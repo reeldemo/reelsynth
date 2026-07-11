@@ -3,10 +3,13 @@ pub mod patch;
 pub mod voice;
 pub mod import;
 pub mod export;
+pub mod engine;
+pub mod ffi;
 
 pub use wavetable::WavetableBank;
 pub use patch::Patch;
 pub use voice::render_note;
+pub use engine::SynthEngine;
 pub use export::{
     export_preset, export_reelpack, export_wavetable, parse_targets, ExportOptions, ExportReport,
     ExportTarget,
