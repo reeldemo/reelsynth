@@ -1,3 +1,7 @@
+[workspace]
+members = [".", "ui-theme"]
+resolver = "2"
+
 [package]
 name = "reelsynth"
 version = "0.1.0"

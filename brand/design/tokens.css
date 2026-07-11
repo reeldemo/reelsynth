@@ -1,0 +1,41 @@
+/* ReelSynth design tokens — Majico palette:0 (Base 1), project 95409489-… */
+
+:root,
+:root[data-theme="reelsynth-dark"] {
+  --bg: #0a0a0a;
+  --bg-muted: #18181b;
+  --surface: #18181b;
+  --surface2: #141416;
+  --text: #fafafa;
+  --text-muted: #a1a1aa;
+  --muted: #a1a1aa;
+  --accent: #183d50;
+  --accent-on: #fafafa;
+  --accent-muted: #061e2a;
+  --border: #27272a;
+  --font-heading: "IBM Plex Sans", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 20px;
+  --space-lg: 32px;
+  --space-xl: 48px;
+}
+
+:root[data-theme="reelsynth-light"] {
+  --bg: #ffffff;
+  --bg-muted: #f4f4f5;
+  --surface: #f4f4f5;
+  --surface2: #e4e4e7;
+  --text: #0a0a0a;
+  --text-muted: #52525b;
+  --muted: #52525b;
+  --accent: #183d50;
+  --accent-on: #fafafa;
+  --accent-muted: #061e2a;
+  --border: #e4e4e7;
+}

@@ -45,6 +45,16 @@ python -m engine.reelsynth_import wav path/to/cycles/
 python -m engine.reelsynth_import serum path/to/patch.fxp
 ```
 
+## Brand
+
+Visual identity via [Majico](https://github.com/cap-jmk-launchpad/majico.xyz) — see [brand/BRAND.md](brand/BRAND.md) and [brand/MAJICO.md](brand/MAJICO.md).
+
+Theme preview (requires display):
+
+```bash
+cargo run -p reelsynth-ui-theme --example smoke
+```
+
 ## Plugin (Phase 5)
 
 JUCE/VST3 scaffold lives in `plugin/` — shares the Rust core via static lib linkage (not yet wired).

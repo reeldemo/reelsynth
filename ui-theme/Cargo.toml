@@ -1,0 +1,16 @@
+[package]
+name = "reelsynth-ui-theme"
+version = "0.1.0"
+edition = "2021"
+description = "Majico design tokens → egui theme for ReelSynth"
+license = "MIT"
+
+[dependencies]
+egui = "0.28"
+
+[dev-dependencies]
+eframe = { version = "0.28", default-features = true }
+
+[[example]]
+name = "smoke"
+path = "examples/smoke.rs"
