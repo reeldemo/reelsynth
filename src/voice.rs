@@ -8,7 +8,8 @@ pub struct Voice {
     env_level: f32,
     env_stage: u8,
     env_time: f32,
-    filter_z1: f32,
+    svf_low: f32,
+    svf_band: f32,
 }
 
 impl Default for Voice {
@@ -18,7 +19,8 @@ impl Default for Voice {
             env_level: 0.0,
             env_stage: 0,
             env_time: 0.0,
-            filter_z1: 0.0,
+            svf_low: 0.0,
+            svf_band: 0.0,
         }
     }
 }
@@ -125,12 +127,22 @@ impl Voice {
         self.env_level
     }
 
+    /// Chamberlin state-variable filter (LP/HP/BP/notch).
     fn svf_filter(&mut self, input: f32, cutoff: f32, resonance: f32, mode: &str, sr: f32) -> f32 {
-        let _ = (resonance, mode);
-        // Pragmatic MVP: 1-pole lowpass (SVF was silencing output in v0.1)
-        let alpha = cutoff / (cutoff + sr * 0.55);
-        self.filter_z1 += alpha * (input - self.filter_z1);
-        self.filter_z1
+        let fc = cutoff.clamp(20.0, sr * 0.49);
+        let f = 2.0 * (std::f32::consts::PI * fc / sr).sin();
+        let q = 1.0 - resonance.clamp(0.0, 0.95);
+
+        self.svf_low += f * self.svf_band;
+        let high = input - self.svf_low - q * self.svf_band;
+        self.svf_band += f * high;
+
+        match mode.to_ascii_lowercase().as_str() {
+            "highpass" | "hp" => high,
+            "bandpass" | "bp" => self.svf_band,
+            "notch" => self.svf_low + high,
+            _ => self.svf_low,
+        }
     }
 }
 
@@ -198,6 +210,27 @@ mod tests {
         let zc_bright = zero_crossings(&a_bright[4410..]);
         let zc_dark = zero_crossings(&a_dark[4410..]);
         assert!(zc_bright > zc_dark, "bright={zc_bright} dark={zc_dark}");
+    }
+
+    #[test]
+    fn filter_highpass_passes_highs() {
+        let bank = WavetableBank::factory_saw_morph();
+        let mut lp = Patch::default_mono();
+        lp.filter.cutoff = 200.0;
+        lp.filter.filter_type = "lowpass".into();
+        let mut hp = Patch::default_mono();
+        hp.filter.cutoff = 200.0;
+        hp.filter.filter_type = "highpass".into();
+        let a_lp = render_note(&bank, 440.0, 0.5, 44100, &lp);
+        let a_hp = render_note(&bank, 440.0, 0.5, 44100, &hp);
+        let rms_lp = rms(&a_lp[4410..]);
+        let rms_hp = rms(&a_hp[4410..]);
+        assert!(rms_hp > rms_lp * 1.2, "hp={rms_hp} lp={rms_lp}");
+    }
+
+    fn rms(samples: &[f32]) -> f32 {
+        let mean = samples.iter().map(|s| s * s).sum::<f32>() / samples.len().max(1) as f32;
+        mean.sqrt()
     }
 
     fn zero_crossings(samples: &[f32]) -> usize {
