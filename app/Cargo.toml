@@ -1,0 +1,18 @@
+[package]
+name = "reelsynth-app"
+version = "0.1.0"
+edition = "2021"
+description = "ReelSynth standalone playable app"
+license = "MIT"
+
+[[bin]]
+name = "reelsynth-ui"
+path = "src/main.rs"
+
+[dependencies]
+reelsynth = { path = ".." }
+reelsynth-ui-theme = { path = "../ui-theme" }
+eframe = { version = "0.28", default-features = true }
+egui = "0.28"
+cpal = "0.15"
+crossbeam-channel = "0.5"

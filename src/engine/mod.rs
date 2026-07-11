@@ -52,6 +52,21 @@ impl SynthEngine {
         self.patch = patch;
     }
 
+    pub fn set_wt_position(&mut self, position: f32) {
+        if let Some(osc) = self.patch.oscillators.get_mut(0) {
+            osc.position = position.clamp(0.0, 255.0);
+        }
+    }
+
+    pub fn set_filter_cutoff(&mut self, cutoff: f32) {
+        self.patch.filter.cutoff = cutoff;
+        self.params.filter_cutoff.set_target(cutoff);
+    }
+
+    pub fn set_filter_resonance(&mut self, resonance: f32) {
+        self.patch.filter.resonance = resonance.clamp(0.0, 0.95);
+    }
+
     pub fn note_on(&mut self, note: u8, velocity: f32) {
         let freq = note_to_freq(note);
         self.pool

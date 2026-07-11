@@ -55,9 +55,23 @@ Theme preview (requires display):
 cargo run -p reelsynth-ui-theme --example smoke
 ```
 
-## Plugin (Phase 5)
+## Standalone UI (egui)
 
-JUCE/VST3 scaffold lives in `plugin/` — shares the Rust core via static lib linkage (not yet wired).
+Visual identity: [brand/BRAND.md](brand/BRAND.md). Theme: `reelsynth-ui-theme`.
+
+```bash
+# Playable app (realtime synth — requires Rust ≥1.85 or working cargo lock)
+cargo run -p reelsynth-app --bin reelsynth-ui
+
+# Theme-only smoke test
+cargo run -p reelsynth-ui-theme --example smoke
+```
+
+Keyboard: **Z S X D C V G B H N J M** (one octave) or click the on-screen piano.
+
+## Plugin (S6)
+
+Rust CLAP/VST3/AU + **egui** editor — see [plugin/README.md](plugin/README.md). No JUCE.
 
 ## License
 

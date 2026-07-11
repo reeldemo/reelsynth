@@ -49,41 +49,29 @@ pub fn apply_tokens(visuals: &mut Visuals, t: &Tokens) {
     visuals.extreme_bg_color = t.surface2;
     visuals.faint_bg_color = t.bg_muted;
     visuals.code_bg_color = t.surface2;
-    visuals.window_stroke = Stroke::new(1.0, t.border);
+    visuals.window_stroke = Stroke::new(1.0_f32, t.border);
     visuals.widgets.noninteractive.bg_fill = t.bg_muted;
-    visuals.widgets.noninteractive.fg_stroke = Stroke::new(1.0, t.text_muted);
+    visuals.widgets.noninteractive.fg_stroke = Stroke::new(1.0_f32, t.text_muted);
     visuals.widgets.inactive.bg_fill = t.bg_muted;
-    visuals.widgets.inactive.fg_stroke = Stroke::new(1.0, t.text);
-    visuals.widgets.inactive.bg_stroke = Stroke::new(1.0, t.border);
+    visuals.widgets.inactive.fg_stroke = Stroke::new(1.0_f32, t.text);
+    visuals.widgets.inactive.bg_stroke = Stroke::new(1.0_f32, t.border);
     visuals.widgets.hovered.bg_fill = t.accent_muted;
-    visuals.widgets.hovered.fg_stroke = Stroke::new(1.5, t.text);
-    visuals.widgets.hovered.bg_stroke = Stroke::new(1.0, t.accent);
+    visuals.widgets.hovered.fg_stroke = Stroke::new(1.5_f32, t.text);
+    visuals.widgets.hovered.bg_stroke = Stroke::new(1.0_f32, t.accent);
     visuals.widgets.active.bg_fill = t.accent;
-    visuals.widgets.active.fg_stroke = Stroke::new(1.5, t.accent_on);
-    visuals.widgets.active.bg_stroke = Stroke::new(1.0, t.accent);
+    visuals.widgets.active.fg_stroke = Stroke::new(1.5_f32, t.accent_on);
+    visuals.widgets.active.bg_stroke = Stroke::new(1.0_f32, t.accent);
     visuals.widgets.open.bg_fill = t.accent_muted;
     visuals.selection.bg_fill = t.accent.gamma_multiply(0.35);
-    visuals.selection.stroke = Stroke::new(1.0, t.accent);
+    visuals.selection.stroke = Stroke::new(1.0_f32, t.accent);
     visuals.hyperlink_color = t.accent;
     visuals.warn_fg_color = Color32::from_rgb(250, 204, 21);
     visuals.error_fg_color = Color32::from_rgb(248, 113, 113);
-    visuals.window_rounding = 10.0;
-    visuals.menu_rounding = 8.0;
+    visuals.window_rounding = Rounding::same(10.0);
+    visuals.menu_rounding = Rounding::same(8.0);
 }
 
 pub fn apply_fonts(ctx: &egui::Context) {
-    let mut fonts = egui::FontDefinitions::default();
-    fonts
-        .families
-        .entry(FontFamily::Proportional)
-        .or_default()
-        .insert(0, "Inter".to_owned());
-    fonts
-        .families
-        .entry(FontFamily::Monospace)
-        .or_default()
-        .insert(0, "JetBrains Mono".to_owned());
-    ctx.set_fonts(fonts);
     let mut style = (*ctx.style()).clone();
     style.text_styles.insert(
         egui::TextStyle::Heading,
