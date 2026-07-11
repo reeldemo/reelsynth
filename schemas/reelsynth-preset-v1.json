@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "reelsynth-preset-v1",
+  "title": "ReelSynth Preset v1",
+  "type": "object",
+  "required": ["schema", "oscillators"],
+  "properties": {
+    "schema": { "const": "reelsynth-preset-v1" },
+    "name": { "type": "string" },
+    "wavetable_id": { "type": "string" },
+    "oscillators": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": { "enum": ["wavetable", "sub", "noise"] },
+          "level": { "type": "number", "minimum": 0, "maximum": 2 },
+          "position": { "type": "number", "minimum": 0 },
+          "detune": { "type": "number" },
+          "unison": { "type": "integer", "minimum": 1, "maximum": 16 },
+          "wavetable_id": { "type": "string" }
+        }
+      }
+    },
+    "filter": {
+      "type": "object",
+      "properties": {
+        "type": { "enum": ["lowpass", "highpass", "bandpass", "notch"] },
+        "cutoff": { "type": "number", "minimum": 20 },
+        "resonance": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "envelope": {
+      "type": "object",
+      "properties": {
+        "attack": { "type": "number", "minimum": 0 },
+        "decay": { "type": "number", "minimum": 0 },
+        "sustain": { "type": "number", "minimum": 0, "maximum": 1 },
+        "release": { "type": "number", "minimum": 0 }
+      }
+    },
+    "lfo": {
+      "type": "object",
+      "properties": {
+        "rate": { "type": "number" },
+        "depth": { "type": "number" },
+        "target": { "type": "string" }
+      }
+    },
+    "mod_matrix": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "required": ["source", "target", "amount"],
+        "properties": {
+          "source": { "type": "string" },
+          "target": { "type": "string" },
+          "amount": { "type": "number" }
+        }
+      }
+    },
+    "sub_level": { "type": "number", "minimum": 0, "maximum": 1 },
+    "noise_level": { "type": "number", "minimum": 0, "maximum": 1 }
+  }
+}

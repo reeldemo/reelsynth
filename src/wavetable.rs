@@ -1,0 +1,254 @@
+//! Wavetable bank: N frames × M samples, linear + spectral crossfade.
+
+pub const DEFAULT_NUM_FRAMES: usize = 256;
+pub const DEFAULT_FRAME_SIZE: usize = 2048;
+pub const REELWT_MAGIC: &[u8; 6] = b"REELWT";
+pub const REELWT_VERSION: u16 = 1;
+
+#[derive(Clone, Debug)]
+pub struct WavetableBank {
+    pub num_frames: usize,
+    pub frame_size: usize,
+    pub frames: Vec<f32>,
+}
+
+impl WavetableBank {
+    pub fn new(num_frames: usize, frame_size: usize) -> Self {
+        Self {
+            num_frames,
+            frame_size,
+            frames: vec![0.0; num_frames * frame_size],
+        }
+    }
+
+    pub fn from_flat(num_frames: usize, frame_size: usize, frames: Vec<f32>) -> Result<Self, String> {
+        if frames.len() != num_frames * frame_size {
+            return Err(format!(
+                "expected {} samples, got {}",
+                num_frames * frame_size,
+                frames.len()
+            ));
+        }
+        Ok(Self {
+            num_frames,
+            frame_size,
+            frames,
+        })
+    }
+
+    pub fn frame(&self, index: usize) -> &[f32] {
+        let start = index * self.frame_size;
+        &self.frames[start..start + self.frame_size]
+    }
+
+    pub fn frame_mut(&mut self, index: usize) -> &mut [f32] {
+        let start = index * self.frame_size;
+        &mut self.frames[start..start + self.frame_size]
+    }
+
+    /// Sample at wavetable position (0..num_frames-1) and phase (0..1).
+    pub fn sample(&self, position: f32, phase: f32) -> f32 {
+        if self.num_frames == 0 || self.frame_size == 0 {
+            return 0.0;
+        }
+        let pos = position.clamp(0.0, (self.num_frames - 1) as f32);
+        let idx0 = pos.floor() as usize;
+        let idx1 = (idx0 + 1).min(self.num_frames - 1);
+        let frac = pos - idx0 as f32;
+
+        let s0 = self.sample_frame(idx0, phase);
+        let s1 = self.sample_frame(idx1, phase);
+        if frac < 1e-6 || idx0 == idx1 {
+            s0
+        } else {
+            linear_crossfade(s0, s1, frac)
+        }
+    }
+
+    fn sample_frame(&self, frame_idx: usize, phase: f32) -> f32 {
+        let frame = self.frame(frame_idx);
+        let p = phase.fract();
+        let pos = p * self.frame_size as f32;
+        let i0 = pos.floor() as usize % self.frame_size;
+        let i1 = (i0 + 1) % self.frame_size;
+        let f = pos - i0 as f32;
+        frame[i0] * (1.0 - f) + frame[i1] * f
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut out = Vec::with_capacity(16 + self.frames.len() * 4);
+        out.extend_from_slice(REELWT_MAGIC);
+        out.extend_from_slice(&REELWT_VERSION.to_le_bytes());
+        out.extend_from_slice(&(self.num_frames as u32).to_le_bytes());
+        out.extend_from_slice(&(self.frame_size as u32).to_le_bytes());
+        for s in &self.frames {
+            out.extend_from_slice(&s.to_le_bytes());
+        }
+        out
+    }
+
+    pub fn from_bytes(data: &[u8]) -> Result<Self, String> {
+        if data.len() < 16 {
+            return Err("truncated .reelwt header".into());
+        }
+        if &data[0..6] != REELWT_MAGIC {
+            return Err("invalid .reelwt magic".into());
+        }
+        let version = u16::from_le_bytes([data[6], data[7]]);
+        if version != REELWT_VERSION {
+            return Err(format!("unsupported .reelwt version {version}"));
+        }
+        let num_frames = u32::from_le_bytes([data[8], data[9], data[10], data[11]]) as usize;
+        let frame_size = u32::from_le_bytes([data[12], data[13], data[14], data[15]]) as usize;
+        let expected = 16 + num_frames * frame_size * 4;
+        if data.len() != expected {
+            return Err(format!("expected {expected} bytes, got {}", data.len()));
+        }
+        let mut frames = Vec::with_capacity(num_frames * frame_size);
+        for chunk in data[16..].chunks_exact(4) {
+            frames.push(f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]));
+        }
+        Self::from_flat(num_frames, frame_size, frames)
+    }
+
+    pub fn write_file(&self, path: &str) -> Result<(), String> {
+        std::fs::write(path, self.to_bytes()).map_err(|e| e.to_string())
+    }
+
+    pub fn read_file(path: &str) -> Result<Self, String> {
+        let data = std::fs::read(path).map_err(|e| e.to_string())?;
+        Self::from_bytes(&data)
+    }
+
+    /// Resample a single-cycle waveform into one frame.
+    pub fn set_frame_from_cycle(&mut self, frame_idx: usize, cycle: &[f32]) {
+        if frame_idx >= self.num_frames || cycle.is_empty() {
+            return;
+        }
+        let frame_size = self.frame_size;
+        let out = self.frame_mut(frame_idx);
+        let len = cycle.len();
+        for i in 0..frame_size {
+            let src = (i as f32 / frame_size as f32) * len as f32;
+            let i0 = src.floor() as usize % len;
+            let i1 = (i0 + 1) % len;
+            let f = src - src.floor();
+            out[i] = cycle[i0] * (1.0 - f) + cycle[i1] * f;
+        }
+    }
+
+    pub fn factory_saw_morph() -> Self {
+        let mut bank = Self::new(DEFAULT_NUM_FRAMES, DEFAULT_FRAME_SIZE);
+        let frame_size = bank.frame_size;
+        for f in 0..bank.num_frames {
+            let morph = f as f32 / (bank.num_frames - 1) as f32;
+            let frame = bank.frame_mut(f);
+            for (i, sample) in frame.iter_mut().enumerate() {
+                let p = i as f32 / frame_size as f32;
+                let saw = 2.0 * p - 1.0;
+                let sine = (p * std::f32::consts::TAU).sin();
+                *sample = saw * (1.0 - morph) + sine * morph;
+            }
+        }
+        bank
+    }
+
+    pub fn factory_square_morph() -> Self {
+        let mut bank = Self::new(DEFAULT_NUM_FRAMES, DEFAULT_FRAME_SIZE);
+        let frame_size = bank.frame_size;
+        for f in 0..bank.num_frames {
+            let morph = f as f32 / (bank.num_frames - 1) as f32;
+            let frame = bank.frame_mut(f);
+            for (i, sample) in frame.iter_mut().enumerate() {
+                let p = i as f32 / frame_size as f32;
+                let sq = if p < 0.5 { 1.0 } else { -1.0 };
+                let tri = 1.0 - 4.0 * (p - 0.5).abs();
+                *sample = sq * (1.0 - morph) + tri * morph;
+            }
+        }
+        bank
+    }
+
+    pub fn factory_sine() -> Self {
+        let mut bank = Self::new(DEFAULT_NUM_FRAMES, DEFAULT_FRAME_SIZE);
+        let frame_size = bank.frame_size;
+        for f in 0..bank.num_frames {
+            let frame = bank.frame_mut(f);
+            for (i, sample) in frame.iter_mut().enumerate() {
+                let p = i as f32 / frame_size as f32;
+                *sample = (p * std::f32::consts::TAU).sin();
+            }
+        }
+        bank
+    }
+
+    pub fn factory_formant() -> Self {
+        let mut bank = Self::new(DEFAULT_NUM_FRAMES, DEFAULT_FRAME_SIZE);
+        let frame_size = bank.frame_size;
+        for f in 0..bank.num_frames {
+            let vowel = f as f32 / (bank.num_frames - 1) as f32;
+            let f1 = 300.0 + vowel * 400.0;
+            let f2 = 800.0 + vowel * 1200.0;
+            let frame = bank.frame_mut(f);
+            for (i, sample) in frame.iter_mut().enumerate() {
+                let p = i as f32 / frame_size as f32;
+                let s1 = (p * f1 * 0.02 * std::f32::consts::TAU).sin();
+                let s2 = (p * f2 * 0.015 * std::f32::consts::TAU).sin() * 0.5;
+                *sample = (s1 + s2).clamp(-1.0, 1.0);
+            }
+        }
+        bank
+    }
+
+    pub fn factory_metallic() -> Self {
+        let mut bank = Self::new(DEFAULT_NUM_FRAMES, DEFAULT_FRAME_SIZE);
+        let frame_size = bank.frame_size;
+        for f in 0..bank.num_frames {
+            let det = 1.0 + f as f32 * 0.003;
+            let frame = bank.frame_mut(f);
+            for (i, sample) in frame.iter_mut().enumerate() {
+                let p = i as f32 / frame_size as f32;
+                let mut v = 0.0f32;
+                for h in 1..=8 {
+                    v += (p * det * h as f32 * std::f32::consts::TAU).sin() / h as f32;
+                }
+                *sample = v.clamp(-1.0, 1.0);
+            }
+        }
+        bank
+    }
+}
+
+fn linear_crossfade(a: f32, b: f32, t: f32) -> f32 {
+    a * (1.0 - t) + b * t
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn morph_continuity() {
+        let bank = WavetableBank::factory_saw_morph();
+        let mut prev = bank.sample(0.0, 0.25);
+        for f in 1..bank.num_frames {
+            let pos = f as f32;
+            let cur = bank.sample(pos, 0.25);
+            assert!(
+                (cur - prev).abs() < 0.15,
+                "discontinuity at frame {f}: {prev} -> {cur}"
+            );
+            prev = cur;
+        }
+    }
+
+    #[test]
+    fn roundtrip_bytes() {
+        let bank = WavetableBank::factory_sine();
+        let bytes = bank.to_bytes();
+        let restored = WavetableBank::from_bytes(&bytes).unwrap();
+        assert_eq!(restored.num_frames, bank.num_frames);
+        assert_eq!(restored.frame_size, bank.frame_size);
+        assert!((restored.sample(0.0, 0.5) - bank.sample(0.0, 0.5)).abs() < 1e-5);
+    }
+}

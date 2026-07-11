@@ -1,0 +1,50 @@
+# ReelSynth
+
+Open-source wavetable synthesizer engine (MIT). Powers offline rendering in [Reeldemo](https://github.com/cap-jmk-launchpad/reeldemo-ableton) and targets VST3/AU in a future plugin build.
+
+## Features
+
+- **WavetableBank** — 256 frames × 2048 samples, linear + spectral crossfade
+- **Voice** — multi-osc wavetable, ADSR, state-variable filter, modulation matrix
+- **Import** — Vital `.vitaltable`, WAV single-cycle folders, Serum `.fxp` (wavetable subset v1)
+- **Formats** — `.reelwt` (binary bank), `.reelpreset` (JSON patch) — see [docs/FORMAT.md](docs/FORMAT.md)
+
+## Build
+
+```bash
+# Rust library + tests
+cargo test
+
+# Python wheel (PyO3)
+maturin develop --features python
+```
+
+## Python API
+
+```python
+import reelsynth
+
+audio = reelsynth.render_note(
+    bank_path="data/wavetables/saw_morph.reelwt",
+    freq=440.0,
+    duration=1.0,
+    patch_json='{"oscillators":[{"level":1.0,"position":0.0}],"filter":{"cutoff":1200}}',
+    sample_rate=44100,
+)
+```
+
+## CLI import (via Reeldemo wrapper)
+
+```bash
+python -m engine.reelsynth_import vital path/to/table.vitaltable
+python -m engine.reelsynth_import wav path/to/cycles/
+python -m engine.reelsynth_import serum path/to/patch.fxp
+```
+
+## Plugin (Phase 5)
+
+JUCE/VST3 scaffold lives in `plugin/` — shares the Rust core via static lib linkage (not yet wired).
+
+## License
+
+MIT — see [LICENSE](LICENSE). Reeldemo agent, text-to-wavetable, and compose integration are commercial and live in the Reeldemo repo.

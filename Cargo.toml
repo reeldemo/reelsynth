@@ -1,0 +1,29 @@
+[package]
+name = "reelsynth"
+version = "0.1.0"
+edition = "2021"
+description = "Open-source wavetable synthesizer engine for Reeldemo"
+license = "MIT"
+readme = "README.md"
+
+[[bin]]
+name = "gen_factory"
+path = "src/bin/gen_factory.rs"
+required-features = []
+
+[lib]
+name = "reelsynth"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+pyo3 = { version = "0.22", features = ["extension-module"], optional = true }
+numpy = { version = "0.22", optional = true }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[features]
+default = []
+python = ["dep:pyo3", "dep:numpy"]
+
+[dev-dependencies]
+approx = "0.5"

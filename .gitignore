@@ -1,0 +1,7 @@
+/target
+/dist
+*.so
+*.dylib
+*.pyd
+__pycache__/
+.venv/

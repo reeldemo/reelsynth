@@ -1,0 +1,3 @@
+[tool.maturin]
+manifest-path = "Cargo.toml"
+features = ["python"]
