@@ -29,9 +29,22 @@
 
 ---
 
-## Agent screenshot capture (macOS)
+## Agent screenshot audit (summary)
 
-Full workflow: [SKILL.md § Agent-driven screenshot audit](SKILL.md#agent-driven-screenshot-audit).
+| Step | Action |
+|------|--------|
+| **1. Capture** | Launch `reelsynth-ui` → `screencapture` → `brand/mockups/audits/` |
+| **2. Compare** | Read PNG + diff vs `s1-performance.html` + `COMPONENT_SPEC.md` |
+| **3. Loop** | `/loop audit UI` — max 5×: screenshot → audit → fix Critical/Major in `ui/` → rebuild |
+| **4. Exit** | S1 ~4px parity; piano ~18px keys; alignments match mockup |
+
+Full workflow: [SKILL.md § Screenshot audit workflow](SKILL.md#screenshot-audit-workflow).
+
+---
+
+## Capture script (macOS)
+
+Run from repo root after build + launch. Output: `brand/mockups/audits/YYYY-MM-DD_HH-MM-ss-app.png`.
 
 ### Build + launch
 
@@ -40,7 +53,7 @@ cd /Users/julian/Documents/coding-projects/reelsynth
 pkill -f 'target/debug/reelsynth-ui' || true
 cargo build -p reelsynth-app --bin reelsynth-ui
 ./target/debug/reelsynth-ui &
-sleep 3
+sleep 3   # wait for window + first frame
 ```
 
 ### Capture app window
@@ -64,28 +77,32 @@ end tell
 APPLESCRIPT
 )
 
-screencapture -o -l"$WIN_ID" "$OUT"
-echo "$OUT"
+if [ -n "$WIN_ID" ] && [ "$WIN_ID" != "missing value" ]; then
+  screencapture -o -l"$WIN_ID" "$OUT"
+else
+  screencapture -o -l$(osascript -e 'tell app "System Events" to id of front window') "$OUT"
+fi
+echo "Saved: $OUT"
 ```
 
 | Method | When to use |
 |--------|-------------|
 | `screencapture -l<winID>` | **Preferred** — crops to ReelSynth window |
-| `screencapture -o -l$(osascript … front window)` | Fallback if process lookup fails |
-| Browser MCP screenshot | Mockup reference capture at 1280×720 |
+| Front-window fallback | osascript process lookup failed |
+| Browser MCP screenshot | Optional mockup reference at 1280×720 |
 
-**Window identity:** title `"ReelSynth"`, process `reelsynth-ui`, default viewport 1280×720 (`APP_HEIGHT_S1`).
+**Window identity:** title `"ReelSynth"`, process `reelsynth-ui`, viewport 1280×720 (`APP_HEIGHT_S1`).
 
-### Capture reference mockup
+### Compare (after capture)
+
+1. **Read** the PNG with the Read tool.
+2. **Reference:** `brand/mockups/s1-performance.html` + `brand/mockups/COMPONENT_SPEC.md` (+ `mockups.css` for tokens).
+3. Walk regions; score Critical / Major / Minor / Polish.
+
+### Loop + cleanup
 
 ```bash
-# Static analysis (preferred): read s1-performance.html + mockups.css + COMPONENT_SPEC.md
-# Visual reference: browser MCP → file:///…/brand/mockups/s1-performance.html → screenshot
-```
-
-### Cleanup
-
-```bash
+# Loop: fix Critical/Major in ui/ → cargo build -p reelsynth-app --bin reelsynth-ui → re-capture (max 5×)
 pkill -f 'target/debug/reelsynth-ui' || true
 ```
 

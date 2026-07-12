@@ -30,6 +30,41 @@ Design-first workflow: **mockup approval → proto → app**. Layout changes req
 | "Compare to mockup" | Side-by-side audit against HTML reference |
 | `/loop` + audit | Loop mode: screenshot → audit → fix Critical/Major → rebuild → repeat |
 
+## Screenshot audit workflow
+
+Concise agent loop — full script in [reference.md § Capture script](reference.md#capture-script).
+
+### 1. Capture screenshots
+
+After launching `reelsynth-ui`, save window PNGs to **`brand/mockups/audits/`** using macOS `screencapture` (timestamped `YYYY-MM-DD_HH-MM-ss-app.png`). Build/launch first; do not commit audit PNGs.
+
+### 2. Read + compare
+
+Use the **Read tool** on the captured PNG. Compare regions, spacing, and widgets against:
+
+- `brand/mockups/s1-performance.html` — S1 layout / region map
+- `brand/mockups/COMPONENT_SPEC.md` — HTML → egui sizes and tokens
+
+Score findings Critical / Major / Minor / Polish ([reference.md](reference.md)).
+
+### 3. Loop mode (`/loop audit UI`)
+
+**Max 5 iterations** per session:
+
+1. Screenshot → audit
+2. Fix **Critical** and **Major** in `ui/` (+ `ui-theme/`)
+3. Rebuild → re-screenshot → repeat
+
+Trigger: `/loop` + audit UI (e.g. `/loop until UI matches mockup`). After 5 passes without exit, report blockers and arm sleeper ([Loop mode](#loop-mode)).
+
+### 4. Exit criteria
+
+- **S1 parity ~4px** vs `s1-performance.html` at 1280×720
+- **Piano ~18px** white keys, 80px tall, readable
+- **Alignments** match mockup landmarks (header 48px, rail 240px, WT strip 72px, etc.)
+
+---
+
 ## Quick start
 
 1. **Identify sprint context** from visible panels (S1 vs full S6 vs narrow).
