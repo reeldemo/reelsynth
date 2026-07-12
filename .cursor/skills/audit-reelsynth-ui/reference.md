@@ -25,7 +25,109 @@
 | **Minor** | Within ~4px but noticeable; secondary typography | Label 12px not 13px; gutter 6px not 8px; muted text too bright |
 | **Polish** | Cosmetic; motion; micro-interaction | Hover mix slightly off; chevron rotation timing; badge spacing |
 
-**Parity tolerance:** ≤4px on layout regions vs mockup at 1× (1280×820 canonical). Widget internal geometry (arc stroke, gradient) judged qualitatively against `components.html`.
+**Parity tolerance:** ≤4px on layout regions vs mockup at 1× (1280×720 S1 / 1280×820 S6 canonical). Widget internal geometry (arc stroke, gradient) judged qualitatively against `components.html`.
+
+---
+
+## Agent screenshot capture (macOS)
+
+Full workflow: [SKILL.md § Agent-driven screenshot audit](SKILL.md#agent-driven-screenshot-audit).
+
+### Build + launch
+
+```bash
+cd /Users/julian/Documents/coding-projects/reelsynth
+pkill -f 'target/debug/reelsynth-ui' || true
+cargo build -p reelsynth-app --bin reelsynth-ui
+./target/debug/reelsynth-ui &
+sleep 3
+```
+
+### Capture app window
+
+```bash
+AUDIT_DIR=brand/mockups/audits
+mkdir -p "$AUDIT_DIR"
+STAMP=$(date +%Y-%m-%d_%H-%M-%S)
+OUT="$AUDIT_DIR/${STAMP}-app.png"
+
+WIN_ID=$(osascript <<'APPLESCRIPT'
+tell application "System Events"
+  repeat with p in (every process whose name is "reelsynth-ui")
+    try
+      repeat with w in (every window of p whose name contains "ReelSynth")
+        return id of w
+      end repeat
+    end try
+  end repeat
+end tell
+APPLESCRIPT
+)
+
+screencapture -o -l"$WIN_ID" "$OUT"
+echo "$OUT"
+```
+
+| Method | When to use |
+|--------|-------------|
+| `screencapture -l<winID>` | **Preferred** — crops to ReelSynth window |
+| `screencapture -o -l$(osascript … front window)` | Fallback if process lookup fails |
+| Browser MCP screenshot | Mockup reference capture at 1280×720 |
+
+**Window identity:** title `"ReelSynth"`, process `reelsynth-ui`, default viewport 1280×720 (`APP_HEIGHT_S1`).
+
+### Capture reference mockup
+
+```bash
+# Static analysis (preferred): read s1-performance.html + mockups.css + COMPONENT_SPEC.md
+# Visual reference: browser MCP → file:///…/brand/mockups/s1-performance.html → screenshot
+```
+
+### Cleanup
+
+```bash
+pkill -f 'target/debug/reelsynth-ui' || true
+```
+
+---
+
+## Pixel-check landmarks (S1)
+
+Use these when screenshot diff suggests misalignment. Source: `COMPONENT_SPEC.md` + `mockups.css` + `ui/src/layout.rs`.
+
+| Landmark | CSS / mockup | egui constant | Tolerance |
+|----------|--------------|---------------|-----------|
+| Viewport | 1280×720 | `APP_WIDTH` × `APP_HEIGHT_S1` | exact |
+| Header height | 48px (`--grid-unit` × 6) | `HEADER_HEIGHT` | ≤4px |
+| Footer height | 36px | `FOOTER_HEIGHT` | ≤4px |
+| Right rail width | 240px | `RAIL_WIDTH` | ≤4px |
+| WT strip height | 72px | `WT_STRIP_HEIGHT` | ≤4px |
+| Piano keyboard height | 80px (`--piano-h`) | `PIANO_HEIGHT` | ≤4px |
+| Piano white key width | 18px (`--piano-white-w`) | `PIANO_WHITE_KEY_WIDTH` | ≤4px |
+| Piano wrap total | 96px (16px pad + 80px keys) | `GRID_UNIT * 2 + PIANO_HEIGHT` | ≤4px |
+| Knob sm / lg | 48px / 64px | `KNOB_SM` / `KNOB_LG` | ≤4px |
+| Panel padding | 8px | `GRID_UNIT` | ≤4px |
+| Knob row gap | 12px | `SPACE_SM` | ≤4px |
+| ADSR graph height | 80px | rail panel | ≤4px |
+
+**Piano readability check:** 14 white keys × 18px = 252px keyboard width, centered in wrap. Keys must not stretch to fill viewport width.
+
+**Disabled ADSR/LFO check:** opacity ~0.38, non-interactive (`panel_disabled` / `ui.add_enabled_ui(false, …)`). Visible but greyed — not hidden, not fully live.
+
+---
+
+## Loop mode exit criteria
+
+| Criterion | Pass signal |
+|-----------|-------------|
+| S1 layout | Matches `s1-performance.html` region map |
+| Piano | 18px keys, 80px tall, readable |
+| Alignment | All landmarks within ~4px |
+| Borders | Panel edges visible (`--border` #27272a) |
+| Disabled groups | ADSR/LFO greyed, knobs non-draggable |
+| Sprint scope | No osc/mod/FX/2D/3D columns |
+
+Max **5 iterations** per session; arm `AGENT_LOOP_WAKE_reelsynth-ui-audit` sleeper if not done.
 
 ---
 
@@ -44,7 +146,7 @@
 │                                      │  · ADSR disabled │
 │                                      │  · LFO disabled  │
 ├──────────────────────────────────────┴──────────────────┤
-│ Piano wrap (optional) — 72px keyboard, 14 white keys    │
+│ Piano wrap (optional) — 96px total (16px pad + 80px keyboard), 18px white keys │
 ├─────────────────────────────────────────────────────────┤
 │ Footer 36px — piano toggle + status/MIDI                 │
 └─────────────────────────────────────────────────────────┘
@@ -72,8 +174,9 @@ Osc 220px, rail 200px, mod/FX collapsed, piano hidden, WT views compressed but v
 | Osc column | hidden | 280px min | DECISIONS |
 | Right rail | 240px | 240px | `RAIL_WIDTH` |
 | WT strip | 72px | 72px | `WT_STRIP_HEIGHT` |
-| Piano height | 72px | 72px | `PIANO_HEIGHT` |
-| White key width | 15px fixed | 15px fixed | not flex-stretch |
+| Piano height | 80px | 80px | `PIANO_HEIGHT` / `--piano-h` |
+| Piano wrap | 96px | 96px | `GRID_UNIT * 2 + PIANO_HEIGHT` |
+| White key width | 18px fixed | 18px fixed | `--piano-white-w`; not flex-stretch |
 | Panel padding | 8px | 8px | `--space-xs` |
 | Knob row gap | 12px | 12px | `--space-sm` |
 
@@ -128,6 +231,8 @@ Arc: 270° sweep, 3px stroke, track `--border`, fill accent/accent-ui. Pointer: 
 ### Piano (`.rs-piano`)
 
 - 14 white keys, 2 octaves, start C3 (note 48)
+- Container 80px tall (`--piano-h`); wrap 96px with 16px vertical padding
+- White key: 18px fixed width (`--piano-white-w`); total keyboard 252px centered
 - Black key: 58% white width, 56% piano height
 - Active key: `--accent-ui` gradient fill
 - Toggle: footer `.rs-toggle` / `state.piano_visible`
@@ -179,7 +284,7 @@ Check these when audit findings point to "looks wrong" but layout numbers seem f
 
 5. **Knob interaction** — proto/app should use custom `Knob` widget (`widgets/knob.rs`), not stock `DragValue` without arc paint.
 
-6. **Piano key sizing** — fixed `PIANO_WHITE_KEY_WIDTH` (15px), not stretched to fill width.
+6. **Piano key sizing** — fixed `PIANO_WHITE_KEY_WIDTH` (18px), not stretched to fill width.
 
 7. **CentralPanel vs custom layout** — S1 uses `draw_s1` with computed `S1Layout` rects; verify `screen`/`max_rect` matches full viewport.
 
