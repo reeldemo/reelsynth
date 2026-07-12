@@ -6,14 +6,12 @@ use reelsynth_ui::{draw_s1, S1State};
 use reelsynth_ui_theme;
 
 struct ProtoApp {
-    themed: bool,
     state: S1State,
 }
 
 impl Default for ProtoApp {
     fn default() -> Self {
         Self {
-            themed: false,
             state: S1State::default(),
         }
     }
@@ -21,11 +19,6 @@ impl Default for ProtoApp {
 
 impl eframe::App for ProtoApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        if !self.themed {
-            reelsynth_ui_theme::apply(ctx);
-            self.themed = true;
-        }
-
         egui::CentralPanel::default()
             .frame(egui::Frame {
                 fill: reelsynth_ui_theme::Tokens::default().bg,
@@ -71,6 +64,9 @@ fn main() -> eframe::Result<()> {
                 .with_title("ReelSynth UI Proto"),
             ..Default::default()
         },
-        Box::new(|_cc| Ok(Box::new(ProtoApp::default()))),
+        Box::new(|cc| {
+            reelsynth_ui_theme::apply(&cc.egui_ctx);
+            Ok(Box::new(ProtoApp::default()))
+        }),
     )
 }

@@ -10,8 +10,8 @@ fn main() -> eframe::Result<()> {
             ..Default::default()
         },
         Box::new(|cc| {
+            reelsynth_ui_theme::apply(&cc.egui_ctx);
             Ok(Box::new(SmokeApp {
-                started: false,
                 wt_position: 0.42,
                 filter_cutoff: 1200.0,
             }))
@@ -20,18 +20,12 @@ fn main() -> eframe::Result<()> {
 }
 
 struct SmokeApp {
-    started: bool,
     wt_position: f32,
     filter_cutoff: f32,
 }
 
 impl eframe::App for SmokeApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        if !self.started {
-            reelsynth_ui_theme::apply(ctx);
-            self.started = true;
-        }
-
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("ReelSynth");
             ui.label("Majico palette:0 · IBM Plex Sans / Inter");

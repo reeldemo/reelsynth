@@ -119,12 +119,14 @@ fn main() -> eframe::Result<()> {
                 .with_title("ReelSynth"),
             ..Default::default()
         },
-        Box::new(move |_cc| Ok(Box::new(ReelSynthApp::new(audio.clone())))),
+        Box::new(move |cc| {
+            reelsynth_ui_theme::apply(&cc.egui_ctx);
+            Ok(Box::new(ReelSynthApp::new(audio.clone())))
+        }),
     )
 }
 
 struct ReelSynthApp {
-    themed: bool,
     audio: Option<Arc<AudioHandle>>,
     state: S1State,
 }
@@ -137,7 +139,6 @@ impl ReelSynthApp {
             "No audio — UI only".into()
         };
         Self {
-            themed: false,
             audio,
             state: S1State {
                 status,
@@ -192,11 +193,6 @@ fn keyboard_note(key: egui::Key) -> Option<u8> {
 
 impl eframe::App for ReelSynthApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        if !self.themed {
-            reelsynth_ui_theme::apply(ctx);
-            self.themed = true;
-        }
-
         ctx.input(|i| {
             for event in &i.events {
                 if let egui::Event::Key {
