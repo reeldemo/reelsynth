@@ -74,6 +74,19 @@ pub fn apply_tokens(visuals: &mut Visuals, t: &Tokens) {
     visuals.menu_rounding = Rounding::same(8.0);
 }
 
+/// Font for headings and window titles. IBM Plex Sans when bundled fonts load, else proportional UI font.
+pub fn heading_font(size: f32) -> FontId {
+    FontId::new(size, heading_font_family())
+}
+
+fn heading_font_family() -> FontFamily {
+    if try_font(include_bytes!("../assets/fonts/IBMPlexSans-SemiBold.ttf")).is_some() {
+        FontFamily::Name("heading".into())
+    } else {
+        FontFamily::Proportional
+    }
+}
+
 pub fn apply_fonts(ctx: &egui::Context) {
     let mut fonts = FontDefinitions::default();
 
@@ -84,16 +97,18 @@ pub fn apply_fonts(ctx: &egui::Context) {
         }
     }
 
-    if let Some(data) = try_font(include_bytes!("../assets/fonts/IBMPlexSans-SemiBold.ttf")) {
+    let heading_family = if let Some(data) =
+        try_font(include_bytes!("../assets/fonts/IBMPlexSans-SemiBold.ttf"))
+    {
         fonts.font_data.insert("ibm_plex".to_owned(), data);
-        if let Some(family) = fonts.families.get_mut(&FontFamily::Name("heading".into())) {
-            family.insert(0, "ibm_plex".to_owned());
-        } else {
-            fonts
-                .families
-                .insert(FontFamily::Name("heading".into()), vec!["ibm_plex".to_owned()]);
-        }
-    }
+        let family = FontFamily::Name("heading".into());
+        fonts
+            .families
+            .insert(family.clone(), vec!["ibm_plex".to_owned()]);
+        family
+    } else {
+        FontFamily::Proportional
+    };
 
     if let Some(data) = try_font(include_bytes!("../assets/fonts/JetBrainsMono-Regular.ttf")) {
         fonts.font_data.insert("jetbrains".to_owned(), data);
@@ -102,12 +117,13 @@ pub fn apply_fonts(ctx: &egui::Context) {
         }
     }
 
+    // Fonts become active at the start of the next frame; style is immediate.
     ctx.set_fonts(fonts);
 
     let mut style = (*ctx.style()).clone();
     style.text_styles.insert(
         egui::TextStyle::Heading,
-        FontId::new(18.0, FontFamily::Name("heading".into())),
+        FontId::new(18.0, heading_family),
     );
     style.text_styles.insert(
         egui::TextStyle::Body,
@@ -122,12 +138,20 @@ pub fn apply_fonts(ctx: &egui::Context) {
     ctx.set_style(style);
 }
 
-/// Load font bytes without panicking on invalid data.
+/// Load font bytes without panicking on missing or invalid data.
 fn try_font(bytes: &'static [u8]) -> Option<FontData> {
-    if bytes.is_empty() {
+    if bytes.is_empty() || !looks_like_font(bytes) {
         return None;
     }
     Some(FontData::from_static(bytes))
+}
+
+fn looks_like_font(bytes: &[u8]) -> bool {
+    if bytes.len() < 4 {
+        return false;
+    }
+    matches!(&bytes[0..4], [0, 1, 0, 0] | b"OTTO" | b"true" | b"typ1")
+        || bytes.len() >= 12 && &bytes[8..12] == b"true"
 }
 
 fn hex(s: &str) -> Color32 {
@@ -144,5 +168,13 @@ mod tests {
     fn default_accent_matches_majico() {
         let t = Tokens::default();
         assert_eq!(t.accent, hex("#183d50"));
+    }
+
+    #[test]
+    fn looks_like_font_accepts_valid_ttf_magic() {
+        assert!(looks_like_font(&[0, 1, 0, 0, 0]));
+        assert!(looks_like_font(b"OTTO"));
+        assert!(!looks_like_font(&[]));
+        assert!(!looks_like_font(b"xxxx"));
     }
 }

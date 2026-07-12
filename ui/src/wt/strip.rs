@@ -92,7 +92,7 @@ impl<'a> WtStrip<'a> {
                     Pos2::new(playhead_x, inner.min.y),
                     Pos2::new(playhead_x, inner.max.y),
                 ],
-                egui::Stroke::new(2.0, tokens.accent),
+                egui::Stroke::new(2.0_f32, tokens.accent),
             );
 
             let frame_i = self.position.round() as u32;
@@ -131,7 +131,7 @@ fn paint_waveform_thumbnail(
     }
     if points.len() >= 2 {
         let color = if active { accent } else { accent_ui };
-        painter.add(Shape::line(points, egui::Stroke::new(if active { 2.0 } else { 1.5 }, color)));
+        painter.add(Shape::line(points, egui::Stroke::new(if active { 2.0_f32 } else { 1.5_f32 }, color)));
     }
 }
 
@@ -153,5 +153,5 @@ fn paint_placeholder_wave(
         })
         .collect();
     let color = if active { accent } else { accent_ui };
-    painter.add(Shape::line(points, egui::Stroke::new(1.5, color)));
+    painter.add(Shape::line(points, egui::Stroke::new(1.5_f32, color)));
 }

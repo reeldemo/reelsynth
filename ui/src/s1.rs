@@ -196,7 +196,7 @@ fn draw_spectrum_hero(ui: &mut Ui, state: &S1State) {
             .collect();
         painter.add(Shape::line(
             wave,
-            egui::Stroke::new(1.5, tokens.accent_on.gamma_multiply(0.6)),
+            egui::Stroke::new(1.5_f32, tokens.accent_on.gamma_multiply(0.6)),
         ));
     });
 }

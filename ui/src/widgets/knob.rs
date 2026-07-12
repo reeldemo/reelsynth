@@ -177,10 +177,10 @@ fn paint_knob(
 
     let fill = tokens.surface2.gamma_multiply(alpha);
     painter.circle_filled(center, radius, fill);
-    painter.circle_stroke(center, radius, egui::Stroke::new(1.0, tokens.border));
+    painter.circle_stroke(center, radius, egui::Stroke::new(1.0_f32, tokens.border));
 
     if matches!(style, KnobStyle::Wired) {
-        painter.circle_stroke(center, radius + 1.5, egui::Stroke::new(1.0, accent_ui));
+        painter.circle_stroke(center, radius + 1.5, egui::Stroke::new(1.0_f32, accent_ui));
     }
 
     let arc_start = std::f32::consts::FRAC_PI_4 * 3.0; // 135°
@@ -195,7 +195,7 @@ fn paint_knob(
         let a1 = arc_start + t1 * arc_span;
         let p0 = center + Vec2::angled(a0) * track_r;
         let p1 = center + Vec2::angled(a1) * track_r;
-        painter.line_segment([p0, p1], egui::Stroke::new(2.5, tokens.border.gamma_multiply(alpha)));
+        painter.line_segment([p0, p1], egui::Stroke::new(2.5_f32, tokens.border.gamma_multiply(alpha)));
     }
 
     let value_steps = (track_steps as f32 * norm) as usize;
@@ -211,7 +211,7 @@ fn paint_knob(
         let a1 = arc_start + t1 * arc_span;
         let p0 = center + Vec2::angled(a0) * track_r;
         let p1 = center + Vec2::angled(a1) * track_r;
-        painter.line_segment([p0, p1], egui::Stroke::new(2.5, fill_color.gamma_multiply(alpha)));
+        painter.line_segment([p0, p1], egui::Stroke::new(2.5_f32, fill_color.gamma_multiply(alpha)));
     }
 
     let angle = arc_start + norm * arc_span;
@@ -222,5 +222,5 @@ fn paint_knob(
     } else {
         tokens.text
     };
-    painter.line_segment([center, tip], egui::Stroke::new(2.0, pointer_color.gamma_multiply(alpha)));
+    painter.line_segment([center, tip], egui::Stroke::new(2.0_f32, pointer_color.gamma_multiply(alpha)));
 }
