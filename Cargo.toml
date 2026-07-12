@@ -1,5 +1,5 @@
 [workspace]
-members = [".", "ui-theme", "app"]
+members = [".", "ui-theme", "ui", "app"]
 resolver = "2"
 
 [package]

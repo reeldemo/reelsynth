@@ -1,7 +1,10 @@
 //! Majico palette:0 → egui `Visuals` for ReelSynth.
 //! Source of truth: `brand/design/tokens.css`
 
-use egui::{Color32, FontFamily, FontId, Rounding, Stroke, Visuals};
+use egui::{Color32, FontData, FontDefinitions, FontFamily, FontId, Rounding, Stroke, Visuals};
+
+/// Interactive highlight (mockups `--accent-ui`).
+pub const ACCENT_UI: Color32 = Color32::from_rgb(0x2a, 0x6b, 0x8a);
 
 /// ReelSynth dark theme tokens (Majico Base 1).
 pub struct Tokens {
@@ -72,22 +75,59 @@ pub fn apply_tokens(visuals: &mut Visuals, t: &Tokens) {
 }
 
 pub fn apply_fonts(ctx: &egui::Context) {
+    let mut fonts = FontDefinitions::default();
+
+    if let Some(data) = try_font(include_bytes!("../assets/fonts/Inter-Regular.ttf")) {
+        fonts.font_data.insert("inter".to_owned(), data);
+        if let Some(family) = fonts.families.get_mut(&FontFamily::Proportional) {
+            family.insert(0, "inter".to_owned());
+        }
+    }
+
+    if let Some(data) = try_font(include_bytes!("../assets/fonts/IBMPlexSans-SemiBold.ttf")) {
+        fonts.font_data.insert("ibm_plex".to_owned(), data);
+        if let Some(family) = fonts.families.get_mut(&FontFamily::Name("heading".into())) {
+            family.insert(0, "ibm_plex".to_owned());
+        } else {
+            fonts
+                .families
+                .insert(FontFamily::Name("heading".into()), vec!["ibm_plex".to_owned()]);
+        }
+    }
+
+    if let Some(data) = try_font(include_bytes!("../assets/fonts/JetBrainsMono-Regular.ttf")) {
+        fonts.font_data.insert("jetbrains".to_owned(), data);
+        if let Some(family) = fonts.families.get_mut(&FontFamily::Monospace) {
+            family.insert(0, "jetbrains".to_owned());
+        }
+    }
+
+    ctx.set_fonts(fonts);
+
     let mut style = (*ctx.style()).clone();
     style.text_styles.insert(
         egui::TextStyle::Heading,
-        FontId::new(18.0, FontFamily::Proportional),
+        FontId::new(18.0, FontFamily::Name("heading".into())),
     );
     style.text_styles.insert(
         egui::TextStyle::Body,
-        FontId::new(14.0, FontFamily::Proportional),
+        FontId::new(13.0, FontFamily::Proportional),
     );
     style.text_styles.insert(
         egui::TextStyle::Monospace,
-        FontId::new(13.0, FontFamily::Monospace),
+        FontId::new(11.0, FontFamily::Monospace),
     );
     style.spacing.item_spacing = egui::vec2(8.0, 8.0);
     style.spacing.button_padding = egui::vec2(12.0, 8.0);
     ctx.set_style(style);
+}
+
+/// Load font bytes without panicking on invalid data.
+fn try_font(bytes: &'static [u8]) -> Option<FontData> {
+    if bytes.is_empty() {
+        return None;
+    }
+    Some(FontData::from_static(bytes))
 }
 
 fn hex(s: &str) -> Color32 {

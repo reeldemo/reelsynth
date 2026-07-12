@@ -11,6 +11,7 @@ path = "src/main.rs"
 
 [dependencies]
 reelsynth = { path = ".." }
+reelsynth-ui = { path = "../ui" }
 reelsynth-ui-theme = { path = "../ui-theme" }
 eframe = { version = "0.28", default-features = true }
 egui = "0.28"

@@ -1,0 +1,20 @@
+[package]
+name = "reelsynth-ui"
+version = "0.1.0"
+edition = "2021"
+description = "ReelSynth egui widgets and S1 layout"
+license = "MIT"
+
+[lib]
+name = "reelsynth_ui"
+path = "src/lib.rs"
+
+[[bin]]
+name = "reelsynth-ui-proto"
+path = "src/bin/proto.rs"
+
+[dependencies]
+reelsynth = { path = ".." }
+reelsynth-ui-theme = { path = "../ui-theme" }
+egui = "0.28"
+eframe = { version = "0.28", default-features = true }
