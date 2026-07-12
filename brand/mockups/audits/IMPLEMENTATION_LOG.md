@@ -15,7 +15,7 @@ Progress tracker for the UI platform plan (`reelsynth_ui_platform` + `reelsynth_
 | Piano keyboard + QWERTY | ✅ (prior) |
 | `cargo test --no-default-features -j 1` | ✅ |
 
-**Commits:** `feat(app): S1 preset I/O, MIDI routing, functional header`
+**Commit:** `c252ca6` — preset I/O, MIDI routing, functional header
 
 ### S2 — WT editor (in progress)
 
@@ -31,7 +31,7 @@ Progress tracker for the UI platform plan (`reelsynth_ui_platform` + `reelsynth_
 | Import Vital/WAV/Serum | ⬜ S2+ |
 | egui-in-plugin-host spike | ⬜ end of S2 |
 
-**Commits:** `feat(ui): S2 WT 2D/3D views with sprint visibility gate`
+**Commit:** `c252ca6` — S2 WT 2D/3D views + `show_wt_editor` gate
 
 ### Next loop
 
