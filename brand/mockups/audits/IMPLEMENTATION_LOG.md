@@ -19,7 +19,7 @@ Progress tracker for the UI platform plan (`reelsynth_ui_platform` + `reelsynth_
 | Center layout: strip → morph → 2D/3D (no hero when osc on) | ✅ |
 | `cargo test --no-default-features -j 1` | ✅ |
 
-**Commit:** _(this loop)_
+**Commit:** `c8a80e6` — osc column, mod matrix, FX rack, WT tools
 
 ### S4 — Mod matrix ✅
 
