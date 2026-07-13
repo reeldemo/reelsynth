@@ -17,7 +17,7 @@ Progress tracker for the UI platform plan (`reelsynth_ui_platform` + `reelsynth_
 | `cargo test --no-default-features -j 1` | ✅ |
 | `cargo build -p reelsynth-plugin --release` | ✅ |
 
-**Commit:** _(pending push)_
+**Commit:** `983257f` — plugin shell, mod/FX wiring, egui spike
 
 ### Next loop
 
