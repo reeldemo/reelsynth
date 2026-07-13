@@ -1,14 +1,14 @@
 //! Modulation matrix section (S4) — matches `.rs-mod-grid` in mockups.
 
-use egui::{Color32, FontId, Rect, Ui};
+use egui::{FontId, Rect, Ui};
 use reelsynth::ModSlot;
 use reelsynth_ui_theme::{heading_font, Tokens};
 
 use crate::layout::{UiScale, GRID_UNIT, SPACE_SM};
 use crate::region::region;
 
-pub const MOD_ROW_HEIGHT: f32 = 28.0;
-pub const MOD_SECTION_HEADER: f32 = 28.0;
+pub const MOD_ROW_HEIGHT: f32 = 22.0;
+pub const MOD_SECTION_HEADER: f32 = 24.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ModPolarity {
@@ -353,148 +353,90 @@ fn draw_mod_row(ui: &mut Ui, route: &mut ModSlotUi, row_h: f32) -> ModRowResult 
         ui.allocate_exact_size(egui::vec2(ui.available_width(), row_h), egui::Sense::hover());
 
     if ui.is_rect_visible(rect) {
-        let painter = ui.painter_at(rect);
-        let fill = if response.hovered() {
-            tokens.accent.gamma_multiply(0.14)
-        } else {
-            tokens.bg_muted
-        };
-        painter.rect_filled(rect, 6.0, fill);
-        painter.rect_stroke(rect, 6.0, egui::Stroke::new(1.0_f32, tokens.border));
-
-        let src_w = 100.0;
-        let cell_w = 72.0;
-        let on_w = 48.0;
-        let gap = GRID_UNIT;
-        let inner = rect.shrink2(egui::vec2(8.0, 4.0));
-
-        painter.text(
-            egui::pos2(inner.min.x, inner.center().y),
-            egui::Align2::LEFT_CENTER,
-            route.source,
-            FontId::monospace(10.0),
-            tokens.text,
-        );
-
-        let arrow_x = inner.min.x + src_w;
-        painter.text(
-            egui::pos2(arrow_x, inner.center().y),
-            egui::Align2::LEFT_CENTER,
-            format!("→ {}", route.target),
-            FontId::proportional(11.0),
-            tokens.text_muted,
-        );
-
-        let amount_x = inner.max.x - on_w - gap - cell_w - gap - cell_w;
-        let amount_rect = Rect::from_min_size(
-            egui::pos2(amount_x, inner.min.y),
-            egui::vec2(cell_w, inner.height()),
-        );
-        if paint_mod_cell(ui, amount_rect, route) {
-            changed = true;
-        }
-
-        let curve_rect = Rect::from_min_size(
-            egui::pos2(amount_x + cell_w + gap, inner.min.y),
-            egui::vec2(cell_w, inner.height()),
-        );
-        if ui.allocate_rect(curve_rect, egui::Sense::click()).clicked() {
-            route.curve = match route.curve {
-                "Lin" => "Exp",
-                "Exp" => "Step",
-                _ => "Lin",
-            };
-            changed = true;
-        }
-        if ui.is_rect_visible(curve_rect) {
-            let painter = ui.painter_at(curve_rect);
-            painter.rect_filled(curve_rect, 4.0, tokens.surface2);
-            painter.rect_stroke(curve_rect, 4.0, egui::Stroke::new(1.0_f32, tokens.border));
-            painter.text(
-                curve_rect.center(),
-                egui::Align2::CENTER_CENTER,
-                route.curve,
-                FontId::monospace(11.0),
-                tokens.text,
+        if response.hovered() {
+            ui.painter_at(rect).rect_filled(
+                rect,
+                4.0,
+                tokens.accent.gamma_multiply(0.08),
             );
         }
 
-        let on_rect = Rect::from_min_size(
-            egui::pos2(inner.max.x - on_w, inner.min.y),
-            egui::vec2(on_w, inner.height()),
-        );
-        if ui.allocate_rect(on_rect, egui::Sense::click()).clicked() {
-            route.enabled = !route.enabled;
-            changed = true;
-        }
-        if ui.is_rect_visible(on_rect) {
-            let on_label = if route.enabled { "On" } else { "Off" };
-            ui.painter_at(on_rect).text(
-                on_rect.center(),
-                egui::Align2::CENTER_CENTER,
-                on_label,
-                FontId::monospace(10.0),
-                tokens.text_muted,
-            );
-        }
+        ui.allocate_ui_at_rect(rect.shrink2(egui::vec2(4.0, 1.0)), |ui| {
+            ui.horizontal_centered(|ui| {
+                ui.spacing_mut().item_spacing.x = 6.0;
+                ui.label(
+                    egui::RichText::new(route.source)
+                        .font(FontId::monospace(10.0))
+                        .color(tokens.text),
+                );
+                ui.label(
+                    egui::RichText::new("→")
+                        .size(10.0)
+                        .color(tokens.text_muted),
+                );
+                ui.label(
+                    egui::RichText::new(route.target)
+                        .size(11.0)
+                        .color(tokens.text),
+                );
+
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    ui.spacing_mut().item_spacing.x = 6.0;
+                    let on_label = if route.enabled { "On" } else { "Off" };
+                    if ui
+                        .add(
+                            egui::Button::new(
+                                egui::RichText::new(on_label).font(FontId::monospace(10.0)),
+                            )
+                            .frame(false),
+                        )
+                        .clicked()
+                    {
+                        route.enabled = !route.enabled;
+                        changed = true;
+                    }
+                    if ui
+                        .add(
+                            egui::Button::new(
+                                egui::RichText::new(route.curve).font(FontId::monospace(10.0)),
+                            )
+                            .frame(false),
+                        )
+                        .clicked()
+                    {
+                        route.curve = match route.curve {
+                            "Lin" => "Exp",
+                            "Exp" => "Step",
+                            _ => "Lin",
+                        };
+                        changed = true;
+                    }
+                    let mut drag = egui::DragValue::new(&mut route.amount)
+                        .speed(0.5)
+                        .range(-100..=100);
+                    match route.polarity {
+                        ModPolarity::Bipolar => {}
+                        ModPolarity::Positive => {
+                            drag = drag.prefix("+");
+                        }
+                        ModPolarity::Negative => {
+                            drag = drag.prefix("−");
+                        }
+                    }
+                    if ui.add(drag).changed() {
+                        if route.polarity != ModPolarity::Bipolar {
+                            route.polarity = if route.amount < 0 {
+                                ModPolarity::Negative
+                            } else {
+                                ModPolarity::Positive
+                            };
+                        }
+                        changed = true;
+                    }
+                });
+            });
+        });
     }
 
     ModRowResult { changed }
-}
-
-fn paint_mod_cell(ui: &mut Ui, rect: Rect, route: &mut ModSlotUi) -> bool {
-    let tokens = Tokens::default();
-    let (stroke, text_color, fill) = match route.polarity {
-        ModPolarity::Positive => (
-            Color32::from_rgb(0x4a, 0xde, 0x80).gamma_multiply(0.4),
-            Color32::from_rgb(0x4a, 0xde, 0x80),
-            tokens.surface2,
-        ),
-        ModPolarity::Negative => (
-            Color32::from_rgb(0xf8, 0x71, 0x71).gamma_multiply(0.4),
-            Color32::from_rgb(0xf8, 0x71, 0x71),
-            tokens.surface2,
-        ),
-        ModPolarity::Bipolar => (
-            Color32::from_rgb(0x2a, 0x6b, 0x8a),
-            tokens.accent_on,
-            tokens.accent.gamma_multiply(0.35),
-        ),
-    };
-
-    let amount_label = match route.polarity {
-        ModPolarity::Bipolar => format!("±{}", route.amount.abs()),
-        ModPolarity::Negative => format!("−{}", route.amount.abs()),
-        ModPolarity::Positive => format!("+{}", route.amount),
-    };
-
-    if ui.is_rect_visible(rect) {
-        let painter = ui.painter_at(rect);
-        painter.rect_filled(rect, 4.0, fill);
-        painter.rect_stroke(rect, 4.0, egui::Stroke::new(1.0_f32, stroke));
-        painter.text(
-            rect.center(),
-            egui::Align2::CENTER_CENTER,
-            amount_label,
-            FontId::monospace(11.0),
-            text_color,
-        );
-    }
-
-    let mut amount = route.amount as f32;
-    let resp = ui.allocate_rect(rect, egui::Sense::click_and_drag());
-    if resp.dragged() {
-        amount += resp.drag_delta().x * 0.5;
-        amount = amount.clamp(-100.0, 100.0);
-        route.amount = amount.round() as i32;
-        if route.polarity != ModPolarity::Bipolar {
-            route.polarity = if route.amount < 0 {
-                ModPolarity::Negative
-            } else {
-                ModPolarity::Positive
-            };
-        }
-        return true;
-    }
-    false
 }

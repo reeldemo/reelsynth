@@ -3,7 +3,7 @@
 use egui::Ui;
 use reelsynth_ui_theme::Tokens;
 
-use crate::layout::{GRID_UNIT, SPACE_SM};
+use crate::layout::{CENTER_GAP, GRID_UNIT, SPACE_SM};
 use crate::widgets::{
     format_coarse, format_pan, format_unison, knob_value_label, labeled_cycle, tab_bar, Knob,
     KnobSize, KnobStyle, panel,
@@ -116,11 +116,11 @@ pub struct OscColumnResult {
 
 pub fn draw_osc_column(ui: &mut Ui, state: OscColumnState<'_>, scale: f32) -> OscColumnResult {
     let mut changed = false;
-    let gap = SPACE_SM * scale;
-    let min_section_h = 92.0 * scale;
+    let gap = CENTER_GAP * scale;
+    let min_section_h = 80.0 * scale;
 
     egui::Frame::none()
-        .inner_margin(egui::Margin::same(SPACE_SM * scale))
+        .inner_margin(egui::Margin::same(SPACE_SM * scale * 0.75))
         .show(ui, |ui| {
             ui.set_width(ui.available_width());
             ui.spacing_mut().item_spacing.y = gap;
@@ -338,17 +338,24 @@ fn param_slider(
     let tokens = Tokens::default();
     let mut changed = false;
     ui.horizontal(|ui| {
-        ui.label(
-            egui::RichText::new(label)
-                .size(10.0)
-                .color(tokens.text_muted),
+        ui.spacing_mut().item_spacing.x = 4.0;
+        ui.allocate_ui_with_layout(
+            egui::vec2(72.0, 18.0),
+            egui::Layout::left_to_right(egui::Align::Center),
+            |ui| {
+                ui.label(
+                    egui::RichText::new(label)
+                        .size(10.0)
+                        .color(tokens.text_muted),
+                );
+            },
         );
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             knob_value_label(ui, value_label);
-            let slider_w = ui.available_width().max(80.0);
+            let slider_w = ui.available_width().max(48.0);
             let norm = ((*value - *range.start()) / (*range.end() - *range.start())).clamp(0.0, 1.0);
             let (rect, resp) = ui.allocate_exact_size(
-                egui::vec2(slider_w, 16.0),
+                egui::vec2(slider_w, 14.0),
                 egui::Sense::click_and_drag(),
             );
             if resp.dragged() || resp.clicked() {
@@ -360,7 +367,7 @@ fn param_slider(
             }
             if ui.is_rect_visible(rect) {
                 let painter = ui.painter_at(rect);
-                let track = rect.shrink2(egui::vec2(0.0, 5.0));
+                let track = rect.shrink2(egui::vec2(0.0, 4.0));
                 painter.rect_filled(track, 3.0, tokens.surface2);
                 let fill_w = track.width() * norm;
                 let fill = egui::Rect::from_min_size(track.min, egui::vec2(fill_w, track.height()));
@@ -368,7 +375,7 @@ fn param_slider(
                 let thumb_x = track.min.x + track.width() * norm;
                 painter.circle_filled(
                     egui::pos2(thumb_x, track.center().y),
-                    6.0,
+                    5.0,
                     tokens.accent_on,
                 );
             }

@@ -6,11 +6,11 @@ use super::header::{sync_morph_from_active_tab, sync_osc_position_from_wt};
 use crate::ambient::paint_ambient_waves;
 use crate::center_layout::compute_center_regions;
 use crate::fx_rack::{draw_effect_rack, EffectRackState};
-use crate::layout::{embed_mod_fx_in_center, UiScale};
+use crate::layout::{embed_mod_fx_in_center, embed_piano_in_center, UiScale};
 use crate::layout_audit::{
     center_fx_used_rect_id, center_mod_used_rect_id, center_morph_used_rect_id,
-    center_scope_used_rect_id, center_strip_used_rect_id, center_used_rect_id,
-    center_views_used_rect_id,
+    center_piano_used_rect_id, center_scope_used_rect_id, center_strip_used_rect_id,
+    center_used_rect_id, center_views_used_rect_id,
 };
 use crate::mod_matrix::{draw_mod_matrix, ModMatrixState};
 use crate::region::region;
@@ -28,24 +28,32 @@ pub(super) fn draw_center(
 ) {
     region(ui, rect, |ui| {
         let s = scale.ui();
-        let inner = rect.shrink(SPACE_SM * s);
-        let embedded = embed_mod_fx_in_center(ShellLayoutOptions {
+        let inner = rect.shrink(SPACE_SM * s * 0.75);
+        let layout_opts = ShellLayoutOptions {
             piano_visible: state.piano_visible,
             show_osc_column: config.show_osc_column,
             show_mod_matrix: config.show_mod_matrix,
             mod_matrix_open: state.mod_matrix_open,
             show_fx_rack: config.show_fx_rack,
             fx_rack_open: state.fx_rack_open,
-        });
+        };
+        let embedded = embed_mod_fx_in_center(layout_opts);
 
         let time = ui.input(|i| i.time);
-        let regions = compute_center_regions(inner, config, s, embedded);
+        let regions = compute_center_regions(
+            inner,
+            config,
+            s,
+            embedded,
+            embed_piano_in_center(layout_opts),
+        );
         let scope_rect = regions.scope;
         let strip_rect = regions.wt_strip;
         let morph_rect = regions.morph;
         let mod_rect = regions.mod_matrix;
         let fx_rect = regions.fx_rack;
         let views_rect = regions.wt_views;
+        let piano_rect = regions.piano;
 
         let bank_name = state.wt_bank_name.clone();
 
@@ -232,6 +240,22 @@ pub(super) fn draw_center(
             let used = ui.min_rect();
             ui.ctx()
                 .data_mut(|d| d.insert_temp(center_fx_used_rect_id(), used));
+            });
+        }
+
+        if piano_rect.is_positive() && state.piano_visible {
+            region(ui, piano_rect, |ui| {
+                let inner = ui.max_rect();
+                let (_, piano) = PianoKeyboard::new(&state.keys_down).show_in_rect(ui, inner);
+                if let Some(n) = piano.note_on {
+                    actions.note_on = Some(n);
+                }
+                if let Some(n) = piano.note_off {
+                    actions.note_off = Some(n);
+                }
+                let used = ui.min_rect();
+                ui.ctx()
+                    .data_mut(|d| d.insert_temp(center_piano_used_rect_id(), used));
             });
         }
 

@@ -7,11 +7,11 @@ use egui_kittest::Harness;
 use reelsynth::Patch;
 use reelsynth_ui::{
     audit_center, audit_shell, compute_center_regions, default_effect_slots, draw_shell,
-    embed_mod_fx_in_center, osc_type_index, ShellLayout, ShellLayoutOptions, ShellMidiDevices,
+    embed_mod_fx_in_center, embed_piano_in_center, osc_type_index, ShellLayout, ShellLayoutOptions, ShellMidiDevices,
     center_fx_used_rect_id, center_mod_used_rect_id, center_morph_used_rect_id,
-    center_scope_used_rect_id, center_strip_used_rect_id, center_used_rect_id,
-    center_views_used_rect_id, footer_used_rect_id, fx_strip_used_rect_id, header_used_rect_id,
-    mod_strip_used_rect_id, osc_used_rect_id, piano_used_rect_id, rail_used_rect_id, ShellConfig,
+    center_piano_used_rect_id, center_scope_used_rect_id, center_strip_used_rect_id,
+    center_used_rect_id, center_views_used_rect_id, footer_used_rect_id, fx_strip_used_rect_id, header_used_rect_id,
+    mod_strip_used_rect_id, osc_used_rect_id, rail_used_rect_id, ShellConfig,
     UiState, APP_HEIGHT_FULL, APP_MIN_WIDTH, SPACE_SM,
 };
 use reelsynth_ui::widgets::{Knob, KnobSize, PianoKeyboard};
@@ -148,7 +148,7 @@ fn full_shell_min_window_no_layout_overlap() {
 
     let scale = layout.scale.ui();
     let inner = layout.center.shrink(SPACE_SM * scale);
-    let regions = compute_center_regions(inner, &config, scale, embed_mod_fx_in_center(options));
+    let regions = compute_center_regions(inner, &config, scale, embed_mod_fx_in_center(options), embed_piano_in_center(options));
     audit_center(layout.center, &regions, scale);
 
     let midi = ShellMidiDevices {
@@ -313,6 +313,7 @@ fn interface_used_rects_within_allocated_min_window() {
         &config,
         scale,
         embed_mod_fx_in_center(options),
+        embed_piano_in_center(options),
     );
     audit_center(layout.center, &center_regions, scale);
 
@@ -370,12 +371,13 @@ fn interface_used_rects_within_allocated_min_window() {
     let rail_used = get_used(&harness.ctx, rail_used_rect_id(), "rail");
     assert!(rail_used.max.y <= layout.rail.max.y + 0.5);
 
-    let piano_used = get_used(&harness.ctx, piano_used_rect_id(), "piano");
+    let piano_used = get_used(&harness.ctx, center_piano_used_rect_id(), "center piano");
     assert!(
-        fits_max_slack(layout.piano_wrap, piano_used, 12.0),
+        fits_max_slack(center_regions.piano, piano_used, 12.0),
         "piano used rect out of bounds: used={piano_used:?} piano={:?}",
-        layout.piano_wrap
+        center_regions.piano
     );
+    assert!(!layout.piano_wrap.is_positive());
 
     let footer_used = get_used(&harness.ctx, footer_used_rect_id(), "footer");
     assert!(fits_max_slack(layout.footer, footer_used, 12.0));
@@ -401,6 +403,9 @@ fn interface_used_rects_within_allocated_min_window() {
 
     let fx_used = get_used(&harness.ctx, center_fx_used_rect_id(), "center fx");
     assert!(fits_max_slack(center_regions.fx_rack, fx_used, 12.0));
+
+    let piano_region_used = get_used(&harness.ctx, center_piano_used_rect_id(), "center piano widget");
+    assert!(fits_max_slack(center_regions.piano, piano_region_used, 12.0));
 
     // Bottom strips only exist when not embedded; should be absent here.
     assert!(harness.ctx.data(|d| d.get_temp::<egui::Rect>(mod_strip_used_rect_id())).is_none());

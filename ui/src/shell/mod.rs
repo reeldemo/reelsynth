@@ -10,7 +10,7 @@ use reelsynth::Patch;
 use reelsynth_ui_theme::Tokens;
 
 use crate::fx_rack::{draw_effect_rack, EffectRackState};
-use crate::layout::{embed_mod_fx_in_center, ShellLayout, ShellLayoutOptions};
+use crate::layout::{embed_mod_fx_in_center, embed_piano_in_center, ShellLayout, ShellLayoutOptions};
 use crate::layout_audit::{fx_strip_used_rect_id, mod_strip_used_rect_id};
 use crate::mod_matrix::{draw_mod_matrix, ModMatrixState};
 use crate::region::region;
@@ -167,7 +167,10 @@ pub fn draw_shell(
         });
     }
 
-    if state.piano_visible && layout.piano_wrap.is_positive() {
+    if state.piano_visible
+        && layout.piano_wrap.is_positive()
+        && !embed_piano_in_center(layout_opts)
+    {
         draw_piano_wrap(ui, layout.piano_wrap, state, &mut actions, layout.scale);
     }
 

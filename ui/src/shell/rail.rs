@@ -4,7 +4,7 @@ use reelsynth_ui_theme::Tokens;
 use super::*;
 use super::footer::{draw_level_meter, format_cutoff};
 use super::header::sync_osc_position_from_wt;
-use crate::layout::UiScale;
+use crate::layout::{CENTER_GAP, UiScale};
 use crate::layout_audit::rail_used_rect_id;
 use crate::region::region;
 use crate::widgets::{labeled_cycle, tab_bar, Knob, KnobSize, KnobStyle, panel, panel_disabled};
@@ -18,10 +18,10 @@ pub(super) fn draw_rail(
     scale: UiScale,
 ) {
     let s = scale.ui();
-    let gap = SPACE_SM * s;
+    let gap = CENTER_GAP * s;
     region(ui, rect, |ui| {
         egui::Frame::none()
-            .inner_margin(egui::Margin::same(SPACE_SM * s))
+            .inner_margin(egui::Margin::same(SPACE_SM * s * 0.75))
             .show(ui, |ui| {
                 ui.set_width(ui.available_width());
                 ui.spacing_mut().item_spacing.y = gap;

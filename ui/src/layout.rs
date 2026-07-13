@@ -5,6 +5,8 @@ use egui::Rect;
 pub const GRID_UNIT: f32 = 8.0;
 pub const SPACE_SM: f32 = 8.0;
 pub const SPACE_MD: f32 = 16.0;
+/// Tighter vertical gap inside the center column stack.
+pub const CENTER_GAP: f32 = 4.0;
 
 pub const BUTTON_RADIUS: f32 = 6.0;
 pub const BUTTON_PAD_X: f32 = 10.0;
@@ -40,16 +42,16 @@ pub const KNOB_MD: f32 = 44.0;
 pub const KNOB_LG: f32 = 52.0;
 pub const KNOB_COL_WIDTH: f32 = 56.0;
 
-pub const WT_STRIP_HEIGHT: f32 = 60.0;
-pub const WT_MORPH_HEIGHT: f32 = 24.0;
+pub const WT_STRIP_HEIGHT: f32 = 48.0;
+pub const WT_MORPH_HEIGHT: f32 = 20.0;
 pub const WT_TOOLBAR_HEIGHT: f32 = 24.0;
 pub const WT_VIEW_MIN_HEIGHT: f32 = 128.0;
 
-pub const PIANO_HEIGHT: f32 = 88.0;
-pub const PIANO_WHITE_KEY_WIDTH: f32 = 16.0;
+pub const PIANO_HEIGHT: f32 = 52.0;
+pub const PIANO_WHITE_KEY_WIDTH: f32 = 12.0;
 pub const PIANO_BLACK_WIDTH_RATIO: f32 = 0.58;
 pub const PIANO_BLACK_HEIGHT_RATIO: f32 = 0.56;
-pub const PIANO_OCTAVES: usize = 3;
+pub const PIANO_OCTAVES: usize = 2;
 pub const PIANO_START_NOTE: u8 = 48; // C3
 
 pub const MOD_MATRIX_HEIGHT: f32 = 120.0;
@@ -131,6 +133,11 @@ pub fn embed_mod_fx_in_center(options: ShellLayoutOptions) -> bool {
     options.show_osc_column && (options.show_mod_matrix || options.show_fx_rack)
 }
 
+/// Piano sits under FX in the center column (same width as effects).
+pub fn embed_piano_in_center(options: ShellLayoutOptions) -> bool {
+    options.piano_visible && embed_mod_fx_in_center(options)
+}
+
 impl ShellLayout {
     pub fn compute(screen: Rect, piano_visible: bool) -> Self {
         Self::compute_with_options(
@@ -157,8 +164,8 @@ impl ShellLayout {
     pub fn compute_with_options(screen: Rect, options: ShellLayoutOptions) -> Self {
         let screen_scale = (screen.height() / APP_HEIGHT_FULL).clamp(0.72, 1.0);
 
-        let piano_wrap_h = if options.piano_visible {
-            (GRID_UNIT * 2.0 + PIANO_HEIGHT) * screen_scale
+        let piano_wrap_h = if options.piano_visible && !embed_piano_in_center(options) {
+            (GRID_UNIT + PIANO_HEIGHT) * screen_scale
         } else {
             0.0
         };
@@ -326,12 +333,11 @@ mod tests {
                 fx_rack_open: true,
             },
         );
-        // Mod/FX embedded in center — no full-width bottom strips.
+        // Mod/FX/piano embedded in center — no full-width bottom strips.
         assert!(!layout.mod_matrix.is_positive());
         assert!(!layout.fx_rack.is_positive());
-        assert!(layout.piano_wrap.is_positive());
+        assert!(!layout.piano_wrap.is_positive());
         assert!(layout.main.height() > 400.0);
-        assert_eq!(layout.piano_wrap.min.y, layout.main.max.y);
         assert_eq!(layout.footer.max.y, screen.max.y);
     }
 

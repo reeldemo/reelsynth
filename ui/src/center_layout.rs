@@ -1,8 +1,10 @@
-//! Center-column region allocation (scope, WT, mod matrix, FX).
+//! Center-column region allocation (scope, WT, mod matrix, FX, piano).
 
 use egui::Rect;
 
-use crate::layout::{GRID_UNIT, WT_MORPH_HEIGHT, WT_STRIP_HEIGHT, WT_VIEW_MIN_HEIGHT};
+use crate::layout::{
+    CENTER_GAP, PIANO_HEIGHT, WT_MORPH_HEIGHT, WT_STRIP_HEIGHT, WT_VIEW_MIN_HEIGHT,
+};
 use crate::scope_strip::SCOPE_STRIP_HEIGHT;
 use crate::state::ShellConfig;
 
@@ -14,10 +16,11 @@ pub struct CenterRegions {
     pub mod_matrix: Rect,
     pub fx_rack: Rect,
     pub wt_views: Rect,
+    pub piano: Rect,
 }
 
 impl CenterRegions {
-    pub fn named(&self) -> [(&str, Rect); 6] {
+    pub fn named(&self) -> [(&str, Rect); 7] {
         [
             ("scope", self.scope),
             ("wt_strip", self.wt_strip),
@@ -25,6 +28,7 @@ impl CenterRegions {
             ("mod_matrix", self.mod_matrix),
             ("fx_rack", self.fx_rack),
             ("wt_views", self.wt_views),
+            ("piano", self.piano),
         ]
     }
 }
@@ -34,11 +38,12 @@ pub fn compute_center_regions(
     config: &ShellConfig,
     scale: f32,
     embedded: bool,
+    piano_visible: bool,
 ) -> CenterRegions {
+    let gap = CENTER_GAP * scale;
     let scope_h = SCOPE_STRIP_HEIGHT * scale;
     let strip_h = WT_STRIP_HEIGHT * scale;
     let morph_line_h = WT_MORPH_HEIGHT * scale;
-    let gap = GRID_UNIT * scale;
 
     let scope = rect_row(inner, inner.min.y, scope_h);
     let mut y = scope.max.y + gap;
@@ -57,13 +62,15 @@ pub fn compute_center_regions(
 
         if embedded {
             let remaining = (inner.max.y - y).max(0.0);
-            let (preview_h, mod_h, fx_h) = embedded_heights(
+            let show_piano = piano_visible;
+            let (preview_h, mod_h, fx_h, piano_h) = embedded_heights(
                 remaining,
                 gap,
                 scale,
                 config.show_wt_editor,
                 config.show_mod_matrix,
                 config.show_fx_rack,
+                show_piano,
             );
 
             let wt_views = if preview_h > EPS {
@@ -83,7 +90,15 @@ pub fn compute_center_regions(
             };
 
             let fx_rack = if fx_h > EPS {
-                rect_row(inner, y, fx_h.min((inner.max.y - y).max(0.0)))
+                let r = rect_row(inner, y, fx_h);
+                y = r.max.y + gap;
+                r
+            } else {
+                Rect::NOTHING
+            };
+
+            let piano = if piano_h > EPS {
+                rect_row(inner, y, piano_h.min((inner.max.y - y).max(0.0)))
             } else {
                 Rect::NOTHING
             };
@@ -95,6 +110,7 @@ pub fn compute_center_regions(
                 mod_matrix,
                 fx_rack,
                 wt_views,
+                piano,
             }
         } else {
             let wt_views = if config.show_wt_editor
@@ -111,6 +127,7 @@ pub fn compute_center_regions(
                 mod_matrix: Rect::NOTHING,
                 fx_rack: Rect::NOTHING,
                 wt_views,
+                piano: Rect::NOTHING,
             }
         }
     } else {
@@ -162,13 +179,13 @@ pub fn compute_center_regions(
             mod_matrix: Rect::NOTHING,
             fx_rack: Rect::NOTHING,
             wt_views,
+            piano: Rect::NOTHING,
         }
     }
 }
 
 const EPS: f32 = 0.01;
 
-/// Split remaining height among preview / mod / FX without overflow.
 fn embedded_heights(
     remaining: f32,
     gap: f32,
@@ -176,27 +193,31 @@ fn embedded_heights(
     show_preview: bool,
     show_mod: bool,
     show_fx: bool,
-) -> (f32, f32, f32) {
-    let mut segments: Vec<(f32, f32)> = Vec::new(); // (min_h, weight)
+    show_piano: bool,
+) -> (f32, f32, f32, f32) {
+    let piano_h = if show_piano {
+        PIANO_HEIGHT * scale
+    } else {
+        0.0
+    };
+
+    let segment_count = [show_preview, show_mod, show_fx].iter().filter(|&&e| e).count();
+    let gap_total = gap * segment_count.saturating_sub(1) as f32
+        + if show_piano && segment_count > 0 { gap } else { 0.0 };
+    let budget = (remaining - piano_h - gap_total).max(0.0);
+
+    let mut segments: Vec<(f32, f32)> = Vec::new();
     if show_preview {
-        segments.push((32.0 * scale, 0.22));
+        segments.push((28.0 * scale, 0.18));
     }
     if show_mod {
-        segments.push((64.0 * scale, 0.52));
+        segments.push((56.0 * scale, 0.50));
     }
     if show_fx {
-        segments.push((48.0 * scale, 0.26));
+        segments.push((44.0 * scale, 0.32));
     }
 
-    let n = segments.len();
-    if n == 0 || remaining <= EPS {
-        return (0.0, 0.0, 0.0);
-    }
-
-    let gap_total = gap * (n.saturating_sub(1)) as f32;
-    let budget = (remaining - gap_total).max(0.0);
     let heights = distribute_heights(budget, &segments);
-
     let mut preview_h = 0.0;
     let mut mod_h = 0.0;
     let mut fx_h = 0.0;
@@ -213,7 +234,7 @@ fn embedded_heights(
         fx_h = heights[i];
     }
 
-    (preview_h, mod_h, fx_h)
+    (preview_h, mod_h, fx_h, piano_h)
 }
 
 fn distribute_heights(budget: f32, segments: &[(f32, f32)]) -> Vec<f32> {
@@ -238,11 +259,6 @@ fn distribute_heights(budget: f32, segments: &[(f32, f32)]) -> Vec<f32> {
         for ((_, weight), h) in segments.iter().zip(out.iter_mut()) {
             *h += spare * (*weight / weight_sum);
         }
-    } else {
-        let each = spare / segments.len() as f32;
-        for h in &mut out {
-            *h += each;
-        }
     }
     out
 }
@@ -266,17 +282,18 @@ mod tests {
     #[test]
     fn embedded_heights_never_exceed_budget() {
         for remaining in (80..=600).step_by(17) {
-            let (p, m, f) = embedded_heights(
+            let (p, m, f, piano) = embedded_heights(
                 remaining as f32,
-                8.0,
+                4.0,
                 1.0,
+                true,
                 true,
                 true,
                 true,
             );
             assert!(
-                p + m + f + 16.0 <= remaining as f32 + 0.5,
-                "overflow at remaining={remaining}: {p}+{m}+{f}"
+                p + m + f + piano + 12.0 <= remaining as f32 + 0.5,
+                "overflow at remaining={remaining}: {p}+{m}+{f}+{piano}"
             );
         }
     }
@@ -304,7 +321,7 @@ mod tests {
         };
         let scale = layout.scale.ui();
         let inner = layout.center.shrink(SPACE_SM * scale);
-        let regions = compute_center_regions(inner, &config, scale, true);
+        let regions = compute_center_regions(inner, &config, scale, true, true);
 
         for (name, rect) in regions.named() {
             if rect.is_positive() {
@@ -315,6 +332,9 @@ mod tests {
             }
         }
         audit_center(layout.center, &regions, scale);
+        assert!(regions.piano.is_positive());
+        assert!(regions.fx_rack.is_positive());
+        assert!(regions.piano.min.y >= regions.fx_rack.max.y - 1.0);
     }
 
     fn within(rect: Rect, outer: Rect) -> bool {

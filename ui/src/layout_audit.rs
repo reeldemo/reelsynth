@@ -56,6 +56,10 @@ pub fn center_fx_used_rect_id() -> egui::Id {
     egui::Id::new("reelsynth.audit.center.fx_used_rect")
 }
 
+pub fn center_piano_used_rect_id() -> egui::Id {
+    egui::Id::new("reelsynth.audit.center.piano_used_rect")
+}
+
 pub fn mod_strip_used_rect_id() -> egui::Id {
     egui::Id::new("reelsynth.audit.mod_strip_used_rect")
 }
@@ -241,6 +245,7 @@ mod tests {
             &full_config(),
             layout.scale.ui(),
             embedded,
+            options.piano_visible,
         );
         audit_center(layout.center, &regions, layout.scale.ui());
     }
@@ -286,6 +291,7 @@ mod tests {
                                     &config,
                                     layout.scale.ui(),
                                     embed_mod_fx_in_center(options),
+                                    piano,
                                 );
                                 audit_center(layout.center, &regions, layout.scale.ui());
                             }

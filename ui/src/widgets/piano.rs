@@ -5,6 +5,7 @@ use reelsynth_ui_theme::{ACCENT_UI, Tokens};
 
 use crate::layout::{
     PIANO_BLACK_HEIGHT_RATIO, PIANO_BLACK_WIDTH_RATIO, PIANO_OCTAVES, PIANO_START_NOTE,
+    PIANO_WHITE_KEY_WIDTH,
 };
 
 pub struct PianoResponse {
@@ -57,11 +58,16 @@ impl<'a> PianoKeyboard<'a> {
 
     pub fn show_in_rect(self, ui: &mut Ui, area: Rect) -> (Response, PianoResponse) {
         let white_count = self.octaves * 7;
-        let pad_x = 8.0;
-        let pad_y = 4.0;
-        let avail_w = (area.width() - pad_x * 2.0).max(1.0);
+        let pad_x = 4.0;
+        let pad_y = 2.0;
+        let key_w = if self.white_key_width > 0.0 {
+            self.white_key_width
+        } else {
+            PIANO_WHITE_KEY_WIDTH
+        };
+        let natural_w = white_count as f32 * key_w;
+        let avail_w = natural_w.min((area.width() - pad_x * 2.0).max(1.0));
         let avail_h = (area.height() - pad_y * 2.0).max(1.0);
-        let _key_w = avail_w / white_count as f32;
         let key_h = avail_h;
 
         let size = Vec2::new(avail_w, key_h);
