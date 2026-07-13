@@ -31,7 +31,7 @@ plugin/
 cargo build -p reelsynth-plugin --release
 ```
 
-Artifacts: `.clap`, `.vst3`, `.component` (AU) — see `docs/UI.md`.
+Artifacts: `.clap`, `.vst3`, `.component` (AU) — see [docs/UI.md](../docs/UI.md).
 
 ## Offline / agent use (today)
 

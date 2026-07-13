@@ -5,3 +5,5 @@
 *.pyd
 __pycache__/
 .venv/
+docs-images-staging/
+docs-images.zip
