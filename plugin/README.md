@@ -9,7 +9,7 @@
 | Item | State |
 |------|--------|
 | Standalone app | `app/` — egui + cpal + `SynthEngine` |
-| Plugin shell | Not wired yet (S6) |
+| Plugin shell | `plugin/` — CLAP entry stub + editor spike (`reelsynth-plugin-editor`) |
 | JUCE CMake scaffold | **Retired** — do not use |
 
 ## Planned layout (S6)

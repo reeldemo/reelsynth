@@ -249,6 +249,7 @@ mod tests {
                 source: format!("lfo{}", (i % 3) + 1),
                 target: format!("osc{}_position", (i % 3) + 1),
                 amount: 0.25,
+                enabled: true,
             })
             .collect();
         let bank = WavetableBank::factory_sine();

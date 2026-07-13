@@ -10,6 +10,7 @@ pub use params::{EngineParams, Smoother};
 pub use voice_pool::{VoicePool, MAX_VOICES};
 pub use voice_rt::RtVoice;
 
+use crate::fx::FxChain;
 use crate::patch::Patch;
 use crate::voice::render_note;
 use crate::wavetable::WavetableBank;
@@ -20,6 +21,7 @@ pub struct SynthEngine {
     patch: Patch,
     pool: VoicePool,
     params: EngineParams,
+    fx: FxChain,
     sample_rate: u32,
     global_time: f32,
 }
@@ -28,11 +30,13 @@ impl SynthEngine {
     pub fn new(bank: WavetableBank, patch: Patch, sample_rate: u32) -> Self {
         let params = EngineParams::new(&patch, sample_rate as f32);
         let pool = VoicePool::new(&patch);
+        let fx = FxChain::new(sample_rate);
         Self {
             bank,
             patch,
             pool,
             params,
+            fx,
             sample_rate,
             global_time: 0.0,
         }
@@ -49,6 +53,7 @@ impl SynthEngine {
     pub fn set_patch(&mut self, patch: Patch) {
         self.params.sync_from_patch(&patch);
         self.pool.reset_patch(&patch);
+        self.fx.set_bypass(patch.fx_bypass.clone());
         self.patch = patch;
     }
 
@@ -129,6 +134,15 @@ impl SynthEngine {
         self.patch.noise_level = level.clamp(0.0, 1.0);
     }
 
+    pub fn set_mod_matrix(&mut self, slots: Vec<crate::patch::ModSlot>) {
+        self.patch.mod_matrix = slots;
+    }
+
+    pub fn set_fx_bypass(&mut self, bypass: crate::fx::FxBypass) {
+        self.patch.fx_bypass = bypass.clone();
+        self.fx.set_bypass(bypass);
+    }
+
     pub fn note_on(&mut self, note: u8, velocity: f32) {
         let freq = note_to_freq(note);
         self.pool
@@ -162,19 +176,25 @@ impl SynthEngine {
             for voice in self.pool.voices_mut() {
                 acc += voice.process_sample(&self.bank, &patch, self.global_time, dt, sr);
             }
-            *sample = acc * self.params.master_gain.current();
+            *sample = self.fx.process_sample(acc * self.params.master_gain.current());
             self.global_time += dt;
         }
     }
 
     /// Offline reference render using the same patch/bank (for golden tests).
     pub fn render_offline(&self, freq: f32, duration: f32) -> Vec<f32> {
-        render_note(
+        let mut audio = render_note(
             &self.bank,
             freq,
             duration,
             self.sample_rate,
             &self.patch,
-        )
+        );
+        let mut fx = FxChain::new(self.sample_rate);
+        fx.set_bypass(self.patch.fx_bypass.clone());
+        for sample in audio.iter_mut() {
+            *sample = fx.process_sample(*sample);
+        }
+        audio
     }
 }

@@ -1,6 +1,7 @@
 //! Modulation matrix section (S4) — matches `.rs-mod-grid` in mockups.
 
 use egui::{Color32, FontId, Rect, Ui};
+use reelsynth::ModSlot;
 use reelsynth_ui_theme::{heading_font, Tokens};
 
 use crate::layout::{GRID_UNIT, SPACE_SM};
@@ -155,6 +156,134 @@ pub fn draw_mod_matrix(ui: &mut Ui, rect: Rect, state: ModMatrixState<'_>) -> Mo
     });
 
     ModMatrixResult { changed }
+}
+
+/// Map UI rows to engine [`ModSlot`] entries (S6).
+pub fn mod_routes_to_slots(routes: &[ModRouteUi]) -> Vec<ModSlot> {
+    routes
+        .iter()
+        .filter_map(|route| {
+            let source = ui_source_to_engine(route.source)?;
+            let target = ui_target_to_engine(route.target)?;
+            let amount = route.amount as f32 / 100.0;
+            Some(ModSlot {
+                source,
+                target,
+                amount,
+                enabled: route.enabled,
+            })
+        })
+        .collect()
+}
+
+/// Hydrate UI rows from patch mod matrix; pads with defaults when sparse.
+pub fn mod_routes_from_slots(slots: &[ModSlot]) -> Vec<ModRouteUi> {
+    if slots.is_empty() {
+        return default_mod_routes();
+    }
+    slots
+        .iter()
+        .map(|slot| ModRouteUi {
+            source: engine_source_to_ui(&slot.source),
+            target: engine_target_to_ui(&slot.target),
+            amount: (slot.amount * 100.0).round() as i32,
+            curve: "Lin",
+            enabled: slot.enabled,
+            polarity: polarity_from_amount(slot.amount),
+        })
+        .collect()
+}
+
+fn polarity_from_amount(amount: f32) -> ModPolarity {
+    if amount < 0.0 {
+        ModPolarity::Negative
+    } else if amount > 0.0 {
+        ModPolarity::Positive
+    } else {
+        ModPolarity::Bipolar
+    }
+}
+
+fn ui_source_to_engine(label: &str) -> Option<String> {
+    Some(
+        match label {
+            "LFO 1" => "lfo1",
+            "LFO 2" => "lfo2",
+            "Env 2" | "Env 1" => "env",
+            "Velo" => "velocity",
+            "ModWh" => "modwheel",
+            "After" => "aftertouch",
+            "Step" => "step",
+            "Rand" => "rand",
+            other => other,
+        }
+        .into(),
+    )
+}
+
+fn engine_source_to_ui(source: &str) -> &'static str {
+    match source {
+        "lfo1" | "lfo" => "LFO 1",
+        "lfo2" => "LFO 2",
+        "env1" | "env" => "Env 2",
+        "velocity" | "vel" => "Velo",
+        "modwheel" => "ModWh",
+        "aftertouch" => "After",
+        "step" => "Step",
+        "rand" => "Rand",
+        _ => "LFO 1",
+    }
+}
+
+fn ui_target_to_engine(label: &str) -> Option<String> {
+    Some(
+        match label {
+            "WT Pos" => "osc1_position",
+            "Cutoff" => "filter_cutoff",
+            "Res" => "filter_resonance",
+            "Pitch" | "Detune" => "osc1_detune",
+            "Level" => "osc1_level",
+            "Pan" => "osc1_pan",
+            other => other,
+        }
+        .into(),
+    )
+}
+
+fn engine_target_to_ui(target: &str) -> &'static str {
+    match target {
+        t if t.ends_with("_position") => "WT Pos",
+        "filter_cutoff" => "Cutoff",
+        "filter_resonance" => "Res",
+        t if t.ends_with("_detune") => "Detune",
+        t if t.ends_with("_level") => "Level",
+        t if t.ends_with("_pan") => "Pan",
+        _ => "WT Pos",
+    }
+}
+
+#[cfg(test)]
+mod bridge_tests {
+    use super::*;
+
+    #[test]
+    fn round_trip_mod_route() {
+        let routes = default_mod_routes();
+        let slots = mod_routes_to_slots(&routes);
+        assert!(!slots.is_empty());
+        let restored = mod_routes_from_slots(&slots);
+        assert_eq!(restored.len(), routes.len());
+        assert_eq!(restored[0].source, routes[0].source);
+        assert_eq!(restored[0].target, routes[0].target);
+    }
+
+    #[test]
+    fn disabled_routes_persist() {
+        let mut routes = default_mod_routes();
+        routes[0].enabled = false;
+        let slots = mod_routes_to_slots(&routes);
+        assert!(!slots[0].enabled);
+    }
 }
 
 fn section_header(ui: &mut Ui, title: &str, meta: &str, open: bool) -> egui::Response {

@@ -224,6 +224,9 @@ fn compute_mods(
 ) -> std::collections::HashMap<String, f32> {
     let mut out = std::collections::HashMap::new();
     for slot in slots {
+        if !slot.enabled {
+            continue;
+        }
         let src = match slot.source.as_str() {
             "lfo1" | "lfo" => lfo,
             "env1" | "env" => env,

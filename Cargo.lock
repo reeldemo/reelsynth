@@ -3156,6 +3156,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "reelsynth-plugin"
+version = "0.1.0"
+dependencies = [
+ "eframe",
+ "egui",
+ "reelsynth",
+ "reelsynth-ui",
+ "reelsynth-ui-theme",
+]
+
+[[package]]
 name = "reelsynth-ui"
 version = "0.1.0"
 dependencies = [

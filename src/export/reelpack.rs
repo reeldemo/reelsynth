@@ -258,6 +258,7 @@ mod tests {
                 source: "lfo1".into(),
                 target: format!("osc{}_position", (i % 3) + 1),
                 amount: 0.5,
+                enabled: true,
             })
             .collect();
         let preset_path = preset_dir.join("mod.reelpreset");

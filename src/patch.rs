@@ -115,6 +115,13 @@ pub struct ModSlot {
     pub target: String,
     #[serde(default)]
     pub amount: f32,
+    /// When false the route is ignored by the engine (S6 UI On/Off).
+    #[serde(default = "default_enabled")]
+    pub enabled: bool,
+}
+
+fn default_enabled() -> bool {
+    true
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -135,6 +142,8 @@ pub struct Patch {
     pub lfo: Lfo,
     #[serde(default)]
     pub mod_matrix: Vec<ModSlot>,
+    #[serde(default)]
+    pub fx_bypass: crate::fx::FxBypass,
     #[serde(default)]
     pub sub_level: f32,
     #[serde(default)]
@@ -199,6 +208,7 @@ impl Patch {
             envelope: Envelope::default(),
             lfo: Lfo::default(),
             mod_matrix: vec![],
+            fx_bypass: crate::fx::FxBypass::default(),
             sub_level: 0.0,
             noise_level: 0.0,
         }

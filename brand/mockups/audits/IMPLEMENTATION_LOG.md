@@ -2,6 +2,43 @@
 
 Progress tracker for the UI platform plan (`reelsynth_ui_platform` + `reelsynth_ui_redesign`).
 
+## 2026-07-13 — Loop iteration 4 (S6 complete)
+
+### S6 — Plugin shell + mod/FX wiring ✅
+
+| Item | Status |
+|------|--------|
+| `plugin/` Rust crate (`reelsynth-plugin`) | ✅ |
+| CLAP entry stub (`clap_entry.rs`) | ✅ |
+| egui editor embed spike (`PluginEditorApp`, `reelsynth-plugin-editor`) | ✅ |
+| Mod matrix UI → `Patch::mod_matrix` bridge | ✅ `mod_routes_to_slots` / `from_slots` |
+| FX bypass UI → `FxChain` audio stub | ✅ `fx_slots_to_bypass`, `src/fx.rs` |
+| App audio cmds `SetModMatrix` / `SetFxBypass` | ✅ |
+| `cargo test --no-default-features -j 1` | ✅ |
+| `cargo build -p reelsynth-plugin --release` | ✅ |
+
+**Commit:** _(pending push)_
+
+### Next loop
+
+1. S7: real CLAP/VST3 host bindings (nih-plug or clap-sys)
+2. Macro knobs → mod matrix destinations
+3. UI audit vs `index.html` landmarks (<1px gate)
+
+### Sprint summary
+
+| Sprint | Status |
+|--------|--------|
+| S-brand | ✅ |
+| S0 | ✅ |
+| S1 | ✅ |
+| S2 | ✅ |
+| S3 | ✅ |
+| S4 | ✅ |
+| S5 | ✅ |
+| S6 | ✅ |
+| S7 | roadmap |
+
 ## 2026-07-13 — Loop iteration 3 (S3–S5 complete)
 
 ### S3 — Osc column + WT tools ✅
@@ -47,7 +84,7 @@ Progress tracker for the UI platform plan (`reelsynth_ui_platform` + `reelsynth_
 | Frame draw/edit | ✅ S3 |
 | Morph A→B | ✅ S3 |
 | Import Vital/WAV/Serum | ✅ S3 |
-| egui-in-plugin-host spike | ⬜ S6 |
+| egui-in-plugin-host spike | ✅ S6 (`reelsynth-plugin-editor`) |
 
 ### Next loop
 
@@ -68,7 +105,7 @@ Progress tracker for the UI platform plan (`reelsynth_ui_platform` + `reelsynth_
 | S3 | ✅ |
 | S4 | ✅ |
 | S5 | ✅ |
-| S6 | ⬜ |
+| S6 | ✅ |
 | S7 | roadmap |
 
 ## 2026-07-12 — Loop iteration 2 (S2 complete)

@@ -1,5 +1,6 @@
 pub mod wavetable;
 pub mod patch;
+pub mod fx;
 pub mod voice;
 pub mod import;
 pub mod export;
@@ -7,7 +8,8 @@ pub mod engine;
 pub mod ffi;
 
 pub use wavetable::WavetableBank;
-pub use patch::{Envelope, Patch};
+pub use fx::{FxBypass, FxChain};
+pub use patch::{Envelope, ModSlot, Patch};
 pub use voice::render_note;
 pub use engine::SynthEngine;
 pub use export::{

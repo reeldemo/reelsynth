@@ -1,6 +1,7 @@
 //! FX rack section (S5) — matches `.rs-fx-rack` slot cards in mockups.
 
 use egui::{Color32, FontId, Rect, Ui};
+use reelsynth::FxBypass;
 use reelsynth_ui_theme::{heading_font, Tokens};
 
 use crate::layout::{GRID_UNIT, RADIUS_SM, SPACE_SM};
@@ -95,6 +96,46 @@ pub fn draw_fx_rack(ui: &mut Ui, rect: Rect, state: FxRackState<'_>) -> FxRackRe
     });
 
     FxRackResult { changed }
+}
+
+/// Map UI slot cards to engine bypass flags (S6).
+pub fn fx_slots_to_bypass(slots: &[FxSlotUi]) -> FxBypass {
+    let mut bypass = FxBypass::default();
+    for slot in slots {
+        match slot.name {
+            "Chorus" => bypass.chorus_bypassed = slot.bypassed,
+            "Delay" => bypass.delay_bypassed = slot.bypassed,
+            "Reverb" => bypass.reverb_bypassed = slot.bypassed,
+            _ => {}
+        }
+    }
+    bypass
+}
+
+/// Hydrate UI slots from patch bypass state.
+pub fn fx_slots_from_bypass(bypass: &FxBypass) -> Vec<FxSlotUi> {
+    let mut slots = default_fx_slots();
+    for slot in &mut slots {
+        match slot.name {
+            "Chorus" => {
+                slot.bypassed = bypass.chorus_bypassed;
+                slot.active = !bypass.chorus_bypassed;
+            }
+            "Delay" => {
+                slot.bypassed = bypass.delay_bypassed;
+                slot.active = !bypass.delay_bypassed;
+            }
+            "Reverb" => {
+                slot.bypassed = bypass.reverb_bypassed;
+                slot.active = !bypass.reverb_bypassed;
+            }
+            _ => {}
+        }
+        if slot.bypassed && slot.name != "+ Slot" {
+            slot.detail = "Bypassed".into();
+        }
+    }
+    slots
 }
 
 fn section_header(ui: &mut Ui, title: &str, meta: &str, open: bool) -> egui::Response {

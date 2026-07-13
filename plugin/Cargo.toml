@@ -1,0 +1,21 @@
+[package]
+name = "reelsynth-plugin"
+version = "0.1.0"
+edition = "2021"
+description = "ReelSynth CLAP/VST3/AU plugin shell (egui editor)"
+license = "MIT"
+
+[lib]
+name = "reelsynth_plugin"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "reelsynth-plugin-editor"
+path = "src/bin/editor_host.rs"
+
+[dependencies]
+reelsynth = { path = ".." }
+reelsynth-ui = { path = "../ui" }
+reelsynth-ui-theme = { path = "../ui-theme" }
+eframe = { version = "0.28", default-features = true }
+egui = "0.28"
