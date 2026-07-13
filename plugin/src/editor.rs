@@ -95,6 +95,7 @@ impl eframe::App for PluginEditorApp {
                     &midi,
                     &shell,
                     None,
+                    None,
                 );
 
                 if let Some(n) = actions.note_on {

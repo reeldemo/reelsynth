@@ -10,8 +10,9 @@ use reelsynth::{load_preset, resolve_bank_for_preset, Envelope, MidiEvent, Patch
 use reelsynth_ui::{
     draw_shell, effect_slots_to_patch, factory_bank, factory_label, fm_source_from_index,
     filter_type_from_mode, lfo_shape_from_index, mod_slots_to_patch, osc_type_from_index,
-    patch_from_state, sync_state_from_patch, warp_mode_from_index,
-    ShellConfig, ShellMidiDevices, UiState, ScopeStripContext, ScopeStripState,
+    patch_from_state, sync_state_from_patch, warp_mode_from_index, OscStripContext,
+    OscStripPreviewState, ShellConfig, ShellMidiDevices, UiState, ScopeStripContext,
+    ScopeStripState,
 };
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -38,6 +39,7 @@ pub struct ReelSynthApp {
     midi_event_rx: Receiver<MidiEvent>,
     scope: ScopeMonitor,
     scope_strip_state: ScopeStripState,
+    osc_strip_state: OscStripPreviewState,
 }
 
 impl ReelSynthApp {
@@ -75,6 +77,7 @@ impl ReelSynthApp {
             midi_event_rx,
             scope,
             scope_strip_state: ScopeStripState::default(),
+            osc_strip_state: OscStripPreviewState::default(),
         }
     }
 
@@ -138,38 +141,38 @@ impl ReelSynthApp {
                 mac.value = self.state.macro_values[i];
             }
             a.send(AudioCmd::SetMacros(macros));
-            for i in 0..3 {
+            for (i, osc) in self.state.oscillators.iter().enumerate() {
                 a.send(AudioCmd::SetOsc {
                     index: i,
-                    level: self.state.osc_level[i],
-                    detune: self.state.osc_coarse[i],
-                    unison: self.state.osc_unison[i],
-                    position: self.state.osc_position[i],
-                    pan: self.state.osc_pan[i],
-                    osc_type: osc_type_from_index(self.state.osc_type[i]).into(),
-                    pulse_width: self.state.osc_pulse_width[i],
-                    morph_a: self.state.osc_morph_a[i],
-                    morph_b: self.state.osc_morph_b[i],
-                    morph_amount: self.state.osc_morph_amount[i],
-                    warp_mode: warp_mode_from_index(self.state.osc_warp_mode[i]).into(),
-                    warp_amount: self.state.osc_warp_amount[i],
-                    fm_source: fm_source_from_index(self.state.osc_fm_source[i]).into(),
-                    fm_ratio: self.state.osc_fm_ratio[i],
-                    fm_index: self.state.osc_fm_index[i],
+                    level: osc.level,
+                    detune: osc.coarse,
+                    unison: osc.unison,
+                    position: osc.position,
+                    pan: osc.pan,
+                    osc_type: osc_type_from_index(osc.osc_type).into(),
+                    pulse_width: osc.pulse_width,
+                    morph_a: osc.morph_a,
+                    morph_b: osc.morph_b,
+                    morph_amount: osc.morph_amount,
+                    warp_mode: warp_mode_from_index(osc.warp_mode).into(),
+                    warp_amount: osc.warp_amount,
+                    fm_source: fm_source_from_index(osc.fm_source).into(),
+                    fm_ratio: osc.fm_ratio,
+                    fm_index: osc.fm_index,
                 });
                 a.send(AudioCmd::SetOscFm {
                     index: i,
-                    fm_source: fm_source_from_index(self.state.osc_fm_source[i]).into(),
-                    fm_ratio: self.state.osc_fm_ratio[i],
-                    fm_index: self.state.osc_fm_index[i],
+                    fm_source: fm_source_from_index(osc.fm_source).into(),
+                    fm_ratio: osc.fm_ratio,
+                    fm_index: osc.fm_index,
                 });
             }
-            a.send(AudioCmd::SetSubLevel(self.state.sub_level));
-            a.send(AudioCmd::SetNoiseLevel(self.state.noise_level));
-            a.send(AudioCmd::SetModMatrix(mod_slots_to_patch(&self.state.mod_routes)));
-            a.send(AudioCmd::SetEffects(effect_slots_to_patch(&self.state.fx_slots)));
+            let patch = patch_from_state(&self.state, &self.current_patch);
+            a.send(AudioCmd::SetPatch(patch.clone()));
+            self.current_patch = patch;
+        } else {
+            self.current_patch = patch_from_state(&self.state, &self.current_patch);
         }
-        self.current_patch = patch_from_state(&self.state, &self.current_patch);
     }
 
     fn connect_midi(&mut self, index: usize) {
@@ -570,6 +573,12 @@ impl eframe::App for ReelSynthApp {
                             now_secs,
                             state: &mut self.scope_strip_state,
                         };
+                        let osc_ctx = OscStripContext {
+                            banks: &banks,
+                            bank_for_osc,
+                            now_secs,
+                            state: &mut self.osc_strip_state,
+                        };
                         draw_shell(
                             ui,
                             ui.max_rect(),
@@ -579,6 +588,7 @@ impl eframe::App for ReelSynthApp {
                             &midi,
                             &config,
                             Some(scope_ctx),
+                            Some(osc_ctx),
                         )
                     } else {
                         let scope_ctx = ScopeStripContext {
@@ -589,6 +599,12 @@ impl eframe::App for ReelSynthApp {
                             now_secs,
                             state: &mut self.scope_strip_state,
                         };
+                        let osc_ctx = OscStripContext {
+                            banks: &[],
+                            bank_for_osc,
+                            now_secs,
+                            state: &mut self.osc_strip_state,
+                        };
                         draw_shell(
                             ui,
                             ui.max_rect(),
@@ -598,6 +614,7 @@ impl eframe::App for ReelSynthApp {
                             &midi,
                             &config,
                             Some(scope_ctx),
+                            Some(osc_ctx),
                         )
                     }
                 } else {
@@ -609,6 +626,12 @@ impl eframe::App for ReelSynthApp {
                         now_secs,
                         state: &mut self.scope_strip_state,
                     };
+                    let osc_ctx = OscStripContext {
+                        banks: &[],
+                        bank_for_osc,
+                        now_secs,
+                        state: &mut self.osc_strip_state,
+                    };
                     draw_shell(
                         ui,
                         ui.max_rect(),
@@ -618,6 +641,7 @@ impl eframe::App for ReelSynthApp {
                         &midi,
                         &config,
                         Some(scope_ctx),
+                        Some(osc_ctx),
                     )
                 };
 

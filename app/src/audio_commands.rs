@@ -53,6 +53,7 @@ pub(crate) enum AudioCmd {
     SetNoiseLevel(f32),
     SetModMatrix(Vec<ModSlot>),
     SetEffects(Vec<reelsynth::EffectSlot>),
+    SetPatch(Patch),
     LoadPreset {
         patch: Patch,
         bank: WavetableBank,
@@ -139,6 +140,7 @@ pub(crate) fn drain_commands(
             Ok(AudioCmd::SetNoiseLevel(l)) => engine.set_noise_level(l),
             Ok(AudioCmd::SetModMatrix(slots)) => engine.set_mod_matrix(slots),
             Ok(AudioCmd::SetEffects(effects)) => engine.set_effects(effects),
+            Ok(AudioCmd::SetPatch(patch)) => engine.set_patch(patch),
             Ok(AudioCmd::LoadPreset { patch, bank }) => {
                 engine.load_preset(bank.clone(), patch);
                 if let Ok(mut g) = bank_shared.write() {

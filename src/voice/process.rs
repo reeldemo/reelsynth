@@ -27,7 +27,7 @@ pub struct VoiceState {
     pub svf2_band: f32,
     pub noise_seed: u32,
     /// Previous-sample feedback for self-FM per osc slot.
-    pub fm_feedback: [f32; 3],
+    pub fm_feedback: Vec<f32>,
     pub lfo1_rt: LfoRuntime,
     pub lfo2_rt: LfoRuntime,
     /// Per-voice random mod source (latched on note on).
@@ -54,7 +54,7 @@ impl VoiceState {
             svf2_low: 0.0,
             svf2_band: 0.0,
             noise_seed: 1,
-            fm_feedback: [0.0; 3],
+            fm_feedback: vec![0.0; patch.oscillators.len().max(1)],
             lfo1_rt: LfoRuntime::default(),
             lfo2_rt: LfoRuntime::default(),
             rand_mod: 0.0,
@@ -80,7 +80,8 @@ impl VoiceState {
         self.svf2_low = 0.0;
         self.svf2_band = 0.0;
         self.noise_seed = self.noise_seed.wrapping_add(1);
-        self.fm_feedback = [0.0; 3];
+        self.fm_feedback.resize(patch.oscillators.len().max(1), 0.0);
+        self.fm_feedback.fill(0.0);
         self.lfo1_rt.reset();
         self.lfo2_rt.reset();
         self.rand_mod = pseudo_noise(self.noise_seed);
@@ -266,7 +267,9 @@ pub fn process_sample_stages(state: &mut VoiceState, ctx: &VoiceSampleContext<'_
                 fm_index,
                 state,
             );
-            state.fm_feedback[oi] = raw;
+            if let Some(fb) = state.fm_feedback.get_mut(oi) {
+                *fb = raw;
+            }
 
             let osc_sample = raw * osc_level * amplitude / unison as f32;
 
@@ -384,7 +387,7 @@ fn process_os_fm(
             sub_phase,
             fm_ratio,
             sub_inc,
-            state.fm_feedback[oi],
+            state.fm_feedback.get(oi).copied().unwrap_or(0.0),
         );
         sample_carrier_with_fm(
             osc,

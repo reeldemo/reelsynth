@@ -90,7 +90,7 @@ pub fn render_scope_previews(
     }
 
     // Osc tap: single-cycle snapshot at the root pitch (power chord composite).
-    let osc_cycle = render_osc_single_cycle(banks, bank_for_osc, patch, count);
+    let osc_cycle = render_combined_osc_cycle(banks, bank_for_osc, patch, count);
 
     ScopePreviews {
         osc: ScopeTap { samples: osc_cycle },
@@ -132,14 +132,46 @@ pub fn spectrum_magnitudes(samples: &[f32], bar_count: usize) -> Vec<f32> {
     bars
 }
 
-fn render_osc_single_cycle(
+/// Single-cycle preview of one oscillator (power-chord voicing for audibility).
+pub fn render_osc_cycle_at_index(
+    banks: &[WavetableBank],
+    bank_for_osc: impl Fn(usize) -> usize + Copy,
+    patch: &Patch,
+    osc_index: usize,
+    sample_count: usize,
+) -> Vec<f32> {
+    let count = sample_count.max(16);
+    let root = note_to_freq(PREVIEW_ROOT_NOTE);
+    let fifth = note_to_freq(PREVIEW_FIFTH_NOTE);
+    let mut out = vec![0.0f32; count];
+
+    let Some(osc) = patch.oscillators.get(osc_index) else {
+        return out;
+    };
+
+    for i in 0..count {
+        let phase = i as f32 / count as f32;
+        out[i] = preview_osc_sample_at_phase(
+            banks,
+            bank_for_osc,
+            patch,
+            osc_index,
+            osc,
+            phase,
+            root,
+            fifth,
+        );
+    }
+    out
+}
+
+/// Sum of all active oscillators (matches scope strip Osc tap).
+pub fn render_combined_osc_cycle(
     banks: &[WavetableBank],
     bank_for_osc: impl Fn(usize) -> usize + Copy,
     patch: &Patch,
     sample_count: usize,
 ) -> Vec<f32> {
-    use crate::osc::{sample_va, VaWaveform, WtWarpMode};
-
     let count = sample_count.max(16);
     let root = note_to_freq(PREVIEW_ROOT_NOTE);
     let fifth = note_to_freq(PREVIEW_FIFTH_NOTE);
@@ -152,43 +184,74 @@ fn render_osc_single_cycle(
             if osc.level <= 0.0 {
                 continue;
             }
-            let unison = osc.unison.max(1) as usize;
-            let spread_cents = 15.0f32;
-            let stereo_spread = patch.unison_stereo_spread.clamp(0.0, 1.0);
-
-            for u in 0..unison {
-                let det_spread = if unison > 1 {
-                    spread_cents * (u as f32 / (unison - 1) as f32 - 0.5) * 2.0
-                } else {
-                    0.0
-                };
-                let det = osc.detune + det_spread;
-                let ratio = 2.0f32.powf(det / 1200.0);
-
-                let sample_at = |base_freq: f32| -> f32 {
-                    let voice_phase = (phase * base_freq * ratio / root).fract();
-                    if let Some(wave) = VaWaveform::from_osc_type(&osc.osc_type) {
-                        return sample_va(wave, voice_phase, 1.0 / 2048.0, osc.pulse_width);
-                    }
-                    let bank_idx = bank_for_osc(oi);
-                    let bank = banks.get(bank_idx).or_else(|| banks.first());
-                    let Some(bank) = bank else {
-                        return 0.0;
-                    };
-                    let wt_pos = preview_wt_position(osc, bank.num_frames);
-                    let warp = WtWarpMode::from_str(&osc.warp_mode);
-                    bank.sample_warped(wt_pos, voice_phase, warp, osc.warp_amount)
-                };
-
-                sum += sample_at(root) * osc.level / unison as f32;
-                sum += sample_at(fifth) * osc.level * 0.85 / unison as f32;
-                let _ = stereo_spread;
-            }
+            sum += preview_osc_sample_at_phase(
+                banks,
+                bank_for_osc,
+                patch,
+                oi,
+                osc,
+                phase,
+                root,
+                fifth,
+            );
         }
         out[i] = sum.clamp(-1.0, 1.0);
     }
 
     out
+}
+
+fn preview_osc_sample_at_phase(
+    banks: &[WavetableBank],
+    bank_for_osc: impl Fn(usize) -> usize + Copy,
+    patch: &Patch,
+    oi: usize,
+    osc: &crate::patch::Oscillator,
+    phase: f32,
+    root: f32,
+    fifth: f32,
+) -> f32 {
+    use crate::osc::{sample_va, VaWaveform, WtWarpMode};
+
+    if osc.level <= 0.0 {
+        return 0.0;
+    }
+
+    let unison = osc.unison.max(1) as usize;
+    let spread_cents = 15.0f32;
+    let stereo_spread = patch.unison_stereo_spread.clamp(0.0, 1.0);
+    let mut sum = 0.0f32;
+
+    for u in 0..unison {
+        let det_spread = if unison > 1 {
+            spread_cents * (u as f32 / (unison - 1) as f32 - 0.5) * 2.0
+        } else {
+            0.0
+        };
+        let det = osc.detune + det_spread;
+        let ratio = 2.0f32.powf(det / 1200.0);
+
+        let sample_at = |base_freq: f32| -> f32 {
+            let voice_phase = (phase * base_freq * ratio / root).fract();
+            if let Some(wave) = VaWaveform::from_osc_type(&osc.osc_type) {
+                return sample_va(wave, voice_phase, 1.0 / 2048.0, osc.pulse_width);
+            }
+            let bank_idx = bank_for_osc(oi);
+            let bank = banks.get(bank_idx).or_else(|| banks.first());
+            let Some(bank) = bank else {
+                return 0.0;
+            };
+            let wt_pos = preview_wt_position(osc, bank.num_frames);
+            let warp = WtWarpMode::from_str(&osc.warp_mode);
+            bank.sample_warped(wt_pos, voice_phase, warp, osc.warp_amount)
+        };
+
+        sum += sample_at(root) * osc.level / unison as f32;
+        sum += sample_at(fifth) * osc.level * 0.85 / unison as f32;
+        let _ = stereo_spread;
+    }
+
+    sum.clamp(-1.0, 1.0)
 }
 
 fn preview_wt_position(osc: &crate::patch::Oscillator, num_frames: usize) -> f32 {

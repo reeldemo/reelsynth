@@ -18,8 +18,8 @@ pub use fx::{default_effects, effects_from_bypass, EffectSlot, EffectType, FxByp
 pub use patch::{Envelope, Macro, ModSlot, Patch};
 pub use voice::{render_note, render_note_single_bank};
 pub use scope::{
-    render_scope_previews, spectrum_magnitudes, ScopePreviews, ScopeTap, PREVIEW_FIFTH_NOTE,
-    PREVIEW_ROOT_NOTE,
+    render_combined_osc_cycle, render_osc_cycle_at_index, render_scope_previews,
+    spectrum_magnitudes, ScopePreviews, ScopeTap, PREVIEW_FIFTH_NOTE, PREVIEW_ROOT_NOTE,
 };
 pub use scope::{ScopeLiveTaps, ScopeMonitor, ScopeRingBuffer, SCOPE_DISPLAY_LEN, SCOPE_RING_LEN};
 pub use engine::{BankSet, MidiEvent, SynthEngine, VoiceMpe};
