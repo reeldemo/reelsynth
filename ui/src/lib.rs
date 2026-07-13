@@ -1,7 +1,9 @@
 mod ambient;
+mod center_layout;
 mod region;
 mod fx_rack;
 mod layout;
+mod layout_audit;
 mod mod_matrix;
 mod osc_column;
 mod scope_strip;
@@ -17,6 +19,8 @@ pub use fx_rack::{
     effect_slots_to_bypass, effect_slots_to_patch, EffectRackState, EffectSlotUi,
 };
 pub use layout::*;
+pub use layout_audit::{audit_center, audit_shell, overlap_area, within_bounds};
+pub use center_layout::{compute_center_regions, CenterRegions};
 pub use mod_matrix::{
     default_mod_slots, draw_mod_matrix, mod_slots_from_patch, mod_slots_to_patch,
     ModMatrixState, ModPolarity, ModSlotUi,

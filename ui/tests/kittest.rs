@@ -2,10 +2,13 @@
 
 use std::collections::HashSet;
 
+use egui::Rect;
 use egui_kittest::Harness;
 use reelsynth::Patch;
 use reelsynth_ui::{
-    default_effect_slots, draw_shell, osc_type_index, ShellMidiDevices, ShellConfig, UiState,
+    audit_center, audit_shell, compute_center_regions, default_effect_slots, draw_shell,
+    embed_mod_fx_in_center, osc_type_index, ShellLayout, ShellLayoutOptions, ShellMidiDevices,
+    ShellConfig, UiState, APP_HEIGHT_FULL, APP_MIN_WIDTH, SPACE_SM,
 };
 use reelsynth_ui::widgets::{Knob, KnobSize, PianoKeyboard};
 use reelsynth_ui_theme;
@@ -109,4 +112,74 @@ fn compact_mode_collapses_sections() {
         );
     harness.run();
     assert!(!config.show_mod_matrix && !config.show_fx_rack);
+}
+
+#[test]
+fn full_shell_min_window_no_layout_overlap() {
+    struct ShellTest {
+        fonts_applied: bool,
+        state: UiState,
+    }
+
+    let config = ShellConfig {
+        show_wt_editor: true,
+        show_osc_column: true,
+        show_mod_matrix: true,
+        show_fx_rack: true,
+    };
+    let options = ShellLayoutOptions {
+        piano_visible: true,
+        show_osc_column: true,
+        show_mod_matrix: true,
+        mod_matrix_open: true,
+        show_fx_rack: true,
+        fx_rack_open: true,
+    };
+    let screen = Rect::from_min_size(
+        egui::pos2(0.0, 0.0),
+        egui::vec2(APP_MIN_WIDTH, APP_HEIGHT_FULL),
+    );
+    let layout = ShellLayout::compute_with_options(screen, options);
+    audit_shell(&layout, screen, options);
+
+    let scale = layout.scale.ui();
+    let inner = layout.center.shrink(SPACE_SM * scale);
+    let regions = compute_center_regions(inner, &config, scale, embed_mod_fx_in_center(options));
+    audit_center(layout.center, &regions, scale);
+
+    let midi = ShellMidiDevices {
+        names: &["None".to_string()],
+        selected: 0,
+    };
+    let preview = Patch::default_mono();
+    let mut harness = Harness::builder()
+        .with_size([APP_MIN_WIDTH, APP_HEIGHT_FULL])
+        .build_state(
+            |ctx, test| {
+                if !test.fonts_applied {
+                    reelsynth_ui_theme::apply(ctx);
+                    test.fonts_applied = true;
+                    return;
+                }
+
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    let screen = ui.max_rect();
+                    let _actions = draw_shell(
+                        ui,
+                        screen,
+                        &mut test.state,
+                        None,
+                        &preview,
+                        &midi,
+                        &config,
+                        None,
+                    );
+                });
+            },
+            ShellTest {
+                fonts_applied: false,
+                state: UiState::default(),
+            },
+        );
+    harness.run();
 }

@@ -4,8 +4,9 @@ use reelsynth::Patch;
 use super::*;
 use super::header::{sync_morph_from_active_tab, sync_osc_position_from_wt};
 use crate::ambient::paint_ambient_waves;
+use crate::center_layout::compute_center_regions;
 use crate::fx_rack::{draw_effect_rack, EffectRackState};
-use crate::layout::{embed_mod_fx_in_center, CENTER_FX_HEIGHT, CENTER_MOD_HEIGHT, UiScale};
+use crate::layout::{embed_mod_fx_in_center, UiScale};
 use crate::mod_matrix::{draw_mod_matrix, ModMatrixState};
 use crate::region::region;
 
@@ -32,8 +33,13 @@ pub(super) fn draw_center(
     });
 
     let time = ui.input(|i| i.time);
-    let (scope_rect, strip_rect, morph_rect, mod_rect, fx_rect, views_rect) =
-        center_regions(inner, config, s, embedded);
+    let regions = compute_center_regions(inner, config, s, embedded);
+    let scope_rect = regions.scope;
+    let strip_rect = regions.wt_strip;
+    let morph_rect = regions.morph;
+    let mod_rect = regions.mod_matrix;
+    let fx_rect = regions.fx_rack;
+    let views_rect = regions.wt_views;
 
     let bank_name = state.wt_bank_name.clone();
 
@@ -226,141 +232,4 @@ pub(super) fn draw_center(
     if embedded || config.show_wt_editor {
         ui.ctx().request_repaint();
     }
-}
-
-use crate::layout::{ShellLayoutOptions, GRID_UNIT, WT_MORPH_HEIGHT, WT_STRIP_HEIGHT, WT_VIEW_MIN_HEIGHT};
-use reelsynth_ui_theme::Tokens;
-
-fn center_regions(
-    inner: Rect,
-    config: &ShellConfig,
-    scale: f32,
-    embedded: bool,
-) -> (Rect, Rect, Rect, Rect, Rect, Rect) {
-    let scope_h = SCOPE_STRIP_HEIGHT * scale;
-    let strip_h = WT_STRIP_HEIGHT * scale;
-    let morph_line_h = WT_MORPH_HEIGHT * scale;
-    let gap = GRID_UNIT * scale;
-
-    let scope_rect = Rect::from_min_max(
-        inner.min,
-        egui::pos2(inner.max.x, (inner.min.y + scope_h).min(inner.max.y)),
-    );
-    let mut y = scope_rect.max.y + gap;
-
-    if config.show_osc_column {
-        let strip_rect = rect_row(inner, y, strip_h);
-        y = strip_rect.max.y + gap;
-
-        let morph_rect = if config.show_wt_editor {
-            let r = rect_row(inner, y, morph_line_h);
-            y = r.max.y + gap;
-            r
-        } else {
-            Rect::NOTHING
-        };
-
-        if embedded {
-            let remaining = inner.max.y - y;
-            let preview_h = if config.show_wt_editor {
-                (remaining * 0.22).clamp(48.0 * scale, 72.0 * scale)
-            } else {
-                0.0
-            };
-            let mod_h = if config.show_mod_matrix {
-                if config.show_fx_rack {
-                    ((remaining - preview_h) * 0.52).max(CENTER_MOD_HEIGHT * scale)
-                } else {
-                    remaining - preview_h
-                }
-            } else {
-                0.0
-            };
-            let fx_h = if config.show_fx_rack {
-                (remaining - preview_h - mod_h - gap).max(CENTER_FX_HEIGHT * scale)
-            } else {
-                0.0
-            };
-
-            let views_rect = if preview_h > 0.0 {
-                let r = rect_row(inner, y, preview_h);
-                y = r.max.y + gap;
-                r
-            } else {
-                Rect::NOTHING
-            };
-
-            let mod_rect = if mod_h > 0.0 {
-                let r = rect_row(inner, y, mod_h);
-                y = r.max.y + gap;
-                r
-            } else {
-                Rect::NOTHING
-            };
-
-            let fx_rect = if fx_h > 0.0 {
-                Rect::from_min_max(egui::pos2(inner.min.x, y), egui::pos2(inner.max.x, inner.max.y))
-            } else {
-                Rect::NOTHING
-            };
-
-            (scope_rect, strip_rect, morph_rect, mod_rect, fx_rect, views_rect)
-        } else {
-            let views_rect = if config.show_wt_editor && y < inner.max.y - WT_VIEW_MIN_HEIGHT * scale * 0.5 {
-                Rect::from_min_max(egui::pos2(inner.min.x, y), inner.max)
-            } else {
-                Rect::NOTHING
-            };
-            (scope_rect, strip_rect, morph_rect, Rect::NOTHING, Rect::NOTHING, views_rect)
-        }
-    } else {
-        let views_h = if config.show_wt_editor {
-            (WT_VIEW_MIN_HEIGHT * scale + gap)
-                .min((inner.height() - scope_h - gap - strip_h - gap).max(WT_VIEW_MIN_HEIGHT * scale * 0.5))
-        } else {
-            0.0
-        };
-        let morph_block_h = if config.show_wt_editor {
-            morph_line_h + gap
-        } else {
-            0.0
-        };
-
-        let views_rect = if config.show_wt_editor && views_h > 0.0 {
-            Rect::from_min_max(
-                egui::pos2(inner.min.x, inner.max.y - views_h),
-                inner.max,
-            )
-        } else {
-            Rect::NOTHING
-        };
-
-        let morph_rect = if config.show_wt_editor && morph_block_h > 0.0 {
-            Rect::from_min_max(
-                egui::pos2(inner.min.x, views_rect.min.y - morph_block_h),
-                egui::pos2(inner.max.x, views_rect.min.y - gap),
-            )
-        } else {
-            Rect::NOTHING
-        };
-
-        let strip_top = if config.show_wt_editor {
-            morph_rect.min.y - gap - strip_h
-        } else {
-            inner.max.y - strip_h
-        };
-        let strip_rect = Rect::from_min_max(
-            egui::pos2(inner.min.x, strip_top.max(scope_rect.max.y + gap)),
-            egui::pos2(inner.max.x, strip_top + strip_h),
-        );
-
-        (scope_rect, strip_rect, morph_rect, Rect::NOTHING, Rect::NOTHING, views_rect)
-    }
-}
-
-fn rect_row(inner: Rect, y: f32, height: f32) -> Rect {
-    Rect::from_min_max(
-        egui::pos2(inner.min.x, y),
-        egui::pos2(inner.max.x, (y + height).min(inner.max.y)),
-    )
 }

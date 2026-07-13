@@ -341,20 +341,16 @@ mod tests {
             egui::pos2(0.0, 0.0),
             egui::vec2(APP_MIN_WIDTH, APP_MIN_HEIGHT),
         );
-        let layout = ShellLayout::compute_with_options(
-            screen,
-            ShellLayoutOptions {
-                piano_visible: true,
-                show_osc_column: true,
-                show_mod_matrix: true,
-                mod_matrix_open: true,
-                show_fx_rack: true,
-                fx_rack_open: true,
-            },
-        );
-        assert!(layout.header.max.y <= layout.main.min.y);
-        assert!(layout.main.max.y <= layout.piano_wrap.min.y);
-        assert!(layout.piano_wrap.max.y <= layout.footer.min.y);
+        let options = ShellLayoutOptions {
+            piano_visible: true,
+            show_osc_column: true,
+            show_mod_matrix: true,
+            mod_matrix_open: true,
+            show_fx_rack: true,
+            fx_rack_open: true,
+        };
+        let layout = ShellLayout::compute_with_options(screen, options);
+        crate::layout_audit::audit_shell(&layout, screen, options);
         assert!(layout.main.height() > 100.0);
     }
 
@@ -364,20 +360,17 @@ mod tests {
             egui::pos2(0.0, 0.0),
             egui::vec2(APP_MIN_WIDTH, APP_MIN_HEIGHT),
         );
-        let layout = ShellLayout::compute_with_options(
-            screen,
-            ShellLayoutOptions {
-                piano_visible: true,
-                show_osc_column: false,
-                show_mod_matrix: true,
-                mod_matrix_open: true,
-                show_fx_rack: true,
-                fx_rack_open: true,
-            },
-        );
+        let options = ShellLayoutOptions {
+            piano_visible: true,
+            show_osc_column: false,
+            show_mod_matrix: true,
+            mod_matrix_open: true,
+            show_fx_rack: true,
+            fx_rack_open: true,
+        };
+        let layout = ShellLayout::compute_with_options(screen, options);
+        crate::layout_audit::audit_shell(&layout, screen, options);
         assert!(layout.mod_matrix.is_positive());
         assert!(layout.fx_rack.is_positive());
-        assert!(layout.mod_matrix.max.y <= layout.fx_rack.min.y);
-        assert!(layout.fx_rack.max.y <= layout.piano_wrap.min.y);
     }
 }
