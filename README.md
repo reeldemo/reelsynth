@@ -1,6 +1,6 @@
 # ReelSynth
 
-Open-source wavetable synthesizer engine (MIT). Powers offline rendering in [Reeldemo](https://github.com/cap-jmk-launchpad/reeldemo-ableton) and targets VST3/AU in a future plugin build.
+Open-source wavetable synthesizer engine (MIT). Powers offline rendering in [Reeldemo](https://github.com/reeldemo/reeldemo-ableton) and targets VST3/AU in a future plugin build.
 
 ## Features
 
@@ -61,7 +61,7 @@ Visual identity: [brand/BRAND.md](brand/BRAND.md). Theme: `reelsynth-ui-theme`.
 
 ```bash
 # Playable app (realtime synth — requires Rust ≥1.85 or working cargo lock)
-cargo run -p reelsynth-app --bin reelsynth-ui
+cargo run -p reelsynth-app --bin reelsynth-app
 
 # Theme-only smoke test
 cargo run -p reelsynth-ui-theme --example smoke

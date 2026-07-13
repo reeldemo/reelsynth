@@ -38,5 +38,5 @@ OAuth MCP — no API key in repo.
 ## Next steps
 
 1. Pick logo in Studio → `get_logo_svg` → update `logo/reelsynth-mark.svg`
-2. `import_repo` for `cap-jmk-launchpad/reelsynth` when GitHub connected
+2. `import_repo` for `reeldemo/reelsynth` when GitHub connected
 3. `rustup update stable` then `cargo test -p reelsynth-ui-theme`
