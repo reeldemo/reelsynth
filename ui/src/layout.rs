@@ -21,7 +21,14 @@ pub const RADIUS_MD: f32 = 16.0;
 
 pub const APP_WIDTH: f32 = 1280.0;
 pub const APP_HEIGHT_COMPACT: f32 = 720.0;
-pub const APP_HEIGHT_FULL: f32 = 820.0;
+/// Default and minimum window height — full shell fits at scale 1.0 with autoscale in columns.
+pub const APP_HEIGHT_FULL: f32 = 880.0;
+pub const APP_MIN_WIDTH: f32 = APP_WIDTH;
+pub const APP_MIN_HEIGHT: f32 = APP_HEIGHT_FULL;
+
+/// Main-column content design height (rail with osc column at scale 1.0).
+pub const MAIN_NEEDED_FULL: f32 = 620.0;
+pub const MAIN_NEEDED_COMPACT: f32 = 200.0;
 
 pub const HEADER_HEIGHT: f32 = 40.0;
 pub const FOOTER_HEIGHT: f32 = 28.0;
@@ -38,16 +45,45 @@ pub const WT_MORPH_HEIGHT: f32 = 24.0;
 pub const WT_TOOLBAR_HEIGHT: f32 = 24.0;
 pub const WT_VIEW_MIN_HEIGHT: f32 = 128.0;
 
-pub const PIANO_HEIGHT: f32 = 80.0;
-pub const PIANO_WHITE_KEY_WIDTH: f32 = 18.0;
+pub const PIANO_HEIGHT: f32 = 72.0;
+pub const PIANO_WHITE_KEY_WIDTH: f32 = 16.0;
 pub const PIANO_BLACK_WIDTH_RATIO: f32 = 0.58;
 pub const PIANO_BLACK_HEIGHT_RATIO: f32 = 0.56;
 pub const PIANO_OCTAVES: usize = 2;
 pub const PIANO_START_NOTE: u8 = 48; // C3
 
-pub const MOD_MATRIX_HEIGHT: f32 = 136.0;
-pub const FX_RACK_HEIGHT: f32 = 104.0;
+pub const MOD_MATRIX_HEIGHT: f32 = 120.0;
+pub const FX_RACK_HEIGHT: f32 = 92.0;
 pub const SECTION_HEADER_HEIGHT: f32 = 24.0;
+
+/// Uniform UI scale derived from window and main-column budget.
+#[derive(Debug, Clone, Copy)]
+pub struct UiScale {
+    pub screen: f32,
+    pub main: f32,
+}
+
+impl UiScale {
+    pub fn compute(screen_h: f32, main_h: f32, show_osc_column: bool) -> Self {
+        let screen = (screen_h / APP_HEIGHT_FULL).clamp(0.72, 1.0);
+        let needed = if show_osc_column {
+            MAIN_NEEDED_FULL
+        } else {
+            MAIN_NEEDED_COMPACT
+        };
+        let main = (main_h / needed).clamp(0.72, 1.0);
+        Self { screen, main }
+    }
+
+    /// Combined scale for knobs, rows, cards.
+    pub fn ui(&self) -> f32 {
+        (self.screen * self.main).clamp(0.72, 1.0)
+    }
+
+    pub fn px(&self, design: f32) -> f32 {
+        design * self.ui()
+    }
+}
 
 /// Layout options for the performance / full shell.
 #[derive(Debug, Clone, Copy)]
@@ -85,6 +121,7 @@ pub struct ShellLayout {
     pub fx_rack: Rect,
     pub piano_wrap: Rect,
     pub footer: Rect,
+    pub scale: UiScale,
 }
 
 impl ShellLayout {
@@ -111,40 +148,44 @@ impl ShellLayout {
     }
 
     pub fn compute_with_options(screen: Rect, options: ShellLayoutOptions) -> Self {
+        let screen_scale = (screen.height() / APP_HEIGHT_FULL).clamp(0.72, 1.0);
+
         let piano_wrap_h = if options.piano_visible {
-            GRID_UNIT * 2.0 + PIANO_HEIGHT
+            (GRID_UNIT * 2.0 + PIANO_HEIGHT) * screen_scale
         } else {
             0.0
         };
 
         let mod_h = if options.show_mod_matrix {
-            if options.mod_matrix_open {
+            let base = if options.mod_matrix_open {
                 MOD_MATRIX_HEIGHT
             } else {
                 SECTION_HEADER_HEIGHT
-            }
+            };
+            base * screen_scale
         } else {
             0.0
         };
 
         let fx_h = if options.show_fx_rack {
-            if options.fx_rack_open {
+            let base = if options.fx_rack_open {
                 FX_RACK_HEIGHT
             } else {
                 SECTION_HEADER_HEIGHT
-            }
+            };
+            base * screen_scale
         } else {
             0.0
         };
 
         let header = Rect::from_min_size(
             screen.min,
-            egui::vec2(screen.width(), HEADER_HEIGHT),
+            egui::vec2(screen.width(), HEADER_HEIGHT * screen_scale),
         );
 
         let footer = Rect::from_min_size(
-            egui::pos2(screen.min.x, screen.max.y - FOOTER_HEIGHT),
-            egui::vec2(screen.width(), FOOTER_HEIGHT),
+            egui::pos2(screen.min.x, screen.max.y - FOOTER_HEIGHT * screen_scale),
+            egui::vec2(screen.width(), FOOTER_HEIGHT * screen_scale),
         );
 
         let mut stack_top = footer.min.y;
@@ -221,6 +262,8 @@ impl ShellLayout {
             Rect::NOTHING
         };
 
+        let scale = UiScale::compute(screen.height(), main_h, options.show_osc_column);
+
         Self {
             header,
             main,
@@ -231,6 +274,7 @@ impl ShellLayout {
             fx_rack,
             piano_wrap,
             footer,
+            scale,
         }
     }
 }
@@ -263,7 +307,7 @@ mod tests {
 
     #[test]
     fn s4_s5_full_layout_sections() {
-        let screen = Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(1280.0, 820.0));
+        let screen = Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(1280.0, APP_HEIGHT_FULL));
         let layout = ShellLayout::compute_with_options(
             screen,
             ShellLayoutOptions {
@@ -275,11 +319,40 @@ mod tests {
                 fx_rack_open: true,
             },
         );
-        assert_eq!(layout.mod_matrix.height(), MOD_MATRIX_HEIGHT);
-        assert_eq!(layout.fx_rack.height(), FX_RACK_HEIGHT);
         assert_eq!(layout.mod_matrix.min.y, layout.main.max.y);
         assert_eq!(layout.fx_rack.min.y, layout.mod_matrix.max.y);
         assert_eq!(layout.piano_wrap.min.y, layout.fx_rack.max.y);
         assert_eq!(layout.footer.max.y, screen.max.y);
+        assert!(
+            layout.main.height() > 0.0,
+            "main column must have positive height"
+        );
+        assert!((layout.mod_matrix.height() - MOD_MATRIX_HEIGHT).abs() < 0.5);
+        assert!((layout.fx_rack.height() - FX_RACK_HEIGHT).abs() < 0.5);
+    }
+
+    #[test]
+    fn min_window_no_overlap() {
+        let screen = Rect::from_min_size(
+            egui::pos2(0.0, 0.0),
+            egui::vec2(APP_MIN_WIDTH, APP_MIN_HEIGHT),
+        );
+        let layout = ShellLayout::compute_with_options(
+            screen,
+            ShellLayoutOptions {
+                piano_visible: true,
+                show_osc_column: true,
+                show_mod_matrix: true,
+                mod_matrix_open: true,
+                show_fx_rack: true,
+                fx_rack_open: true,
+            },
+        );
+        assert!(layout.header.max.y <= layout.main.min.y);
+        assert!(layout.main.max.y <= layout.mod_matrix.min.y);
+        assert!(layout.mod_matrix.max.y <= layout.fx_rack.min.y);
+        assert!(layout.fx_rack.max.y <= layout.piano_wrap.min.y);
+        assert!(layout.piano_wrap.max.y <= layout.footer.min.y);
+        assert!(layout.main.height() > 100.0);
     }
 }

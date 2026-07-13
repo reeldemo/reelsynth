@@ -29,11 +29,10 @@ pub(super) use crate::scope_strip::{
     draw_scope_strip, ScopeStripInput, ScopeStripState, SCOPE_STRIP_HEIGHT,
 };
 pub(super) use crate::widgets::{
-    adsr_graph, format_depth, format_env_time, format_lfo_rate, format_sustain, tab_bar, Knob,
-    KnobSize, KnobStyle, PianoKeyboard, panel, panel_disabled,
+    adsr_graph, format_depth, format_env_time, format_lfo_rate, format_sustain, PianoKeyboard,
 };
 pub(super) use crate::wt::{
-    morph_amount_for_position, WtEditTool, WtMorph, WtStrip, WtView2d, WtView3d, FACTORY_BANKS,
+    morph_amount_for_position, WtMorph, WtStrip, WtView2d, WtView3d, FACTORY_BANKS,
 };
 
 pub fn draw_shell(
@@ -83,12 +82,14 @@ pub fn draw_shell(
         );
     }
     if layout.mod_matrix.is_positive() {
+        painter.rect_filled(layout.mod_matrix, 0.0, tokens.bg_muted);
         painter.line_segment(
             [layout.mod_matrix.left_top(), layout.mod_matrix.right_top()],
             border,
         );
     }
     if layout.fx_rack.is_positive() {
+        painter.rect_filled(layout.fx_rack, 0.0, tokens.bg_muted);
         painter.line_segment(
             [layout.fx_rack.left_top(), layout.fx_rack.right_top()],
             border,
@@ -109,10 +110,20 @@ pub fn draw_shell(
 
     draw_header(ui, layout.header, state, midi, &mut actions);
     if layout.osc.is_positive() {
-        draw_osc(ui, layout.osc, state, &mut actions);
+        draw_osc(ui, layout.osc, state, &mut actions, layout.scale);
     }
-    draw_center(ui, layout.center, state, bank, preview_patch, config, scope, &mut actions);
-    draw_rail(ui, layout.rail, state, config, &mut actions);
+    draw_center(
+        ui,
+        layout.center,
+        state,
+        bank,
+        preview_patch,
+        config,
+        scope,
+        &mut actions,
+        layout.scale,
+    );
+    draw_rail(ui, layout.rail, state, config, &mut actions, layout.scale);
 
     if layout.mod_matrix.is_positive() {
         let result = draw_mod_matrix(
@@ -123,6 +134,7 @@ pub fn draw_shell(
                 routes: &mut state.mod_routes,
                 total_routes: state.mod_route_total,
             },
+            layout.scale,
         );
         if result.changed {
             actions.params_changed = true;
@@ -137,6 +149,7 @@ pub fn draw_shell(
                 open: &mut state.fx_rack_open,
                 slots: &mut state.fx_slots,
             },
+            layout.scale,
         );
         if result.changed {
             actions.params_changed = true;

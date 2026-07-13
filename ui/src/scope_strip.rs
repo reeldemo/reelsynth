@@ -8,9 +8,10 @@ use reelsynth::{
 use reelsynth_ui_theme::Tokens;
 
 use crate::layout::{GRID_UNIT, RADIUS_SM, SPACE_SM};
+use crate::region::region;
 use crate::wt::waveform_points;
 
-pub const SCOPE_STRIP_HEIGHT: f32 = 88.0;
+pub const SCOPE_STRIP_HEIGHT: f32 = 72.0;
 const PREVIEW_INTERVAL_SECS: f64 = 1.0 / 30.0;
 const SPECTRUM_BARS: usize = 20;
 
@@ -44,7 +45,7 @@ pub fn draw_scope_strip(ui: &mut Ui, rect: Rect, input: ScopeStripInput<'_>) {
     let previews = resolve_previews(input);
     let inner = rect.shrink(SPACE_SM);
 
-    ui.allocate_ui_at_rect(inner, |ui| {
+    region(ui, inner, |ui| {
         ui.vertical(|ui| {
             ui.label(
                 egui::RichText::new("Signal chain")

@@ -1,10 +1,10 @@
 use egui::{Rect, Ui};
-use reelsynth::Patch;
 use reelsynth_ui_theme::Tokens;
 
 use super::*;
-use super::footer::draw_piano_toggle;
-use crate::widgets::button_ghost;
+use crate::layout::UiScale;
+use crate::region::region;
+use crate::widgets::{button_ghost, button_toggle};
 pub(super) fn draw_header(
     ui: &mut Ui,
     rect: Rect,
@@ -13,7 +13,7 @@ pub(super) fn draw_header(
     actions: &mut ShellActions,
 ) {
     let tokens = Tokens::default();
-    ui.allocate_ui_at_rect(rect, |ui| {
+    region(ui, rect, |ui| {
         ui.set_min_height(rect.height());
         egui::Frame::none()
             .inner_margin(egui::Margin::symmetric(SPACE_SM, 0.0))
@@ -100,12 +100,12 @@ pub(super) fn draw_header(
                             );
                         });
 
-                        let toggle = draw_piano_toggle(ui, state.piano_visible);
+                        let toggle = button_toggle(ui, "Piano", state.piano_visible);
                         if toggle.clicked() {
                             state.piano_visible = !state.piano_visible;
                         }
 
-                        egui::ComboBox::from_id_source("s1_midi_device")
+                        egui::ComboBox::from_id_salt("s1_midi_device")
                             .selected_text(
                                 midi.names
                                     .get(midi.selected)
@@ -165,8 +165,14 @@ pub(super) fn sync_osc_position_from_wt(state: &mut UiState) {
     state.osc_position[idx] = state.wt_position;
 }
 
-pub(super) fn draw_osc(ui: &mut Ui, rect: Rect, state: &mut UiState, actions: &mut ShellActions) {
-    ui.allocate_ui_at_rect(rect, |ui| {
+pub(super) fn draw_osc(
+    ui: &mut Ui,
+    rect: Rect,
+    state: &mut UiState,
+    actions: &mut ShellActions,
+    scale: UiScale,
+) {
+    region(ui, rect, |ui| {
         let prev_tab = state.osc_tab;
         let result = draw_osc_column(
             ui,
@@ -190,6 +196,7 @@ pub(super) fn draw_osc(ui: &mut Ui, rect: Rect, state: &mut UiState, actions: &m
                 noise_level: &mut state.noise_level,
                 macro_values: &mut state.macro_values,
             },
+            scale.ui(),
         );
         if state.osc_tab != prev_tab {
             sync_morph_from_active_tab(state);

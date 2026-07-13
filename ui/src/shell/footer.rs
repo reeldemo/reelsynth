@@ -2,7 +2,7 @@ use egui::{Rect, Ui};
 use reelsynth_ui_theme::Tokens;
 
 use super::*;
-use crate::widgets::button_toggle;
+use crate::region::region;
 
 pub(super) fn draw_level_meter(ui: &mut Ui) {
     let tokens = Tokens::default();
@@ -25,7 +25,7 @@ pub(super) fn draw_level_meter(ui: &mut Ui) {
 }
 
 pub(super) fn draw_piano_wrap(ui: &mut Ui, rect: Rect, state: &mut UiState, actions: &mut ShellActions) {
-    ui.allocate_ui_at_rect(rect, |ui| {
+    region(ui, rect, |ui| {
         egui::Frame::none()
             .inner_margin(egui::Margin::symmetric(SPACE_SM, GRID_UNIT))
             .show(ui, |ui| {
@@ -44,7 +44,7 @@ pub(super) fn draw_piano_wrap(ui: &mut Ui, rect: Rect, state: &mut UiState, acti
 
 pub(super) fn draw_footer(ui: &mut Ui, rect: Rect, state: &UiState) {
     let tokens = Tokens::default();
-    ui.allocate_ui_at_rect(rect, |ui| {
+    region(ui, rect, |ui| {
         ui.set_min_height(rect.height());
         egui::Frame::none()
             .inner_margin(egui::Margin::symmetric(SPACE_SM, 0.0))
@@ -74,10 +74,6 @@ pub(super) fn draw_footer(ui: &mut Ui, rect: Rect, state: &UiState) {
                 });
             });
     });
-}
-
-pub(super) fn draw_piano_toggle(ui: &mut Ui, on: bool) -> egui::Response {
-    button_toggle(ui, "Piano", on)
 }
 
 pub(super) fn format_cutoff(hz: f32) -> String {

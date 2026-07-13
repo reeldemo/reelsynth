@@ -12,7 +12,7 @@ use crossbeam_channel;
 use eframe::egui;
 use midi_host::MidiDevices;
 use reelsynth::engine::MidiEvent;
-use reelsynth_ui::APP_HEIGHT_FULL;
+use reelsynth_ui::{APP_HEIGHT_FULL, APP_MIN_HEIGHT, APP_MIN_WIDTH};
 use std::sync::Arc;
 
 fn main() -> eframe::Result<()> {
@@ -31,8 +31,8 @@ fn main() -> eframe::Result<()> {
         "ReelSynth",
         eframe::NativeOptions {
             viewport: egui::ViewportBuilder::default()
-                .with_inner_size([1280.0, APP_HEIGHT_FULL])
-                .with_min_inner_size([1024.0, 640.0])
+                .with_inner_size([APP_MIN_WIDTH, APP_HEIGHT_FULL])
+                .with_min_inner_size([APP_MIN_WIDTH, APP_MIN_HEIGHT])
                 .with_title("ReelSynth"),
             ..Default::default()
         },

@@ -5,7 +5,7 @@ use crate::lfo::{lfo_for_target, lfo_value, LfoRuntime};
 use crate::modulation::{compute_macro_mods, compute_mods, merge_mods, ModSources};
 use crate::osc::WtWarpMode;
 use crate::oversample::{process_os, OS_FACTOR};
-use crate::patch::{Envelope, Filter, Lfo, Oscillator, Patch};
+use crate::patch::{Lfo, Oscillator, Patch};
 use crate::wavetable::WavetableBank;
 use crate::engine::VoiceMpe;
 use super::envelope::advance_envelope;

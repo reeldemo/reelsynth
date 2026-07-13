@@ -1,16 +1,24 @@
 //! ADSR envelope graph — matches `.rs-adsr-graph` (80px tall).
 
-use egui::{Color32, FontId, Pos2, Shape, Ui};
-use reelsynth_ui_theme::Tokens;
+use egui::{FontId, Pos2, Shape, Ui};
+use reelsynth_ui_theme::{ACCENT_UI, Tokens};
 
-pub const ADSR_GRAPH_HEIGHT: f32 = 80.0;
+pub const ADSR_GRAPH_HEIGHT: f32 = 64.0;
 
 /// Draw the amp envelope shape from normalized segment lengths.
-pub fn adsr_graph(ui: &mut Ui, attack: f32, decay: f32, sustain: f32, _release: f32) -> egui::Response {
+pub fn adsr_graph(
+    ui: &mut Ui,
+    attack: f32,
+    decay: f32,
+    sustain: f32,
+    _release: f32,
+    scale: f32,
+) -> egui::Response {
     let tokens = Tokens::default();
-    let accent_ui = Color32::from_rgb(0x2a, 0x6b, 0x8a);
+    let accent_ui = ACCENT_UI;
+    let height = ADSR_GRAPH_HEIGHT * scale;
     let (rect, response) =
-        ui.allocate_exact_size(egui::vec2(ui.available_width(), ADSR_GRAPH_HEIGHT), egui::Sense::hover());
+        ui.allocate_exact_size(egui::vec2(ui.available_width(), height), egui::Sense::hover());
 
     if ui.is_rect_visible(rect) {
         let painter = ui.painter_at(rect);

@@ -40,7 +40,7 @@ impl EffectProcessor {
 // ── Chorus ───────────────────────────────────────────────────────────────────
 
 #[derive(Clone, Debug)]
-struct ChorusProc {
+pub(crate) struct ChorusProc {
     sr: f32,
     buf_l: Vec<f32>,
     buf_r: Vec<f32>,
@@ -90,7 +90,7 @@ impl ChorusProc {
 // ── Delay (stereo ping-pong) ─────────────────────────────────────────────────
 
 #[derive(Clone, Debug)]
-struct DelayProc {
+pub(crate) struct DelayProc {
     sr: f32,
     buf_l: Vec<f32>,
     buf_r: Vec<f32>,
@@ -188,7 +188,7 @@ impl AllpassFilter {
 }
 
 #[derive(Clone, Debug)]
-struct ReverbProc {
+pub(crate) struct ReverbProc {
     combs_l: [CombFilter; NUM_COMBS],
     combs_r: [CombFilter; NUM_COMBS],
     allpass_l: [AllpassFilter; NUM_ALLPASS],
@@ -264,7 +264,7 @@ impl ReverbProc {
 // ── Distortion ─────────────────────────────────────────────────────────────────
 
 #[derive(Clone, Debug)]
-struct DistortionProc {
+pub(crate) struct DistortionProc {
     tone_lp: f32,
     tone_state_l: f32,
     tone_state_r: f32,
@@ -297,7 +297,7 @@ impl DistortionProc {
 // ── Compressor (feed-forward RMS) ────────────────────────────────────────────
 
 #[derive(Clone, Debug)]
-struct CompressorProc {
+pub(crate) struct CompressorProc {
     sr: f32,
     env: f32,
 }

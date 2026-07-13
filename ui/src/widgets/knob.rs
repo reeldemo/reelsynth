@@ -42,6 +42,7 @@ pub struct Knob<'a> {
     pub size: KnobSize,
     pub style: KnobStyle,
     pub logarithmic: bool,
+    pub scale: f32,
 }
 
 impl<'a> Knob<'a> {
@@ -54,7 +55,13 @@ impl<'a> Knob<'a> {
             size: KnobSize::Md,
             style: KnobStyle::Normal,
             logarithmic: false,
+            scale: 1.0,
         }
+    }
+
+    pub fn scale(mut self, factor: f32) -> Self {
+        self.scale = factor;
+        self
     }
 
     pub fn size(mut self, size: KnobSize) -> Self {
@@ -82,8 +89,8 @@ impl<'a> Knob<'a> {
         let mut changed = false;
 
         let tokens = Tokens::default();
-        let dial = self.size.diameter();
-        let col_w = KNOB_COL_WIDTH;
+        let dial = self.size.diameter() * self.scale;
+        let col_w = KNOB_COL_WIDTH * self.scale;
 
         let inner = ui.vertical(|ui| {
             ui.set_width(col_w);

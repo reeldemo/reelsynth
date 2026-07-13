@@ -272,6 +272,7 @@ impl WavetableBank {
     }
 }
 
+#[allow(dead_code)]
 fn linear_crossfade(a: f32, b: f32, t: f32) -> f32 {
     a * (1.0 - t) + b * t
 }

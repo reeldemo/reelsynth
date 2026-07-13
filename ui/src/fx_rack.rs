@@ -2,14 +2,45 @@
 
 use egui::{Color32, FontId, Rect, Ui};
 use reelsynth::{EffectSlot, EffectType};
-use reelsynth_ui_theme::{heading_font, Tokens};
+use reelsynth_ui_theme::{heading_font, Tokens, ACCENT_UI};
 
-use crate::layout::{GRID_UNIT, RADIUS_SM, SPACE_SM};
+use crate::layout::{UiScale, GRID_UNIT, RADIUS_SM, SPACE_SM};
+use crate::region::region;
 use crate::widgets::button_icon;
 
-pub const FX_SLOT_WIDTH: f32 = 160.0;
-pub const FX_SECTION_HEADER: f32 = 28.0;
+pub const FX_SLOT_WIDTH: f32 = 148.0;
+pub const FX_SECTION_HEADER: f32 = 24.0;
 const CPU_WARN_ACTIVE_SLOTS: usize = 4;
+
+#[derive(Debug, Clone, Copy)]
+struct FxMetrics {
+    slot_width: f32,
+    card_height: f32,
+    controls_height: f32,
+    column_height: f32,
+    add_width: f32,
+    header_h: f32,
+}
+
+impl FxMetrics {
+    fn from_scale(scale: UiScale, body_h: f32) -> Self {
+        let s = scale.ui();
+        let header_h = FX_SECTION_HEADER * s;
+        let controls_h = 18.0 * s;
+        let gap = 2.0 * s;
+        let body = (body_h - header_h).max(40.0 * s);
+        let card_h = (body - controls_h - gap).clamp(44.0 * s, 60.0 * s);
+        let column_h = card_h + gap + controls_h;
+        Self {
+            slot_width: FX_SLOT_WIDTH * s,
+            card_height: card_h,
+            controls_height: controls_h,
+            column_height: column_h,
+            add_width: 40.0 * s,
+            header_h,
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct EffectSlotUi {
@@ -75,21 +106,11 @@ impl EffectSlotUi {
             return "Bypassed".into();
         }
         match self.effect_type {
-            EffectType::Chorus => {
-                format!("Mix {:.0}% · {:.1} Hz", self.mix * 100.0, self.rate)
-            }
-            EffectType::Delay => {
-                format!("{:.0} ms · FB {:.0}%", self.time_ms, self.feedback * 100.0)
-            }
-            EffectType::Reverb => {
-                format!("Size {:.0}% · Mix {:.0}%", self.size * 100.0, self.mix * 100.0)
-            }
-            EffectType::Distortion => {
-                format!("Drive {:.0}% · Mix {:.0}%", self.drive * 100.0, self.mix * 100.0)
-            }
-            EffectType::Compressor => {
-                format!("{:.0} dB · {:.1}:1", self.threshold, self.ratio)
-            }
+            EffectType::Chorus => format!("Mix {:.0}% · {:.1} Hz", self.mix * 100.0, self.rate),
+            EffectType::Delay => format!("{:.0} ms · FB {:.0}%", self.time_ms, self.feedback * 100.0),
+            EffectType::Reverb => format!("Size {:.0}% · Mix {:.0}%", self.size * 100.0, self.mix * 100.0),
+            EffectType::Distortion => format!("Drive {:.0}% · Mix {:.0}%", self.drive * 100.0, self.mix * 100.0),
+            EffectType::Compressor => format!("{:.0} dB · {:.1}:1", self.threshold, self.ratio),
         }
     }
 
@@ -113,7 +134,6 @@ pub fn effect_slots_to_patch(slots: &[EffectSlotUi]) -> Vec<EffectSlot> {
     slots.iter().map(EffectSlotUi::to_slot).collect()
 }
 
-/// Legacy bridge for old bypass-only API.
 pub fn effect_slots_to_bypass(slots: &[EffectSlotUi]) -> reelsynth::FxBypass {
     let mut bypass = reelsynth::FxBypass::default();
     for slot in slots {
@@ -140,11 +160,17 @@ pub struct FxRackResult {
     pub changed: bool,
 }
 
-pub fn draw_effect_rack(ui: &mut Ui, rect: Rect, mut state: EffectRackState<'_>) -> FxRackResult {
+pub fn draw_effect_rack(
+    ui: &mut Ui,
+    rect: Rect,
+    mut state: EffectRackState<'_>,
+    scale: UiScale,
+) -> FxRackResult {
     let tokens = Tokens::default();
     let mut changed = false;
+    let metrics = FxMetrics::from_scale(scale, rect.height());
 
-    ui.allocate_ui_at_rect(rect, |ui| {
+    region(ui, rect, |ui| {
         egui::Frame::none()
             .fill(tokens.bg_muted)
             .stroke(egui::Stroke::new(1.0_f32, tokens.border))
@@ -155,7 +181,7 @@ pub fn draw_effect_rack(ui: &mut Ui, rect: Rect, mut state: EffectRackState<'_>)
                 if active > CPU_WARN_ACTIVE_SLOTS {
                     meta.push_str(" · CPU ⚠");
                 }
-                let header = section_header(ui, "Effects", &meta, *state.open);
+                let header = section_header(ui, "Effects", &meta, *state.open, metrics.header_h);
                 if header.clicked() {
                     *state.open = !*state.open;
                 }
@@ -172,16 +198,17 @@ pub fn draw_effect_rack(ui: &mut Ui, rect: Rect, mut state: EffectRackState<'_>)
                     }
 
                     egui::Frame::none()
-                        .inner_margin(egui::Margin::symmetric(SPACE_SM, GRID_UNIT))
+                        .inner_margin(egui::Margin::symmetric(SPACE_SM * scale.ui(), GRID_UNIT * scale.ui()))
                         .show(ui, |ui| {
                             ui.horizontal(|ui| {
-                                ui.spacing_mut().item_spacing.x = GRID_UNIT;
+                                ui.spacing_mut().item_spacing.x = GRID_UNIT * scale.ui();
+                                ui.set_min_height(metrics.column_height);
                                 for idx in 0..state.slots.len() {
-                                    if draw_fx_slot(ui, &mut state.slots, idx).changed {
+                                    if draw_fx_slot_column(ui, &mut state.slots, idx, metrics).changed {
                                         changed = true;
                                     }
                                 }
-                                if draw_add_slot(ui).clicked() {
+                                if draw_add_slot(ui, metrics).clicked() {
                                     state
                                         .slots
                                         .push(EffectSlotUi::from_slot(&EffectSlot::chorus()));
@@ -196,10 +223,10 @@ pub fn draw_effect_rack(ui: &mut Ui, rect: Rect, mut state: EffectRackState<'_>)
     FxRackResult { changed }
 }
 
-fn section_header(ui: &mut Ui, title: &str, meta: &str, open: bool) -> egui::Response {
+fn section_header(ui: &mut Ui, title: &str, meta: &str, open: bool, height: f32) -> egui::Response {
     let tokens = Tokens::default();
     let (rect, response) =
-        ui.allocate_exact_size(egui::vec2(ui.available_width(), FX_SECTION_HEADER), egui::Sense::click());
+        ui.allocate_exact_size(egui::vec2(ui.available_width(), height), egui::Sense::click());
     if ui.is_rect_visible(rect) {
         let painter = ui.painter_at(rect);
         painter.rect_filled(rect, 0.0, tokens.surface2);
@@ -242,63 +269,60 @@ struct FxSlotResult {
     changed: bool,
 }
 
-fn draw_fx_slot(ui: &mut Ui, slots: &mut Vec<EffectSlotUi>, idx: usize) -> FxSlotResult {
+fn draw_fx_slot_column(
+    ui: &mut Ui,
+    slots: &mut Vec<EffectSlotUi>,
+    idx: usize,
+    metrics: FxMetrics,
+) -> FxSlotResult {
     let tokens = Tokens::default();
     let mut changed = false;
-    let slot_h = 72.0;
-    let (rect, response) = ui.allocate_exact_size(
-        egui::vec2(FX_SLOT_WIDTH, slot_h),
-        egui::Sense::click(),
-    );
 
-    let active = slots[idx].is_active();
+    let column = ui.vertical(|ui| {
+        ui.set_width(metrics.slot_width);
+        ui.set_min_height(metrics.column_height);
 
-    if ui.is_rect_visible(rect) {
-        let painter = ui.painter_at(rect);
-        let stroke = if active {
-            Color32::from_rgb(0x2a, 0x6b, 0x8a)
-        } else {
-            tokens.border
-        };
-        let fill = if response.hovered() {
-            tokens.surface2
-        } else {
-            tokens.bg_muted
-        };
-        painter.rect_filled(rect, RADIUS_SM, fill);
-        painter.rect_stroke(rect, RADIUS_SM, egui::Stroke::new(1.0_f32, stroke));
-
-        let name = slots[idx].effect_type.label();
-        let detail = slots[idx].detail();
-        painter.text(
-            egui::pos2(rect.min.x + GRID_UNIT, rect.min.y + GRID_UNIT),
-            egui::Align2::LEFT_TOP,
-            name,
-            FontId::proportional(11.0),
-            tokens.text,
+        let (card_rect, response) = ui.allocate_exact_size(
+            egui::vec2(metrics.slot_width, metrics.card_height),
+            egui::Sense::click(),
         );
-        painter.text(
-            egui::pos2(rect.min.x + GRID_UNIT, rect.min.y + GRID_UNIT + 18.0),
-            egui::Align2::LEFT_TOP,
-            detail,
-            FontId::proportional(10.0),
-            tokens.text_muted,
-        );
-    }
 
-    if response.clicked() {
-        slots[idx].bypassed = !slots[idx].bypassed;
-        changed = true;
-    }
+        let active = slots[idx].is_active();
+        if ui.is_rect_visible(card_rect) {
+            let painter = ui.painter_at(card_rect);
+            let stroke = if active { ACCENT_UI } else { tokens.border };
+            let fill = if response.hovered() {
+                tokens.surface2
+            } else {
+                tokens.bg_muted
+            };
+            painter.rect_filled(card_rect, RADIUS_SM, fill);
+            painter.rect_stroke(card_rect, RADIUS_SM, egui::Stroke::new(1.0_f32, stroke));
+            painter.text(
+                egui::pos2(card_rect.min.x + GRID_UNIT, card_rect.min.y + 6.0),
+                egui::Align2::LEFT_TOP,
+                slots[idx].effect_type.label(),
+                FontId::proportional(11.0),
+                tokens.text,
+            );
+            painter.text(
+                egui::pos2(card_rect.min.x + GRID_UNIT, card_rect.min.y + 22.0),
+                egui::Align2::LEFT_TOP,
+                slots[idx].detail(),
+                FontId::proportional(10.0),
+                tokens.text_muted,
+            );
+        }
 
-    // Controls row below card
-    ui.allocate_ui_at_rect(
-        Rect::from_min_size(
-            egui::pos2(rect.min.x, rect.max.y + 2.0),
-            egui::vec2(FX_SLOT_WIDTH, 18.0),
-        ),
-        |ui| {
-            ui.horizontal(|ui| {
+        if response.clicked() {
+            slots[idx].bypassed = !slots[idx].bypassed;
+            changed = true;
+        }
+
+        ui.allocate_ui_with_layout(
+            egui::vec2(metrics.slot_width, metrics.controls_height),
+            egui::Layout::left_to_right(egui::Align::Center),
+            |ui| {
                 ui.spacing_mut().item_spacing.x = 2.0;
                 if idx > 0 && button_icon(ui, "◀").clicked() {
                     slots.swap(idx, idx - 1);
@@ -313,9 +337,9 @@ fn draw_fx_slot(ui: &mut Ui, slots: &mut Vec<EffectSlotUi>, idx: usize) -> FxSlo
                     changed = true;
                     return;
                 }
-                egui::ComboBox::from_id_source(format!("fx_type_{idx}"))
+                egui::ComboBox::from_id_salt(format!("fx_type_{idx}"))
                     .selected_text(slots[idx].effect_type.label())
-                    .width(72.0)
+                    .width(metrics.slot_width - 56.0)
                     .show_ui(ui, |ui| {
                         for ty in EffectType::ALL {
                             if ui
@@ -335,17 +359,18 @@ fn draw_fx_slot(ui: &mut Ui, slots: &mut Vec<EffectSlotUi>, idx: usize) -> FxSlo
                             }
                         }
                     });
-            });
-        },
-    );
+            },
+        );
+    });
 
+    let _ = column;
     FxSlotResult { changed }
 }
 
-fn draw_add_slot(ui: &mut Ui) -> egui::Response {
+fn draw_add_slot(ui: &mut Ui, metrics: FxMetrics) -> egui::Response {
     let tokens = Tokens::default();
     let (rect, response) = ui.allocate_exact_size(
-        egui::vec2(48.0, 72.0),
+        egui::vec2(metrics.add_width, metrics.card_height),
         egui::Sense::click(),
     );
     if ui.is_rect_visible(rect) {

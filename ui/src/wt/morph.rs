@@ -4,6 +4,7 @@ use egui::{FontId, Sense, Ui, Vec2};
 use reelsynth_ui_theme::Tokens;
 
 use crate::layout::WT_MORPH_HEIGHT;
+use crate::region::region;
 
 pub struct WtMorph<'a> {
     pub frame_a: &'a mut f32,
@@ -26,7 +27,7 @@ impl<'a> WtMorph<'a> {
 
         let mut changed = false;
         let mut endpoints_changed = false;
-        ui.allocate_ui_at_rect(rect, |ui| {
+        region(ui, rect, |ui| {
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = 8.0;
                 ui.label(

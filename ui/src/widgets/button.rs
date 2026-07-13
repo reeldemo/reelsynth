@@ -85,7 +85,13 @@ pub fn labeled_cycle(ui: &mut Ui, field_label: &str, value_label: &str) -> Respo
                 .size(10.0)
                 .color(tokens.text_muted),
         );
-        clicked = Some(button_cycle(ui, value_label));
+        ui.allocate_ui_with_layout(
+            egui::vec2(ui.available_width(), 0.0),
+            egui::Layout::right_to_left(egui::Align::Center),
+            |ui| {
+                clicked = Some(button_cycle(ui, value_label));
+            },
+        );
     });
     clicked.unwrap()
 }

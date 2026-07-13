@@ -1,3 +1,4 @@
+mod region;
 mod fx_rack;
 mod layout;
 mod mod_matrix;
@@ -9,6 +10,7 @@ mod state_sync;
 pub mod widgets;
 pub mod wt;
 
+pub use region::region;
 pub use fx_rack::{
     default_effect_slots, draw_effect_rack, effect_slots_from_bypass, effect_slots_from_patch,
     effect_slots_to_bypass, effect_slots_to_patch, EffectRackState, EffectSlotUi,

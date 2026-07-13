@@ -4,6 +4,7 @@ use egui::{Sense, Ui};
 use reelsynth_ui_theme::Tokens;
 
 use crate::layout::{RADIUS_SM, WT_TOOLBAR_HEIGHT};
+use crate::region::region;
 use crate::widgets::button_tool;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -53,7 +54,7 @@ impl WtToolbar {
         );
 
         let mut changed = false;
-        ui.allocate_ui_at_rect(rect.shrink2(egui::vec2(4.0, 2.0)), |ui| {
+        region(ui, rect.shrink2(egui::vec2(4.0, 2.0)), |ui| {
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = 2.0;
                 for candidate in [

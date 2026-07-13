@@ -3,6 +3,7 @@ use reelsynth::WavetableBank;
 use reelsynth_ui_theme::Tokens;
 
 use crate::layout::{RADIUS_SM, WT_TOOLBAR_HEIGHT, WT_VIEW_MIN_HEIGHT};
+use crate::region::region;
 
 use super::toolbar::{WtEditTool, WtToolbar};
 use super::waveform::{frame_index, peak_point, waveform_points};
@@ -54,7 +55,8 @@ impl WtView2d<'_> {
             rect.max,
         );
 
-        ui.allocate_ui_at_rect(
+        region(
+            ui,
             Rect::from_min_max(rect.min, egui::pos2(rect.max.x, plot_top)),
             |ui| {
                 WtToolbar::show(ui, self.tool);

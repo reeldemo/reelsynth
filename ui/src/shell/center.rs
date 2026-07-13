@@ -1,9 +1,11 @@
 use egui::{Rect, Ui};
 use reelsynth::Patch;
-use reelsynth_ui_theme::Tokens;
 
 use super::*;
 use super::header::{sync_morph_from_active_tab, sync_osc_position_from_wt};
+use crate::layout::UiScale;
+use crate::region::region;
+
 pub(super) fn draw_center(
     ui: &mut Ui,
     rect: Rect,
@@ -13,85 +15,17 @@ pub(super) fn draw_center(
     config: &ShellConfig,
     scope: Option<ScopeStripContext<'_>>,
     actions: &mut ShellActions,
+    scale: UiScale,
 ) {
-    let inner = rect.shrink(SPACE_SM);
-    let morph_h = if config.show_wt_editor {
-        WT_MORPH_HEIGHT + GRID_UNIT
-    } else {
-        0.0
-    };
-    let views_h = if config.show_wt_editor {
-        WT_VIEW_MIN_HEIGHT + GRID_UNIT
-    } else {
-        0.0
-    };
-
-    let scope_rect = Rect::from_min_max(
-        inner.min,
-        egui::pos2(inner.max.x, inner.min.y + SCOPE_STRIP_HEIGHT),
-    );
-    let content_top = scope_rect.max.y + GRID_UNIT;
-
-    let (strip_rect, morph_rect, views_rect) = if config.show_osc_column {
-        let strip_rect = Rect::from_min_max(
-            egui::pos2(inner.min.x, content_top),
-            egui::pos2(inner.max.x, content_top + WT_STRIP_HEIGHT),
-        );
-        let morph_rect = if config.show_wt_editor {
-            Rect::from_min_max(
-                egui::pos2(inner.min.x, strip_rect.max.y + GRID_UNIT),
-                egui::pos2(inner.max.x, strip_rect.max.y + GRID_UNIT + WT_MORPH_HEIGHT),
-            )
-        } else {
-            Rect::NOTHING
-        };
-        let views_top = if config.show_wt_editor {
-            morph_rect.max.y + GRID_UNIT
-        } else {
-            strip_rect.max.y + GRID_UNIT
-        };
-        let views_rect = if config.show_wt_editor {
-            Rect::from_min_max(
-                egui::pos2(inner.min.x, views_top),
-                inner.max,
-            )
-        } else {
-            Rect::NOTHING
-        };
-        (strip_rect, morph_rect, views_rect)
-    } else {
-        let views_rect = if config.show_wt_editor {
-            Rect::from_min_max(
-                egui::pos2(inner.min.x, inner.max.y - views_h),
-                inner.max,
-            )
-        } else {
-            Rect::NOTHING
-        };
-        let morph_rect = if config.show_wt_editor {
-            Rect::from_min_max(
-                egui::pos2(inner.min.x, views_rect.min.y - morph_h),
-                egui::pos2(inner.max.x, views_rect.min.y - GRID_UNIT),
-            )
-        } else {
-            Rect::NOTHING
-        };
-        let strip_bottom = if config.show_wt_editor {
-            morph_rect.min.y - GRID_UNIT
-        } else {
-            inner.max.y
-        };
-        let strip_rect = Rect::from_min_max(
-            egui::pos2(inner.min.x, strip_bottom - WT_STRIP_HEIGHT),
-            egui::pos2(inner.max.x, strip_bottom),
-        );
-        (strip_rect, morph_rect, views_rect)
-    };
+    let s = scale.ui();
+    let inner = rect.shrink(SPACE_SM * s);
+    let (scope_rect, strip_rect, morph_rect, views_rect) =
+        center_regions(inner, config, s);
 
     let bank_name = state.wt_bank_name.clone();
 
     if scope_rect.is_positive() {
-        ui.allocate_ui_at_rect(scope_rect, |ui| {
+        region(ui, scope_rect, |ui| {
             if let Some(ctx) = scope {
                 draw_scope_strip(
                     ui,
@@ -127,7 +61,7 @@ pub(super) fn draw_center(
     }
 
     if config.show_wt_editor && morph_rect.is_positive() {
-        ui.allocate_ui_at_rect(morph_rect, |ui| {
+        region(ui, morph_rect, |ui| {
             let morph = WtMorph {
                 frame_a: &mut state.wt_morph_a,
                 frame_b: &mut state.wt_morph_b,
@@ -143,12 +77,14 @@ pub(super) fn draw_center(
     }
 
     if config.show_wt_editor && views_rect.is_positive() {
-        ui.allocate_ui_at_rect(views_rect, |ui| {
+        let view_min = WT_VIEW_MIN_HEIGHT * s;
+        let views_h = views_rect.height().max(view_min * 0.5);
+        region(ui, views_rect, |ui| {
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = GRID_UNIT;
                 let half_w = (ui.available_width() - GRID_UNIT) * 0.5;
                 ui.allocate_ui_with_layout(
-                    egui::vec2(half_w, WT_VIEW_MIN_HEIGHT),
+                    egui::vec2(half_w, views_h),
                     egui::Layout::top_down(egui::Align::Min),
                     |ui| {
                         let view = WtView2d {
@@ -163,7 +99,7 @@ pub(super) fn draw_center(
                     },
                 );
                 ui.allocate_ui_with_layout(
-                    egui::vec2(half_w, WT_VIEW_MIN_HEIGHT),
+                    egui::vec2(half_w, views_h),
                     egui::Layout::top_down(egui::Align::Min),
                     |ui| {
                         WtView3d {
@@ -177,20 +113,105 @@ pub(super) fn draw_center(
         });
     }
 
-    ui.allocate_ui_at_rect(strip_rect, |ui| {
-        let strip = WtStrip {
-            position: &mut state.wt_position,
-            bank: bank.as_deref(),
-            bank_name: Some(bank_name.as_str()),
-            visible_frames: 16,
-        };
-        if strip.show(ui).changed {
-            sync_osc_position_from_wt(state);
-            state.wt_morph_amount =
-                morph_amount_for_position(state.wt_morph_a, state.wt_morph_b, state.wt_position);
-            sync_morph_from_active_tab(state);
-            actions.params_changed = true;
-        }
-    });
+    if strip_rect.is_positive() {
+        region(ui, strip_rect, |ui| {
+            let strip = WtStrip {
+                position: &mut state.wt_position,
+                bank: bank.as_deref(),
+                bank_name: Some(bank_name.as_str()),
+                visible_frames: 16,
+            };
+            if strip.show(ui).changed {
+                sync_osc_position_from_wt(state);
+                state.wt_morph_amount =
+                    morph_amount_for_position(state.wt_morph_a, state.wt_morph_b, state.wt_position);
+                sync_morph_from_active_tab(state);
+                actions.params_changed = true;
+            }
+        });
+    }
 }
 
+fn center_regions(inner: Rect, config: &ShellConfig, scale: f32) -> (Rect, Rect, Rect, Rect) {
+    let scope_h = SCOPE_STRIP_HEIGHT * scale;
+    let strip_h = WT_STRIP_HEIGHT * scale;
+    let morph_line_h = WT_MORPH_HEIGHT * scale;
+    let gap = GRID_UNIT * scale;
+    let view_min = WT_VIEW_MIN_HEIGHT * scale;
+
+    let scope_rect = Rect::from_min_max(
+        inner.min,
+        egui::pos2(inner.max.x, (inner.min.y + scope_h).min(inner.max.y)),
+    );
+    let mut y = scope_rect.max.y + gap;
+
+    if config.show_osc_column {
+        let strip_rect = rect_row(inner, y, strip_h);
+        y = strip_rect.max.y + gap;
+
+        let morph_rect = if config.show_wt_editor {
+            let r = rect_row(inner, y, morph_line_h);
+            y = r.max.y + gap;
+            r
+        } else {
+            Rect::NOTHING
+        };
+
+        let views_rect = if config.show_wt_editor && y < inner.max.y - view_min * 0.5 {
+            Rect::from_min_max(egui::pos2(inner.min.x, y), inner.max)
+        } else {
+            Rect::NOTHING
+        };
+
+        (scope_rect, strip_rect, morph_rect, views_rect)
+    } else {
+        let views_h = if config.show_wt_editor {
+            (view_min + gap)
+                .min((inner.height() - scope_h - gap - strip_h - gap).max(view_min * 0.5))
+        } else {
+            0.0
+        };
+        let morph_block_h = if config.show_wt_editor {
+            morph_line_h + gap
+        } else {
+            0.0
+        };
+
+        let views_rect = if config.show_wt_editor && views_h > 0.0 {
+            Rect::from_min_max(
+                egui::pos2(inner.min.x, inner.max.y - views_h),
+                inner.max,
+            )
+        } else {
+            Rect::NOTHING
+        };
+
+        let morph_rect = if config.show_wt_editor && morph_block_h > 0.0 {
+            Rect::from_min_max(
+                egui::pos2(inner.min.x, views_rect.min.y - morph_block_h),
+                egui::pos2(inner.max.x, views_rect.min.y - gap),
+            )
+        } else {
+            Rect::NOTHING
+        };
+
+        let strip_top = if config.show_wt_editor {
+            morph_rect.min.y - gap - strip_h
+        } else {
+            inner.max.y - strip_h
+        };
+        let strip_rect = Rect::from_min_max(
+            egui::pos2(inner.min.x, strip_top.max(scope_rect.max.y + gap)),
+            egui::pos2(inner.max.x, strip_top + strip_h),
+        );
+
+        (scope_rect, strip_rect, morph_rect, views_rect)
+    }
+}
+
+fn rect_row(inner: Rect, y: f32, height: f32) -> Rect {
+    Rect::from_min_max(
+        egui::pos2(inner.min.x, y),
+        egui::pos2(inner.max.x, (y + height).min(inner.max.y)),
+    )
+}

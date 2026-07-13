@@ -6,7 +6,7 @@ use reelsynth_ui_theme::Tokens;
 use crate::layout::{GRID_UNIT, SPACE_SM};
 use crate::widgets::{
     format_coarse, format_pan, format_unison, knob_value_label, labeled_cycle, tab_bar, Knob,
-    KnobSize, KnobStyle, panel, panel_disabled,
+    KnobSize, KnobStyle, panel,
 };
 
 const OSC_TABS: [&str; 3] = ["Osc 1", "Osc 2", "Osc 3"];
@@ -114,14 +114,15 @@ pub struct OscColumnResult {
     pub changed: bool,
 }
 
-pub fn draw_osc_column(ui: &mut Ui, state: OscColumnState<'_>) -> OscColumnResult {
+pub fn draw_osc_column(ui: &mut Ui, state: OscColumnState<'_>, scale: f32) -> OscColumnResult {
     let mut changed = false;
+    let gap = SPACE_SM * scale;
 
     egui::Frame::none()
-        .inner_margin(egui::Margin::same(SPACE_SM))
+        .inner_margin(egui::Margin::same(SPACE_SM * scale))
         .show(ui, |ui| {
             ui.set_width(ui.available_width());
-            ui.spacing_mut().item_spacing.y = SPACE_SM;
+            ui.spacing_mut().item_spacing.y = gap;
 
             panel(ui, "Oscillators", |ui| {
                 tab_bar(ui, &OSC_TABS, state.osc_tab);
@@ -139,18 +140,21 @@ pub fn draw_osc_column(ui: &mut Ui, state: OscColumnState<'_>) -> OscColumnResul
                     let level_text = format!("{:.2}", state.osc_level[idx]);
                     let r1 = Knob::new(&mut state.osc_level[idx], 0.0..=1.0, "Level")
                         .size(KnobSize::Sm)
+                        .scale(scale)
                         .style(KnobStyle::Wired)
                         .value_text(level_text)
                         .show(ui);
                     let pan_text = format_pan(state.osc_pan[idx]);
                     let r2 = Knob::new(&mut state.osc_pan[idx], -1.0..=1.0, "Pan")
                         .size(KnobSize::Sm)
+                        .scale(scale)
                         .style(KnobStyle::Normal)
                         .value_text(pan_text)
                         .show(ui);
                     let coarse_text = format_coarse(state.osc_coarse[idx]);
                     let r3 = Knob::new(&mut state.osc_coarse[idx], -2400.0..=2400.0, "Coarse")
                         .size(KnobSize::Sm)
+                        .scale(scale)
                         .style(KnobStyle::Wired)
                         .value_text(coarse_text)
                         .show(ui);
@@ -252,12 +256,14 @@ pub fn draw_osc_column(ui: &mut Ui, state: OscColumnState<'_>) -> OscColumnResul
                         let ratio_text = format!("{:.2}", state.osc_fm_ratio[idx]);
                         let r1 = Knob::new(&mut state.osc_fm_ratio[idx], 0.5..=16.0, "Ratio")
                             .size(KnobSize::Sm)
+                            .scale(scale)
                             .style(KnobStyle::Wired)
                             .value_text(ratio_text)
                             .show(ui);
                         let index_text = format!("{:.1}", state.osc_fm_index[idx]);
                         let r2 = Knob::new(&mut state.osc_fm_index[idx], 0.0..=10.0, "Index")
                             .size(KnobSize::Sm)
+                            .scale(scale)
                             .style(KnobStyle::Normal)
                             .value_text(index_text)
                             .show(ui);
@@ -274,12 +280,14 @@ pub fn draw_osc_column(ui: &mut Ui, state: OscColumnState<'_>) -> OscColumnResul
                     let sub_text = format!("{:.2}", state.sub_level);
                     let r1 = Knob::new(state.sub_level, 0.0..=1.0, "Sub")
                         .size(KnobSize::Sm)
+                        .scale(scale)
                         .style(KnobStyle::Wired)
                         .value_text(sub_text)
                         .show(ui);
                     let noise_text = format!("{:.2}", state.noise_level);
                     let r2 = Knob::new(state.noise_level, 0.0..=1.0, "Noise")
                         .size(KnobSize::Sm)
+                        .scale(scale)
                         .style(KnobStyle::Wired)
                         .value_text(noise_text)
                         .show(ui);
@@ -296,6 +304,7 @@ pub fn draw_osc_column(ui: &mut Ui, state: OscColumnState<'_>) -> OscColumnResul
                         let text = format!("{:.0}%", state.macro_values[i] * 100.0);
                         let r = Knob::new(&mut state.macro_values[i], 0.0..=1.0, label)
                             .size(KnobSize::Sm)
+                            .scale(scale)
                             .style(KnobStyle::Wired)
                             .value_text(text)
                             .show(ui);

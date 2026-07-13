@@ -4,7 +4,8 @@ use egui::{Color32, FontId, Rect, Ui};
 use reelsynth::ModSlot;
 use reelsynth_ui_theme::{heading_font, Tokens};
 
-use crate::layout::{GRID_UNIT, SPACE_SM};
+use crate::layout::{UiScale, GRID_UNIT, SPACE_SM};
+use crate::region::region;
 
 pub const MOD_ROW_HEIGHT: f32 = 28.0;
 pub const MOD_SECTION_HEADER: f32 = 28.0;
@@ -118,11 +119,24 @@ pub struct ModMatrixResult {
     pub changed: bool,
 }
 
-pub fn draw_mod_matrix(ui: &mut Ui, rect: Rect, state: ModMatrixState<'_>) -> ModMatrixResult {
+pub fn draw_mod_matrix(
+    ui: &mut Ui,
+    rect: Rect,
+    state: ModMatrixState<'_>,
+    scale: UiScale,
+) -> ModMatrixResult {
     let tokens = Tokens::default();
     let mut changed = false;
+    let s = scale.ui();
+    let header_h = MOD_SECTION_HEADER * s;
+    let row_h = MOD_ROW_HEIGHT * s;
+    let body_h = (rect.height() - header_h).max(0.0);
+    let row_gap = 2.0 * s;
+    let max_rows = ((body_h - GRID_UNIT * s) / (row_h + row_gap))
+        .floor()
+        .max(1.0) as usize;
 
-    ui.allocate_ui_at_rect(rect, |ui| {
+    region(ui, rect, |ui| {
         egui::Frame::none()
             .fill(tokens.bg_muted)
             .stroke(egui::Stroke::new(1.0_f32, tokens.border))
@@ -130,26 +144,21 @@ pub fn draw_mod_matrix(ui: &mut Ui, rect: Rect, state: ModMatrixState<'_>) -> Mo
                 ui.set_width(ui.available_width());
                 let active = state.routes.iter().filter(|r| r.enabled).count();
                 let meta = format!("{active} / {} routes", state.total_routes);
-                let header = section_header(ui, "Modulation Matrix", &meta, *state.open);
+                let header = section_header(ui, "Modulation Matrix", &meta, *state.open, header_h);
                 if header.clicked() {
                     *state.open = !*state.open;
                 }
 
                 if *state.open {
-                    ui.add_space(GRID_UNIT);
                     egui::Frame::none()
-                        .inner_margin(egui::Margin::symmetric(SPACE_SM, GRID_UNIT))
+                        .inner_margin(egui::Margin::symmetric(SPACE_SM * s, GRID_UNIT * s))
                         .show(ui, |ui| {
-                            egui::ScrollArea::vertical()
-                                .max_height(rect.height() - MOD_SECTION_HEADER - GRID_UNIT * 2.0)
-                                .show(ui, |ui| {
-                                    ui.spacing_mut().item_spacing.y = 2.0;
-                                    for route in state.routes.iter_mut() {
-                                        if draw_mod_row(ui, route).changed {
-            changed = true;
-        }
-                                    }
-                                });
+                            ui.spacing_mut().item_spacing.y = row_gap;
+                            for route in state.routes.iter_mut().take(max_rows) {
+                                if draw_mod_row(ui, route, row_h).changed {
+                                    changed = true;
+                                }
+                            }
                         });
                 }
             });
@@ -296,10 +305,10 @@ mod bridge_tests {
     }
 }
 
-fn section_header(ui: &mut Ui, title: &str, meta: &str, open: bool) -> egui::Response {
+fn section_header(ui: &mut Ui, title: &str, meta: &str, open: bool, height: f32) -> egui::Response {
     let tokens = Tokens::default();
     let (rect, response) =
-        ui.allocate_exact_size(egui::vec2(ui.available_width(), MOD_SECTION_HEADER), egui::Sense::click());
+        ui.allocate_exact_size(egui::vec2(ui.available_width(), height), egui::Sense::click());
     if ui.is_rect_visible(rect) {
         let painter = ui.painter_at(rect);
         painter.rect_filled(rect, 0.0, tokens.surface2);
@@ -337,10 +346,9 @@ struct ModRowResult {
     changed: bool,
 }
 
-fn draw_mod_row(ui: &mut Ui, route: &mut ModSlotUi) -> ModRowResult {
+fn draw_mod_row(ui: &mut Ui, route: &mut ModSlotUi, row_h: f32) -> ModRowResult {
     let tokens = Tokens::default();
     let mut changed = false;
-    let row_h = MOD_ROW_HEIGHT;
     let (rect, response) =
         ui.allocate_exact_size(egui::vec2(ui.available_width(), row_h), egui::Sense::hover());
 
