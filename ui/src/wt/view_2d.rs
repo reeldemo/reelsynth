@@ -1,7 +1,8 @@
 use egui::{Color32, Pos2, Rect, Sense, Shape, Ui, Vec2};
 use reelsynth::WavetableBank;
-use reelsynth_ui_theme::Tokens;
+use reelsynth_ui_theme::{ACCENT_UI, Tokens};
 
+use crate::ambient::{animated_wave_points, peak_glow_color};
 use crate::layout::{RADIUS_SM, WT_TOOLBAR_HEIGHT, WT_VIEW_MIN_HEIGHT};
 use crate::region::region;
 
@@ -17,14 +18,17 @@ pub struct WtView2d<'a> {
     pub bank: Option<&'a mut WavetableBank>,
     pub bank_name: Option<&'a str>,
     pub tool: &'a mut WtEditTool,
+    pub animate: bool,
+    pub time: f32,
 }
 
 impl WtView2d<'_> {
     pub fn show(self, ui: &mut Ui) -> WtView2dResponse {
         let tokens = Tokens::default();
-        let accent_ui = Color32::from_rgb(0x2a, 0x6b, 0x8a);
+        let accent_ui = ACCENT_UI;
+        let view_h = ui.available_height().max(WT_VIEW_MIN_HEIGHT * 0.5);
         let (rect, _) = ui.allocate_exact_size(
-            Vec2::new(ui.available_width(), WT_VIEW_MIN_HEIGHT),
+            Vec2::new(ui.available_width(), view_h),
             Sense::hover(),
         );
 
@@ -69,6 +73,8 @@ impl WtView2d<'_> {
         let wave = if let Some(bank) = self.bank.as_ref() {
             let frame = bank.frame(frame_idx);
             waveform_points(frame, inner, 256, 0.42)
+        } else if self.animate {
+            animated_wave_points(inner, mid_y, self.time, self.position, 128)
         } else {
             placeholder_wave(inner, mid_y)
         };
@@ -88,7 +94,8 @@ impl WtView2d<'_> {
             ));
 
             if let Some(peak) = peak_point(&wave) {
-                painter.circle_filled(peak, 4.0, tokens.accent);
+                let glow = peak_glow_color(tokens.accent, self.time);
+                painter.circle_filled(peak, 4.0, glow);
                 painter.circle_stroke(peak, 4.0, egui::Stroke::new(1.0_f32, tokens.accent_on));
             }
         }

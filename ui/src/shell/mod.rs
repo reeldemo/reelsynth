@@ -10,7 +10,7 @@ use reelsynth::Patch;
 use reelsynth_ui_theme::Tokens;
 
 use crate::fx_rack::{draw_effect_rack, EffectRackState};
-use crate::layout::{ShellLayout, ShellLayoutOptions};
+use crate::layout::{embed_mod_fx_in_center, ShellLayout, ShellLayoutOptions};
 use crate::mod_matrix::{draw_mod_matrix, ModMatrixState};
 
 pub use crate::state::{
@@ -45,17 +45,16 @@ pub fn draw_shell(
     config: &ShellConfig,
     scope: Option<ScopeStripContext<'_>>,
 ) -> ShellActions {
-    let layout = ShellLayout::compute_with_options(
-        screen,
-        ShellLayoutOptions {
-            piano_visible: state.piano_visible,
-            show_osc_column: config.show_osc_column,
-            show_mod_matrix: config.show_mod_matrix,
-            mod_matrix_open: state.mod_matrix_open,
-            show_fx_rack: config.show_fx_rack,
-            fx_rack_open: state.fx_rack_open,
-        },
-    );
+    let layout_opts = ShellLayoutOptions {
+        piano_visible: state.piano_visible,
+        show_osc_column: config.show_osc_column,
+        show_mod_matrix: config.show_mod_matrix,
+        mod_matrix_open: state.mod_matrix_open,
+        show_fx_rack: config.show_fx_rack,
+        fx_rack_open: state.fx_rack_open,
+    };
+    let layout = ShellLayout::compute_with_options(screen, layout_opts);
+    let embedded_mod_fx = embed_mod_fx_in_center(layout_opts);
     let tokens = Tokens::default();
     let mut actions = ShellActions::default();
 
@@ -125,7 +124,7 @@ pub fn draw_shell(
     );
     draw_rail(ui, layout.rail, state, config, &mut actions, layout.scale);
 
-    if layout.mod_matrix.is_positive() {
+    if layout.mod_matrix.is_positive() && !embedded_mod_fx {
         let result = draw_mod_matrix(
             ui,
             layout.mod_matrix,
@@ -141,7 +140,7 @@ pub fn draw_shell(
         }
     }
 
-    if layout.fx_rack.is_positive() {
+    if layout.fx_rack.is_positive() && !embedded_mod_fx {
         let result = draw_effect_rack(
             ui,
             layout.fx_rack,
@@ -157,7 +156,7 @@ pub fn draw_shell(
     }
 
     if state.piano_visible && layout.piano_wrap.is_positive() {
-        draw_piano_wrap(ui, layout.piano_wrap, state, &mut actions);
+        draw_piano_wrap(ui, layout.piano_wrap, state, &mut actions, layout.scale);
     }
 
     draw_footer(ui, layout.footer, state);

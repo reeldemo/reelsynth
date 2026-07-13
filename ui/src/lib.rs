@@ -1,3 +1,4 @@
+mod ambient;
 mod region;
 mod fx_rack;
 mod layout;

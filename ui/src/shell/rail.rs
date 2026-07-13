@@ -1,4 +1,5 @@
 use egui::{Rect, Ui};
+use reelsynth_ui_theme::Tokens;
 
 use super::*;
 use super::footer::{draw_level_meter, format_cutoff};
@@ -166,12 +167,33 @@ fn draw_rail_panels(
             );
         });
 
-        panel(ui, "LFO 1", |ui| {
-            lfo_panel(ui, &mut state.lfo_rate, &mut state.lfo_depth, &mut state.lfo_shape, KnobStyle::Wired, actions, s);
-        });
-
-        panel(ui, "LFO 2", |ui| {
-            lfo_panel(ui, &mut state.lfo2_rate, &mut state.lfo2_depth, &mut state.lfo2_shape, KnobStyle::Normal, actions, s);
+        panel(ui, "LFOs", |ui| {
+            ui.columns(2, |cols| {
+                cols[0].vertical(|ui| {
+                    ui.label(egui::RichText::new("LFO 1").size(10.0).color(Tokens::default().text_muted));
+                    lfo_panel(
+                        ui,
+                        &mut state.lfo_rate,
+                        &mut state.lfo_depth,
+                        &mut state.lfo_shape,
+                        KnobStyle::Wired,
+                        actions,
+                        s,
+                    );
+                });
+                cols[1].vertical(|ui| {
+                    ui.label(egui::RichText::new("LFO 2").size(10.0).color(Tokens::default().text_muted));
+                    lfo_panel(
+                        ui,
+                        &mut state.lfo2_rate,
+                        &mut state.lfo2_depth,
+                        &mut state.lfo2_shape,
+                        KnobStyle::Normal,
+                        actions,
+                        s,
+                    );
+                });
+            });
         });
 
         draw_level_meter(ui);

@@ -1,6 +1,6 @@
 use egui::{Color32, Pos2, Rect, Sense, Shape, Ui, Vec2};
 use reelsynth::WavetableBank;
-use reelsynth_ui_theme::Tokens;
+use reelsynth_ui_theme::{ACCENT_UI, Tokens};
 
 use crate::layout::{RADIUS_SM, WT_VIEW_MIN_HEIGHT};
 
@@ -9,14 +9,16 @@ use super::waveform::{frame_index, waveform_points};
 pub struct WtView3d<'a> {
     pub position: f32,
     pub bank: Option<&'a WavetableBank>,
+    pub time: f32,
 }
 
 impl WtView3d<'_> {
     pub fn show(self, ui: &mut Ui) -> Rect {
         let tokens = Tokens::default();
-        let accent_ui = Color32::from_rgb(0x2a, 0x6b, 0x8a);
+        let accent_ui = ACCENT_UI;
+        let view_h = ui.available_height().max(WT_VIEW_MIN_HEIGHT * 0.5);
         let (rect, _) = ui.allocate_exact_size(
-            Vec2::new(ui.available_width(), WT_VIEW_MIN_HEIGHT),
+            Vec2::new(ui.available_width(), view_h),
             Sense::hover(),
         );
 
@@ -44,9 +46,17 @@ impl WtView3d<'_> {
         paint_grid(&painter, inner, tokens.border);
 
         if let Some(bank) = self.bank {
-            paint_mesh_from_bank(&painter, inner, bank, self.position, accent_ui, tokens.accent);
+            paint_mesh_from_bank(
+                &painter,
+                inner,
+                bank,
+                self.position,
+                self.time,
+                accent_ui,
+                tokens.accent,
+            );
         } else {
-            paint_placeholder_mesh(&painter, inner, accent_ui);
+            paint_placeholder_mesh(&painter, inner, self.time, accent_ui);
         }
 
         rect
@@ -78,12 +88,16 @@ fn paint_mesh_from_bank(
     rect: Rect,
     bank: &WavetableBank,
     position: f32,
+    time: f32,
     accent_ui: Color32,
     accent: Color32,
 ) {
     let num_slices = 16usize;
     let center_frame = frame_index(position, bank.num_frames);
     let half = num_slices / 2;
+    let drift = (time * 0.15).sin() * 2.0;
+    let center_frame = ((center_frame as f32 + drift).round() as i32)
+        .clamp(0, bank.num_frames.saturating_sub(1) as i32) as usize;
     let mesh_left = rect.min.x + rect.width() * 0.08;
     let mesh_width = rect.width() * 0.84;
     let depth_pitch = rect.width() * 0.028;
@@ -148,11 +162,11 @@ fn paint_mesh_from_bank(
     }
 }
 
-fn paint_placeholder_mesh(painter: &egui::Painter, rect: Rect, accent_ui: Color32) {
+fn paint_placeholder_mesh(painter: &egui::Painter, rect: Rect, time: f32, accent_ui: Color32) {
     for i in 0..10 {
         let t = i as f32 / 9.0;
         let y_off = t * rect.height() * 0.32;
-        let x_off = (t - 0.5) * rect.width() * 0.22;
+        let x_off = (t - 0.5) * rect.width() * 0.22 + (time * 0.2 + t).sin() * 4.0;
         let points: Vec<Pos2> = (0..=40)
             .map(|j| {
                 let u = j as f32 / 40.0;

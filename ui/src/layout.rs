@@ -45,15 +45,17 @@ pub const WT_MORPH_HEIGHT: f32 = 24.0;
 pub const WT_TOOLBAR_HEIGHT: f32 = 24.0;
 pub const WT_VIEW_MIN_HEIGHT: f32 = 128.0;
 
-pub const PIANO_HEIGHT: f32 = 72.0;
+pub const PIANO_HEIGHT: f32 = 88.0;
 pub const PIANO_WHITE_KEY_WIDTH: f32 = 16.0;
 pub const PIANO_BLACK_WIDTH_RATIO: f32 = 0.58;
 pub const PIANO_BLACK_HEIGHT_RATIO: f32 = 0.56;
-pub const PIANO_OCTAVES: usize = 2;
+pub const PIANO_OCTAVES: usize = 3;
 pub const PIANO_START_NOTE: u8 = 48; // C3
 
 pub const MOD_MATRIX_HEIGHT: f32 = 120.0;
 pub const FX_RACK_HEIGHT: f32 = 92.0;
+pub const CENTER_MOD_HEIGHT: f32 = 108.0;
+pub const CENTER_FX_HEIGHT: f32 = 88.0;
 pub const SECTION_HEADER_HEIGHT: f32 = 24.0;
 
 /// Uniform UI scale derived from window and main-column budget.
@@ -124,6 +126,11 @@ pub struct ShellLayout {
     pub scale: UiScale,
 }
 
+/// Mod matrix + FX live in the center column when the osc column is visible.
+pub fn embed_mod_fx_in_center(options: ShellLayoutOptions) -> bool {
+    options.show_osc_column && (options.show_mod_matrix || options.show_fx_rack)
+}
+
 impl ShellLayout {
     pub fn compute(screen: Rect, piano_visible: bool) -> Self {
         Self::compute_with_options(
@@ -156,7 +163,7 @@ impl ShellLayout {
             0.0
         };
 
-        let mod_h = if options.show_mod_matrix {
+        let mod_h = if options.show_mod_matrix && !embed_mod_fx_in_center(options) {
             let base = if options.mod_matrix_open {
                 MOD_MATRIX_HEIGHT
             } else {
@@ -167,7 +174,7 @@ impl ShellLayout {
             0.0
         };
 
-        let fx_h = if options.show_fx_rack {
+        let fx_h = if options.show_fx_rack && !embed_mod_fx_in_center(options) {
             let base = if options.fx_rack_open {
                 FX_RACK_HEIGHT
             } else {
@@ -306,7 +313,7 @@ mod tests {
     }
 
     #[test]
-    fn s4_s5_full_layout_sections() {
+    fn s4_s5_full_layout_embedded_mod_fx() {
         let screen = Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(1280.0, APP_HEIGHT_FULL));
         let layout = ShellLayout::compute_with_options(
             screen,
@@ -319,16 +326,13 @@ mod tests {
                 fx_rack_open: true,
             },
         );
-        assert_eq!(layout.mod_matrix.min.y, layout.main.max.y);
-        assert_eq!(layout.fx_rack.min.y, layout.mod_matrix.max.y);
-        assert_eq!(layout.piano_wrap.min.y, layout.fx_rack.max.y);
+        // Mod/FX embedded in center — no full-width bottom strips.
+        assert!(!layout.mod_matrix.is_positive());
+        assert!(!layout.fx_rack.is_positive());
+        assert!(layout.piano_wrap.is_positive());
+        assert!(layout.main.height() > 400.0);
+        assert_eq!(layout.piano_wrap.min.y, layout.main.max.y);
         assert_eq!(layout.footer.max.y, screen.max.y);
-        assert!(
-            layout.main.height() > 0.0,
-            "main column must have positive height"
-        );
-        assert!((layout.mod_matrix.height() - MOD_MATRIX_HEIGHT).abs() < 0.5);
-        assert!((layout.fx_rack.height() - FX_RACK_HEIGHT).abs() < 0.5);
     }
 
     #[test]
@@ -349,10 +353,31 @@ mod tests {
             },
         );
         assert!(layout.header.max.y <= layout.main.min.y);
-        assert!(layout.main.max.y <= layout.mod_matrix.min.y);
-        assert!(layout.mod_matrix.max.y <= layout.fx_rack.min.y);
-        assert!(layout.fx_rack.max.y <= layout.piano_wrap.min.y);
+        assert!(layout.main.max.y <= layout.piano_wrap.min.y);
         assert!(layout.piano_wrap.max.y <= layout.footer.min.y);
         assert!(layout.main.height() > 100.0);
+    }
+
+    #[test]
+    fn compact_layout_keeps_bottom_mod_fx() {
+        let screen = Rect::from_min_size(
+            egui::pos2(0.0, 0.0),
+            egui::vec2(APP_MIN_WIDTH, APP_MIN_HEIGHT),
+        );
+        let layout = ShellLayout::compute_with_options(
+            screen,
+            ShellLayoutOptions {
+                piano_visible: true,
+                show_osc_column: false,
+                show_mod_matrix: true,
+                mod_matrix_open: true,
+                show_fx_rack: true,
+                fx_rack_open: true,
+            },
+        );
+        assert!(layout.mod_matrix.is_positive());
+        assert!(layout.fx_rack.is_positive());
+        assert!(layout.mod_matrix.max.y <= layout.fx_rack.min.y);
+        assert!(layout.fx_rack.max.y <= layout.piano_wrap.min.y);
     }
 }

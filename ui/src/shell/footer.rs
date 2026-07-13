@@ -2,6 +2,7 @@ use egui::{Rect, Ui};
 use reelsynth_ui_theme::Tokens;
 
 use super::*;
+use crate::layout::UiScale;
 use crate::region::region;
 
 pub(super) fn draw_level_meter(ui: &mut Ui) {
@@ -24,20 +25,25 @@ pub(super) fn draw_level_meter(ui: &mut Ui) {
     }
 }
 
-pub(super) fn draw_piano_wrap(ui: &mut Ui, rect: Rect, state: &mut UiState, actions: &mut ShellActions) {
+pub(super) fn draw_piano_wrap(
+    ui: &mut Ui,
+    rect: Rect,
+    state: &mut UiState,
+    actions: &mut ShellActions,
+    _scale: UiScale,
+) {
     region(ui, rect, |ui| {
         egui::Frame::none()
             .inner_margin(egui::Margin::symmetric(SPACE_SM, GRID_UNIT))
             .show(ui, |ui| {
-                ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
-                    let (_, piano) = PianoKeyboard::new(&state.keys_down).show(ui);
-                    if let Some(n) = piano.note_on {
-                        actions.note_on = Some(n);
-                    }
-                    if let Some(n) = piano.note_off {
-                        actions.note_off = Some(n);
-                    }
-                });
+                let inner = ui.max_rect();
+                let (_, piano) = PianoKeyboard::new(&state.keys_down).show_in_rect(ui, inner);
+                if let Some(n) = piano.note_on {
+                    actions.note_on = Some(n);
+                }
+                if let Some(n) = piano.note_off {
+                    actions.note_off = Some(n);
+                }
             });
     });
 }
