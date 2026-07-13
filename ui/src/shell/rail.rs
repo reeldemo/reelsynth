@@ -5,6 +5,8 @@ use reelsynth_ui_theme::Tokens;
 use super::*;
 use super::footer::{draw_level_meter, format_cutoff};
 use super::header::sync_osc_position_from_wt;
+use crate::widgets::{labeled_cycle, tab_bar, Knob, KnobSize, KnobStyle, panel, panel_disabled};
+
 pub(super) fn draw_rail(
     ui: &mut Ui,
     rect: Rect,
@@ -214,14 +216,9 @@ pub(super) fn draw_rail(
                             }
                         });
                         ui.horizontal(|ui| {
-                            ui.label(
-                                egui::RichText::new("Shape")
-                                    .size(10.0)
-                                    .color(Tokens::default().text_muted),
-                            );
                             let shapes = ["Sine", "Tri", "Saw", "S&H"];
                             let label = shapes[state.lfo_shape.min(3)];
-                            if ui.button(label).clicked() {
+                            if labeled_cycle(ui, "Shape", label).clicked() {
                                 state.lfo_shape = (state.lfo_shape + 1) % shapes.len();
                                 actions.params_changed = true;
                             }
@@ -248,14 +245,9 @@ pub(super) fn draw_rail(
                             }
                         });
                         ui.horizontal(|ui| {
-                            ui.label(
-                                egui::RichText::new("Shape")
-                                    .size(10.0)
-                                    .color(Tokens::default().text_muted),
-                            );
                             let shapes = ["Sine", "Tri", "Saw", "S&H"];
                             let label = shapes[state.lfo2_shape.min(3)];
-                            if ui.button(label).clicked() {
+                            if labeled_cycle(ui, "Shape", label).clicked() {
                                 state.lfo2_shape = (state.lfo2_shape + 1) % shapes.len();
                                 actions.params_changed = true;
                             }

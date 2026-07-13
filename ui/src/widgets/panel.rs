@@ -10,7 +10,7 @@ pub fn panel<R>(ui: &mut Ui, title: &str, add_contents: impl FnOnce(&mut Ui) -> 
         fill: tokens.bg_muted,
         stroke: egui::Stroke::new(1.0_f32, tokens.border),
         rounding: egui::Rounding::same(RADIUS_SM),
-        inner_margin: Margin::same(8.0),
+        inner_margin: Margin::same(6.0),
         ..Default::default()
     }
     .show(ui, |ui| {
@@ -21,10 +21,10 @@ pub fn panel<R>(ui: &mut Ui, title: &str, add_contents: impl FnOnce(&mut Ui) -> 
         };
         ui.label(
             egui::RichText::new(display)
-                .font(heading_font(11.0))
+                .font(heading_font(10.0))
                 .color(tokens.text_muted),
         );
-        ui.add_space(8.0);
+        ui.add_space(6.0);
         add_contents(ui)
     })
     .inner

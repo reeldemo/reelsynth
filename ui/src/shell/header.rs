@@ -4,6 +4,7 @@ use reelsynth_ui_theme::Tokens;
 
 use super::*;
 use super::footer::draw_piano_toggle;
+use crate::widgets::button_ghost;
 pub(super) fn draw_header(
     ui: &mut Ui,
     rect: Rect,
@@ -23,17 +24,17 @@ pub(super) fn draw_header(
 
                     ui.label(
                         egui::RichText::new("ReelSynth")
-                            .font(heading_font(15.0))
+                            .font(heading_font(14.0))
                             .color(tokens.text)
                             .extra_letter_spacing(0.04),
                     );
 
                     ui.add_space(GRID_UNIT);
 
-                    if header_btn(ui, "Open", true).clicked() {
+                    if button_ghost(ui, "Open").clicked() {
                         actions.open_preset = true;
                     }
-                    if header_btn(ui, "Save", true).clicked() {
+                    if button_ghost(ui, "Save").clicked() {
                         actions.save_preset = true;
                     }
 
@@ -111,7 +112,7 @@ pub(super) fn draw_header(
                                     .map(String::as_str)
                                     .unwrap_or("MIDI"),
                             )
-                            .width(160.0)
+                            .width(140.0)
                             .show_ui(ui, |ui| {
                                 for (idx, name) in midi.names.iter().enumerate() {
                                     if ui
@@ -134,49 +135,6 @@ fn truncate_status(s: &str, max_chars: usize) -> String {
     } else {
         format!("{}…", s.chars().take(max_chars.saturating_sub(1)).collect::<String>())
     }
-}
-
-fn header_btn(ui: &mut Ui, label: &str, ghost: bool) -> egui::Response {
-    let tokens = Tokens::default();
-    let galley = ui.painter().layout_no_wrap(
-        label.to_owned(),
-        FontId::proportional(11.0),
-        if ghost { tokens.text } else { tokens.accent_on },
-    );
-    let size = egui::vec2(galley.size().x + 24.0, galley.size().y + 12.0);
-    let (rect, response) = ui.allocate_exact_size(size, egui::Sense::click());
-    if ui.is_rect_visible(rect) {
-        let painter = ui.painter_at(rect);
-        let fill = if ghost {
-            Color32::TRANSPARENT
-        } else {
-            tokens.accent
-        };
-        let stroke = if ghost {
-            tokens.border
-        } else {
-            Color32::from_rgb(0x2a, 0x6b, 0x8a)
-        };
-        let text_color = if ghost {
-            tokens.text
-        } else {
-            tokens.accent_on
-        };
-        if response.hovered() {
-            painter.rect_filled(rect, 6.0, tokens.bg_muted);
-        } else {
-            painter.rect_filled(rect, 6.0, fill);
-        }
-        painter.rect_stroke(rect, 6.0, egui::Stroke::new(1.0_f32, stroke));
-        painter.text(
-            rect.center(),
-            egui::Align2::CENTER_CENTER,
-            label,
-            FontId::proportional(11.0),
-            text_color,
-        );
-    }
-    response
 }
 
 fn header_menu_label(label: &str) -> egui::WidgetText {

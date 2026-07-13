@@ -130,14 +130,14 @@ pub fn apply_fonts(ctx: &egui::Context) {
     );
     style.text_styles.insert(
         egui::TextStyle::Body,
-        FontId::new(13.0, FontFamily::Proportional),
+        FontId::new(12.0, FontFamily::Proportional),
     );
     style.text_styles.insert(
         egui::TextStyle::Monospace,
-        FontId::new(11.0, FontFamily::Monospace),
+        FontId::new(10.0, FontFamily::Monospace),
     );
-    style.spacing.item_spacing = egui::vec2(8.0, 8.0);
-    style.spacing.button_padding = egui::vec2(12.0, 8.0);
+    style.spacing.item_spacing = egui::vec2(6.0, 4.0);
+    style.spacing.button_padding = egui::vec2(8.0, 4.0);
     ctx.set_style(style);
 }
 

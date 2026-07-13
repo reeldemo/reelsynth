@@ -1,5 +1,7 @@
-use egui::{Color32, FontId, Painter, Response, Sense, Ui, Vec2};
-use reelsynth_ui_theme::Tokens;
+use egui::{FontId, Painter, Response, Sense, Ui, Vec2};
+use reelsynth_ui_theme::{ACCENT_UI, Tokens};
+
+use crate::layout::KNOB_COL_WIDTH;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum KnobSize {
@@ -80,9 +82,8 @@ impl<'a> Knob<'a> {
         let mut changed = false;
 
         let tokens = Tokens::default();
-        let accent_ui = Color32::from_rgb(0x2a, 0x6b, 0x8a);
         let dial = self.size.diameter();
-        let col_w = 72.0_f32;
+        let col_w = KNOB_COL_WIDTH;
 
         let inner = ui.vertical(|ui| {
             ui.set_width(col_w);
@@ -91,7 +92,7 @@ impl<'a> Knob<'a> {
                 ui.label(
                     egui::RichText::new("Live")
                         .font(FontId::monospace(9.0))
-                        .color(accent_ui),
+                        .color(ACCENT_UI),
                 );
             }
 
@@ -113,17 +114,18 @@ impl<'a> Knob<'a> {
             }
 
             let norm = normalized(self.value, &self.range, self.logarithmic);
+            let hovered = enabled && response.hovered();
             paint_knob(
                 ui.painter_at(rect),
                 rect.center(),
                 dial * 0.5,
                 norm,
                 &tokens,
-                accent_ui,
                 self.style,
+                hovered,
             );
 
-            ui.add_space(4.0);
+            ui.add_space(2.0);
             ui.label(
                 egui::RichText::new(self.label)
                     .size(10.0)
@@ -136,7 +138,7 @@ impl<'a> Knob<'a> {
             };
             ui.label(
                 egui::RichText::new(display)
-                    .font(FontId::monospace(11.0))
+                    .font(FontId::monospace(10.0))
                     .color(if enabled {
                         tokens.text
                     } else {
@@ -169,18 +171,23 @@ fn paint_knob(
     radius: f32,
     norm: f32,
     tokens: &Tokens,
-    accent_ui: Color32,
     style: KnobStyle,
+    hovered: bool,
 ) {
     let disabled = matches!(style, KnobStyle::Disabled);
     let alpha = if disabled { 0.38 } else { 1.0 };
 
     let fill = tokens.surface2.gamma_multiply(alpha);
     painter.circle_filled(center, radius, fill);
-    painter.circle_stroke(center, radius, egui::Stroke::new(1.0_f32, tokens.border));
+    let border_color = if hovered && !disabled {
+        ACCENT_UI
+    } else {
+        tokens.border
+    };
+    painter.circle_stroke(center, radius, egui::Stroke::new(1.0_f32, border_color));
 
     if matches!(style, KnobStyle::Wired) {
-        painter.circle_stroke(center, radius + 1.5, egui::Stroke::new(1.0_f32, accent_ui));
+        painter.circle_stroke(center, radius + 1.5, egui::Stroke::new(1.0_f32, ACCENT_UI));
     }
 
     let arc_start = std::f32::consts::FRAC_PI_4 * 3.0; // 135°
@@ -202,7 +209,7 @@ fn paint_knob(
     let fill_color = if disabled {
         tokens.text_muted
     } else {
-        accent_ui
+        ACCENT_UI
     };
     for i in 0..value_steps {
         let t0 = i as f32 / track_steps as f32;

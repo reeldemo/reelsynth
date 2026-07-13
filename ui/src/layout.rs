@@ -3,8 +3,16 @@
 use egui::Rect;
 
 pub const GRID_UNIT: f32 = 8.0;
-pub const SPACE_SM: f32 = 12.0;
-pub const SPACE_MD: f32 = 20.0;
+pub const SPACE_SM: f32 = 8.0;
+pub const SPACE_MD: f32 = 16.0;
+
+pub const BUTTON_RADIUS: f32 = 6.0;
+pub const BUTTON_PAD_X: f32 = 10.0;
+pub const BUTTON_PAD_Y: f32 = 5.0;
+pub const BUTTON_PAD_X_COMPACT: f32 = 7.0;
+pub const BUTTON_PAD_Y_COMPACT: f32 = 3.0;
+pub const BUTTON_FONT_SIZE: f32 = 11.0;
+pub const BUTTON_FONT_SIZE_TOOL: f32 = 10.0;
 
 /// `--radius-sm` in `brand/design/tokens.css`.
 pub const RADIUS_SM: f32 = 10.0;
@@ -15,19 +23,20 @@ pub const APP_WIDTH: f32 = 1280.0;
 pub const APP_HEIGHT_COMPACT: f32 = 720.0;
 pub const APP_HEIGHT_FULL: f32 = 820.0;
 
-pub const HEADER_HEIGHT: f32 = 48.0;
-pub const FOOTER_HEIGHT: f32 = 36.0;
-pub const OSC_COLUMN_WIDTH: f32 = 280.0;
-pub const RAIL_WIDTH: f32 = 240.0;
+pub const HEADER_HEIGHT: f32 = 40.0;
+pub const FOOTER_HEIGHT: f32 = 28.0;
+pub const OSC_COLUMN_WIDTH: f32 = 252.0;
+pub const RAIL_WIDTH: f32 = 216.0;
 
-pub const KNOB_SM: f32 = 48.0;
-pub const KNOB_MD: f32 = 56.0;
-pub const KNOB_LG: f32 = 64.0;
+pub const KNOB_SM: f32 = 40.0;
+pub const KNOB_MD: f32 = 44.0;
+pub const KNOB_LG: f32 = 52.0;
+pub const KNOB_COL_WIDTH: f32 = 56.0;
 
-pub const WT_STRIP_HEIGHT: f32 = 72.0;
-pub const WT_MORPH_HEIGHT: f32 = 28.0;
-pub const WT_TOOLBAR_HEIGHT: f32 = 28.0;
-pub const WT_VIEW_MIN_HEIGHT: f32 = 140.0;
+pub const WT_STRIP_HEIGHT: f32 = 60.0;
+pub const WT_MORPH_HEIGHT: f32 = 24.0;
+pub const WT_TOOLBAR_HEIGHT: f32 = 24.0;
+pub const WT_VIEW_MIN_HEIGHT: f32 = 128.0;
 
 pub const PIANO_HEIGHT: f32 = 80.0;
 pub const PIANO_WHITE_KEY_WIDTH: f32 = 18.0;
@@ -36,9 +45,9 @@ pub const PIANO_BLACK_HEIGHT_RATIO: f32 = 0.56;
 pub const PIANO_OCTAVES: usize = 2;
 pub const PIANO_START_NOTE: u8 = 48; // C3
 
-pub const MOD_MATRIX_HEIGHT: f32 = 160.0;
-pub const FX_RACK_HEIGHT: f32 = 120.0;
-pub const SECTION_HEADER_HEIGHT: f32 = 28.0;
+pub const MOD_MATRIX_HEIGHT: f32 = 136.0;
+pub const FX_RACK_HEIGHT: f32 = 104.0;
+pub const SECTION_HEADER_HEIGHT: f32 = 24.0;
 
 /// Layout options for the performance / full shell.
 #[derive(Debug, Clone, Copy)]

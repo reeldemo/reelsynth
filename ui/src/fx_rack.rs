@@ -5,6 +5,7 @@ use reelsynth::{EffectSlot, EffectType};
 use reelsynth_ui_theme::{heading_font, Tokens};
 
 use crate::layout::{GRID_UNIT, RADIUS_SM, SPACE_SM};
+use crate::widgets::button_icon;
 
 pub const FX_SLOT_WIDTH: f32 = 160.0;
 pub const FX_SECTION_HEADER: f32 = 28.0;
@@ -299,15 +300,15 @@ fn draw_fx_slot(ui: &mut Ui, slots: &mut Vec<EffectSlotUi>, idx: usize) -> FxSlo
         |ui| {
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = 2.0;
-                if idx > 0 && ui.small_button("◀").clicked() {
+                if idx > 0 && button_icon(ui, "◀").clicked() {
                     slots.swap(idx, idx - 1);
                     changed = true;
                 }
-                if idx + 1 < slots.len() && ui.small_button("▶").clicked() {
+                if idx + 1 < slots.len() && button_icon(ui, "▶").clicked() {
                     slots.swap(idx, idx + 1);
                     changed = true;
                 }
-                if slots.len() > 1 && ui.small_button("✕").clicked() {
+                if slots.len() > 1 && button_icon(ui, "✕").clicked() {
                     slots.remove(idx);
                     changed = true;
                     return;

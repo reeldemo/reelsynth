@@ -5,8 +5,8 @@ use reelsynth_ui_theme::Tokens;
 
 use crate::layout::{GRID_UNIT, SPACE_SM};
 use crate::widgets::{
-    format_coarse, format_pan, format_unison, knob_value_label, tab_bar, Knob, KnobSize,
-    KnobStyle, panel, panel_disabled,
+    format_coarse, format_pan, format_unison, knob_value_label, labeled_cycle, tab_bar, Knob,
+    KnobSize, KnobStyle, panel, panel_disabled,
 };
 
 const OSC_TABS: [&str; 3] = ["Osc 1", "Osc 2", "Osc 3"];
@@ -128,36 +128,29 @@ pub fn draw_osc_column(ui: &mut Ui, state: OscColumnState<'_>) -> OscColumnResul
                 ui.add_space(GRID_UNIT);
 
                 let idx = (*state.osc_tab).min(2);
-                ui.horizontal(|ui| {
-                    ui.label(
-                        egui::RichText::new("Type")
-                            .size(10.0)
-                            .color(Tokens::default().text_muted),
-                    );
-                    let ty_label = OSC_TYPES[state.osc_type[idx].min(OSC_TYPES.len() - 1)];
-                    if ui.button(ty_label).clicked() {
-                        state.osc_type[idx] = (state.osc_type[idx] + 1) % OSC_TYPES.len();
-                        changed = true;
-                    }
-                });
+                let ty_label = OSC_TYPES[state.osc_type[idx].min(OSC_TYPES.len() - 1)];
+                if labeled_cycle(ui, "Type", ty_label).clicked() {
+                    state.osc_type[idx] = (state.osc_type[idx] + 1) % OSC_TYPES.len();
+                    changed = true;
+                }
 
                 ui.horizontal_centered(|ui| {
                     ui.spacing_mut().item_spacing.x = SPACE_SM;
                     let level_text = format!("{:.2}", state.osc_level[idx]);
                     let r1 = Knob::new(&mut state.osc_level[idx], 0.0..=1.0, "Level")
-                        .size(KnobSize::Md)
+                        .size(KnobSize::Sm)
                         .style(KnobStyle::Wired)
                         .value_text(level_text)
                         .show(ui);
                     let pan_text = format_pan(state.osc_pan[idx]);
                     let r2 = Knob::new(&mut state.osc_pan[idx], -1.0..=1.0, "Pan")
-                        .size(KnobSize::Md)
+                        .size(KnobSize::Sm)
                         .style(KnobStyle::Normal)
                         .value_text(pan_text)
                         .show(ui);
                     let coarse_text = format_coarse(state.osc_coarse[idx]);
                     let r3 = Knob::new(&mut state.osc_coarse[idx], -2400.0..=2400.0, "Coarse")
-                        .size(KnobSize::Md)
+                        .size(KnobSize::Sm)
                         .style(KnobStyle::Wired)
                         .value_text(coarse_text)
                         .show(ui);
@@ -180,19 +173,12 @@ pub fn draw_osc_column(ui: &mut Ui, state: OscColumnState<'_>) -> OscColumnResul
                         changed = true;
                     }
 
-                    ui.horizontal(|ui| {
-                        ui.label(
-                            egui::RichText::new("Warp")
-                                .size(10.0)
-                                .color(Tokens::default().text_muted),
-                        );
-                        let warp_label = WARP_MODES[state.osc_warp_mode[idx].min(2)];
-                        if ui.button(warp_label).clicked() {
-                            state.osc_warp_mode[idx] =
-                                (state.osc_warp_mode[idx] + 1) % WARP_MODES.len();
-                            changed = true;
-                        }
-                    });
+                    let warp_label = WARP_MODES[state.osc_warp_mode[idx].min(2)];
+                    if labeled_cycle(ui, "Warp", warp_label).clicked() {
+                        state.osc_warp_mode[idx] =
+                            (state.osc_warp_mode[idx] + 1) % WARP_MODES.len();
+                        changed = true;
+                    }
                     let warp_label_pct = state.osc_warp_amount[idx] * 100.0;
                     if param_slider(
                         ui,
@@ -238,42 +224,28 @@ pub fn draw_osc_column(ui: &mut Ui, state: OscColumnState<'_>) -> OscColumnResul
 
                 ui.add_space(GRID_UNIT);
                 panel(ui, "FM", |ui| {
-                    ui.horizontal(|ui| {
-                        ui.label(
-                            egui::RichText::new("Algo")
-                                .size(10.0)
-                                .color(Tokens::default().text_muted),
-                        );
-                        let algo_label =
-                            FM_ALGORITHMS[state.osc_fm_algorithm[idx].min(FM_ALGORITHMS.len() - 1)];
-                        if ui.button(algo_label).clicked() {
-                            state.osc_fm_algorithm[idx] =
-                                (state.osc_fm_algorithm[idx] + 1) % FM_ALGORITHMS.len();
-                            if state.osc_fm_algorithm[idx] == 0 {
-                                state.osc_fm_source[idx] = 0;
-                            } else {
-                                state.osc_fm_source[idx] = state.osc_fm_algorithm[idx];
-                            }
-                            changed = true;
+                    let algo_label =
+                        FM_ALGORITHMS[state.osc_fm_algorithm[idx].min(FM_ALGORITHMS.len() - 1)];
+                    if labeled_cycle(ui, "Algo", algo_label).clicked() {
+                        state.osc_fm_algorithm[idx] =
+                            (state.osc_fm_algorithm[idx] + 1) % FM_ALGORITHMS.len();
+                        if state.osc_fm_algorithm[idx] == 0 {
+                            state.osc_fm_source[idx] = 0;
+                        } else {
+                            state.osc_fm_source[idx] = state.osc_fm_algorithm[idx];
                         }
-                    });
+                        changed = true;
+                    }
 
-                    ui.horizontal(|ui| {
-                        ui.label(
-                            egui::RichText::new("Source")
-                                .size(10.0)
-                                .color(Tokens::default().text_muted),
-                        );
-                        let src_label = FM_SOURCES[state.osc_fm_source[idx].min(FM_SOURCES.len() - 1)];
-                        if ui.button(src_label).clicked() {
-                            state.osc_fm_source[idx] =
-                                (state.osc_fm_source[idx] + 1) % FM_SOURCES.len();
-                            state.osc_fm_algorithm[idx] = fm_algorithm_index(fm_source_from_index(
-                                state.osc_fm_source[idx],
-                            ));
-                            changed = true;
-                        }
-                    });
+                    let src_label = FM_SOURCES[state.osc_fm_source[idx].min(FM_SOURCES.len() - 1)];
+                    if labeled_cycle(ui, "Source", src_label).clicked() {
+                        state.osc_fm_source[idx] =
+                            (state.osc_fm_source[idx] + 1) % FM_SOURCES.len();
+                        state.osc_fm_algorithm[idx] = fm_algorithm_index(fm_source_from_index(
+                            state.osc_fm_source[idx],
+                        ));
+                        changed = true;
+                    }
 
                     ui.horizontal_centered(|ui| {
                         ui.spacing_mut().item_spacing.x = SPACE_SM;
