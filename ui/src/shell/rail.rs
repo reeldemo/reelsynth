@@ -5,6 +5,7 @@ use super::*;
 use super::footer::{draw_level_meter, format_cutoff};
 use super::header::sync_osc_position_from_wt;
 use crate::layout::UiScale;
+use crate::layout_audit::rail_used_rect_id;
 use crate::region::region;
 use crate::widgets::{labeled_cycle, tab_bar, Knob, KnobSize, KnobStyle, panel, panel_disabled};
 
@@ -25,6 +26,9 @@ pub(super) fn draw_rail(
                 ui.set_width(ui.available_width());
                 ui.spacing_mut().item_spacing.y = gap;
                 draw_rail_panels(ui, state, config, actions, scale);
+                // Store used rect for widget-overflow regression tests.
+                let used = ui.min_rect();
+                ui.ctx().data_mut(|d| d.insert_temp(rail_used_rect_id(), used));
             });
     });
 }
@@ -39,6 +43,7 @@ fn draw_rail_panels(
     let s = scale.ui();
     let knob_sm = if s < 0.82 { KnobSize::Sm } else { KnobSize::Sm };
     let knob_md = if s < 0.82 { KnobSize::Sm } else { KnobSize::Md };
+    let min_panel_h = 92.0 * s;
 
     if !config.show_osc_column {
         panel(ui, "Performance", |ui| {
@@ -125,78 +130,105 @@ fn draw_rail_panels(
     });
 
     if config.show_osc_column {
-        panel(ui, "Filter Envelope", |ui| {
-            adsr_graph(
-                ui,
-                state.filt_env_attack,
-                state.filt_env_decay,
-                state.filt_env_sustain,
-                state.filt_env_release,
-                s,
-            );
-            ui.add_space(GRID_UNIT * s);
-            env_knobs(
-                ui,
-                &mut state.filt_env_attack,
-                &mut state.filt_env_decay,
-                &mut state.filt_env_sustain,
-                &mut state.filt_env_release,
-                actions,
-                s,
-            );
-        });
+        // Budget panels to avoid clipping at the minimum window size.
+        if ui.available_height() > min_panel_h * 4.6 {
+            panel(ui, "Filter Envelope", |ui| {
+                adsr_graph(
+                    ui,
+                    state.filt_env_attack,
+                    state.filt_env_decay,
+                    state.filt_env_sustain,
+                    state.filt_env_release,
+                    s,
+                );
+                ui.add_space(GRID_UNIT * s);
+                env_knobs(
+                    ui,
+                    &mut state.filt_env_attack,
+                    &mut state.filt_env_decay,
+                    &mut state.filt_env_sustain,
+                    &mut state.filt_env_release,
+                    actions,
+                    s,
+                );
+            });
+        }
 
-        panel(ui, "Amp Envelope", |ui| {
-            adsr_graph(
-                ui,
-                state.env_attack,
-                state.env_decay,
-                state.env_sustain,
-                state.env_release,
-                s,
-            );
-            ui.add_space(GRID_UNIT * s);
-            env_knobs(
-                ui,
-                &mut state.env_attack,
-                &mut state.env_decay,
-                &mut state.env_sustain,
-                &mut state.env_release,
-                actions,
-                s,
-            );
-        });
+        if ui.available_height() > min_panel_h * 3.3 {
+            panel(ui, "Amp Envelope", |ui| {
+                adsr_graph(
+                    ui,
+                    state.env_attack,
+                    state.env_decay,
+                    state.env_sustain,
+                    state.env_release,
+                    s,
+                );
+                ui.add_space(GRID_UNIT * s);
+                env_knobs(
+                    ui,
+                    &mut state.env_attack,
+                    &mut state.env_decay,
+                    &mut state.env_sustain,
+                    &mut state.env_release,
+                    actions,
+                    s,
+                );
+            });
+        }
 
-        panel(ui, "LFOs", |ui| {
-            ui.columns(2, |cols| {
-                cols[0].vertical(|ui| {
-                    ui.label(egui::RichText::new("LFO 1").size(10.0).color(Tokens::default().text_muted));
-                    lfo_panel(
-                        ui,
-                        &mut state.lfo_rate,
-                        &mut state.lfo_depth,
-                        &mut state.lfo_shape,
-                        KnobStyle::Wired,
-                        actions,
-                        s,
+        if ui.available_height() > min_panel_h * 2.0 {
+            panel(ui, "LFOs", |ui| {
+                ui.spacing_mut().item_spacing.x = SPACE_SM * s;
+                let w = (ui.available_width() - SPACE_SM * s).max(0.0) * 0.5;
+                ui.horizontal(|ui| {
+                    ui.allocate_ui_with_layout(
+                        egui::vec2(w, 0.0),
+                        egui::Layout::top_down(egui::Align::Min),
+                        |ui| {
+                            ui.label(
+                                egui::RichText::new("LFO 1")
+                                    .size(10.0)
+                                    .color(Tokens::default().text_muted),
+                            );
+                            lfo_panel(
+                                ui,
+                                &mut state.lfo_rate,
+                                &mut state.lfo_depth,
+                                &mut state.lfo_shape,
+                                KnobStyle::Wired,
+                                actions,
+                                s,
+                            );
+                        },
                     );
-                });
-                cols[1].vertical(|ui| {
-                    ui.label(egui::RichText::new("LFO 2").size(10.0).color(Tokens::default().text_muted));
-                    lfo_panel(
-                        ui,
-                        &mut state.lfo2_rate,
-                        &mut state.lfo2_depth,
-                        &mut state.lfo2_shape,
-                        KnobStyle::Normal,
-                        actions,
-                        s,
+                    ui.allocate_ui_with_layout(
+                        egui::vec2(w, 0.0),
+                        egui::Layout::top_down(egui::Align::Min),
+                        |ui| {
+                            ui.label(
+                                egui::RichText::new("LFO 2")
+                                    .size(10.0)
+                                    .color(Tokens::default().text_muted),
+                            );
+                            lfo_panel(
+                                ui,
+                                &mut state.lfo2_rate,
+                                &mut state.lfo2_depth,
+                                &mut state.lfo2_shape,
+                                KnobStyle::Normal,
+                                actions,
+                                s,
+                            );
+                        },
                     );
                 });
             });
-        });
+        }
 
-        draw_level_meter(ui);
+        if ui.available_height() > 56.0 * s {
+            draw_level_meter(ui);
+        }
     } else {
         panel_disabled(ui, "Amp Envelope", |ui| {
             ui.horizontal_centered(|ui| {

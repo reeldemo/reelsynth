@@ -7,6 +7,11 @@ use crate::layout::{embed_mod_fx_in_center, ShellLayout, ShellLayoutOptions, SPA
 
 const EPS: f32 = 0.5;
 
+/// Stored in `egui::Context` temp data by `shell::rail` for tests.
+pub fn rail_used_rect_id() -> egui::Id {
+    egui::Id::new("reelsynth.audit.rail_used_rect")
+}
+
 /// Positive overlap area between two rects (0 if adjacent or disjoint).
 pub fn overlap_area(a: Rect, b: Rect) -> f32 {
     if !a.is_positive() || !b.is_positive() {

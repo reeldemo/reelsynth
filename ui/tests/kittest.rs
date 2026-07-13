@@ -8,7 +8,7 @@ use reelsynth::Patch;
 use reelsynth_ui::{
     audit_center, audit_shell, compute_center_regions, default_effect_slots, draw_shell,
     embed_mod_fx_in_center, osc_type_index, ShellLayout, ShellLayoutOptions, ShellMidiDevices,
-    ShellConfig, UiState, APP_HEIGHT_FULL, APP_MIN_WIDTH, SPACE_SM,
+    rail_used_rect_id, ShellConfig, UiState, APP_HEIGHT_FULL, APP_MIN_WIDTH, SPACE_SM,
 };
 use reelsynth_ui::widgets::{Knob, KnobSize, PianoKeyboard};
 use reelsynth_ui_theme;
@@ -182,4 +182,82 @@ fn full_shell_min_window_no_layout_overlap() {
             },
         );
     harness.run();
+}
+
+#[test]
+fn rail_widgets_within_rail_bounds_min_window() {
+    struct ShellTest {
+        fonts_applied: bool,
+        state: UiState,
+    }
+
+    let config = ShellConfig {
+        show_wt_editor: true,
+        show_osc_column: true,
+        show_mod_matrix: true,
+        show_fx_rack: true,
+    };
+    let options = ShellLayoutOptions {
+        piano_visible: true,
+        show_osc_column: true,
+        show_mod_matrix: true,
+        mod_matrix_open: true,
+        show_fx_rack: true,
+        fx_rack_open: true,
+    };
+    let screen = Rect::from_min_size(
+        egui::pos2(0.0, 0.0),
+        egui::vec2(APP_MIN_WIDTH, APP_HEIGHT_FULL),
+    );
+    let layout = ShellLayout::compute_with_options(screen, options);
+    audit_shell(&layout, screen, options);
+
+    let midi = ShellMidiDevices {
+        names: &["None".to_string()],
+        selected: 0,
+    };
+    let preview = Patch::default_mono();
+
+    let mut harness = Harness::builder()
+        .with_size([APP_MIN_WIDTH, APP_HEIGHT_FULL])
+        .build_state(
+            |ctx, test| {
+                if !test.fonts_applied {
+                    reelsynth_ui_theme::apply(ctx);
+                    test.fonts_applied = true;
+                    return;
+                }
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    let screen = ui.max_rect();
+                    let _actions = draw_shell(
+                        ui,
+                        screen,
+                        &mut test.state,
+                        None,
+                        &preview,
+                        &midi,
+                        &config,
+                        None,
+                    );
+                });
+            },
+            ShellTest {
+                fonts_applied: false,
+                state: UiState::default(),
+            },
+        );
+
+    harness.run();
+
+    let rail_bounds = layout.rail;
+    let used = harness
+        .ctx
+        .data(|d| d.get_temp::<egui::Rect>(rail_used_rect_id()))
+        .expect("rail used rect not stored");
+    assert!(
+        used.max.y <= rail_bounds.max.y + 0.5,
+        "rail content exceeds allocated height: used_max_y={} rail_max_y={} (used={used:?} rail={rail_bounds:?})",
+        used.max.y,
+        rail_bounds.max.y,
+    );
 }
