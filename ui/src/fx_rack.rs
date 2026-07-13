@@ -395,7 +395,9 @@ mod bridge_tests {
 
     #[test]
     fn effect_type_labels() {
-        let ui = EffectSlotUi::from_slot(&EffectSlot::for_type(EffectType::Distortion));
+        let mut slot = EffectSlot::for_type(EffectType::Distortion);
+        slot.bypassed = false;
+        let ui = EffectSlotUi::from_slot(&slot);
         assert!(ui.detail().contains("Drive"));
     }
 }

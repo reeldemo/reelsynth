@@ -63,7 +63,11 @@ fn osc_tab_switch_follows_state() {
 
 #[test]
 fn compact_mode_collapses_sections() {
-    let mut state = UiState::default();
+    struct ShellTest {
+        fonts_applied: bool,
+        state: UiState,
+    }
+
     let config = ShellConfig {
         show_mod_matrix: false,
         show_fx_rack: false,
@@ -74,22 +78,35 @@ fn compact_mode_collapses_sections() {
         selected: 0,
     };
     let preview = Patch::default_mono();
-    let mut harness = Harness::new(|ctx| {
-        reelsynth_ui_theme::apply(ctx);
-        egui::CentralPanel::default().show(ctx, |ui| {
-            let screen = ui.max_rect();
-            let _actions = draw_shell(
-                ui,
-                screen,
-                &mut state,
-                None,
-                &preview,
-                &midi,
-                &config,
-                None,
-            );
-        });
-    });
+    let mut harness = Harness::builder()
+        .with_size([1280.0, 720.0])
+        .build_state(
+            |ctx, test| {
+                if !test.fonts_applied {
+                    reelsynth_ui_theme::apply(ctx);
+                    test.fonts_applied = true;
+                    return;
+                }
+
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    let screen = ui.max_rect();
+                    let _actions = draw_shell(
+                        ui,
+                        screen,
+                        &mut test.state,
+                        None,
+                        &preview,
+                        &midi,
+                        &config,
+                        None,
+                    );
+                });
+            },
+            ShellTest {
+                fonts_applied: false,
+                state: UiState::default(),
+            },
+        );
     harness.run();
     assert!(!config.show_mod_matrix && !config.show_fx_rack);
 }

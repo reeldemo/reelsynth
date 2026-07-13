@@ -5,7 +5,7 @@ use reelsynth::engine::MidiEvent;
 use reelsynth::{Envelope, Macro, ModSlot, Patch, SynthEngine, WavetableBank};
 use std::sync::{Arc, RwLock};
 
-enum AudioCmd {
+pub(crate) enum AudioCmd {
   Midi(MidiEvent),
     SetWtPosition(f32),
     SetFilterCutoff(f32),

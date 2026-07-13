@@ -1,6 +1,7 @@
 //! ReelSynth standalone application state.
 
-use crate::audio_host::{start_audio, AudioCmd, AudioHandle};
+use crate::audio_commands::AudioCmd;
+use crate::audio_host::AudioHandle;
 use crate::midi_host::{MidiDevices, MidiInputHandle};
 use crossbeam_channel::{Receiver, Sender};
 use eframe::egui;

@@ -5,25 +5,13 @@ mod footer;
 mod header;
 mod rail;
 
-use std::collections::HashSet;
+use egui::{Rect, Ui};
+use reelsynth::Patch;
+use reelsynth_ui_theme::Tokens;
 
-use egui::{Color32, FontId, Rect, Ui};
-use reelsynth::{Patch, ScopeLiveTaps, WavetableBank};
-use reelsynth_ui_theme::{heading_font, Tokens};
-
-use crate::fx_rack::{draw_effect_rack, default_effect_slots, EffectRackState, EffectSlotUi};
-use crate::layout::{
-    ShellLayout, ShellLayoutOptions, GRID_UNIT, SPACE_SM, WT_MORPH_HEIGHT,
-    WT_STRIP_HEIGHT, WT_VIEW_MIN_HEIGHT,
-};
-use crate::mod_matrix::{draw_mod_matrix, default_mod_slots, ModMatrixState, ModSlotUi};
-use crate::osc_column::{draw_osc_column, osc_type_index, warp_mode_index, OscColumnState};
-use crate::scope_strip::{draw_scope_strip, ScopeStripInput, ScopeStripState, SCOPE_STRIP_HEIGHT};
-use crate::widgets::{
-    adsr_graph, format_depth, format_env_time, format_lfo_rate, format_sustain, tab_bar, Knob,
-    KnobSize, KnobStyle, PianoKeyboard, panel, panel_disabled,
-};
-use crate::wt::{morph_amount_for_position, WtEditTool, WtMorph, WtStrip, WtView2d, WtView3d, FACTORY_BANKS};
+use crate::fx_rack::{draw_effect_rack, EffectRackState};
+use crate::layout::{ShellLayout, ShellLayoutOptions};
+use crate::mod_matrix::{draw_mod_matrix, ModMatrixState};
 
 pub use crate::state::{
     ScopeStripContext, ShellActions, ShellConfig, ShellMidiDevices, UiState,
@@ -45,7 +33,7 @@ pub(super) use crate::widgets::{
     KnobSize, KnobStyle, PianoKeyboard, panel, panel_disabled,
 };
 pub(super) use crate::wt::{
-    morph_amount_for_position, WtMorph, WtStrip, WtView2d, WtView3d, FACTORY_BANKS,
+    morph_amount_for_position, WtEditTool, WtMorph, WtStrip, WtView2d, WtView3d, FACTORY_BANKS,
 };
 
 pub fn draw_shell(

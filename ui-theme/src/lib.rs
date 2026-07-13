@@ -2,6 +2,9 @@
 //! Source of truth: `brand/design/tokens.css`
 
 use egui::{Color32, FontData, FontDefinitions, FontFamily, FontId, Rounding, Stroke, Visuals};
+use std::sync::OnceLock;
+
+static HEADING_FAMILY: OnceLock<FontFamily> = OnceLock::new();
 
 /// Interactive highlight (mockups `--accent-ui`).
 pub const ACCENT_UI: Color32 = Color32::from_rgb(0x2a, 0x6b, 0x8a);
@@ -80,11 +83,10 @@ pub fn heading_font(size: f32) -> FontId {
 }
 
 fn heading_font_family() -> FontFamily {
-    if try_font(include_bytes!("../assets/fonts/IBMPlexSans-SemiBold.ttf")).is_some() {
-        FontFamily::Name("heading".into())
-    } else {
-        FontFamily::Proportional
-    }
+    HEADING_FAMILY
+        .get()
+        .cloned()
+        .unwrap_or(FontFamily::Proportional)
 }
 
 pub fn apply_fonts(ctx: &egui::Context) {
@@ -109,6 +111,7 @@ pub fn apply_fonts(ctx: &egui::Context) {
     } else {
         FontFamily::Proportional
     };
+    let _ = HEADING_FAMILY.set(heading_family.clone());
 
     if let Some(data) = try_font(include_bytes!("../assets/fonts/JetBrainsMono-Regular.ttf")) {
         fonts.font_data.insert("jetbrains".to_owned(), data.into());
