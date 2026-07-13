@@ -30,12 +30,12 @@ fn offline_vs_realtime_rms_match_single_note() {
     let gate_samples = num_samples.saturating_sub(tail_release);
 
     let mut engine = SynthEngine::new(bank, patch, sample_rate);
-    engine.note_on(57, 1.0); // A3 ≈ 220 Hz
+    engine.note_on(0, 57, 1.0); // A3 ≈ 220 Hz
 
     let mut rt = vec![0.0f32; gate_samples];
     engine.process(&mut rt);
 
-    engine.note_off(57);
+    engine.note_off(0, 57);
     let mut tail = vec![0.0f32; tail_release];
     engine.process(&mut tail);
     rt.extend(tail);
@@ -84,9 +84,9 @@ fn polyphony_mixed_notes() {
     let patch = Patch::default_mono();
     let mut engine = SynthEngine::new(bank, patch, 44100);
 
-    engine.note_on(60, 1.0);
-    engine.note_on(64, 0.8);
-    engine.note_on(67, 0.8);
+    engine.note_on(0, 60, 1.0);
+    engine.note_on(0, 64, 0.8);
+    engine.note_on(0, 67, 0.8);
 
     let mut block = vec![0.0f32; 2048];
     engine.process(&mut block);

@@ -2,12 +2,14 @@
 
 mod bank_set;
 mod midi;
+mod mpe;
 mod params;
 mod voice_pool;
 mod voice_rt;
 
 pub use bank_set::BankSet;
-pub use midi::{note_to_freq, MidiEvent};
+pub use midi::{note_to_freq, pitch_bend_from_raw, MidiEvent};
+pub use mpe::{MpeConfig, MpeState, VoiceMpe};
 pub use params::{EngineParams, Smoother};
 pub use voice_pool::{VoicePool, MAX_VOICES};
 pub use voice_rt::RtVoice;
@@ -31,6 +33,7 @@ pub struct SynthEngine {
     sample_rate: u32,
     global_time: f32,
     scope: ScopeMonitor,
+    mpe: MpeState,
 }
 
 impl SynthEngine {
@@ -48,6 +51,7 @@ impl SynthEngine {
             sample_rate,
             global_time: 0.0,
             scope: ScopeMonitor::new(),
+            mpe: MpeState::new(),
         }
     }
 
@@ -197,6 +201,32 @@ impl SynthEngine {
         self.patch.lfo.depth = depth.clamp(0.0, 1.0);
     }
 
+    pub fn set_lfo_shape(&mut self, shape: &str) {
+        self.patch.lfo.shape = shape.to_string();
+    }
+
+    pub fn set_lfo2_rate(&mut self, rate: f32) {
+        self.patch.lfo2.rate = rate.max(0.0);
+    }
+
+    pub fn set_lfo2_depth(&mut self, depth: f32) {
+        self.patch.lfo2.depth = depth.clamp(0.0, 1.0);
+    }
+
+    pub fn set_lfo2_shape(&mut self, shape: &str) {
+        self.patch.lfo2.shape = shape.to_string();
+    }
+
+    pub fn set_macro(&mut self, index: usize, value: f32) {
+        if let Some(mac) = self.patch.macros.get_mut(index) {
+            mac.value = value.clamp(0.0, 1.0);
+        }
+    }
+
+    pub fn set_macros(&mut self, macros: Vec<crate::patch::Macro>) {
+        self.patch.macros = macros;
+    }
+
     pub fn set_osc_level(&mut self, index: usize, level: f32) {
         self.patch.ensure_oscillators(index + 1);
         if let Some(osc) = self.patch.oscillators.get_mut(index) {
@@ -254,21 +284,78 @@ impl SynthEngine {
         self.set_effects(crate::fx::effects_from_bypass(&bypass));
     }
 
-    pub fn note_on(&mut self, note: u8, velocity: f32) {
+    pub fn note_on(&mut self, channel: u8, note: u8, velocity: f32) {
         let freq = note_to_freq(note);
-        self.pool
-            .note_on(&self.patch, note, freq, velocity, self.global_time);
+        let voice_mpe = self.mpe.voice_mpe(channel);
+        self.pool.note_on(
+            &self.patch,
+            channel,
+            note,
+            freq,
+            velocity,
+            self.global_time,
+            voice_mpe,
+        );
     }
 
-    pub fn note_off(&mut self, note: u8) {
-        self.pool.note_off(note);
+    pub fn note_off(&mut self, channel: u8, note: u8) {
+        self.pool.note_off(channel, note);
     }
 
     pub fn handle_event(&mut self, event: MidiEvent) {
         match event {
-            MidiEvent::NoteOn { note, velocity } => self.note_on(note, velocity),
-            MidiEvent::NoteOff { note } => self.note_off(note),
+            MidiEvent::NoteOn {
+                channel,
+                note,
+                velocity,
+            } => self.note_on(channel, note, velocity),
+            MidiEvent::NoteOff { channel, note } => self.note_off(channel, note),
+            MidiEvent::PitchBend { channel, value } => {
+                self.mpe.set_pitch_bend(channel, value);
+                let mpe = self.mpe.voice_mpe(channel);
+                self.pool.update_channel_mpe(channel, mpe);
+            }
+            MidiEvent::ChannelPressure { channel, pressure } => {
+                self.mpe.set_pressure(channel, pressure);
+                let mpe = self.mpe.voice_mpe(channel);
+                self.pool.update_channel_mpe(channel, mpe);
+            }
+            MidiEvent::PolyAftertouch {
+                channel,
+                note,
+                pressure,
+            } => {
+                self.mpe.set_pressure(channel, pressure);
+                let mpe = self.mpe.voice_mpe(channel);
+                for voice in self.pool.voices_mut() {
+                    if voice.active && voice.channel == channel && voice.note == note {
+                        voice.mpe.pressure = pressure;
+                    }
+                }
+                self.pool.update_channel_mpe(channel, mpe);
+            }
+            MidiEvent::ControlChange { channel, cc, value } => {
+                match cc {
+                    1 => self.mpe.set_modwheel(value),
+                    74 => {
+                        self.mpe.set_timbre(channel, value);
+                        let mpe = self.mpe.voice_mpe(channel);
+                        self.pool.update_channel_mpe(channel, mpe);
+                    }
+                    _ => {}
+                }
+            }
         }
+    }
+
+    /// Legacy note-on without channel (channel 0).
+    pub fn note_on_legacy(&mut self, note: u8, velocity: f32) {
+        self.note_on(0, note, velocity);
+    }
+
+    /// Legacy note-off without channel (channel 0).
+    pub fn note_off_legacy(&mut self, note: u8) {
+        self.note_off(0, note);
     }
 
     /// Render one block of mono audio into `out` (L+R average).
@@ -303,6 +390,8 @@ impl SynthEngine {
             let mut acc_l = 0.0f32;
             let mut acc_r = 0.0f32;
             let mut voices_active = false;
+            let modwheel = self.mpe.modwheel();
+            let bend_range = self.mpe.config.bend_range_semitones;
             for voice in self.pool.voices_mut() {
                 if !voice.active {
                     continue;
@@ -315,6 +404,8 @@ impl SynthEngine {
                     self.global_time,
                     dt,
                     sr,
+                    modwheel,
+                    bend_range,
                 );
                 acc_osc += stages.osc_mono;
                 acc_l += stages.filtered[0];
@@ -347,6 +438,8 @@ impl SynthEngine {
             let mut acc_l = 0.0f32;
             let mut acc_r = 0.0f32;
             let mut voices_active = false;
+            let modwheel = self.mpe.modwheel();
+            let bend_range = self.mpe.config.bend_range_semitones;
             for voice in self.pool.voices_mut() {
                 if !voice.active {
                     continue;
@@ -359,6 +452,8 @@ impl SynthEngine {
                     self.global_time,
                     dt,
                     sr,
+                    modwheel,
+                    bend_range,
                 );
                 acc_osc += stages.osc_mono;
                 acc_l += stages.filtered[0];

@@ -1,9 +1,13 @@
 //! Shared per-sample voice DSP kernel (offline + realtime).
 
 use crate::fm::{fm_mod_signal, sample_carrier_with_fm, FmSource};
-use crate::osc::{WtWarpMode};
-use crate::patch::{Envelope, Filter, Lfo, ModSlot, Oscillator, Patch};
+use crate::lfo::{lfo_for_target, lfo_value, LfoRuntime};
+use crate::modulation::{compute_macro_mods, compute_mods, merge_mods, ModSources};
+use crate::osc::WtWarpMode;
+use crate::oversample::{process_os, OS_FACTOR};
+use crate::patch::{Envelope, Filter, Lfo, Oscillator, Patch};
 use crate::wavetable::WavetableBank;
+use crate::engine::VoiceMpe;
 
 /// Per-voice DSP state shared by offline `render_note` and realtime voices.
 #[derive(Clone, Debug)]
@@ -22,6 +26,10 @@ pub struct VoiceState {
     pub noise_seed: u32,
     /// Previous-sample feedback for self-FM per osc slot.
     pub fm_feedback: [f32; 3],
+    pub lfo1_rt: LfoRuntime,
+    pub lfo2_rt: LfoRuntime,
+    /// Per-voice random mod source (latched on note on).
+    pub rand_mod: f32,
 }
 
 impl VoiceState {
@@ -45,6 +53,9 @@ impl VoiceState {
             svf2_band: 0.0,
             noise_seed: 1,
             fm_feedback: [0.0; 3],
+            lfo1_rt: LfoRuntime::default(),
+            lfo2_rt: LfoRuntime::default(),
+            rand_mod: 0.0,
         }
     }
 
@@ -68,6 +79,9 @@ impl VoiceState {
         self.svf2_band = 0.0;
         self.noise_seed = self.noise_seed.wrapping_add(1);
         self.fm_feedback = [0.0; 3];
+        self.lfo1_rt.reset();
+        self.lfo2_rt.reset();
+        self.rand_mod = pseudo_noise(self.noise_seed);
     }
 }
 
@@ -82,6 +96,9 @@ pub struct VoiceSampleContext<'a> {
     pub sample_index: u32,
     pub dt: f32,
     pub sr: f32,
+    pub modwheel: f32,
+    pub mpe: VoiceMpe,
+    pub bend_range_semitones: f32,
 }
 
 /// Per-voice signal-chain taps before the FX bus.
@@ -117,11 +134,49 @@ pub fn process_sample_stages(state: &mut VoiceState, ctx: &VoiceSampleContext<'_
         ctx.dt,
     );
 
-    let lfo = lfo_value(&ctx.patch.lfo, ctx.time);
-    let mods = compute_mods(&ctx.patch.mod_matrix, lfo, amp_env, ctx.velocity);
+    let lfo1 = lfo_value(&ctx.patch.lfo, ctx.time, &mut state.lfo1_rt);
+    let lfo2 = lfo_value(&ctx.patch.lfo2, ctx.time, &mut state.lfo2_rt);
+    let step = (ctx.time * 2.0).fract() * 2.0 - 1.0;
+
+    let macro_vals: [f32; 4] = std::array::from_fn(|i| {
+        ctx.patch
+            .macros
+            .get(i)
+            .map(|m| (m.value - 0.5) * 2.0)
+            .unwrap_or(0.0)
+    });
+
+    let sources = ModSources {
+        lfo1,
+        lfo2,
+        amp_env,
+        filt_env,
+        velocity: ctx.velocity,
+        modwheel: ctx.modwheel,
+        aftertouch: ctx.mpe.pressure,
+        pressure: ctx.mpe.pressure,
+        timbre: ctx.mpe.timbre,
+        pitch_bend: ctx.mpe.pitch_bend,
+        step,
+        rand: state.rand_mod,
+        macros: macro_vals,
+    };
+
+    let matrix_mods = compute_mods(&ctx.patch.mod_matrix, &sources);
+    let macro_mods = compute_macro_mods(&ctx.patch.macros);
+    let mods = merge_mods(matrix_mods, macro_mods);
 
     let amp_mod = mods.get("amp").copied().unwrap_or(0.0);
     let amplitude = (ctx.velocity + amp_mod).clamp(0.0, 1.0) * amp_env;
+
+    let pitch_bend_semi = ctx.mpe.pitch_bend_semitones(ctx.bend_range_semitones);
+    let pitch_bend_mod = mods
+        .get("pitch_bend")
+        .or_else(|| mods.get("osc1_detune"))
+        .copied()
+        .unwrap_or(0.0);
+    let base_freq = ctx.freq
+        * 2.0f32.powf((pitch_bend_semi + pitch_bend_mod / 1200.0) / 12.0);
 
     let mut left = 0.0f32;
     let mut right = 0.0f32;
@@ -149,9 +204,17 @@ pub fn process_sample_stages(state: &mut VoiceState, ctx: &VoiceSampleContext<'_
             .get(&format!("osc{}_fm_index", oi + 1))
             .copied()
             .unwrap_or(0.0);
-        let wt_pos = wt_position(osc, pos_mod, lfo, &ctx.patch.lfo, bank.num_frames);
+        let wt_pos = wt_position(osc, pos_mod, lfo1, lfo2, &ctx.patch.lfo, &ctx.patch.lfo2, bank.num_frames);
         let det_mod = mods
             .get(&format!("osc{}_detune", oi + 1))
+            .copied()
+            .unwrap_or(0.0);
+        let pan_mod = mods
+            .get(&format!("osc{}_pan", oi + 1))
+            .copied()
+            .unwrap_or(0.0);
+        let level_mod = mods
+            .get(&format!("osc{}_level", oi + 1))
             .copied()
             .unwrap_or(0.0);
         let unison = osc.unison.max(1) as usize;
@@ -160,8 +223,11 @@ pub fn process_sample_stages(state: &mut VoiceState, ctx: &VoiceSampleContext<'_
         let fm_source = FmSource::from_str(&osc.fm_source);
         let fm_ratio = osc.fm_ratio.clamp(0.5, 16.0);
         let fm_index = (osc.fm_index + fm_index_mod
-            + lfo_for_target(&ctx.patch.lfo, lfo, &format!("osc{}_fm_index", oi + 1)))
+            + lfo_for_target(&ctx.patch.lfo, lfo1, &format!("osc{}_fm_index", oi + 1))
+            + lfo_for_target(&ctx.patch.lfo2, lfo2, &format!("osc{}_fm_index", oi + 1)))
         .clamp(0.0, 10.0);
+
+        let osc_level = (osc.level + level_mod).clamp(0.0, 1.0);
 
         for u in 0..unison {
             let det_spread = if unison > 1 {
@@ -175,7 +241,7 @@ pub fn process_sample_stages(state: &mut VoiceState, ctx: &VoiceSampleContext<'_
                 0.0
             };
             let det = osc.detune + det_mod + det_spread;
-            let osc_freq = ctx.freq * 2.0f32.powf(det / 1200.0);
+            let osc_freq = base_freq * 2.0f32.powf(det / 1200.0);
             let phase_inc = osc_freq / ctx.sr;
             let phase = &mut state.phases[phase_idx];
             *phase += phase_inc;
@@ -183,19 +249,7 @@ pub fn process_sample_stages(state: &mut VoiceState, ctx: &VoiceSampleContext<'_
                 *phase -= 1.0;
             }
 
-            let mod_signal = fm_mod_signal(
-                fm_source,
-                oi,
-                &ctx.patch.oscillators,
-                ctx.banks,
-                ctx.bank_for_osc,
-                *phase,
-                fm_ratio,
-                phase_inc,
-                state.fm_feedback[oi],
-            );
-
-            let raw = sample_carrier_with_fm(
+            let raw = process_os_fm(
                 osc,
                 bank,
                 *phase,
@@ -203,14 +257,18 @@ pub fn process_sample_stages(state: &mut VoiceState, ctx: &VoiceSampleContext<'_
                 wt_pos,
                 warp,
                 warp_amount,
-                mod_signal,
+                fm_source,
+                oi,
+                ctx,
+                fm_ratio,
                 fm_index,
+                state,
             );
             state.fm_feedback[oi] = raw;
 
-            let osc_sample = raw * osc.level * amplitude / unison as f32;
+            let osc_sample = raw * osc_level * amplitude / unison as f32;
 
-            let (pan_l, pan_r) = equal_power_pan(osc.pan + pan_spread);
+            let (pan_l, pan_r) = equal_power_pan(osc.pan + pan_mod + pan_spread);
             left += osc_sample * pan_l;
             right += osc_sample * pan_r;
             phase_idx += 1;
@@ -233,13 +291,16 @@ pub fn process_sample_stages(state: &mut VoiceState, ctx: &VoiceSampleContext<'_
     let filt_env_level = filt_env;
 
     let cutoff_mod = mods.get("filter_cutoff").copied().unwrap_or(0.0)
-        + lfo_for_target(&ctx.patch.lfo, lfo, "cutoff") * ctx.patch.filter.cutoff;
-    let res_mod = mods.get("filter_resonance").copied().unwrap_or(0.0);
+        + lfo_for_target(&ctx.patch.lfo, lfo1, "cutoff") * ctx.patch.filter.cutoff
+        + lfo_for_target(&ctx.patch.lfo2, lfo2, "cutoff") * ctx.patch.filter.cutoff
+        + ctx.mpe.timbre * 2000.0;
+    let res_mod = mods.get("filter_resonance").copied().unwrap_or(0.0)
+        + ctx.mpe.timbre * 0.15;
 
     let cutoff1 = compute_cutoff(
         &ctx.patch.filter,
         cutoff_mod,
-        ctx.freq,
+        base_freq,
         filt_env_level,
         ctx.sr,
     );
@@ -248,14 +309,17 @@ pub fn process_sample_stages(state: &mut VoiceState, ctx: &VoiceSampleContext<'_
     let cutoff2 = compute_cutoff(
         &ctx.patch.filter2,
         cutoff_mod * 0.5,
-        ctx.freq,
+        base_freq,
         filt_env_level,
         ctx.sr,
     );
-    let resonance2 = ctx.patch.filter2.resonance.clamp(0.0, 0.95);
+    let resonance2 = (ctx.patch.filter2.resonance + res_mod * 0.5).clamp(0.0, 0.95);
 
-    let driven_l = soft_drive(left, ctx.patch.filter.drive);
-    let driven_r = soft_drive(right, ctx.patch.filter2.drive.max(ctx.patch.filter.drive));
+    let driven_l = process_os(left, |sample, _| soft_drive(sample, ctx.patch.filter.drive));
+    let driven_r = process_os(
+        right,
+        |sample, _| soft_drive(sample, ctx.patch.filter2.drive.max(ctx.patch.filter.drive)),
+    );
     let filtered_l = svf_filter(
         &mut state.svf_low,
         &mut state.svf_band,
@@ -265,6 +329,8 @@ pub fn process_sample_stages(state: &mut VoiceState, ctx: &VoiceSampleContext<'_
         &ctx.patch.filter.filter_type,
         ctx.sr,
         ctx.patch.filter.drive,
+        ctx.dt,
+        0,
     );
     let filtered_r = svf_filter(
         &mut state.svf2_low,
@@ -275,6 +341,8 @@ pub fn process_sample_stages(state: &mut VoiceState, ctx: &VoiceSampleContext<'_
         &ctx.patch.filter2.filter_type,
         ctx.sr,
         ctx.patch.filter2.drive,
+        ctx.dt,
+        0,
     );
 
     let osc_mono = (left + right) * 0.5;
@@ -287,11 +355,56 @@ pub fn process_sample_stages(state: &mut VoiceState, ctx: &VoiceSampleContext<'_
     }
 }
 
+fn process_os_fm(
+    osc: &Oscillator,
+    bank: &WavetableBank,
+    phase: f32,
+    phase_inc: f32,
+    wt_pos: f32,
+    warp: WtWarpMode,
+    warp_amount: f32,
+    fm_source: FmSource,
+    oi: usize,
+    ctx: &VoiceSampleContext<'_>,
+    fm_ratio: f32,
+    fm_index: f32,
+    state: &mut VoiceState,
+) -> f32 {
+    process_os(0.0, |_, os_idx| {
+        let sub_inc = phase_inc / OS_FACTOR as f32;
+        let sub_phase = (phase + sub_inc * os_idx as f32).fract();
+        let mod_signal = fm_mod_signal(
+            fm_source,
+            oi,
+            &ctx.patch.oscillators,
+            ctx.banks,
+            ctx.bank_for_osc,
+            sub_phase,
+            fm_ratio,
+            sub_inc,
+            state.fm_feedback[oi],
+        );
+        sample_carrier_with_fm(
+            osc,
+            bank,
+            sub_phase,
+            sub_inc,
+            wt_pos,
+            warp,
+            warp_amount,
+            mod_signal,
+            fm_index,
+        )
+    })
+}
+
 fn wt_position(
     osc: &Oscillator,
     pos_mod: f32,
-    lfo: f32,
-    lfo_cfg: &Lfo,
+    lfo1: f32,
+    lfo2: f32,
+    lfo1_cfg: &Lfo,
+    lfo2_cfg: &Lfo,
     num_frames: usize,
 ) -> f32 {
     let max_pos = (num_frames.saturating_sub(1)).max(1) as f32;
@@ -300,7 +413,11 @@ fn wt_position(
     } else {
         osc.position
     };
-    (morph_pos + pos_mod + lfo_for_target(lfo_cfg, lfo, "wt_position")).clamp(0.0, max_pos)
+    (morph_pos
+        + pos_mod
+        + lfo_for_target(lfo1_cfg, lfo1, "wt_position")
+        + lfo_for_target(lfo2_cfg, lfo2, "wt_position"))
+    .clamp(0.0, max_pos)
 }
 
 fn soft_drive(input: f32, drive: f32) -> f32 {
@@ -391,6 +508,8 @@ fn svf_filter(
     mode: &str,
     sr: f32,
     drive: f32,
+    _dt: f32,
+    _os_idx: usize,
 ) -> f32 {
     let driven = if drive > 0.0 {
         (input * (1.0 + drive * 2.0)).tanh()
@@ -419,41 +538,6 @@ fn svf_filter(
     } else {
         out
     }
-}
-
-fn lfo_value(lfo: &Lfo, t: f32) -> f32 {
-    (t * lfo.rate * std::f32::consts::TAU * 2.0).sin() * lfo.depth
-}
-
-fn lfo_for_target(lfo: &Lfo, value: f32, target: &str) -> f32 {
-    if lfo.target == target {
-        value
-    } else {
-        0.0
-    }
-}
-
-fn compute_mods(
-    slots: &[ModSlot],
-    lfo: f32,
-    env: f32,
-    velocity: f32,
-) -> std::collections::HashMap<String, f32> {
-    let mut out = std::collections::HashMap::new();
-    for slot in slots {
-        if !slot.enabled {
-            continue;
-        }
-        let src = match slot.source.as_str() {
-            "lfo1" | "lfo" => lfo,
-            "env1" | "env" => env,
-            "velocity" | "vel" => velocity,
-            "modwheel" => 0.0,
-            _ => 0.0,
-        };
-        *out.entry(slot.target.clone()).or_insert(0.0) += src * slot.amount;
-    }
-    out
 }
 
 fn pseudo_noise(seed: u32) -> f32 {
@@ -486,6 +570,9 @@ mod tests {
             sample_index: 0,
             dt,
             sr: 44100.0,
+            modwheel: 0.0,
+            mpe: VoiceMpe::default(),
+            bend_range_semitones: 48.0,
         }
     }
 
@@ -674,5 +761,78 @@ mod tests {
             diff += (l1 - l2).abs();
         }
         assert!(diff > 0.01, "mod fm diff={diff}");
+    }
+
+    #[test]
+    fn lfo2_mod_matrix_applies() {
+        let bank = WavetableBank::factory_sine();
+        let mut patch = Patch::default_mono();
+        patch.lfo2.rate = 8.0;
+        patch.lfo2.depth = 1.0;
+        patch.mod_matrix.push(crate::patch::ModSlot {
+            source: "lfo2".into(),
+            target: "filter_cutoff".into(),
+            amount: 0.5,
+            enabled: true,
+        });
+        let mut dry = Patch::default_mono();
+        dry.mod_matrix.clear();
+
+        let mut v_wet = VoiceState::new(&patch);
+        let mut v_dry = VoiceState::new(&dry);
+        let dt = 1.0 / 44100.0;
+        let mut diff = 0.0f32;
+        for i in 0..4410 {
+            let t = i as f32 * dt;
+            let wet = process_sample(&mut v_wet, &single_bank_ctx(&bank, &patch, 440.0, true, 1.0, t, dt));
+            let dry_s = process_sample(&mut v_dry, &single_bank_ctx(&bank, &dry, 440.0, true, 1.0, t, dt));
+            diff += (wet[0] - dry_s[0]).abs();
+        }
+        assert!(diff > 0.1, "lfo2 mod diff={diff}");
+    }
+
+    #[test]
+    fn mpe_pitch_bend_shifts_pitch() {
+        let bank = WavetableBank::factory_sine();
+        let patch = Patch::default_mono();
+        let dt = 1.0 / 44100.0;
+        let mut center = VoiceState::new(&patch);
+        let mut bent = VoiceState::new(&patch);
+        let mut diff = 0.0f32;
+        for i in 0..4410 {
+            let t = i as f32 * dt;
+            let mut ctx_c = single_bank_ctx(&bank, &patch, 440.0, true, 1.0, t, dt);
+            let mut ctx_b = single_bank_ctx(&bank, &patch, 440.0, true, 1.0, t, dt);
+            ctx_b.mpe.pitch_bend = 0.5;
+            let [l_c, _] = process_sample(&mut center, &ctx_c);
+            let [l_b, _] = process_sample(&mut bent, &ctx_b);
+            if i > 500 {
+                diff += (l_c - l_b).abs();
+            }
+        }
+        assert!(diff > 0.01, "mpe bend diff={diff}");
+    }
+
+    #[test]
+    fn macro_changes_cutoff() {
+        let bank = WavetableBank::factory_saw_morph();
+        let mut patch = Patch::default_mono();
+        patch.macros[0].value = 1.0;
+        patch.macros[0].target = "filter_cutoff".into();
+        patch.macros[0].amount = 1.0;
+        let mut dry = patch.clone();
+        dry.macros[0].value = 0.0;
+
+        let mut v_wet = VoiceState::new(&patch);
+        let mut v_dry = VoiceState::new(&dry);
+        let dt = 1.0 / 44100.0;
+        let mut diff = 0.0f32;
+        for i in 0..4410 {
+            let t = i as f32 * dt;
+            let wet = process_sample(&mut v_wet, &single_bank_ctx(&bank, &patch, 440.0, true, 1.0, t, dt));
+            let dry_s = process_sample(&mut v_dry, &single_bank_ctx(&bank, &dry, 440.0, true, 1.0, t, dt));
+            diff += (wet[0] - dry_s[0]).abs();
+        }
+        assert!(diff > 0.1, "macro diff={diff}");
     }
 }

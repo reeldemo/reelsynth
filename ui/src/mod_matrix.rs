@@ -215,6 +215,10 @@ fn ui_source_to_engine(label: &str) -> Option<String> {
             "After" => "aftertouch",
             "Step" => "step",
             "Rand" => "rand",
+            "M1" => "macro1",
+            "M2" => "macro2",
+            "M3" => "macro3",
+            "M4" => "macro4",
             other => other,
         }
         .into(),
@@ -231,6 +235,10 @@ fn engine_source_to_ui(source: &str) -> &'static str {
         "aftertouch" => "After",
         "step" => "Step",
         "rand" => "Rand",
+        "macro1" | "m1" => "M1",
+        "macro2" | "m2" => "M2",
+        "macro3" | "m3" => "M3",
+        "macro4" | "m4" => "M4",
         _ => "LFO 1",
     }
 }

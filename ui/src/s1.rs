@@ -99,6 +99,10 @@ pub struct S1State {
     pub filt_env_release: f32,
     pub lfo_rate: f32,
     pub lfo_depth: f32,
+    pub lfo_shape: usize,
+    pub lfo2_rate: f32,
+    pub lfo2_depth: f32,
+    pub lfo2_shape: usize,
     pub mod_matrix_open: bool,
     pub fx_rack_open: bool,
     pub mod_routes: Vec<ModRouteUi>,
@@ -170,6 +174,10 @@ impl Default for S1State {
             filt_env_release: 0.5,
             lfo_rate: 2.4,
             lfo_depth: 0.0,
+            lfo_shape: 0,
+            lfo2_rate: 1.0,
+            lfo2_depth: 0.0,
+            lfo2_shape: 0,
             mod_matrix_open: true,
             fx_rack_open: true,
             mod_routes: default_mod_routes(),
@@ -944,6 +952,53 @@ fn draw_rail(
                                 .value_text(depth_text)
                                 .show(ui);
                             if r1.changed || r2.changed {
+                                actions.params_changed = true;
+                            }
+                        });
+                        ui.horizontal(|ui| {
+                            ui.label(
+                                egui::RichText::new("Shape")
+                                    .size(10.0)
+                                    .color(Tokens::default().text_muted),
+                            );
+                            let shapes = ["Sine", "Tri", "Saw", "S&H"];
+                            let label = shapes[state.lfo_shape.min(3)];
+                            if ui.button(label).clicked() {
+                                state.lfo_shape = (state.lfo_shape + 1) % shapes.len();
+                                actions.params_changed = true;
+                            }
+                        });
+                    });
+
+                    panel(ui, "LFO 2", |ui| {
+                        ui.horizontal_centered(|ui| {
+                            ui.spacing_mut().item_spacing.x = SPACE_SM;
+                            let rate_text = format_lfo_rate(state.lfo2_rate);
+                            let depth_text = format_depth(state.lfo2_depth);
+                            let r1 = Knob::new(&mut state.lfo2_rate, 0.05..=20.0, "Rate")
+                                .size(KnobSize::Sm)
+                                .style(KnobStyle::Normal)
+                                .value_text(rate_text)
+                                .show(ui);
+                            let r2 = Knob::new(&mut state.lfo2_depth, 0.0..=1.0, "Depth")
+                                .size(KnobSize::Sm)
+                                .style(KnobStyle::Normal)
+                                .value_text(depth_text)
+                                .show(ui);
+                            if r1.changed || r2.changed {
+                                actions.params_changed = true;
+                            }
+                        });
+                        ui.horizontal(|ui| {
+                            ui.label(
+                                egui::RichText::new("Shape")
+                                    .size(10.0)
+                                    .color(Tokens::default().text_muted),
+                            );
+                            let shapes = ["Sine", "Tri", "Saw", "S&H"];
+                            let label = shapes[state.lfo2_shape.min(3)];
+                            if ui.button(label).clicked() {
+                                state.lfo2_shape = (state.lfo2_shape + 1) % shapes.len();
                                 actions.params_changed = true;
                             }
                         });

@@ -6,14 +6,14 @@ use crossbeam_channel::{Receiver, Sender, TryRecvError};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use eframe::egui;
 use midi_input::{MidiDevices, MidiInputHandle};
-use reelsynth::{import::{import_serum_fxp, import_vital, import_wav_folder}, load_preset, resolve_bank_for_preset, Envelope, ModSlot, Patch, ScopeMonitor, SynthEngine, WavetableBank};
+use reelsynth::{import::{import_serum_fxp, import_vital, import_wav_folder}, load_preset, resolve_bank_for_preset, Envelope, Macro, ModSlot, Patch, ScopeMonitor, SynthEngine, WavetableBank};
+use reelsynth::engine::MidiEvent;
 use reelsynth_ui::{draw_s1, factory_bank, factory_label, fm_algorithm_index, fm_source_from_index, fm_source_index, fx_slots_from_effects, fx_slots_to_effects, mod_routes_from_slots, mod_routes_to_slots, osc_type_from_index, osc_type_index, warp_mode_from_index, warp_mode_index, APP_HEIGHT_FULL, S1MidiDevices, S1ShellConfig, S1State, ScopeStripContext, ScopeStripState};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 
 enum AudioCmd {
-    NoteOn(u8, f32),
-    NoteOff(u8),
+  Midi(MidiEvent),
     SetWtPosition(f32),
     SetFilterCutoff(f32),
     SetFilterResonance(f32),
@@ -21,7 +21,9 @@ enum AudioCmd {
     SetFilterKeyTracking(f32),
     SetEnvelope(Envelope),
     SetFilterEnvelope(Envelope),
-    SetLfo { rate: f32, depth: f32 },
+    SetLfo { rate: f32, depth: f32, shape: String },
+    SetLfo2 { rate: f32, depth: f32, shape: String },
+    SetMacros(Vec<Macro>),
     SetOsc {
         index: usize,
         level: f32,
@@ -170,8 +172,7 @@ fn drain_commands(
 ) {
     loop {
         match rx.try_recv() {
-            Ok(AudioCmd::NoteOn(n, v)) => engine.note_on(n, v),
-            Ok(AudioCmd::NoteOff(n)) => engine.note_off(n),
+            Ok(AudioCmd::Midi(event)) => engine.handle_event(event),
             Ok(AudioCmd::SetWtPosition(p)) => engine.set_wt_position(p),
             Ok(AudioCmd::SetFilterCutoff(c)) => engine.set_filter_cutoff(c),
             Ok(AudioCmd::SetFilterResonance(r)) => engine.set_filter_resonance(r),
@@ -179,10 +180,17 @@ fn drain_commands(
             Ok(AudioCmd::SetFilterKeyTracking(kt)) => engine.set_filter_key_tracking(kt),
             Ok(AudioCmd::SetEnvelope(e)) => engine.set_envelope(e),
             Ok(AudioCmd::SetFilterEnvelope(e)) => engine.set_filter_envelope(e),
-            Ok(AudioCmd::SetLfo { rate, depth }) => {
+            Ok(AudioCmd::SetLfo { rate, depth, shape }) => {
                 engine.set_lfo_rate(rate);
                 engine.set_lfo_depth(depth);
+                engine.set_lfo_shape(&shape);
             }
+            Ok(AudioCmd::SetLfo2 { rate, depth, shape }) => {
+                engine.set_lfo2_rate(rate);
+                engine.set_lfo2_depth(depth);
+                engine.set_lfo2_shape(&shape);
+            }
+            Ok(AudioCmd::SetMacros(macros)) => engine.set_macros(macros),
             Ok(AudioCmd::SetOsc {
                 index,
                 level,
@@ -262,6 +270,24 @@ fn resolve_bank(path: &Path, preset: &Patch) -> Result<WavetableBank, String> {
     })
 }
 
+fn lfo_shape_from_index(idx: usize) -> &'static str {
+    match idx {
+        1 => "tri",
+        2 => "saw",
+        3 => "sh",
+        _ => "sine",
+    }
+}
+
+fn lfo_shape_index(shape: &str) -> usize {
+    match shape.to_ascii_lowercase().as_str() {
+        "tri" | "triangle" => 1,
+        "saw" => 2,
+        "sh" | "s&h" => 3,
+        _ => 0,
+    }
+}
+
 fn sync_state_from_patch(state: &mut S1State, patch: &Patch) {
     state.preset_name = patch.name.clone();
     state.preset_category = preset_category_label(patch);
@@ -332,6 +358,13 @@ fn sync_state_from_patch(state: &mut S1State, patch: &Patch) {
     state.filt_env_release = patch.filter_envelope.release;
     state.lfo_rate = patch.lfo.rate;
     state.lfo_depth = patch.lfo.depth;
+    state.lfo_shape = lfo_shape_index(&patch.lfo.shape);
+    state.lfo2_rate = patch.lfo2.rate;
+    state.lfo2_depth = patch.lfo2.depth;
+    state.lfo2_shape = lfo_shape_index(&patch.lfo2.shape);
+    for (i, mac) in patch.macros.iter().enumerate().take(4) {
+        state.macro_values[i] = mac.value;
+    }
     state.mod_routes = mod_routes_from_slots(&patch.mod_matrix);
     state.mod_route_total = state.mod_routes.len().max(24);
     state.fx_slots = fx_slots_from_effects(&patch.effects);
@@ -415,6 +448,13 @@ fn patch_from_state(state: &S1State, base: &Patch) -> Patch {
     };
     patch.lfo.rate = state.lfo_rate;
     patch.lfo.depth = state.lfo_depth;
+    patch.lfo.shape = lfo_shape_from_index(state.lfo_shape).into();
+    patch.lfo2.rate = state.lfo2_rate;
+    patch.lfo2.depth = state.lfo2_depth;
+    patch.lfo2.shape = lfo_shape_from_index(state.lfo2_shape).into();
+    for (i, mac) in patch.macros.iter_mut().enumerate().take(4) {
+        mac.value = state.macro_values[i];
+    }
     patch.sub_level = state.sub_level;
     patch.noise_level = state.noise_level;
     patch.mod_matrix = mod_routes_to_slots(&state.mod_routes);
@@ -432,7 +472,7 @@ fn main() -> eframe::Result<()> {
     };
 
     let midi_devices = MidiDevices::enumerate();
-    let (midi_note_tx, midi_note_rx) = crossbeam_channel::unbounded::<(u8, bool, f32)>();
+    let (midi_event_tx, midi_event_rx) = crossbeam_channel::unbounded::<MidiEvent>();
 
     eframe::run_native(
         "ReelSynth",
@@ -448,8 +488,8 @@ fn main() -> eframe::Result<()> {
             Ok(Box::new(ReelSynthApp::new(
                 audio.clone(),
                 midi_devices,
-                midi_note_tx,
-                midi_note_rx,
+                midi_event_tx,
+                midi_event_rx,
             )))
         }),
     )
@@ -464,8 +504,8 @@ struct ReelSynthApp {
     midi_devices: MidiDevices,
     midi_selected: usize,
     midi_handle: MidiInputHandle,
-    midi_note_tx: Sender<(u8, bool, f32)>,
-    midi_note_rx: Receiver<(u8, bool, f32)>,
+    midi_event_tx: Sender<MidiEvent>,
+    midi_event_rx: Receiver<MidiEvent>,
     scope: ScopeMonitor,
     scope_strip_state: ScopeStripState,
 }
@@ -474,8 +514,8 @@ impl ReelSynthApp {
     fn new(
         audio: Option<Arc<AudioHandle>>,
         midi_devices: MidiDevices,
-        midi_note_tx: Sender<(u8, bool, f32)>,
-        midi_note_rx: Receiver<(u8, bool, f32)>,
+        midi_event_tx: Sender<MidiEvent>,
+        midi_event_rx: Receiver<MidiEvent>,
     ) -> Self {
         let status = if audio.is_some() {
             "Audio OK — click keys, QWERTY (Z–M), or MIDI".into()
@@ -501,8 +541,8 @@ impl ReelSynthApp {
             midi_devices,
             midi_selected: 0,
             midi_handle,
-            midi_note_tx,
-            midi_note_rx,
+            midi_event_tx,
+            midi_event_rx,
             scope,
             scope_strip_state: ScopeStripState::default(),
         }
@@ -511,7 +551,7 @@ impl ReelSynthApp {
     fn note_on(&mut self, note: u8, velocity: f32) {
         if self.state.keys_down.insert(note) {
             if let Some(a) = &self.audio {
-                a.send(AudioCmd::NoteOn(note, velocity));
+                a.send(AudioCmd::Midi(MidiEvent::note_on(0, note, velocity)));
             }
         }
     }
@@ -519,7 +559,7 @@ impl ReelSynthApp {
     fn note_off(&mut self, note: u8) {
         if self.state.keys_down.remove(&note) {
             if let Some(a) = &self.audio {
-                a.send(AudioCmd::NoteOff(note));
+                a.send(AudioCmd::Midi(MidiEvent::note_off(0, note)));
             }
         }
     }
@@ -556,7 +596,18 @@ impl ReelSynthApp {
             a.send(AudioCmd::SetLfo {
                 rate: self.state.lfo_rate,
                 depth: self.state.lfo_depth,
+                shape: lfo_shape_from_index(self.state.lfo_shape).into(),
             });
+            a.send(AudioCmd::SetLfo2 {
+                rate: self.state.lfo2_rate,
+                depth: self.state.lfo2_depth,
+                shape: lfo_shape_from_index(self.state.lfo2_shape).into(),
+            });
+            let mut macros = self.current_patch.macros.clone();
+            for (i, mac) in macros.iter_mut().enumerate().take(4) {
+                mac.value = self.state.macro_values[i];
+            }
+            a.send(AudioCmd::SetMacros(macros));
             for i in 0..3 {
                 a.send(AudioCmd::SetOsc {
                     index: i,
@@ -596,7 +647,7 @@ impl ReelSynthApp {
         self.midi_handle = match MidiInputHandle::connect(
             &self.midi_devices,
             index,
-            self.midi_note_tx.clone(),
+            self.midi_event_tx.clone(),
         ) {
             Ok(h) => {
                 let label = self
@@ -917,11 +968,16 @@ fn keyboard_note(key: egui::Key) -> Option<u8> {
 
 impl eframe::App for ReelSynthApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        while let Ok((note, on, vel)) = self.midi_note_rx.try_recv() {
-            if on {
-                self.note_on(note, vel.max(0.05));
-            } else {
-                self.note_off(note);
+        while let Ok(event) = self.midi_event_rx.try_recv() {
+            if let Some(a) = &self.audio {
+                a.send(AudioCmd::Midi(event));
+            }
+            if let MidiEvent::NoteOn { note, velocity, .. } = event {
+                self.state.keys_down.insert(note);
+                let _ = velocity;
+            }
+            if let MidiEvent::NoteOff { note, .. } = event {
+                self.state.keys_down.remove(&note);
             }
         }
 

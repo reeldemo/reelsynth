@@ -89,7 +89,7 @@ impl WavetableBank {
         if frac < 1e-6 || idx0 == idx1 {
             s0
         } else {
-            linear_crossfade(s0, s1, frac)
+            spectral_crossfade(s0, s1, frac)
         }
     }
 
@@ -276,6 +276,29 @@ fn linear_crossfade(a: f32, b: f32, t: f32) -> f32 {
     a * (1.0 - t) + b * t
 }
 
+/// Spectral-power crossfade: interpolates energy while preserving phase from dominant frame.
+/// Reduces beating vs linear amplitude blend when morphing wavetable frames.
+fn spectral_crossfade(a: f32, b: f32, t: f32) -> f32 {
+    let t = t.clamp(0.0, 1.0);
+    if t < 1e-6 {
+        return a;
+    }
+    if t > 1.0 - 1e-6 {
+        return b;
+    }
+    let power = (1.0 - t) * a * a + t * b * b;
+    let sign = if (1.0 - t) * a.abs() >= t * b.abs() {
+        a.signum()
+    } else {
+        b.signum()
+    };
+    if sign == 0.0 {
+        power.sqrt() * if a + b >= 0.0 { 1.0 } else { -1.0 }
+    } else {
+        sign * power.sqrt()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -287,6 +310,16 @@ mod tests {
         bank.apply_pencil_segment(0, 0.03, 0.2, 0.05, 0.8);
         let after = bank.frame(0)[64];
         assert!((after - before).abs() > 0.01);
+    }
+
+    #[test]
+    fn spectral_differs_from_linear() {
+        let a = 0.8_f32;
+        let b = -0.6_f32;
+        let t = 0.5;
+        let lin = linear_crossfade(a, b, t);
+        let spec = spectral_crossfade(a, b, t);
+        assert!((lin - spec).abs() > 0.01);
     }
 
     #[test]

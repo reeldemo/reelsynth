@@ -1,5 +1,6 @@
 //! Realtime voice state wrapping the shared DSP kernel.
 
+use crate::engine::mpe::VoiceMpe;
 use crate::patch::Patch;
 use crate::voice::VoiceState;
 
@@ -8,6 +9,7 @@ use crate::voice::VoiceState;
 pub struct RtVoice {
     pub state: VoiceState,
     pub note: u8,
+    pub channel: u8,
     pub freq: f32,
     pub velocity: f32,
     pub gate: bool,
@@ -15,6 +17,7 @@ pub struct RtVoice {
     pub age: u64,
     pub sample_counter: u32,
     pub start_time: f32,
+    pub mpe: VoiceMpe,
 }
 
 impl RtVoice {
@@ -22,6 +25,7 @@ impl RtVoice {
         Self {
             state: VoiceState::new(patch),
             note: 0,
+            channel: 0,
             freq: 0.0,
             velocity: 0.0,
             gate: false,
@@ -29,18 +33,30 @@ impl RtVoice {
             age: 0,
             sample_counter: 0,
             start_time: 0.0,
+            mpe: VoiceMpe::default(),
         }
     }
 
-    pub fn trigger(&mut self, patch: &Patch, note: u8, freq: f32, velocity: f32, start_time: f32) {
+    pub fn trigger(
+        &mut self,
+        patch: &Patch,
+        channel: u8,
+        note: u8,
+        freq: f32,
+        velocity: f32,
+        start_time: f32,
+        mpe: VoiceMpe,
+    ) {
         self.state.reset(patch);
         self.note = note;
+        self.channel = channel;
         self.freq = freq;
         self.velocity = velocity;
         self.gate = true;
         self.active = true;
         self.sample_counter = 0;
         self.start_time = start_time;
+        self.mpe = mpe;
     }
 
     pub fn release(&mut self) {
@@ -59,9 +75,20 @@ impl RtVoice {
         global_time: f32,
         dt: f32,
         sr: f32,
+        modwheel: f32,
+        bend_range_semitones: f32,
     ) -> [f32; 2] {
-        self.process_sample_stages(banks, bank_for_osc, patch, global_time, dt, sr)
-            .filtered
+        self.process_sample_stages(
+            banks,
+            bank_for_osc,
+            patch,
+            global_time,
+            dt,
+            sr,
+            modwheel,
+            bend_range_semitones,
+        )
+        .filtered
     }
 
     pub fn process_sample_stages(
@@ -72,6 +99,8 @@ impl RtVoice {
         global_time: f32,
         dt: f32,
         sr: f32,
+        modwheel: f32,
+        bend_range_semitones: f32,
     ) -> crate::voice::VoiceStageSample {
         if !self.active {
             return crate::voice::VoiceStageSample::default();
@@ -88,6 +117,9 @@ impl RtVoice {
             sample_index: self.sample_counter,
             dt,
             sr,
+            modwheel,
+            mpe: self.mpe,
+            bend_range_semitones,
         };
         let sample = crate::voice::process_sample_stages(&mut self.state, &ctx);
         self.sample_counter = self.sample_counter.wrapping_add(1);

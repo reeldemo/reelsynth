@@ -39,6 +39,9 @@ pub fn render_note(
             sample_index: i as u32,
             dt: 1.0 / sr,
             sr,
+            modwheel: 0.0,
+            mpe: crate::engine::VoiceMpe::default(),
+            bend_range_semitones: 48.0,
         };
         let [l, r] = process_sample(&mut voice, &ctx);
         out[i] = (l + r) * 0.5;

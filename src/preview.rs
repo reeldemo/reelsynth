@@ -70,6 +70,9 @@ pub fn render_scope_previews(
                 sample_index: i as u32,
                 dt: 1.0 / PREVIEW_SR,
                 sr: PREVIEW_SR,
+                modwheel: 0.0,
+                mpe: crate::engine::VoiceMpe::default(),
+                bend_range_semitones: 48.0,
             };
             let stages = process_sample_stages(&mut voices[vi], &ctx);
             osc_sum += stages.osc_mono;

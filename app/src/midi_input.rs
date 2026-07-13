@@ -1,7 +1,8 @@
-//! MIDI input device enumeration and note routing (S1).
+//! MIDI input device enumeration and MPE-capable note routing (S6).
 
 use crossbeam_channel::Sender;
 use midir::{Ignore, MidiInput, MidiInputConnection};
+use reelsynth::engine::{pitch_bend_from_raw, MidiEvent};
 
 pub struct MidiDevices {
     pub names: Vec<String>,
@@ -36,7 +37,7 @@ impl MidiInputHandle {
     pub fn connect(
         devices: &MidiDevices,
         index: usize,
-        note_tx: Sender<(u8, bool, f32)>,
+        event_tx: Sender<MidiEvent>,
     ) -> Result<Self, String> {
         if index == 0 {
             return Ok(Self::disconnected());
@@ -64,18 +65,47 @@ impl MidiInputHandle {
                         return;
                     }
                     let status = message[0] & 0xF0;
+                    let channel = message[0] & 0x0F;
                     let note = message[1];
                     match status {
                         0x90 if message.len() >= 3 => {
                             let vel = message[2];
                             if vel > 0 {
-                                let _ = note_tx.send((note, true, vel as f32 / 127.0));
+                                let _ = event_tx.send(MidiEvent::note_on(
+                                    channel,
+                                    note,
+                                    vel as f32 / 127.0,
+                                ));
                             } else {
-                                let _ = note_tx.send((note, false, 0.0));
+                                let _ = event_tx.send(MidiEvent::note_off(channel, note));
                             }
                         }
                         0x80 => {
-                            let _ = note_tx.send((note, false, 0.0));
+                            let _ = event_tx.send(MidiEvent::note_off(channel, note));
+                        }
+                        0xE0 if message.len() >= 3 => {
+                            let bend = pitch_bend_from_raw(message[1], message[2]);
+                            let _ = event_tx.send(MidiEvent::PitchBend { channel, value: bend });
+                        }
+                        0xD0 if message.len() >= 2 => {
+                            let _ = event_tx.send(MidiEvent::ChannelPressure {
+                                channel,
+                                pressure: message[1] as f32 / 127.0,
+                            });
+                        }
+                        0xA0 if message.len() >= 3 => {
+                            let _ = event_tx.send(MidiEvent::PolyAftertouch {
+                                channel,
+                                note,
+                                pressure: message[2] as f32 / 127.0,
+                            });
+                        }
+                        0xB0 if message.len() >= 3 => {
+                            let _ = event_tx.send(MidiEvent::ControlChange {
+                                channel,
+                                cc: note,
+                                value: message[2] as f32 / 127.0,
+                            });
                         }
                         _ => {}
                     }

@@ -1,4 +1,4 @@
-//! Left oscillator column (S3) — Osc1–3 tabs, sub/noise + macro stubs.
+//! Left oscillator column (S3) — Osc1–3 tabs, sub/noise + macro knobs.
 
 use egui::Ui;
 use reelsynth_ui_theme::Tokens;
@@ -317,25 +317,21 @@ pub fn draw_osc_column(ui: &mut Ui, state: OscColumnState<'_>) -> OscColumnResul
                 });
             });
 
-            panel_disabled(ui, "Macros", |ui| {
+            panel(ui, "Macros", |ui| {
                 ui.horizontal_wrapped(|ui| {
                     ui.spacing_mut().item_spacing.x = SPACE_SM;
                     for (i, label) in ["M1", "M2", "M3", "M4"].iter().enumerate() {
-                        let mut v = state.macro_values[i];
-                        Knob::new(&mut v, 0.0..=1.0, label)
+                        let text = format!("{:.0}%", state.macro_values[i] * 100.0);
+                        let r = Knob::new(&mut state.macro_values[i], 0.0..=1.0, label)
                             .size(KnobSize::Sm)
-                            .style(KnobStyle::Disabled)
-                            .value_text("—")
+                            .style(KnobStyle::Wired)
+                            .value_text(text)
                             .show(ui);
+                        if r.changed {
+                            changed = true;
+                        }
                     }
                 });
-                ui.add_space(4.0);
-                let tokens = Tokens::default();
-                ui.label(
-                    egui::RichText::new("Macro routing ships in S6")
-                        .size(10.0)
-                        .color(tokens.text_muted),
-                );
             });
         });
 

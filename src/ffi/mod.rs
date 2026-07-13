@@ -67,7 +67,7 @@ pub unsafe extern "C" fn reelsynth_note_on(
     }
     (*handle)
         .engine
-        .note_on(note, velocity as f32 / 127.0);
+        .note_on(0, note, velocity as f32 / 127.0);
 }
 
 /// Trigger note off.
@@ -79,7 +79,7 @@ pub unsafe extern "C" fn reelsynth_note_off(handle: *mut ReelsynthHandle, note: 
     if handle.is_null() {
         return;
     }
-    (*handle).engine.note_off(note);
+    (*handle).engine.note_off(0, note);
 }
 
 /// Destroy a synth instance created by `reelsynth_create`.

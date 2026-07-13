@@ -178,6 +178,13 @@ pub struct Lfo {
     pub depth: f32,
     #[serde(default = "default_lfo_target")]
     pub target: String,
+    /// Waveform: sine | tri | saw | sh
+    #[serde(default = "default_lfo_shape")]
+    pub shape: String,
+}
+
+fn default_lfo_shape() -> String {
+    "sine".into()
 }
 
 fn default_lfo_rate() -> f32 {
@@ -193,8 +200,65 @@ impl Default for Lfo {
             rate: default_lfo_rate(),
             depth: 0.0,
             target: default_lfo_target(),
+            shape: default_lfo_shape(),
         }
     }
+}
+
+/// Macro knob with direct destination routing (S6).
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Macro {
+    #[serde(default = "default_macro_value")]
+    pub value: f32,
+    #[serde(default = "default_macro_target")]
+    pub target: String,
+    #[serde(default = "default_macro_amount")]
+    pub amount: f32,
+}
+
+fn default_macro_value() -> f32 {
+    0.5
+}
+fn default_macro_target() -> String {
+    "filter_cutoff".into()
+}
+fn default_macro_amount() -> f32 {
+    0.5
+}
+
+impl Default for Macro {
+    fn default() -> Self {
+        Self {
+            value: default_macro_value(),
+            target: default_macro_target(),
+            amount: default_macro_amount(),
+        }
+    }
+}
+
+pub fn default_macros() -> Vec<Macro> {
+    vec![
+        Macro {
+            target: "filter_cutoff".into(),
+            amount: 0.6,
+            ..Macro::default()
+        },
+        Macro {
+            target: "osc1_position".into(),
+            amount: 0.5,
+            ..Macro::default()
+        },
+        Macro {
+            target: "osc1_fm_index".into(),
+            amount: 0.4,
+            ..Macro::default()
+        },
+        Macro {
+            target: "filter_resonance".into(),
+            amount: 0.35,
+            ..Macro::default()
+        },
+    ]
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -233,6 +297,10 @@ pub struct Patch {
     pub filter_envelope: Envelope,
     #[serde(default)]
     pub lfo: Lfo,
+    #[serde(default)]
+    pub lfo2: Lfo,
+    #[serde(default = "default_macros")]
+    pub macros: Vec<Macro>,
     #[serde(default)]
     pub mod_matrix: Vec<ModSlot>,
     #[serde(default)]
@@ -342,6 +410,8 @@ impl Patch {
             envelope: Envelope::default(),
             filter_envelope: default_filter_envelope(),
             lfo: Lfo::default(),
+            lfo2: Lfo::default(),
+            macros: default_macros(),
             mod_matrix: vec![],
             effects: crate::fx::default_effects(),
             fx_bypass: crate::fx::FxBypass::default(),
@@ -524,6 +594,7 @@ impl Patch {
                 rate: 0.35,
                 depth: 0.15,
                 target: "osc1_fm_index".into(),
+                shape: default_lfo_shape(),
             },
             mod_matrix: vec![ModSlot {
                 source: "lfo1".into(),
@@ -694,6 +765,25 @@ fn migrate_v1_to_v2(v: &mut Value) {
 
     obj.entry("unison_stereo_spread")
         .or_insert(Value::Number(serde_json::Number::from_f64(0.7).unwrap()));
+
+    if !obj.contains_key("lfo2") {
+        obj.insert("lfo2".into(), serde_json::to_value(Lfo::default()).unwrap());
+    }
+    if !obj.contains_key("macros") {
+        obj.insert(
+            "macros".into(),
+            serde_json::to_value(default_macros()).unwrap(),
+        );
+    }
+
+    if let Some(lfo) = obj.get_mut("lfo").and_then(|l| l.as_object_mut()) {
+        lfo.entry("shape")
+            .or_insert(Value::String("sine".into()));
+    }
+    if let Some(lfo) = obj.get_mut("lfo2").and_then(|l| l.as_object_mut()) {
+        lfo.entry("shape")
+            .or_insert(Value::String("sine".into()));
+    }
 
     if let Some(arr) = obj.get_mut("oscillators").and_then(|a| a.as_array_mut()) {
         for osc in arr {
