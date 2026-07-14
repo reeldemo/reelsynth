@@ -79,6 +79,87 @@ pub fn osc_fx_used_rect_id() -> egui::Id {
     egui::Id::new("reelsynth.audit.osc_fx_used_rect")
 }
 
+pub fn osc_fx_allocated_rect_id() -> egui::Id {
+    egui::Id::new("reelsynth.audit.osc_fx_allocated_rect")
+}
+
+pub fn rail_filter_used_rect_id() -> egui::Id {
+    egui::Id::new("reelsynth.audit.rail_filter_used_rect")
+}
+
+pub fn rail_filter_allocated_rect_id() -> egui::Id {
+    egui::Id::new("reelsynth.audit.rail_filter_allocated_rect")
+}
+
+pub fn rail_mod_allocated_rect_id() -> egui::Id {
+    egui::Id::new("reelsynth.audit.rail_mod_allocated_rect")
+}
+
+/// Positive area of a rect (0 when empty or negative).
+pub fn rect_area(rect: Rect) -> f32 {
+    if !rect.is_positive() {
+        0.0
+    } else {
+        rect.width() * rect.height()
+    }
+}
+
+/// Fraction of `allocated` covered by `used` (intersection area / allocated area).
+pub fn utilization(allocated: Rect, used: Rect) -> f32 {
+    let alloc = rect_area(allocated);
+    if alloc <= EPS {
+        return 1.0;
+    }
+    rect_area(allocated.intersect(used)) / alloc
+}
+
+/// Fail when panel content uses less than `min_ratio` of its allocated bounds.
+pub fn assert_min_utilization(label: &str, allocated: Rect, used: Rect, min_ratio: f32) {
+    assert!(
+        allocated.is_positive(),
+        "{label}: allocated rect must be positive ({allocated:?})"
+    );
+    assert!(
+        used.is_positive(),
+        "{label}: used rect must be positive ({used:?})"
+    );
+    assert!(
+        used.width() > EPS && used.height() > EPS,
+        "{label}: used rect has no area ({used:?})"
+    );
+    let util = utilization(allocated, used);
+    assert!(
+        util >= min_ratio - 0.01,
+        "{label}: utilization {:.1}% below minimum {:.0}% (allocated={allocated:?} used={used:?})",
+        util * 100.0,
+        min_ratio * 100.0,
+    );
+}
+
+/// Whitespace heuristics for embedded sidebar panels at default window size.
+pub fn audit_panel_utilization(ctx: &egui::Context, min_ratio: f32) {
+    ctx.data(|d| {
+        if let (Some(allocated), Some(used)) = (
+            d.get_temp::<Rect>(osc_fx_allocated_rect_id()),
+            d.get_temp::<Rect>(osc_fx_used_rect_id()),
+        ) {
+            assert_min_utilization("osc fx sidebar", allocated, used, min_ratio);
+        }
+        if let (Some(allocated), Some(used)) = (
+            d.get_temp::<Rect>(rail_mod_allocated_rect_id()),
+            d.get_temp::<Rect>(rail_mod_used_rect_id()),
+        ) {
+            assert_min_utilization("rail mod matrix", allocated, used, min_ratio);
+        }
+        if let (Some(allocated), Some(used)) = (
+            d.get_temp::<Rect>(rail_filter_allocated_rect_id()),
+            d.get_temp::<Rect>(rail_filter_used_rect_id()),
+        ) {
+            assert_min_utilization("rail filter panel", allocated, used, min_ratio);
+        }
+    });
+}
+
 /// Positive overlap area between two rects (0 if adjacent or disjoint).
 pub fn overlap_area(a: Rect, b: Rect) -> f32 {
     if !a.is_positive() || !b.is_positive() {
@@ -207,11 +288,24 @@ pub fn audit_center(
 }
 
 #[cfg(test)]
-mod tests {
+    mod tests {
     use super::*;
     use crate::center_layout::compute_center_regions;
     use crate::layout::{APP_HEIGHT_FULL, APP_MIN_WIDTH};
     use crate::state::ShellConfig;
+
+    #[test]
+    fn rect_utilization_full_coverage() {
+        let allocated = Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(100.0, 50.0));
+        let used = Rect::from_min_size(egui::pos2(10.0, 5.0), egui::vec2(80.0, 40.0));
+        assert!((utilization(allocated, used) - 0.64).abs() < 0.01);
+    }
+
+    #[test]
+    fn rect_utilization_empty_used() {
+        let allocated = Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(100.0, 50.0));
+        assert_eq!(utilization(allocated, Rect::NOTHING), 0.0);
+    }
 
     fn full_options() -> ShellLayoutOptions {
         ShellLayoutOptions {

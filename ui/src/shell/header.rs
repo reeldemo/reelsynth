@@ -5,7 +5,7 @@ use reelsynth_ui_theme::Tokens;
 use super::*;
 use crate::fx_rack::{draw_effect_rack_sidebar, EffectRackState};
 use crate::layout::UiScale;
-use crate::layout_audit::{header_used_rect_id, osc_fx_used_rect_id, osc_used_rect_id};
+use crate::layout_audit::{header_used_rect_id, osc_fx_allocated_rect_id, osc_fx_used_rect_id, osc_used_rect_id};
 use crate::osc_column::{draw_osc_column, OscColumnInput, OscColumnState};
 use crate::region::region;
 use crate::widgets::{button_ghost, button_toggle, menu_action, menu_divider, menu_section_label, menu_selectable, reel_combo, select_value_text, styled_menu_body};
@@ -179,7 +179,7 @@ pub(super) fn draw_osc(
     region(ui, rect, |ui| {
         let s = scale.ui();
         let fx_h = if config.show_fx_rack {
-            (132.0 * s).min(rect.height() * 0.38).max(88.0 * s)
+            (148.0 * s).min(rect.height() * 0.42).max(96.0 * s)
         } else {
             0.0
         };
@@ -248,8 +248,10 @@ pub(super) fn draw_osc(
                 actions.params_changed = true;
             }
             let used = ui.min_rect().intersect(fx_rect);
-            ui.ctx()
-                .data_mut(|d| d.insert_temp(osc_fx_used_rect_id(), used));
+            ui.ctx().data_mut(|d| {
+                d.insert_temp(osc_fx_allocated_rect_id(), fx_rect);
+                d.insert_temp(osc_fx_used_rect_id(), used);
+            });
         }
 
         let used = ui.min_rect().intersect(rect);

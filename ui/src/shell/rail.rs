@@ -1,14 +1,19 @@
-use egui::{Rect, Ui};
+use egui::{Grid, Rect, Ui};
 use reelsynth_ui_theme::Tokens;
 
 use super::*;
 use super::footer::{draw_level_meter, format_cutoff};
 use super::header::sync_osc_position_from_wt;
 use crate::layout::{CENTER_GAP, UiScale};
-use crate::layout_audit::{rail_mod_used_rect_id, rail_used_rect_id};
+use crate::layout_audit::{
+    rail_filter_allocated_rect_id, rail_filter_used_rect_id, rail_mod_allocated_rect_id,
+    rail_mod_used_rect_id, rail_used_rect_id,
+};
 use crate::mod_matrix::{draw_mod_matrix, ModMatrixState};
 use crate::region::region;
-use crate::widgets::{labeled_select, tab_bar, Knob, KnobSize, KnobStyle, panel, panel_disabled};
+use crate::widgets::{
+    labeled_select, tab_bar, Knob, KnobResponse, KnobSize, KnobStyle, panel, panel_disabled,
+};
 
 pub(super) fn draw_rail(
     ui: &mut Ui,
@@ -79,6 +84,7 @@ fn draw_rail_panels(
     }
 
     panel(ui, "Filter", |ui| {
+        let filter_body_top = ui.cursor().min.y;
         if config.show_osc_column {
             let prev = state.filter_mode;
             tab_bar(ui, &["LP", "HP", "BP", "Notch"], &mut state.filter_mode);
@@ -91,6 +97,17 @@ fn draw_rail_panels(
             ui.horizontal_wrapped(|ui| {
                 ui.spacing_mut().item_spacing = egui::vec2(SPACE_SM * s, SPACE_SM * s);
                 draw_filter_knobs_row(ui, state, config, actions, knob_md, knob_sm, s);
+            });
+        }
+        if config.show_osc_column {
+            let used = ui.min_rect();
+            let allocated = Rect::from_min_max(
+                egui::pos2(ui.max_rect().min.x, filter_body_top),
+                egui::pos2(ui.max_rect().max.x, used.max.y),
+            );
+            ui.ctx().data_mut(|d| {
+                d.insert_temp(rail_filter_used_rect_id(), used);
+                d.insert_temp(rail_filter_allocated_rect_id(), allocated);
             });
         }
     });
@@ -203,9 +220,10 @@ fn draw_rail_panels(
             if result.changed {
                 actions.params_changed = true;
             }
-            let used = mod_rect.intersect(ui.min_rect()).intersect(rail_rect);
-            ui.ctx()
-                .data_mut(|d| d.insert_temp(rail_mod_used_rect_id(), used));
+            ui.ctx().data_mut(|d| {
+                d.insert_temp(rail_mod_allocated_rect_id(), mod_rect);
+                d.insert_temp(rail_mod_used_rect_id(), mod_rect);
+            });
         } else if ui.available_height() > 40.0 * s {
             draw_level_meter(ui);
         }
@@ -249,40 +267,45 @@ fn env_knobs(
     actions: &mut ShellActions,
     scale: f32,
 ) {
-    ui.horizontal_centered(|ui| {
-        ui.spacing_mut().item_spacing.x = SPACE_SM * scale;
-        let a_text = format_env_time(*attack);
-        let r_a = Knob::new(attack, 0.001..=2.0, "A")
+    let gap = SPACE_SM * scale * 0.5;
+    Grid::new(ui.id().with("env_knobs"))
+        .num_columns(2)
+        .spacing([gap, gap])
+        .min_col_width((ui.available_width() - gap) * 0.5)
+        .show(ui, |ui| {
+            let a_text = format_env_time(*attack);
+            let r_a = env_knob_cell(ui, attack, 0.001..=2.0, "A", a_text, scale);
+            let d_text = format_env_time(*decay);
+            let r_d = env_knob_cell(ui, decay, 0.001..=2.0, "D", d_text, scale);
+            ui.end_row();
+            let s_text = format_sustain(*sustain);
+            let r_s = env_knob_cell(ui, sustain, 0.0..=1.0, "S", s_text, scale);
+            let r_text = format_env_time(*release);
+            let r_r = env_knob_cell(ui, release, 0.001..=3.0, "R", r_text, scale);
+            ui.end_row();
+            if r_a.changed || r_d.changed || r_s.changed || r_r.changed {
+                actions.params_changed = true;
+            }
+        });
+}
+
+fn env_knob_cell(
+    ui: &mut Ui,
+    value: &mut f32,
+    range: std::ops::RangeInclusive<f32>,
+    label: &str,
+    value_text: String,
+    scale: f32,
+) -> KnobResponse {
+    ui.vertical_centered(|ui| {
+        Knob::new(value, range, label)
             .size(KnobSize::Sm)
             .scale(scale)
             .style(KnobStyle::Wired)
-            .value_text(a_text)
-            .show(ui);
-        let d_text = format_env_time(*decay);
-        let r_d = Knob::new(decay, 0.001..=2.0, "D")
-            .size(KnobSize::Sm)
-            .scale(scale)
-            .style(KnobStyle::Wired)
-            .value_text(d_text)
-            .show(ui);
-        let s_text = format_sustain(*sustain);
-        let r_s = Knob::new(sustain, 0.0..=1.0, "S")
-            .size(KnobSize::Sm)
-            .scale(scale)
-            .style(KnobStyle::Wired)
-            .value_text(s_text)
-            .show(ui);
-        let r_text = format_env_time(*release);
-        let r_r = Knob::new(release, 0.001..=3.0, "R")
-            .size(KnobSize::Sm)
-            .scale(scale)
-            .style(KnobStyle::Wired)
-            .value_text(r_text)
-            .show(ui);
-        if r_a.changed || r_d.changed || r_s.changed || r_r.changed {
-            actions.params_changed = true;
-        }
-    });
+            .value_text(value_text)
+            .show(ui)
+    })
+    .inner
 }
 
 fn draw_filter_knobs_compact(
@@ -291,64 +314,80 @@ fn draw_filter_knobs_compact(
     actions: &mut ShellActions,
     scale: f32,
 ) {
-    let gap = SPACE_SM * scale * 0.35;
-    let col_w = ((ui.available_width() - gap) * 0.5).max(0.0);
-    ui.horizontal(|ui| {
-        ui.spacing_mut().item_spacing.x = gap;
-        ui.allocate_ui_with_layout(
-            egui::vec2(col_w, 0.0),
-            egui::Layout::top_down(egui::Align::Center),
-            |ui| {
-                ui.spacing_mut().item_spacing.y = gap;
-                let cutoff_text = format_cutoff(state.filter_cutoff);
-                let r1 = Knob::new(&mut state.filter_cutoff, 40.0..=12000.0, "Cutoff")
-                    .size(KnobSize::Sm)
-                    .scale(scale)
-                    .style(KnobStyle::Wired)
-                    .show_wired_badge(false)
-                    .logarithmic(true)
-                    .value_text(cutoff_text)
-                    .show(ui);
-                let res_text = format!("{:.2}", state.filter_resonance);
-                let r2 = Knob::new(&mut state.filter_resonance, 0.0..=0.95, "Res")
-                    .size(KnobSize::Sm)
-                    .scale(scale)
-                    .style(KnobStyle::Wired)
-                    .show_wired_badge(false)
-                    .value_text(res_text)
-                    .show(ui);
-                if r1.changed || r2.changed {
-                    actions.params_changed = true;
-                }
-            },
-        );
-        ui.allocate_ui_with_layout(
-            egui::vec2(col_w, 0.0),
-            egui::Layout::top_down(egui::Align::Center),
-            |ui| {
-                ui.spacing_mut().item_spacing.y = gap;
-                let drive_text = format!("{:.0}%", state.filter_drive * 100.0);
-                let r_drive = Knob::new(&mut state.filter_drive, 0.0..=1.0, "Drive")
-                    .size(KnobSize::Sm)
-                    .scale(scale)
-                    .style(KnobStyle::Wired)
-                    .show_wired_badge(false)
-                    .value_text(drive_text)
-                    .show(ui);
-                let key_text = format!("{:.0}%", state.filter_key_tracking * 100.0);
-                let r3 = Knob::new(&mut state.filter_key_tracking, 0.0..=1.0, "Key")
-                    .size(KnobSize::Sm)
-                    .scale(scale)
-                    .style(KnobStyle::Wired)
-                    .show_wired_badge(false)
-                    .value_text(key_text)
-                    .show(ui);
-                if r_drive.changed || r3.changed {
-                    actions.params_changed = true;
-                }
-            },
-        );
-    });
+    let gap = SPACE_SM * scale * 0.5;
+    Grid::new(ui.id().with("filter_knobs"))
+        .num_columns(2)
+        .spacing([gap, gap])
+        .min_col_width((ui.available_width() - gap) * 0.5)
+        .show(ui, |ui| {
+            let cutoff_text = format_cutoff(state.filter_cutoff);
+            let r1 = filter_knob_cell(
+                ui,
+                &mut state.filter_cutoff,
+                40.0..=12000.0,
+                "Cutoff",
+                cutoff_text,
+                scale,
+                true,
+            );
+            let drive_text = format!("{:.0}%", state.filter_drive * 100.0);
+            let r_drive = filter_knob_cell(
+                ui,
+                &mut state.filter_drive,
+                0.0..=1.0,
+                "Drive",
+                drive_text,
+                scale,
+                false,
+            );
+            ui.end_row();
+            let res_text = format!("{:.2}", state.filter_resonance);
+            let r2 = filter_knob_cell(
+                ui,
+                &mut state.filter_resonance,
+                0.0..=0.95,
+                "Res",
+                res_text,
+                scale,
+                false,
+            );
+            let key_text = format!("{:.0}%", state.filter_key_tracking * 100.0);
+            let r3 = filter_knob_cell(
+                ui,
+                &mut state.filter_key_tracking,
+                0.0..=1.0,
+                "Key",
+                key_text,
+                scale,
+                false,
+            );
+            ui.end_row();
+            if r1.changed || r2.changed || r_drive.changed || r3.changed {
+                actions.params_changed = true;
+            }
+        });
+}
+
+fn filter_knob_cell(
+    ui: &mut Ui,
+    value: &mut f32,
+    range: std::ops::RangeInclusive<f32>,
+    label: &str,
+    value_text: String,
+    scale: f32,
+    logarithmic: bool,
+) -> KnobResponse {
+    ui.vertical_centered(|ui| {
+        Knob::new(value, range, label)
+            .size(KnobSize::Sm)
+            .scale(scale)
+            .style(KnobStyle::Wired)
+            .show_wired_badge(false)
+            .logarithmic(logarithmic)
+            .value_text(value_text)
+            .show(ui)
+    })
+    .inner
 }
 
 fn draw_filter_knobs_row(

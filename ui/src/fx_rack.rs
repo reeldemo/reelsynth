@@ -286,36 +286,54 @@ fn draw_effect_rack_grid(
 ) {
     let s = scale.ui();
     let gap = GRID_UNIT * s * 0.75;
-    let col_w = ((ui.available_width() - gap) * 0.5).max(72.0 * s);
-    let compact_metrics = FxMetrics {
+    let total_w = ui.available_width();
+    let col_w = ((total_w - gap) * 0.5).max(72.0 * s);
+    let card_h = metrics.card_height.max(48.0 * s);
+    let controls_h = metrics.controls_height;
+    let column_h = card_h + gap * 0.5 + controls_h;
+    let grid_metrics = FxMetrics {
         slot_width: col_w,
-        card_height: (44.0 * s).clamp(36.0 * s, 52.0 * s),
-        controls_height: 16.0 * s,
-        column_height: (44.0 * s).clamp(36.0 * s, 52.0 * s) + gap + 16.0 * s,
+        card_height: card_h,
+        controls_height: controls_h,
+        column_height: column_h,
         add_width: col_w,
         header_h: metrics.header_h,
     };
 
-    let mut idx = 0usize;
-    while idx < state.slots.len() {
+    let cell_count = state.slots.len() + 1;
+    let rows = cell_count.div_ceil(2);
+    for row in 0..rows {
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = gap;
-            for _col in 0..2 {
-                if idx < state.slots.len() {
-                    if draw_fx_slot_column(ui, &mut state.slots, idx, compact_metrics).changed {
-                        *changed = true;
-                    }
-                    idx += 1;
-                }
+            for col in 0..2 {
+                let cell = row * 2 + col;
+                ui.allocate_ui_with_layout(
+                    egui::vec2(col_w, column_h),
+                    egui::Layout::top_down(egui::Align::Min),
+                    |ui| {
+                        ui.set_min_width(col_w);
+                        ui.set_max_width(col_w);
+                        if cell < state.slots.len() {
+                            if draw_fx_slot_column(ui, &mut state.slots, cell, grid_metrics)
+                                .changed
+                            {
+                                *changed = true;
+                            }
+                        } else if cell == state.slots.len() {
+                            if draw_add_slot(ui, grid_metrics).clicked() {
+                                state.slots.push(EffectSlotUi::from_slot(
+                                    &EffectSlot::chorus(),
+                                ));
+                                *changed = true;
+                            }
+                        }
+                    },
+                );
             }
         });
-        ui.add_space(gap * 0.5);
-    }
-    if draw_add_slot(ui, compact_metrics).clicked() {
-        state
-            .slots
-            .push(EffectSlotUi::from_slot(&EffectSlot::chorus()));
-        *changed = true;
+        if row + 1 < rows {
+            ui.add_space(gap * 0.5);
+        }
     }
 }
 

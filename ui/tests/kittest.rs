@@ -6,13 +6,15 @@ use egui::Rect;
 use egui_kittest::Harness;
 use reelsynth::Patch;
 use reelsynth_ui::{
-    audit_center, audit_shell, compute_center_regions, default_effect_slots, draw_shell,
-    embed_piano_in_center, osc_type_index, ShellLayout, ShellLayoutOptions, ShellMidiDevices,
-    center_morph_used_rect_id, center_piano_used_rect_id, center_scope_used_rect_id,
-    center_strip_used_rect_id, center_used_rect_id, center_views_used_rect_id,
-    footer_used_rect_id, fx_strip_used_rect_id, header_used_rect_id, mod_strip_used_rect_id,
-    osc_fx_used_rect_id, osc_used_rect_id, rail_mod_used_rect_id, rail_used_rect_id, ShellConfig,
-    UiState, APP_HEIGHT_FULL, APP_MIN_WIDTH, SPACE_SM,
+    audit_center, audit_panel_utilization, audit_shell, compute_center_regions, default_effect_slots,
+    draw_shell, embed_piano_in_center, osc_type_index, ShellLayout, ShellLayoutOptions,
+    ShellMidiDevices, center_morph_used_rect_id, center_piano_used_rect_id,
+    center_scope_used_rect_id, center_strip_used_rect_id, center_used_rect_id,
+    center_views_used_rect_id, footer_used_rect_id, fx_strip_used_rect_id, header_used_rect_id,
+    mod_strip_used_rect_id, osc_fx_allocated_rect_id, osc_fx_used_rect_id, osc_used_rect_id,
+    rail_filter_allocated_rect_id, rail_filter_used_rect_id, rail_mod_allocated_rect_id,
+    rail_mod_used_rect_id, rail_used_rect_id, ShellConfig, UiState, APP_HEIGHT_FULL, APP_MIN_WIDTH,
+    SPACE_SM, utilization,
 };
 use reelsynth_ui::widgets::{Knob, KnobSize, PianoKeyboard};
 use reelsynth_ui_theme;
@@ -415,7 +417,12 @@ fn interface_used_rects_within_allocated_min_window() {
     assert!(fits_max_slack(layout.osc, osc_fx_used, 12.0));
 
     let rail_mod_used = get_used(&harness.ctx, rail_mod_used_rect_id(), "rail mod");
-    assert!(fits_max_slack(layout.rail, rail_mod_used, 12.0));
+    assert!(
+        rail_mod_used.min.x >= layout.rail.min.x - 12.0
+            && rail_mod_used.max.x <= layout.rail.max.x + 12.0,
+        "rail mod matrix extends outside rail column: used={rail_mod_used:?} rail={:?}",
+        layout.rail
+    );
 
     let piano_region_used = get_used(&harness.ctx, center_piano_used_rect_id(), "center piano widget");
     assert!(fits_max_slack(center_regions.piano, piano_region_used, 12.0));
@@ -423,4 +430,91 @@ fn interface_used_rects_within_allocated_min_window() {
     // Bottom strips only exist when not in sidebars; should be absent here.
     assert!(harness.ctx.data(|d| d.get_temp::<egui::Rect>(mod_strip_used_rect_id())).is_none());
     assert!(harness.ctx.data(|d| d.get_temp::<egui::Rect>(fx_strip_used_rect_id())).is_none());
+}
+
+const PANEL_UTIL_MIN: f32 = 0.50;
+
+struct ShellHarnessTest {
+    fonts_applied: bool,
+    state: UiState,
+}
+
+#[test]
+fn panel_whitespace_utilization_at_1280x880() {
+    let options = ShellLayoutOptions {
+        piano_visible: true,
+        show_osc_column: true,
+        show_mod_matrix: true,
+        mod_matrix_open: true,
+        show_fx_rack: true,
+        fx_rack_open: true,
+    };
+    let screen = Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(1280.0, 880.0));
+    let layout = ShellLayout::compute_with_options(screen, options);
+    audit_shell(&layout, screen, options);
+
+    let config = ShellConfig {
+        show_wt_editor: true,
+        show_osc_column: true,
+        show_mod_matrix: true,
+        show_fx_rack: true,
+    };
+    let midi = ShellMidiDevices {
+        names: &["None".to_string()],
+        selected: 0,
+    };
+    let preview = Patch::default_mono();
+
+    let mut harness = Harness::builder()
+        .with_size([1280.0, 880.0])
+        .build_state(
+            |ctx, test| {
+                if !test.fonts_applied {
+                    reelsynth_ui_theme::apply(ctx);
+                    test.fonts_applied = true;
+                    return;
+                }
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    let screen = ui.max_rect();
+                    let _actions = draw_shell(
+                        ui,
+                        screen,
+                        &mut test.state,
+                        None,
+                        &preview,
+                        &midi,
+                        &config,
+                        None,
+                        None,
+                    );
+                });
+            },
+            ShellHarnessTest {
+                fonts_applied: false,
+                state: UiState::default(),
+            },
+        );
+    harness.run();
+    audit_panel_utilization(&harness.ctx, PANEL_UTIL_MIN);
+
+    let osc_fx_alloc = get_used(&harness.ctx, osc_fx_allocated_rect_id(), "osc fx allocated");
+    let osc_fx_used = get_used(&harness.ctx, osc_fx_used_rect_id(), "osc fx used");
+    assert!(
+        utilization(osc_fx_alloc, osc_fx_used) >= PANEL_UTIL_MIN,
+        "osc fx sidebar under-utilized"
+    );
+
+    let filter_alloc = get_used(&harness.ctx, rail_filter_allocated_rect_id(), "filter allocated");
+    let filter_used = get_used(&harness.ctx, rail_filter_used_rect_id(), "filter used");
+    assert!(
+        utilization(filter_alloc, filter_used) >= PANEL_UTIL_MIN,
+        "filter panel under-utilized"
+    );
+
+    let mod_alloc = get_used(&harness.ctx, rail_mod_allocated_rect_id(), "mod allocated");
+    let mod_used = get_used(&harness.ctx, rail_mod_used_rect_id(), "mod used");
+    assert!(
+        utilization(mod_alloc, mod_used) >= PANEL_UTIL_MIN,
+        "rail mod matrix under-utilized"
+    );
 }

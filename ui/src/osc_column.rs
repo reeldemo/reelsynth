@@ -168,7 +168,7 @@ pub fn draw_osc_column(
                     }
                 }
 
-                ui.add_space(GRID_UNIT * 0.5);
+                ui.add_space(GRID_UNIT * 0.35);
 
                 let idx = (*state.osc_tab).min(state.oscillators.len().saturating_sub(1));
                 let osc = &mut state.oscillators[idx];
@@ -207,7 +207,7 @@ pub fn draw_osc_column(
                     }
                 });
 
-                ui.add_space(GRID_UNIT);
+                ui.add_space(GRID_UNIT * 0.5);
                 let is_wt = osc.osc_type == 0;
                 if is_wt {
                     let pos_label = format!("{:.0} / 255", osc.position.round());

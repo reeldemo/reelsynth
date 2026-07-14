@@ -22,11 +22,13 @@ pub use fx_rack::{
 };
 pub use layout::*;
 pub use layout_audit::{
-    audit_center, audit_shell, center_morph_used_rect_id, center_piano_used_rect_id,
-    center_scope_used_rect_id, center_strip_used_rect_id, center_used_rect_id,
-    center_views_used_rect_id, footer_used_rect_id, header_used_rect_id, fx_strip_used_rect_id,
-    mod_strip_used_rect_id, osc_fx_used_rect_id, osc_used_rect_id, overlap_area,
-    piano_used_rect_id, rail_mod_used_rect_id, rail_used_rect_id, within_bounds,
+    audit_center, audit_panel_utilization, audit_shell, center_morph_used_rect_id,
+    center_piano_used_rect_id, center_scope_used_rect_id, center_strip_used_rect_id,
+    center_used_rect_id, center_views_used_rect_id, footer_used_rect_id, header_used_rect_id,
+    fx_strip_used_rect_id, mod_strip_used_rect_id, osc_fx_allocated_rect_id, osc_fx_used_rect_id,
+    osc_used_rect_id, overlap_area, piano_used_rect_id, rail_filter_allocated_rect_id,
+    rail_filter_used_rect_id, rail_mod_allocated_rect_id, rail_mod_used_rect_id,
+    rail_used_rect_id, rect_area, utilization, within_bounds,
 };
 pub use center_layout::{compute_center_regions, CenterRegions};
 pub use mod_matrix::{
