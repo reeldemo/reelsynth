@@ -9,33 +9,135 @@ permissions:
   contents: write
 
 jobs:
-  build-macos:
-    runs-on: macos-latest
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-latest
+            platform: macos
+            arch: aarch64
+            rust_target: aarch64-apple-darwin
+            ext: zip
+          - runner: macos-latest
+            platform: macos
+            arch: x86_64
+            rust_target: x86_64-apple-darwin
+            ext: zip
+          - runner: ubuntu-latest
+            platform: linux
+            arch: x86_64
+            rust_target: x86_64-unknown-linux-gnu
+            ext: tar.gz
+          - runner: windows-latest
+            platform: windows
+            arch: x86_64
+            rust_target: x86_64-pc-windows-msvc
+            ext: zip
+
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_target }}
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2-dev \
+            libudev-dev \
+            libxkbcommon-dev \
+            libgtk-3-dev \
+            libxcb-render0-dev \
+            libxcb-shape0-dev \
+            libxcb-xfixes0-dev
 
       - name: Build release binaries
         run: |
-          cargo build --release -p reelsynth-app -p reelsynth --bin reelsynth-export
-          cargo build --release -p reelsynth-plugin --bin reelsynth-plugin-editor || true
+          cargo build --release --target ${{ matrix.rust_target }} \
+            -p reelsynth-app -p reelsynth --bin reelsynth-export
+          cargo build --release --target ${{ matrix.rust_target }} \
+            -p reelsynth-plugin --bin reelsynth-plugin-editor || true
 
-      - name: Package artifacts
+      - name: Package artifacts (Unix)
+        if: matrix.platform != 'windows'
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          STAGE="dist/reelsynth-${VERSION}-macos-$(uname -m)"
+          TARGET_DIR="target/${{ matrix.rust_target }}/release"
+          STAGE="dist/reelsynth-${VERSION}-${{ matrix.platform }}-${{ matrix.arch }}"
           mkdir -p "$STAGE/bin"
-          cp target/release/reelsynth-app "$STAGE/bin/"
-          cp target/release/reelsynth-export "$STAGE/bin/"
+          cp "$TARGET_DIR/reelsynth-app" "$STAGE/bin/"
+          cp "$TARGET_DIR/reelsynth-export" "$STAGE/bin/"
           cp README.md LICENSE "$STAGE/"
-          if [[ -f target/release/reelsynth-plugin-editor ]]; then
-            cp target/release/reelsynth-plugin-editor "$STAGE/bin/"
+          if [[ -f "$TARGET_DIR/reelsynth-plugin-editor" ]]; then
+            cp "$TARGET_DIR/reelsynth-plugin-editor" "$STAGE/bin/"
           fi
-          (cd dist && zip -qr "reelsynth-${VERSION}-macos-$(uname -m).zip" "$(basename "$STAGE")")
+          cat >"$STAGE/RELEASE_NOTES.md" <<EOF
+          # ReelSynth v${VERSION}
 
-      - name: Upload to GitHub Release
+          ## Standalone app
+          \`\`\`bash
+          ./bin/reelsynth-app
+          \`\`\`
+
+          Keyboard: **Z S X D C V G B H N J M** (one octave) or click the on-screen piano.
+
+          ## CLI export
+          \`\`\`bash
+          ./bin/reelsynth-export --help
+          \`\`\`
+
+          ## Platform
+          - OS: ${{ matrix.platform }}
+          - Arch: ${{ matrix.arch }}
+          - Rust target: ${{ matrix.rust_target }}
+          EOF
+          if [[ "${{ matrix.ext }}" == "tar.gz" ]]; then
+            tar -czf "dist/reelsynth-${VERSION}-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz" \
+              -C dist "$(basename "$STAGE")"
+          else
+            (cd dist && zip -qr "reelsynth-${VERSION}-${{ matrix.platform }}-${{ matrix.arch }}.zip" \
+              "$(basename "$STAGE")")
+          fi
+
+      - name: Package artifacts (Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          $VERSION = "${{ github.ref_name }}".Substring(1)
+          $TARGET_DIR = "target/${{ matrix.rust_target }}/release"
+          $STAGE = "dist/reelsynth-$VERSION-${{ matrix.platform }}-${{ matrix.arch }}"
+          New-Item -ItemType Directory -Force -Path "$STAGE/bin" | Out-Null
+          Copy-Item "$TARGET_DIR/reelsynth-app.exe" "$STAGE/bin/"
+          Copy-Item "$TARGET_DIR/reelsynth-export.exe" "$STAGE/bin/"
+          Copy-Item README.md, LICENSE "$STAGE/"
+          if (Test-Path "$TARGET_DIR/reelsynth-plugin-editor.exe") {
+            Copy-Item "$TARGET_DIR/reelsynth-plugin-editor.exe" "$STAGE/bin/"
+          }
+          Compress-Archive -Path $STAGE -DestinationPath "dist/reelsynth-$VERSION-${{ matrix.platform }}-${{ matrix.arch }}.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: reelsynth-${{ matrix.platform }}-${{ matrix.arch }}
+          path: dist/reelsynth-*-${{ matrix.platform }}-${{ matrix.arch }}.*
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/*.zip
+          files: dist/**
           generate_release_notes: true

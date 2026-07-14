@@ -8,7 +8,13 @@ cd "$ROOT"
 VERSION="$(awk -F'"' '/^version = / { print $2; exit }' Cargo.toml)"
 TARGET="${CARGO_BUILD_TARGET:-$(rustc -vV | awk '/host: / { print $2 }')}"
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
+case "$OS" in
+  darwin) OS="macos" ;;
+esac
 ARCH="$(uname -m)"
+case "$ARCH" in
+  arm64) ARCH="aarch64" ;;
+esac
 DIST="$ROOT/dist"
 STAGE="$DIST/reelsynth-${VERSION}-${OS}-${ARCH}"
 ARCHIVE="$DIST/reelsynth-${VERSION}-${OS}-${ARCH}.zip"

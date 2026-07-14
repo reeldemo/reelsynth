@@ -97,6 +97,41 @@ cargo test
 cargo test --no-default-features -j 1   # UI tests without default features
 ```
 
+## Binary releases
+
+Tagged pushes (`v*`) trigger [.github/workflows/release.yml](.github/workflows/release.yml), which builds and uploads:
+
+| Platform | Artifact |
+|----------|----------|
+| macOS Apple Silicon | `reelsynth-<ver>-macos-aarch64.zip` |
+| macOS Intel | `reelsynth-<ver>-macos-x86_64.zip` |
+| Linux x86_64 | `reelsynth-<ver>-linux-x86_64.tar.gz` |
+| Windows x86_64 | `reelsynth-<ver>-windows-x86_64.zip` |
+
+Each archive contains `bin/reelsynth-app`, `bin/reelsynth-export`, and `RELEASE_NOTES.md`.
+
+### Local staging (macOS/Linux)
+
+```bash
+./scripts/release.sh stage    # build + zip in dist/
+./scripts/release.sh info     # version, paths
+./scripts/release.sh publish  # gh release create (single local artifact)
+```
+
+Bump `version` in workspace `Cargo.toml` files before tagging. Tag and push:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+Manual cross-build (example — Intel macOS from Apple Silicon):
+
+```bash
+rustup target add x86_64-apple-darwin
+cargo build --release --target x86_64-apple-darwin -p reelsynth-app -p reelsynth --bin reelsynth-export
+```
+
 ## Pull requests
 
 - Conventional commits: `feat:`, `fix:`, `docs:`, `chore:`
