@@ -10,6 +10,12 @@ use super::waveform::{frame_index, waveform_points};
 const NUM_SLICES: usize = 16;
 const RIB_COUNT: usize = 12;
 const HOVER_DISTANCE_PX: f32 = 12.0;
+/// How quickly hover perspective eases toward target (1/s).
+const PERSPECTIVE_SMOOTH_SPEED: f32 = 12.0;
+/// Depth coupling: right-hover pulls right slices forward.
+const PERSPECTIVE_DEPTH_COUPLED: f32 = 0.18;
+/// Horizontal spread when yawing toward viewer.
+const PERSPECTIVE_YAW_SPREAD: f32 = 0.35;
 
 /// Slow height/depth breathing (~3s cycle).
 fn mesh_breath_scale(time: f32) -> f32 {
@@ -19,6 +25,45 @@ fn mesh_breath_scale(time: f32) -> f32 {
 /// Gentle rib-line brightness oscillation (~3s cycle).
 fn mesh_rib_pulse(time: f32) -> f32 {
     0.22 + 0.08 * (time * 2.0).sin().abs()
+}
+
+fn mesh_bounds(inner: Rect) -> (f32, f32) {
+    (inner.min.x + inner.width() * 0.08, inner.width() * 0.84)
+}
+
+/// Map pointer X across mesh width to yaw target in [-1, 1] (left → right).
+fn mesh_hover_perspective_t(mesh_left: f32, mesh_width: f32, pointer_x: f32) -> f32 {
+    let t = ((pointer_x - mesh_left) / mesh_width).clamp(0.0, 1.0);
+    (t - 0.5) * 2.0
+}
+
+fn mesh_slice_side_t(slice: usize) -> f32 {
+    (slice as f32 / NUM_SLICES as f32 - 0.5) * 2.0
+}
+
+/// Adjust slice depth for hover-coupled yaw; positive yaw (hover right) brings right slices forward.
+fn mesh_perspective_depth(base_depth: f32, perspective_yaw: f32, slice_t: f32) -> f32 {
+    (base_depth - perspective_yaw * slice_t * PERSPECTIVE_DEPTH_COUPLED).clamp(0.0, 0.55)
+}
+
+fn mesh_perspective_z_offset(
+    base_z_offset: f32,
+    perspective_yaw: f32,
+    slice_t: f32,
+    depth_pitch: f32,
+) -> f32 {
+    base_z_offset + perspective_yaw * slice_t * depth_pitch * PERSPECTIVE_YAW_SPREAD
+}
+
+fn smooth_perspective_yaw(ui: &Ui, target: f32) -> f32 {
+    let id = ui.id().with("mesh_perspective_yaw");
+    let dt = ui.ctx().input(|i| i.unstable_dt);
+    let alpha = (PERSPECTIVE_SMOOTH_SPEED * dt).clamp(0.0, 1.0);
+    ui.ctx().data_mut(|d| {
+        let current = d.get_temp_mut_or(id, 0.0_f32);
+        *current += (target - *current) * alpha;
+        *current
+    })
 }
 
 pub struct WtView3dResponse {
@@ -73,6 +118,13 @@ impl WtView3d<'_> {
             None
         };
 
+        let (mesh_left, mesh_width) = mesh_bounds(inner);
+        let perspective_target = hover_pos
+            .filter(|pos| inner.contains(*pos))
+            .map(|pos| mesh_hover_perspective_t(mesh_left, mesh_width, pos.x))
+            .unwrap_or(0.0);
+        let perspective_yaw = smooth_perspective_yaw(ui, perspective_target);
+
         if response.dragged() {
             let delta = response.drag_delta();
             if delta.x.abs() > 0.0 {
@@ -96,7 +148,7 @@ impl WtView3d<'_> {
         } else if response.clicked() {
             if let Some(pos) = response.interact_pointer_pos() {
                 if inner.contains(pos) {
-                    let layout = MeshLayout::new(inner, self.position, self.time);
+                    let layout = MeshLayout::new(inner, self.position, self.time, perspective_yaw);
                     let next = position_from_mesh_x(&layout, pos.x, num_frames);
                     if (next - *self.position).abs() > 0.01 {
                         *self.position = next;
@@ -138,7 +190,7 @@ impl WtView3d<'_> {
 
         paint_grid(&painter, inner, tokens.border);
 
-        let layout = MeshLayout::new(inner, self.position, self.time);
+        let layout = MeshLayout::new(inner, self.position, self.time, perspective_yaw);
         let mesh = self
             .bank
             .map(|bank| build_mesh_slices(&layout, bank, *self.position));
@@ -191,25 +243,31 @@ struct MeshLayout {
     half: usize,
     base_amp: f32,
     depth_scale: f32,
+    perspective_yaw: f32,
 }
 
 impl MeshLayout {
-    fn new(inner: Rect, _position: &f32, time: f32) -> Self {
+    fn new(inner: Rect, _position: &f32, time: f32, perspective_yaw: f32) -> Self {
         let breath = mesh_breath_scale(time);
+        let (mesh_left, mesh_width) = mesh_bounds(inner);
         Self {
             inner,
-            mesh_left: inner.min.x + inner.width() * 0.08,
-            mesh_width: inner.width() * 0.84,
+            mesh_left,
+            mesh_width,
             depth_pitch: inner.width() * 0.028,
             half: NUM_SLICES / 2,
             base_amp: 0.30 * breath,
             depth_scale: 0.22 * breath,
+            perspective_yaw,
         }
     }
 
     fn slice_geometry(&self, slice: usize) -> (f32, f32, Rect) {
-        let depth = (slice as f32 / NUM_SLICES as f32 - 0.5).abs();
-        let z_offset = (slice as f32 - self.half as f32) * self.depth_pitch;
+        let slice_t = mesh_slice_side_t(slice);
+        let base_depth = (slice as f32 / NUM_SLICES as f32 - 0.5).abs();
+        let depth = mesh_perspective_depth(base_depth, self.perspective_yaw, slice_t);
+        let base_z = (slice as f32 - self.half as f32) * self.depth_pitch;
+        let z_offset = mesh_perspective_z_offset(base_z, self.perspective_yaw, slice_t, self.depth_pitch);
         let y_offset = depth * self.inner.height() * self.depth_scale;
         let slice_rect = Rect::from_min_max(
             Pos2::new(self.mesh_left + z_offset, self.inner.min.y + y_offset),
@@ -405,7 +463,11 @@ fn paint_mesh_from_bank(
         if points.len() < 2 {
             continue;
         }
-        let depth = (s as f32 / NUM_SLICES as f32 - 0.5).abs();
+        let depth = mesh_perspective_depth(
+            (s as f32 / NUM_SLICES as f32 - 0.5).abs(),
+            layout.perspective_yaw,
+            mesh_slice_side_t(s),
+        );
         let alpha = (1.0 - depth * 1.5).clamp(0.2, 1.0);
         let is_active = s == layout.half;
         let is_hovered = hover_slice == Some(s);
@@ -465,11 +527,43 @@ mod tests {
     #[test]
     fn position_from_mesh_x_endpoints() {
         let inner = Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(200.0, 100.0));
-        let layout = MeshLayout::new(inner, &128.0, 0.0);
+        let layout = MeshLayout::new(inner, &128.0, 0.0, 0.0);
         assert!((position_from_mesh_x(&layout, layout.mesh_left, 256) - 0.0).abs() < 1e-4);
         let right = layout.mesh_left + layout.mesh_width;
         assert!((position_from_mesh_x(&layout, right, 256) - 255.0).abs() < 1e-4);
         assert!((position_from_mesh_x(&layout, inner.center().x, 256) - 127.5).abs() < 1.0);
+    }
+
+    #[test]
+    fn mesh_hover_perspective_t_maps_mesh_width() {
+        let inner = Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(200.0, 100.0));
+        let (left, width) = mesh_bounds(inner);
+        assert!((mesh_hover_perspective_t(left, width, left) - (-1.0)).abs() < 1e-4);
+        assert!(mesh_hover_perspective_t(left, width, left + width * 0.5).abs() < 1e-4);
+        assert!((mesh_hover_perspective_t(left, width, left + width) - 1.0).abs() < 1e-4);
+    }
+
+    #[test]
+    fn mesh_perspective_depth_yaws_toward_viewer_on_right_hover() {
+        let right_slice_t = 1.0;
+        let left_slice_t = -1.0;
+        let base = 0.5;
+        let yaw = 1.0;
+        let right_depth = mesh_perspective_depth(base, yaw, right_slice_t);
+        let left_depth = mesh_perspective_depth(base, yaw, left_slice_t);
+        assert!(right_depth < base, "right side should move forward");
+        assert!(left_depth > base, "left side should move back");
+    }
+
+    #[test]
+    fn mesh_perspective_z_offset_spreads_on_yaw() {
+        let pitch = 10.0;
+        let base = 5.0;
+        let yaw = 1.0;
+        let right = mesh_perspective_z_offset(base, yaw, 1.0, pitch);
+        let left = mesh_perspective_z_offset(-base, yaw, -1.0, pitch);
+        assert!(right > base);
+        assert!(left < -base);
     }
 
     #[test]
@@ -485,7 +579,7 @@ mod tests {
     #[test]
     fn nearest_mesh_target_picks_closest_slice() {
         let inner = Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(200.0, 100.0));
-        let layout = MeshLayout::new(inner, &64.0, 0.0);
+        let layout = MeshLayout::new(inner, &64.0, 0.0, 0.0);
         let mesh = MeshData {
             center_frame: 64,
             slices: (0..NUM_SLICES)
