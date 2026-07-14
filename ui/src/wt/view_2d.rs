@@ -2,7 +2,6 @@ use egui::{Color32, Pos2, Rect, Sense, Shape, Ui, Vec2};
 use reelsynth::WavetableBank;
 use reelsynth_ui_theme::{ACCENT_UI, Tokens};
 
-use crate::ambient::{animated_wave_points, peak_glow_color};
 use crate::layout::{RADIUS_SM, WT_TOOLBAR_HEIGHT};
 use crate::region::region;
 
@@ -73,8 +72,6 @@ impl WtView2d<'_> {
         let wave = if let Some(bank) = self.bank.as_ref() {
             let frame = bank.frame(frame_idx);
             waveform_points(frame, inner, 256, 0.42)
-        } else if self.animate {
-            animated_wave_points(inner, mid_y, self.time, self.position, 128)
         } else {
             placeholder_wave(inner, mid_y)
         };
@@ -94,8 +91,7 @@ impl WtView2d<'_> {
             ));
 
             if let Some(peak) = peak_point(&wave) {
-                let glow = peak_glow_color(tokens.accent, self.time);
-                painter.circle_filled(peak, 4.0, glow);
+                painter.circle_filled(peak, 4.0, tokens.accent);
                 painter.circle_stroke(peak, 4.0, egui::Stroke::new(1.0_f32, tokens.accent_on));
             }
         }
@@ -115,7 +111,7 @@ impl WtView2d<'_> {
             egui::Align2::LEFT_TOP,
             label,
             egui::FontId::proportional(10.0),
-            tokens.text_muted,
+            tokens.text_secondary,
         );
 
         if *self.tool == WtEditTool::Pencil {

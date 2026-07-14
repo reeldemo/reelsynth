@@ -71,8 +71,16 @@ pub fn fx_strip_used_rect_id() -> egui::Id {
     egui::Id::new("reelsynth.audit.fx_strip_used_rect")
 }
 
+pub fn osc_mod_used_rect_id() -> egui::Id {
+    egui::Id::new("reelsynth.audit.osc_mod_used_rect")
+}
+
+pub fn osc_mod_allocated_rect_id() -> egui::Id {
+    egui::Id::new("reelsynth.audit.osc_mod_allocated_rect")
+}
+
 pub fn rail_mod_used_rect_id() -> egui::Id {
-    egui::Id::new("reelsynth.audit.rail_mod_used_rect")
+    osc_mod_used_rect_id()
 }
 
 pub fn osc_fx_used_rect_id() -> egui::Id {
@@ -92,7 +100,7 @@ pub fn rail_filter_allocated_rect_id() -> egui::Id {
 }
 
 pub fn rail_mod_allocated_rect_id() -> egui::Id {
-    egui::Id::new("reelsynth.audit.rail_mod_allocated_rect")
+    osc_mod_allocated_rect_id()
 }
 
 /// Positive area of a rect (0 when empty or negative).
@@ -146,10 +154,10 @@ pub fn audit_panel_utilization(ctx: &egui::Context, min_ratio: f32) {
             assert_min_utilization("osc fx sidebar", allocated, used, min_ratio);
         }
         if let (Some(allocated), Some(used)) = (
-            d.get_temp::<Rect>(rail_mod_allocated_rect_id()),
-            d.get_temp::<Rect>(rail_mod_used_rect_id()),
+            d.get_temp::<Rect>(osc_mod_allocated_rect_id()),
+            d.get_temp::<Rect>(osc_mod_used_rect_id()),
         ) {
-            assert_min_utilization("rail mod matrix", allocated, used, min_ratio);
+            assert_min_utilization("osc mod matrix", allocated, used, min_ratio);
         }
         if let (Some(allocated), Some(used)) = (
             d.get_temp::<Rect>(rail_filter_allocated_rect_id()),

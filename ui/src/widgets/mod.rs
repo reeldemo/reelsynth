@@ -19,6 +19,6 @@ pub use adsr::{
     format_sustain, format_unison, knob_value_label, ADSR_GRAPH_HEIGHT,
 };
 pub use knob::{Knob, KnobResponse, KnobSize, KnobStyle};
-pub use panel::{panel, panel_disabled};
+pub use panel::{card_stroke, collapsible_panel, panel, panel_disabled, sidebar_panel};
 pub use piano::{PianoKeyboard, PianoResponse};
 pub use tabs::tab_bar;

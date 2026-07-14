@@ -2,11 +2,14 @@
 
 use egui::{Color32, FontId, Rect, Ui};
 use reelsynth::{EffectSlot, EffectType};
-use reelsynth_ui_theme::{heading_font, Tokens, ACCENT_UI};
+use reelsynth_ui_theme::Tokens;
 
-use crate::layout::{UiScale, GRID_UNIT, RADIUS_SM, SPACE_SM};
+use crate::layout::{UiScale, GRID_UNIT, RADIUS_SM};
 use crate::region::region;
-use crate::widgets::{button_icon, menu_selectable, reel_combo, select_value_text};
+use crate::widgets::{
+    button_icon, card_stroke, collapsible_panel, menu_selectable, reel_combo, select_value_text,
+    sidebar_panel,
+};
 
 pub const FX_SLOT_WIDTH: f32 = 148.0;
 pub const FX_SECTION_HEADER: f32 = 24.0;
@@ -166,7 +169,14 @@ pub fn draw_effect_rack(
     mut state: EffectRackState<'_>,
     scale: UiScale,
 ) -> FxRackResult {
-    draw_effect_rack_inner(ui, rect, &mut state, scale, RackLayout::Horizontal)
+    draw_effect_rack_inner(
+        ui,
+        rect,
+        &mut state,
+        scale,
+        RackLayout::Horizontal,
+        RackChrome::Collapsible,
+    )
 }
 
 /// Narrow-column layout: 2-column grid of effect slots (left osc column).
@@ -176,7 +186,14 @@ pub fn draw_effect_rack_sidebar(
     mut state: EffectRackState<'_>,
     scale: UiScale,
 ) -> FxRackResult {
-    draw_effect_rack_inner(ui, rect, &mut state, scale, RackLayout::Grid2x2)
+    draw_effect_rack_inner(
+        ui,
+        rect,
+        &mut state,
+        scale,
+        RackLayout::Grid2x2,
+        RackChrome::NativePanel,
+    )
 }
 
 #[derive(Clone, Copy)]
@@ -185,60 +202,66 @@ enum RackLayout {
     Grid2x2,
 }
 
+#[derive(Clone, Copy)]
+enum RackChrome {
+    Collapsible,
+    NativePanel,
+}
+
 fn draw_effect_rack_inner(
     ui: &mut Ui,
     rect: Rect,
     state: &mut EffectRackState<'_>,
     scale: UiScale,
     layout: RackLayout,
+    chrome: RackChrome,
 ) -> FxRackResult {
-    let tokens = Tokens::default();
     let mut changed = false;
     let metrics = FxMetrics::from_scale(scale, rect.height());
 
+    let EffectRackState { open, slots } = state;
+
     region(ui, rect, |ui| {
-        egui::Frame::none()
-            .fill(tokens.bg_muted)
-            .stroke(egui::Stroke::new(1.0_f32, tokens.border))
-            .show(ui, |ui| {
-                ui.set_width(ui.available_width());
-                let active = state.slots.iter().filter(|s| s.is_active()).count();
-                let mut meta = format!("{active} active");
-                if active > CPU_WARN_ACTIVE_SLOTS {
-                    meta.push_str(" · CPU ⚠");
-                }
-                let header = section_header(ui, "Effects", &meta, *state.open, metrics.header_h);
-                if header.clicked() {
-                    *state.open = !*state.open;
-                }
+        ui.set_min_height(rect.height());
+        ui.set_max_height(rect.height());
+        let active = slots.iter().filter(|s| s.is_active()).count();
+        let mut meta = format!("{active} active");
+        if active > CPU_WARN_ACTIVE_SLOTS {
+            meta.push_str(" · CPU ⚠");
+        }
 
-                if *state.open {
-                    if active > CPU_WARN_ACTIVE_SLOTS {
-                        ui.label(
-                            egui::RichText::new(format!(
-                                "⚠ {active} active FX slots — may increase CPU usage"
-                            ))
-                            .size(10.0)
-                            .color(Color32::from_rgb(0xe8, 0xa8, 0x40)),
-                        );
-                    }
+        let body = |ui: &mut Ui| {
+            if active > CPU_WARN_ACTIVE_SLOTS {
+                ui.label(
+                    egui::RichText::new(format!(
+                        "⚠ {active} active FX slots — may increase CPU usage"
+                    ))
+                    .size(10.0)
+                    .color(Color32::from_rgb(0xe8, 0xa8, 0x40)),
+                );
+                ui.add_space(4.0);
+            }
 
-                    let body_h = (rect.height() - metrics.header_h).max(0.0);
-                    egui::Frame::none()
-                        .inner_margin(egui::Margin::symmetric(SPACE_SM * scale.ui(), GRID_UNIT * scale.ui()))
-                        .show(ui, |ui| {
-                            ui.set_min_height(body_h);
-                            match layout {
-                                RackLayout::Horizontal => {
-                                    draw_effect_rack_horizontal(ui, state, scale, metrics, &mut changed);
-                                }
-                                RackLayout::Grid2x2 => {
-                                    draw_effect_rack_grid(ui, state, scale, metrics, &mut changed);
-                                }
-                            }
-                        });
+            let body_h = (rect.height() - 40.0).max(0.0);
+            ui.set_min_height(body_h);
+            match layout {
+                RackLayout::Horizontal => {
+                    draw_effect_rack_horizontal(ui, slots, scale, metrics, &mut changed);
                 }
-            });
+                RackLayout::Grid2x2 => {
+                    draw_effect_rack_grid(ui, slots, scale, metrics, &mut changed);
+                }
+            }
+        };
+
+        match chrome {
+            RackChrome::Collapsible => {
+                collapsible_panel(ui, "Effects", &meta, open, body);
+            }
+            RackChrome::NativePanel => {
+                sidebar_panel(ui, "Effects", &meta, body);
+            }
+        }
     });
 
     FxRackResult { changed }
@@ -246,14 +269,14 @@ fn draw_effect_rack_inner(
 
 fn draw_effect_rack_horizontal(
     ui: &mut Ui,
-    state: &mut EffectRackState<'_>,
+    slots: &mut Vec<EffectSlotUi>,
     scale: UiScale,
     metrics: FxMetrics,
     changed: &mut bool,
 ) {
     let s = scale.ui();
     let gap = GRID_UNIT * s;
-    let slot_count = state.slots.len().max(1);
+    let slot_count = slots.len().max(1);
     let add_w = metrics.add_width;
     let gaps = gap * slot_count as f32;
     let avail = ui.available_width();
@@ -265,15 +288,13 @@ fn draw_effect_rack_horizontal(
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = gap;
         ui.set_min_height(flex_metrics.column_height);
-        for idx in 0..state.slots.len() {
-            if draw_fx_slot_column(ui, &mut state.slots, idx, flex_metrics).changed {
+        for idx in 0..slots.len() {
+            if draw_fx_slot_column(ui, slots, idx, flex_metrics).changed {
                 *changed = true;
             }
         }
         if draw_add_slot(ui, flex_metrics).clicked() {
-            state
-                .slots
-                .push(EffectSlotUi::from_slot(&EffectSlot::chorus()));
+            slots.push(EffectSlotUi::from_slot(&EffectSlot::chorus()));
             *changed = true;
         }
     });
@@ -281,7 +302,7 @@ fn draw_effect_rack_horizontal(
 
 fn draw_effect_rack_grid(
     ui: &mut Ui,
-    state: &mut EffectRackState<'_>,
+    slots: &mut Vec<EffectSlotUi>,
     scale: UiScale,
     metrics: FxMetrics,
     changed: &mut bool,
@@ -291,7 +312,7 @@ fn draw_effect_rack_grid(
     let total_w = ui.available_width();
     let col_w = ((total_w - gap) * 0.5).max(72.0 * s);
     let controls_h = 18.0 * s;
-    let cell_count = state.slots.len() + 1;
+    let cell_count = slots.len() + 1;
     let rows = cell_count.div_ceil(2);
     let body_h = ui.available_height();
     let row_gap_total = gap * 0.5 * (rows.saturating_sub(1) as f32);
@@ -318,15 +339,15 @@ fn draw_effect_rack_grid(
                     |ui| {
                         ui.set_min_width(col_w);
                         ui.set_max_width(col_w);
-                        if cell < state.slots.len() {
-                            if draw_fx_slot_column(ui, &mut state.slots, cell, grid_metrics)
+                        if cell < slots.len() {
+                            if draw_fx_slot_column(ui, slots, cell, grid_metrics)
                                 .changed
                             {
                                 *changed = true;
                             }
-                        } else if cell == state.slots.len() {
+                        } else if cell == slots.len() {
                             if draw_add_slot(ui, grid_metrics).clicked() {
-                                state.slots.push(EffectSlotUi::from_slot(
+                                slots.push(EffectSlotUi::from_slot(
                                     &EffectSlot::chorus(),
                                 ));
                                 *changed = true;
@@ -340,48 +361,6 @@ fn draw_effect_rack_grid(
             ui.add_space(gap * 0.5);
         }
     }
-}
-
-fn section_header(ui: &mut Ui, title: &str, meta: &str, open: bool, height: f32) -> egui::Response {
-    let tokens = Tokens::default();
-    let (rect, response) =
-        ui.allocate_exact_size(egui::vec2(ui.available_width(), height), egui::Sense::click());
-    if ui.is_rect_visible(rect) {
-        let painter = ui.painter_at(rect);
-        painter.rect_filled(rect, 0.0, tokens.surface2);
-        painter.line_segment(
-            [rect.left_bottom(), rect.right_bottom()],
-            egui::Stroke::new(1.0_f32, tokens.border),
-        );
-        let chevron = if open { "▼" } else { "▶" };
-        painter.text(
-            egui::pos2(rect.min.x + SPACE_SM, rect.center().y),
-            egui::Align2::LEFT_CENTER,
-            chevron,
-            FontId::proportional(10.0),
-            tokens.text_muted,
-        );
-        painter.text(
-            egui::pos2(rect.min.x + SPACE_SM + 16.0, rect.center().y),
-            egui::Align2::LEFT_CENTER,
-            title.to_uppercase(),
-            heading_font(11.0),
-            tokens.text,
-        );
-        let meta_color = if meta.contains('⚠') {
-            Color32::from_rgb(0xe8, 0xa8, 0x40)
-        } else {
-            tokens.text_muted
-        };
-        painter.text(
-            egui::pos2(rect.max.x - SPACE_SM, rect.center().y),
-            egui::Align2::RIGHT_CENTER,
-            meta,
-            FontId::monospace(10.0),
-            meta_color,
-        );
-    }
-    response
 }
 
 struct FxSlotResult {
@@ -407,29 +386,44 @@ fn draw_fx_slot_column(
         );
 
         let active = slots[idx].is_active();
+        let bypassed = slots[idx].bypassed;
         if ui.is_rect_visible(card_rect) {
             let painter = ui.painter_at(card_rect);
-            let stroke = if active { ACCENT_UI } else { tokens.border };
-            let fill = if response.hovered() {
+            let stroke = card_stroke(active, response.hovered(), &tokens);
+            let fill = if active {
+                tokens.accent_muted.gamma_multiply(0.55)
+            } else if response.hovered() {
                 tokens.surface2
             } else {
-                tokens.bg_muted
+                tokens.bg
             };
             painter.rect_filled(card_rect, RADIUS_SM, fill);
             painter.rect_stroke(card_rect, RADIUS_SM, egui::Stroke::new(1.0_f32, stroke));
+            let title_color = if bypassed {
+                tokens.text_secondary
+            } else {
+                tokens.text
+            };
             painter.text(
                 egui::pos2(card_rect.min.x + GRID_UNIT, card_rect.min.y + 6.0),
                 egui::Align2::LEFT_TOP,
                 slots[idx].effect_type.label(),
                 FontId::proportional(11.0),
-                tokens.text,
+                title_color,
             );
+            let detail_color = if bypassed {
+                tokens.text_secondary
+            } else if active {
+                tokens.text_secondary
+            } else {
+                tokens.text_muted
+            };
             painter.text(
                 egui::pos2(card_rect.min.x + GRID_UNIT, card_rect.min.y + 22.0),
                 egui::Align2::LEFT_TOP,
                 slots[idx].detail(),
                 FontId::proportional(10.0),
-                tokens.text_muted,
+                detail_color,
             );
         }
 
@@ -496,14 +490,24 @@ fn draw_add_slot(ui: &mut Ui, metrics: FxMetrics) -> egui::Response {
     );
     if ui.is_rect_visible(rect) {
         let painter = ui.painter_at(rect);
-        painter.rect_filled(rect, RADIUS_SM, tokens.bg_muted);
-        painter.rect_stroke(rect, RADIUS_SM, egui::Stroke::new(1.0_f32, tokens.border));
+        let stroke = card_stroke(false, response.hovered(), &tokens);
+        let fill = if response.hovered() {
+            tokens.surface2
+        } else {
+            tokens.bg
+        };
+        painter.rect_filled(rect, RADIUS_SM, fill);
+        painter.rect_stroke(rect, RADIUS_SM, egui::Stroke::new(1.0_f32, stroke));
         painter.text(
             rect.center(),
             egui::Align2::CENTER_CENTER,
             "+",
             FontId::proportional(18.0),
-            tokens.text_muted,
+            if response.hovered() {
+                tokens.text
+            } else {
+                tokens.text_secondary
+            },
         );
     }
     response

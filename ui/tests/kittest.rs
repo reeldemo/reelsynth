@@ -11,8 +11,8 @@ use reelsynth_ui::{
     ShellMidiDevices, center_morph_used_rect_id, center_piano_used_rect_id,
     center_scope_used_rect_id, center_strip_used_rect_id, center_used_rect_id,
     center_views_used_rect_id, footer_used_rect_id, fx_strip_used_rect_id, header_used_rect_id,
-    mod_strip_used_rect_id, osc_fx_allocated_rect_id, osc_fx_used_rect_id, rail_mod_allocated_rect_id,
-    rail_mod_used_rect_id, osc_used_rect_id,
+    mod_strip_used_rect_id, osc_fx_allocated_rect_id, osc_fx_used_rect_id, osc_mod_allocated_rect_id,
+    osc_mod_used_rect_id, osc_used_rect_id,
     rail_filter_allocated_rect_id, rail_filter_used_rect_id, rail_used_rect_id, ShellConfig, UiState, APP_HEIGHT_FULL, APP_MIN_WIDTH,
     SPACE_SM, utilization,
 };
@@ -414,14 +414,14 @@ fn interface_used_rects_within_allocated_min_window() {
     assert!(fits_max_slack(center_regions.wt_views, views_used, 12.0));
 
     let osc_fx_used = get_used(&harness.ctx, osc_fx_used_rect_id(), "osc fx");
-    assert!(fits_max_slack(layout.rail, osc_fx_used, 12.0));
+    assert!(fits_max_slack(layout.osc, osc_fx_used, 12.0));
 
-    let rail_mod_used = get_used(&harness.ctx, rail_mod_used_rect_id(), "rail mod");
+    let osc_mod_used = get_used(&harness.ctx, osc_mod_used_rect_id(), "osc mod");
     assert!(
-        rail_mod_used.min.x >= layout.rail.min.x - 12.0
-            && rail_mod_used.max.x <= layout.rail.max.x + 12.0,
-        "rail mod matrix extends outside rail column: used={rail_mod_used:?} rail={:?}",
-        layout.rail
+        osc_mod_used.min.x >= layout.osc.min.x - 12.0
+            && osc_mod_used.max.x <= layout.osc.max.x + 12.0,
+        "osc mod matrix extends outside left column: used={osc_mod_used:?} osc={:?}",
+        layout.osc
     );
 
     let piano_region_used = get_used(&harness.ctx, center_piano_used_rect_id(), "center piano widget");
@@ -511,10 +511,10 @@ fn panel_whitespace_utilization_at_1280x880() {
         "filter panel under-utilized"
     );
 
-    let mod_alloc = get_used(&harness.ctx, rail_mod_allocated_rect_id(), "mod allocated");
-    let mod_used = get_used(&harness.ctx, rail_mod_used_rect_id(), "mod used");
+    let mod_alloc = get_used(&harness.ctx, osc_mod_allocated_rect_id(), "mod allocated");
+    let mod_used = get_used(&harness.ctx, osc_mod_used_rect_id(), "mod used");
     assert!(
         utilization(mod_alloc, mod_used) >= PANEL_UTIL_MIN,
-        "rail mod matrix under-utilized"
+        "osc mod matrix under-utilized"
     );
 }

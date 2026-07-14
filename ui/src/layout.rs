@@ -75,37 +75,51 @@ pub fn sidebar_fx_min_height(scale: f32, slot_count: usize) -> f32 {
     header + padding + rows as f32 * row_h + gap
 }
 
-/// Split left column: compact osc scroll on top, FX grid fills the bottom.
+/// Split left column: osc scroll on top, FX grid + mod matrix stacked at bottom.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct OscColumnHeights {
     pub osc: f32,
     pub fx: f32,
-    /// Always zero — mod matrix lives in the right rail (`embed_mod_in_rail`).
     pub mod_matrix: f32,
 }
 
-/// Split left column heights: scrollable osc params on top, FX grid anchored at bottom.
+/// Minimum sidebar mod matrix height (header + a few rows).
+pub fn sidebar_mod_min_height(scale: f32, route_rows: usize) -> f32 {
+    let s = scale;
+    let header = SECTION_HEADER_HEIGHT * s + SPACE_SM * s;
+    let rows = route_rows.min(6).max(3);
+    let row_h = MOD_ROW_HEIGHT * s;
+    let gap = GRID_UNIT * s * 0.25 * (rows.saturating_sub(1) as f32);
+    header + rows as f32 * row_h + gap + SPACE_SM * s
+}
+
+/// Split left column: scrollable osc on top; FX + mod matrix share the bottom band.
 pub fn osc_column_split_heights(
     total_h: f32,
     scale: f32,
     slot_count: usize,
     show_fx: bool,
-    _show_mod: bool,
+    show_mod: bool,
 ) -> OscColumnHeights {
     let min_osc = OSC_COLUMN_MIN_SCROLL_HEIGHT * scale;
-    let fx_h = if show_fx {
-        let min_fx = sidebar_fx_min_height(scale, slot_count);
-        min_fx
-            .max(total_h * 0.48)
-            .min((total_h - min_osc).max(min_fx))
+    let mod_h = if show_mod {
+        sidebar_mod_min_height(scale, 5).min(total_h * 0.38)
     } else {
         0.0
     };
-    let osc_h = (total_h - fx_h).max(min_osc);
+    let fx_h = if show_fx {
+        let min_fx = sidebar_fx_min_height(scale, slot_count);
+        let budget = (total_h - min_osc - mod_h).max(min_fx);
+        min_fx.max(budget * 0.55).min(budget)
+    } else {
+        0.0
+    };
+    let bottom = fx_h + mod_h;
+    let osc_h = (total_h - bottom).max(min_osc);
     OscColumnHeights {
         osc: osc_h,
         fx: fx_h,
-        mod_matrix: 0.0,
+        mod_matrix: mod_h,
     }
 }
 
@@ -188,8 +202,13 @@ pub fn embed_fx_in_osc_column(options: ShellLayoutOptions) -> bool {
 }
 
 /// Mod matrix lives in the left osc column when the osc column is visible.
-pub fn embed_mod_in_rail(options: ShellLayoutOptions) -> bool {
+pub fn embed_mod_in_osc_column(options: ShellLayoutOptions) -> bool {
     options.show_osc_column && options.show_mod_matrix
+}
+
+/// Deprecated alias — mod matrix is no longer in the right rail.
+pub fn embed_mod_in_rail(options: ShellLayoutOptions) -> bool {
+    embed_mod_in_osc_column(options)
 }
 
 /// Piano sits at the bottom of the center column when the osc column is visible.

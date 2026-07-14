@@ -71,8 +71,7 @@ pub fn animated_wave_points(
         .collect()
 }
 
-/// Pulsing accent glow at waveform peak.
-pub fn peak_glow_color(accent: Color32, time: f32) -> Color32 {
-    let pulse = 0.65 + 0.35 * (time * 2.5).sin().abs();
-    accent.gamma_multiply(pulse)
+/// Static accent at waveform peak (no idle pulse).
+pub fn peak_glow_color(accent: Color32, _time: f32) -> Color32 {
+    accent
 }

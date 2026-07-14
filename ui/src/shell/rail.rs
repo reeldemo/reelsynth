@@ -4,12 +4,10 @@ use reelsynth_ui_theme::Tokens;
 use super::*;
 use super::footer::{draw_level_meter, format_cutoff};
 use super::header::sync_osc_position_from_wt;
-use crate::layout::{CENTER_GAP, MOD_MATRIX_HEIGHT, UiScale};
+use crate::layout::{CENTER_GAP, UiScale};
 use crate::layout_audit::{
-    rail_filter_allocated_rect_id, rail_filter_used_rect_id, rail_mod_allocated_rect_id,
-    rail_mod_used_rect_id, rail_used_rect_id,
+    rail_filter_allocated_rect_id, rail_filter_used_rect_id, rail_used_rect_id,
 };
-use crate::mod_matrix::{draw_mod_matrix, ModMatrixState};
 use crate::region::region;
 use crate::widgets::{
     labeled_select, tab_bar, Knob, KnobResponse, KnobSize, KnobStyle, panel, panel_disabled,
@@ -26,65 +24,23 @@ pub(super) fn draw_rail(
     let s = scale.ui();
     let gap = CENTER_GAP * s;
     region(ui, rect, |ui| {
-        let mod_h = if config.show_mod_matrix && config.show_osc_column {
-            (MOD_MATRIX_HEIGHT * s)
-                .min(rect.height() * 0.32)
-                .max(72.0 * s)
-        } else {
-            0.0
-        };
-        let scroll_h = (rect.height() - mod_h).max(0.0);
-        let scroll_rect =
-            Rect::from_min_max(rect.min, egui::pos2(rect.max.x, rect.min.y + scroll_h));
-        let mod_top = rect.min.y + scroll_h;
-        let mod_rect = if mod_h > 0.0 {
-            Rect::from_min_max(
-                egui::pos2(rect.min.x, mod_top),
-                egui::pos2(rect.max.x, mod_top + mod_h),
-            )
-        } else {
-            Rect::NOTHING
-        };
-
-        region(ui, scroll_rect, |ui| {
-            egui::Frame::none()
-                .inner_margin(egui::Margin::same(SPACE_SM * s * 0.75))
-                .show(ui, |ui| {
-                    ui.set_width(ui.available_width());
-                    ui.spacing_mut().item_spacing.y = gap;
-                    if config.show_osc_column {
-                        egui::ScrollArea::vertical()
-                            .id_salt("rail_scroll")
-                            .auto_shrink([false; 2])
-                            .show(ui, |ui| {
-                                draw_rail_panels(ui, state, config, actions, scale);
-                            });
-                    } else {
-                        draw_rail_panels(ui, state, config, actions, scale);
-                    }
-                });
-        });
-
-        if mod_rect.is_positive() {
-            let mod_result = draw_mod_matrix(
-                ui,
-                mod_rect,
-                ModMatrixState {
-                    open: &mut state.mod_matrix_open,
-                    routes: &mut state.mod_routes,
-                    total_routes: state.mod_route_total,
-                },
-                scale,
-            );
-            if mod_result.changed {
-                actions.params_changed = true;
-            }
-            let used = ui.min_rect().intersect(mod_rect);
-            ui.ctx().data_mut(|d| {
-                d.insert_temp(rail_mod_allocated_rect_id(), mod_rect);
-                d.insert_temp(rail_mod_used_rect_id(), used);
+        egui::Frame::none()
+            .inner_margin(egui::Margin::same(SPACE_SM * s * 0.75))
+            .show(ui, |ui| {
+                ui.set_width(ui.available_width());
+                ui.set_min_height(rect.height());
+                ui.spacing_mut().item_spacing.y = gap;
+                if config.show_osc_column {
+                    egui::ScrollArea::vertical()
+                        .id_salt("rail_scroll")
+                        .auto_shrink([false; 2])
+                        .show(ui, |ui| {
+                            draw_rail_panels(ui, state, config, actions, scale);
+                        });
+                } else {
+                    draw_rail_panels(ui, state, config, actions, scale);
+                }
             });
-        }
 
         let used = ui.min_rect().intersect(rect);
         ui.ctx().data_mut(|d| d.insert_temp(rail_used_rect_id(), used));

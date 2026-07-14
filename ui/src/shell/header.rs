@@ -5,8 +5,10 @@ use reelsynth_ui_theme::Tokens;
 use super::*;
 use crate::fx_rack::{draw_effect_rack_sidebar, EffectRackState};
 use crate::layout::{osc_column_split_heights, UiScale};
+use crate::mod_matrix::{draw_mod_matrix_sidebar, ModMatrixState};
 use crate::layout_audit::{
-    header_used_rect_id, osc_fx_allocated_rect_id, osc_fx_used_rect_id, osc_used_rect_id,
+    header_used_rect_id, osc_fx_allocated_rect_id, osc_fx_used_rect_id, osc_mod_allocated_rect_id,
+    osc_mod_used_rect_id, osc_used_rect_id,
 };
 use crate::osc_column::{draw_osc_column, OscColumnInput, OscColumnState};
 use crate::region::region;
@@ -185,16 +187,26 @@ pub(super) fn draw_osc(
             s,
             state.fx_slots.len(),
             config.show_fx_rack,
-            false,
+            config.show_mod_matrix,
         );
 
         let mut y = rect.min.y;
         let osc_rect = Rect::from_min_max(rect.min, egui::pos2(rect.max.x, y + stack.osc));
         y += stack.osc;
         let fx_rect = if stack.fx > 0.0 {
-            Rect::from_min_max(
+            let r = Rect::from_min_max(
                 egui::pos2(rect.min.x, y),
                 egui::pos2(rect.max.x, y + stack.fx),
+            );
+            y += stack.fx;
+            r
+        } else {
+            Rect::NOTHING
+        };
+        let mod_rect = if stack.mod_matrix > 0.0 {
+            Rect::from_min_max(
+                egui::pos2(rect.min.x, y),
+                egui::pos2(rect.max.x, y + stack.mod_matrix),
             )
         } else {
             Rect::NOTHING
@@ -266,6 +278,27 @@ pub(super) fn draw_osc(
             });
         }
 
+
+        if mod_rect.is_positive() {
+            let mod_result = draw_mod_matrix_sidebar(
+                ui,
+                mod_rect,
+                ModMatrixState {
+                    open: &mut state.mod_matrix_open,
+                    routes: &mut state.mod_routes,
+                    total_routes: state.mod_route_total,
+                },
+                scale,
+            );
+            if mod_result.changed {
+                actions.params_changed = true;
+            }
+            let used = ui.min_rect().intersect(mod_rect);
+            ui.ctx().data_mut(|d| {
+                d.insert_temp(osc_mod_allocated_rect_id(), mod_rect);
+                d.insert_temp(osc_mod_used_rect_id(), used);
+            });
+        }
 
         let used = ui.min_rect().intersect(rect);
         ui.ctx().data_mut(|d| d.insert_temp(osc_used_rect_id(), used));

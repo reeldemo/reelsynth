@@ -16,10 +16,14 @@ pub struct Tokens {
     pub surface2: Color32,
     pub text: Color32,
     pub text_muted: Color32,
+    /// Secondary labels (section meta, chevrons).
+    pub text_secondary: Color32,
     pub accent: Color32,
     pub accent_on: Color32,
     pub accent_muted: Color32,
     pub border: Color32,
+    /// Stronger divider / hover outline.
+    pub border_strong: Color32,
 }
 
 impl Default for Tokens {
@@ -29,11 +33,13 @@ impl Default for Tokens {
             bg_muted: hex("#18181b"),
             surface2: hex("#141416"),
             text: hex("#fafafa"),
-            text_muted: hex("#a1a1aa"),
+            text_muted: hex("#b4b4be"),
+            text_secondary: hex("#8b8b96"),
             accent: hex("#183d50"),
             accent_on: hex("#fafafa"),
             accent_muted: hex("#061e2a"),
-            border: hex("#27272a"),
+            border: hex("#3a3a42"),
+            border_strong: hex("#52525b"),
         }
     }
 }

@@ -2,10 +2,11 @@
 
 use egui::{FontId, Rect, Ui};
 use reelsynth::ModSlot;
-use reelsynth_ui_theme::{heading_font, Tokens};
+use reelsynth_ui_theme::Tokens;
 
-use crate::layout::{UiScale, GRID_UNIT, SPACE_SM};
+use crate::layout::{UiScale, GRID_UNIT, RADIUS_SM, SPACE_SM};
 use crate::region::region;
+use crate::widgets::{button_ghost, button_toggle, card_stroke, collapsible_panel, sidebar_panel};
 
 pub const MOD_ROW_HEIGHT: f32 = 22.0;
 pub const MOD_SECTION_HEADER: f32 = 24.0;
@@ -125,43 +126,82 @@ pub fn draw_mod_matrix(
     state: ModMatrixState<'_>,
     scale: UiScale,
 ) -> ModMatrixResult {
-    let tokens = Tokens::default();
+    draw_mod_matrix_inner(ui, rect, state, scale, ModChrome::Collapsible)
+}
+
+/// Left-column native panel (matches Filter / Envelope chrome).
+pub fn draw_mod_matrix_sidebar(
+    ui: &mut Ui,
+    rect: Rect,
+    state: ModMatrixState<'_>,
+    scale: UiScale,
+) -> ModMatrixResult {
+    draw_mod_matrix_inner(ui, rect, state, scale, ModChrome::NativePanel)
+}
+
+#[derive(Clone, Copy)]
+enum ModChrome {
+    Collapsible,
+    NativePanel,
+}
+
+fn draw_mod_matrix_inner(
+    ui: &mut Ui,
+    rect: Rect,
+    state: ModMatrixState<'_>,
+    scale: UiScale,
+    chrome: ModChrome,
+) -> ModMatrixResult {
     let mut changed = false;
     let s = scale.ui();
-    let header_h = MOD_SECTION_HEADER * s;
     let row_h = MOD_ROW_HEIGHT * s;
-    let body_h = (rect.height() - header_h).max(0.0);
+    let body_h = (rect.height() - 26.0).max(0.0);
     let row_gap = 2.0 * s;
     let max_rows = ((body_h - GRID_UNIT * s) / (row_h + row_gap))
         .floor()
         .max(1.0) as usize;
 
-    region(ui, rect, |ui| {
-        egui::Frame::none()
-            .fill(tokens.bg_muted)
-            .stroke(egui::Stroke::new(1.0_f32, tokens.border))
-            .show(ui, |ui| {
-                ui.set_width(ui.available_width());
-                let active = state.routes.iter().filter(|r| r.enabled).count();
-                let meta = format!("{active} / {} routes", state.total_routes);
-                let header = section_header(ui, "Modulation Matrix", &meta, *state.open, header_h);
-                if header.clicked() {
-                    *state.open = !*state.open;
-                }
+    let ModMatrixState {
+        open,
+        routes,
+        total_routes,
+    } = state;
 
-                if *state.open {
-                    egui::Frame::none()
-                        .inner_margin(egui::Margin::symmetric(SPACE_SM * s, GRID_UNIT * s))
-                        .show(ui, |ui| {
-                            ui.spacing_mut().item_spacing.y = row_gap;
-                            for route in state.routes.iter_mut().take(max_rows) {
-                                if draw_mod_row(ui, route, row_h).changed {
-                                    changed = true;
-                                }
-                            }
-                        });
-                }
-            });
+    region(ui, rect, |ui| {
+        ui.set_min_height(rect.height());
+        ui.set_max_height(rect.height());
+        let active = routes.iter().filter(|r| r.enabled).count();
+        let meta = format!("{active} / {total_routes} routes");
+        let body = |ui: &mut Ui| {
+            egui::ScrollArea::vertical()
+                .id_salt("mod_matrix_sidebar_scroll")
+                .auto_shrink([false; 2])
+                .show(ui, |ui| {
+                    ui.set_width(ui.available_width());
+                    ui.spacing_mut().item_spacing.y = row_gap;
+                    for route in routes.iter_mut().take(max_rows) {
+                        if draw_mod_row(ui, route, row_h).changed {
+                            changed = true;
+                        }
+                    }
+                });
+        };
+
+        match chrome {
+            ModChrome::Collapsible => {
+                collapsible_panel(ui, "Modulation Matrix", &meta, open, |ui| {
+                    ui.spacing_mut().item_spacing.y = row_gap;
+                    for route in routes.iter_mut().take(max_rows) {
+                        if draw_mod_row(ui, route, row_h).changed {
+                            changed = true;
+                        }
+                    }
+                });
+            }
+            ModChrome::NativePanel => {
+                sidebar_panel(ui, "Modulation Matrix", &meta, body);
+            }
+        }
     });
 
     ModMatrixResult { changed }
@@ -305,43 +345,6 @@ mod bridge_tests {
     }
 }
 
-fn section_header(ui: &mut Ui, title: &str, meta: &str, open: bool, height: f32) -> egui::Response {
-    let tokens = Tokens::default();
-    let (rect, response) =
-        ui.allocate_exact_size(egui::vec2(ui.available_width(), height), egui::Sense::click());
-    if ui.is_rect_visible(rect) {
-        let painter = ui.painter_at(rect);
-        painter.rect_filled(rect, 0.0, tokens.surface2);
-        painter.line_segment(
-            [rect.left_bottom(), rect.right_bottom()],
-            egui::Stroke::new(1.0_f32, tokens.border),
-        );
-        let chevron = if open { "▼" } else { "▶" };
-        painter.text(
-            egui::pos2(rect.min.x + SPACE_SM, rect.center().y),
-            egui::Align2::LEFT_CENTER,
-            chevron,
-            FontId::proportional(10.0),
-            tokens.text_muted,
-        );
-        painter.text(
-            egui::pos2(rect.min.x + SPACE_SM + 16.0, rect.center().y),
-            egui::Align2::LEFT_CENTER,
-            title.to_uppercase(),
-            heading_font(11.0),
-            tokens.text,
-        );
-        painter.text(
-            egui::pos2(rect.max.x - SPACE_SM, rect.center().y),
-            egui::Align2::RIGHT_CENTER,
-            meta,
-            FontId::monospace(10.0),
-            tokens.text_muted,
-        );
-    }
-    response
-}
-
 struct ModRowResult {
     changed: bool,
 }
@@ -353,58 +356,59 @@ fn draw_mod_row(ui: &mut Ui, route: &mut ModSlotUi, row_h: f32) -> ModRowResult 
         ui.allocate_exact_size(egui::vec2(ui.available_width(), row_h), egui::Sense::hover());
 
     if ui.is_rect_visible(rect) {
-        if response.hovered() {
-            ui.painter_at(rect).rect_filled(
-                rect,
-                4.0,
-                tokens.accent.gamma_multiply(0.08),
-            );
+        let active = route.enabled;
+        let stroke = card_stroke(active, response.hovered(), &tokens);
+        let fill = if active {
+            tokens.bg
+        } else {
+            tokens.surface2.gamma_multiply(0.45)
+        };
+        let painter = ui.painter_at(rect);
+        painter.rect_filled(rect, RADIUS_SM, fill);
+        painter.rect_stroke(rect, RADIUS_SM, egui::Stroke::new(1.0_f32, stroke));
+        if response.hovered() && active {
+            painter.rect_filled(rect, RADIUS_SM, tokens.accent.gamma_multiply(0.12));
         }
 
-        ui.allocate_ui_at_rect(rect.shrink2(egui::vec2(4.0, 1.0)), |ui| {
+        let label_color = if active {
+            tokens.text
+        } else {
+            tokens.text_secondary
+        };
+        let target_color = if active {
+            tokens.text_secondary
+        } else {
+            tokens.text_muted
+        };
+
+        ui.allocate_ui_at_rect(rect.shrink2(egui::vec2(SPACE_SM, 2.0)), |ui| {
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = 6.0;
                 ui.label(
                     egui::RichText::new(route.source)
                         .font(FontId::monospace(10.0))
-                        .color(tokens.text),
+                        .color(label_color),
                 );
                 ui.label(
                     egui::RichText::new("→")
                         .size(10.0)
-                        .color(tokens.text_muted),
+                        .color(tokens.text_secondary),
                 );
                 ui.label(
                     egui::RichText::new(route.target)
                         .size(11.0)
-                        .color(tokens.text),
+                        .color(target_color),
                 );
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     ui.set_width(ui.available_width());
-                    ui.spacing_mut().item_spacing.x = 6.0;
+                    ui.spacing_mut().item_spacing.x = 4.0;
                     let on_label = if route.enabled { "On" } else { "Off" };
-                    if ui
-                        .add(
-                            egui::Button::new(
-                                egui::RichText::new(on_label).font(FontId::monospace(10.0)),
-                            )
-                            .frame(false),
-                        )
-                        .clicked()
-                    {
+                    if button_toggle(ui, on_label, route.enabled).clicked() {
                         route.enabled = !route.enabled;
                         changed = true;
                     }
-                    if ui
-                        .add(
-                            egui::Button::new(
-                                egui::RichText::new(route.curve).font(FontId::monospace(10.0)),
-                            )
-                            .frame(false),
-                        )
-                        .clicked()
-                    {
+                    if button_ghost(ui, route.curve).clicked() {
                         route.curve = match route.curve {
                             "Lin" => "Exp",
                             "Exp" => "Step",

@@ -27,13 +27,15 @@ pub use layout_audit::{
     center_used_rect_id, center_views_used_rect_id, footer_used_rect_id, header_used_rect_id,
     fx_strip_used_rect_id, mod_strip_used_rect_id, osc_fx_allocated_rect_id, osc_fx_used_rect_id,
     osc_used_rect_id, overlap_area,
-    piano_used_rect_id, rail_filter_allocated_rect_id, rail_filter_used_rect_id, rail_mod_allocated_rect_id, rail_mod_used_rect_id, rail_used_rect_id,
+    piano_used_rect_id, rail_filter_allocated_rect_id, rail_filter_used_rect_id,
+    osc_mod_allocated_rect_id, osc_mod_used_rect_id, rail_mod_allocated_rect_id,
+    rail_mod_used_rect_id, rail_used_rect_id,
     rect_area, utilization, within_bounds,
 };
 pub use center_layout::{compute_center_regions, CenterRegions};
 pub use mod_matrix::{
-    default_mod_slots, draw_mod_matrix, mod_slots_from_patch, mod_slots_to_patch,
-    ModMatrixState, ModPolarity, ModSlotUi,
+    default_mod_slots, draw_mod_matrix, draw_mod_matrix_sidebar, mod_slots_from_patch,
+    mod_slots_to_patch, ModMatrixState, ModPolarity, ModSlotUi,
 };
 pub use osc_column::{
     draw_osc_column, fm_algorithm_index, fm_source_from_algorithm, fm_source_from_index,
