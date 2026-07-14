@@ -4,7 +4,7 @@ use egui::{FontId, Rect, Ui};
 use reelsynth::ModSlot;
 use reelsynth_ui_theme::Tokens;
 
-use crate::layout::{UiScale, GRID_UNIT, RADIUS_SM, SPACE_SM};
+use crate::layout::{UiScale, GRID_UNIT, RADIUS_SM, SPACE_SM, sidebar_panel_chrome_height};
 use crate::region::region;
 use crate::widgets::{button_ghost, button_toggle, card_stroke, collapsible_panel, sidebar_panel};
 
@@ -155,7 +155,8 @@ fn draw_mod_matrix_inner(
     let mut changed = false;
     let s = scale.ui();
     let row_h = MOD_ROW_HEIGHT * s;
-    let body_h = (rect.height() - 26.0).max(0.0);
+    let chrome_h = sidebar_panel_chrome_height(s, true);
+    let body_h = (rect.height() - chrome_h).max(0.0);
     let row_gap = 2.0 * s;
     let max_rows = ((body_h - GRID_UNIT * s) / (row_h + row_gap))
         .floor()
@@ -168,13 +169,16 @@ fn draw_mod_matrix_inner(
     } = state;
 
     region(ui, rect, |ui| {
+        ui.set_clip_rect(rect);
         ui.set_min_height(rect.height());
         ui.set_max_height(rect.height());
         let active = routes.iter().filter(|r| r.enabled).count();
         let meta = format!("{active} / {total_routes} routes");
         let body = |ui: &mut Ui| {
+            ui.set_max_height(body_h);
             egui::ScrollArea::vertical()
                 .id_salt("mod_matrix_sidebar_scroll")
+                .max_height(body_h)
                 .auto_shrink([false; 2])
                 .show(ui, |ui| {
                     ui.set_width(ui.available_width());
@@ -381,7 +385,7 @@ fn draw_mod_row(ui: &mut Ui, route: &mut ModSlotUi, row_h: f32) -> ModRowResult 
             tokens.text_muted
         };
 
-        ui.allocate_ui_at_rect(rect.shrink2(egui::vec2(SPACE_SM, 2.0)), |ui| {
+        ui.allocate_ui_at_rect(rect.shrink2(egui::vec2(GRID_UNIT, 2.0)), |ui| {
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = 6.0;
                 ui.label(

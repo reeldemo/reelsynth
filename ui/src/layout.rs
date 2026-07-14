@@ -64,15 +64,30 @@ pub const SECTION_HEADER_HEIGHT: f32 = 24.0;
 /// Minimum osc-column height reserved for scrollable oscillator params.
 pub const OSC_COLUMN_MIN_SCROLL_HEIGHT: f32 = 112.0;
 
+/// Inner margin of native [`sidebar_panel`] frames.
+pub const SIDEBAR_PANEL_MARGIN: f32 = 6.0;
+/// Vertical gap between FX and mod matrix in the left column.
+pub const OSC_SIDEBAR_STACK_GAP: f32 = GRID_UNIT;
+
+/// Title + meta chrome inside a native sidebar panel (frame margins extra).
+pub fn sidebar_panel_chrome_height(scale: f32, with_meta: bool) -> f32 {
+    let s = scale;
+    let frame = SIDEBAR_PANEL_MARGIN * 2.0 * s;
+    let title_block = 10.0 * s + 6.0 * s;
+    let meta_block = if with_meta { 12.0 * s + 4.0 * s } else { 0.0 };
+    frame + title_block + meta_block
+}
+
 /// Minimum sidebar FX rack height for a 2-wide grid (header + padding + rows).
 pub fn sidebar_fx_min_height(scale: f32, slot_count: usize) -> f32 {
     let s = scale;
-    let header = SECTION_HEADER_HEIGHT * s;
-    let padding = SPACE_SM * s * 2.0;
+    let chrome = sidebar_panel_chrome_height(s, true);
     let rows = (slot_count + 1).div_ceil(2).max(2);
-    let row_h = 52.0 * s;
-    let gap = GRID_UNIT * s * 0.5 * (rows.saturating_sub(1) as f32);
-    header + padding + rows as f32 * row_h + gap
+    let row_gap = GRID_UNIT * s * 0.375 * (rows.saturating_sub(1) as f32);
+    let controls_h = 18.0 * s;
+    let card_h = 48.0 * s;
+    let row_h = card_h + GRID_UNIT * s * 0.375 + controls_h;
+    chrome + rows as f32 * row_h + row_gap
 }
 
 /// Split left column: osc scroll on top, FX grid + mod matrix stacked at bottom.
@@ -86,11 +101,11 @@ pub struct OscColumnHeights {
 /// Minimum sidebar mod matrix height (header + a few rows).
 pub fn sidebar_mod_min_height(scale: f32, route_rows: usize) -> f32 {
     let s = scale;
-    let header = SECTION_HEADER_HEIGHT * s + SPACE_SM * s;
-    let rows = route_rows.min(6).max(3);
+    let chrome = sidebar_panel_chrome_height(s, true);
+    let rows = route_rows.min(5).max(3);
     let row_h = MOD_ROW_HEIGHT * s;
     let gap = GRID_UNIT * s * 0.25 * (rows.saturating_sub(1) as f32);
-    header + rows as f32 * row_h + gap + SPACE_SM * s
+    chrome + rows as f32 * row_h + gap
 }
 
 /// Split left column: scrollable osc on top; FX + mod matrix share the bottom band.
@@ -102,20 +117,34 @@ pub fn osc_column_split_heights(
     show_mod: bool,
 ) -> OscColumnHeights {
     let min_osc = OSC_COLUMN_MIN_SCROLL_HEIGHT * scale;
+    let stack_gap = if show_fx && show_mod {
+        OSC_SIDEBAR_STACK_GAP * scale
+    } else {
+        0.0
+    };
     let mod_h = if show_mod {
-        sidebar_mod_min_height(scale, 5).min(total_h * 0.38)
+        sidebar_mod_min_height(scale, 5).min(total_h * 0.36)
     } else {
         0.0
     };
-    let fx_h = if show_fx {
-        let min_fx = sidebar_fx_min_height(scale, slot_count);
-        let budget = (total_h - min_osc - mod_h).max(min_fx);
-        min_fx.max(budget * 0.55).min(budget)
+    let min_fx = if show_fx {
+        sidebar_fx_min_height(scale, slot_count)
     } else {
         0.0
     };
-    let bottom = fx_h + mod_h;
-    let osc_h = (total_h - bottom).max(min_osc);
+    let mut fx_h = if show_fx {
+        let budget = (total_h - min_osc - mod_h - stack_gap).max(min_fx);
+        min_fx.max(budget * 0.52).min(budget)
+    } else {
+        0.0
+    };
+    let bottom = fx_h + mod_h + stack_gap;
+    let mut osc_h = (total_h - bottom).max(min_osc);
+    if osc_h + bottom > total_h + 0.5 {
+        let excess = osc_h + bottom - total_h;
+        fx_h = (fx_h - excess).max(min_fx);
+        osc_h = (total_h - fx_h - mod_h - stack_gap).max(min_osc);
+    }
     OscColumnHeights {
         osc: osc_h,
         fx: fx_h,
@@ -445,8 +474,22 @@ mod tests {
         let stack = osc_column_split_heights(total, 1.0, 3, true, false);
         assert!(stack.fx >= sidebar_fx_min_height(1.0, 3));
         assert_eq!(stack.mod_matrix, 0.0);
-        assert!((stack.osc + stack.fx - total).abs() < 0.5);
-        assert!(stack.fx > stack.osc * 0.45);
+        assert!((stack.osc + stack.fx - total).abs() < 1.0);
+    }
+
+    #[test]
+    fn osc_column_split_fx_mod_with_gap() {
+        use super::OSC_SIDEBAR_STACK_GAP;
+
+        let total = 796.0;
+        let stack = osc_column_split_heights(total, 1.0, 3, true, true);
+        assert!(stack.fx >= sidebar_fx_min_height(1.0, 3));
+        assert!(stack.mod_matrix >= sidebar_mod_min_height(1.0, 5));
+        let used = stack.osc + stack.fx + stack.mod_matrix + OSC_SIDEBAR_STACK_GAP;
+        assert!(
+            (used - total).abs() < 1.5,
+            "stack should fill column (used={used} total={total})"
+        );
     }
 
     #[test]

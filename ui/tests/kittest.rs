@@ -6,7 +6,7 @@ use egui::Rect;
 use egui_kittest::Harness;
 use reelsynth::Patch;
 use reelsynth_ui::{
-    audit_center, audit_panel_utilization, audit_shell, compute_center_regions, default_effect_slots,
+    audit_center, audit_osc_sidebar_stacks, audit_panel_utilization, audit_shell, compute_center_regions, default_effect_slots,
     draw_shell, embed_piano_in_center, osc_type_index, ShellLayout, ShellLayoutOptions,
     ShellMidiDevices, center_morph_used_rect_id, center_piano_used_rect_id,
     center_scope_used_rect_id, center_strip_used_rect_id, center_used_rect_id,
@@ -424,6 +424,8 @@ fn interface_used_rects_within_allocated_min_window() {
         layout.osc
     );
 
+    audit_osc_sidebar_stacks(&harness.ctx);
+
     let piano_region_used = get_used(&harness.ctx, center_piano_used_rect_id(), "center piano widget");
     assert!(fits_max_slack(center_regions.piano, piano_region_used, 12.0));
 
@@ -496,6 +498,7 @@ fn panel_whitespace_utilization_at_1280x880() {
         );
     harness.run();
     audit_panel_utilization(&harness.ctx, PANEL_UTIL_MIN);
+    audit_osc_sidebar_stacks(&harness.ctx);
 
     let osc_fx_alloc = get_used(&harness.ctx, osc_fx_allocated_rect_id(), "osc fx allocated");
     let osc_fx_used = get_used(&harness.ctx, osc_fx_used_rect_id(), "osc fx used");

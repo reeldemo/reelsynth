@@ -204,9 +204,15 @@ pub(super) fn draw_osc(
             Rect::NOTHING
         };
         let mod_rect = if stack.mod_matrix > 0.0 {
+            let mod_top = y
+                + if fx_rect.is_positive() {
+                    GRID_UNIT * s
+                } else {
+                    0.0
+                };
             Rect::from_min_max(
-                egui::pos2(rect.min.x, y),
-                egui::pos2(rect.max.x, y + stack.mod_matrix),
+                egui::pos2(rect.min.x, mod_top),
+                egui::pos2(rect.max.x, mod_top + stack.mod_matrix),
             )
         } else {
             Rect::NOTHING

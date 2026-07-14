@@ -144,6 +144,40 @@ pub fn assert_min_utilization(label: &str, allocated: Rect, used: Rect, min_rati
     );
 }
 
+/// FX and mod matrix in the left column must not overlap and share the same width.
+pub fn audit_osc_sidebar_stacks(ctx: &egui::Context) {
+    ctx.data(|d| {
+        if let (Some(fx), Some(mod_r)) = (
+            d.get_temp::<Rect>(osc_fx_allocated_rect_id()),
+            d.get_temp::<Rect>(osc_mod_allocated_rect_id()),
+        ) {
+            let overlap = overlap_area(fx, mod_r);
+            assert!(
+                overlap < 1.0,
+                "osc fx overlaps mod matrix by {overlap:.1}px² (fx={fx:?} mod={mod_r:?})"
+            );
+            assert!(
+                mod_r.min.y >= fx.max.y - EPS,
+                "mod matrix must stack below FX (fx.max.y={} mod.min.y={})",
+                fx.max.y,
+                mod_r.min.y,
+            );
+            assert!(
+                (mod_r.min.x - fx.min.x).abs() < 1.5,
+                "FX and mod should align on left edge (fx.x={} mod.x={})",
+                fx.min.x,
+                mod_r.min.x,
+            );
+            assert!(
+                (mod_r.width() - fx.width()).abs() < 2.0,
+                "FX and mod should share column width (fx.w={} mod.w={})",
+                fx.width(),
+                mod_r.width(),
+            );
+        }
+    });
+}
+
 /// Whitespace heuristics for embedded sidebar panels at default window size.
 pub fn audit_panel_utilization(ctx: &egui::Context, min_ratio: f32) {
     ctx.data(|d| {

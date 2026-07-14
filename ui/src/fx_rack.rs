@@ -4,7 +4,7 @@ use egui::{Color32, FontId, Rect, Ui};
 use reelsynth::{EffectSlot, EffectType};
 use reelsynth_ui_theme::Tokens;
 
-use crate::layout::{UiScale, GRID_UNIT, RADIUS_SM};
+use crate::layout::{UiScale, GRID_UNIT, RADIUS_SM, sidebar_panel_chrome_height};
 use crate::region::region;
 use crate::widgets::{
     button_icon, card_stroke, collapsible_panel, menu_selectable, reel_combo, select_value_text,
@@ -222,6 +222,7 @@ fn draw_effect_rack_inner(
     let EffectRackState { open, slots } = state;
 
     region(ui, rect, |ui| {
+        ui.set_clip_rect(rect);
         ui.set_min_height(rect.height());
         ui.set_max_height(rect.height());
         let active = slots.iter().filter(|s| s.is_active()).count();
@@ -229,6 +230,9 @@ fn draw_effect_rack_inner(
         if active > CPU_WARN_ACTIVE_SLOTS {
             meta.push_str(" · CPU ⚠");
         }
+
+        let chrome_h = sidebar_panel_chrome_height(scale.ui(), true);
+        let body_h = (rect.height() - chrome_h).max(0.0);
 
         let body = |ui: &mut Ui| {
             if active > CPU_WARN_ACTIVE_SLOTS {
@@ -242,14 +246,14 @@ fn draw_effect_rack_inner(
                 ui.add_space(4.0);
             }
 
-            let body_h = (rect.height() - 40.0).max(0.0);
             ui.set_min_height(body_h);
+            ui.set_max_height(body_h);
             match layout {
                 RackLayout::Horizontal => {
                     draw_effect_rack_horizontal(ui, slots, scale, metrics, &mut changed);
                 }
                 RackLayout::Grid2x2 => {
-                    draw_effect_rack_grid(ui, slots, scale, metrics, &mut changed);
+                    draw_effect_rack_grid(ui, slots, scale, metrics, &mut changed, body_h);
                 }
             }
         };
@@ -306,6 +310,7 @@ fn draw_effect_rack_grid(
     scale: UiScale,
     metrics: FxMetrics,
     changed: &mut bool,
+    body_h: f32,
 ) {
     let s = scale.ui();
     let gap = GRID_UNIT * s * 0.75;
@@ -314,10 +319,9 @@ fn draw_effect_rack_grid(
     let controls_h = 18.0 * s;
     let cell_count = slots.len() + 1;
     let rows = cell_count.div_ceil(2);
-    let body_h = ui.available_height();
     let row_gap_total = gap * 0.5 * (rows.saturating_sub(1) as f32);
-    let row_h = ((body_h - row_gap_total) / rows as f32).max(52.0 * s);
-    let card_h = (row_h - gap * 0.5 - controls_h).max(40.0 * s);
+    let row_h = ((body_h - row_gap_total) / rows as f32).clamp(44.0 * s, 60.0 * s);
+    let card_h = (row_h - gap * 0.5 - controls_h).clamp(36.0 * s, 52.0 * s);
     let column_h = card_h + gap * 0.5 + controls_h;
     let grid_metrics = FxMetrics {
         slot_width: col_w,
