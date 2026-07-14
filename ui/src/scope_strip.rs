@@ -14,6 +14,7 @@ use crate::wt::waveform_points;
 pub const SCOPE_STRIP_HEIGHT: f32 = 72.0;
 const PREVIEW_INTERVAL_SECS: f64 = 1.0 / 30.0;
 const SPECTRUM_BARS: usize = 20;
+const TRACE_LUMINANCE_FLOOR: f32 = 0.42;
 
 const STAGE_LABELS: [&str; 4] = ["Osc", "Filter", "FX", "Out"];
 const STAGE_COLORS: [Color32; 4] = [
@@ -176,7 +177,7 @@ fn draw_wave_scope_cell(
     if points.len() >= 2 {
         painter.add(Shape::line(
             points,
-            egui::Stroke::new(1.25_f32, accent.gamma_multiply(0.9)),
+            egui::Stroke::new(1.25_f32, trace_color(accent)),
         ));
         let mid = wave_rect.center().y;
         painter.line_segment(
@@ -228,8 +229,24 @@ fn draw_spectrum_scope_cell(
             egui::pos2(x, bars_rect.max.y - bar_h),
             egui::pos2(x + bar_w, bars_rect.max.y),
         );
-        painter.rect_filled(bar, 1.0, accent.gamma_multiply(0.55 + mag * 0.45));
+        painter.rect_filled(bar, 1.0, trace_color(accent.gamma_multiply(0.55 + mag * 0.45)));
     }
+}
+
+fn trace_color(color: Color32) -> Color32 {
+    let [r, g, b, a] = color.to_array();
+    let lum =
+        (0.2126 * r as f32 + 0.7152 * g as f32 + 0.0722 * b as f32) / 255.0 * (a as f32 / 255.0);
+    if lum >= TRACE_LUMINANCE_FLOOR {
+        return color;
+    }
+    let scale = TRACE_LUMINANCE_FLOOR / lum.max(0.01);
+    Color32::from_rgba_unmultiplied(
+        (r as f32 * scale).min(255.0) as u8,
+        (g as f32 * scale).min(255.0) as u8,
+        (b as f32 * scale).min(255.0) as u8,
+        a,
+    )
 }
 
 fn draw_arrow(ui: &mut Ui, height: f32) {

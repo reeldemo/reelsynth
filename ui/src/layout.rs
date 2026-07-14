@@ -51,8 +51,12 @@ pub const PIANO_HEIGHT: f32 = 128.0;
 pub const PIANO_WHITE_KEY_WIDTH: f32 = 28.0;
 pub const PIANO_BLACK_WIDTH_RATIO: f32 = 0.58;
 pub const PIANO_BLACK_HEIGHT_RATIO: f32 = 0.56;
+/// Full concert range A0–C8 (MIDI 21–108).
+pub const PIANO_START_NOTE: u8 = 21;
+pub const PIANO_END_NOTE: u8 = 108;
+/// Legacy 3-octave window from C3 (Design mode compact preview).
 pub const PIANO_OCTAVES: usize = 3;
-pub const PIANO_START_NOTE: u8 = 48; // C3
+pub const PIANO_LEGACY_START: u8 = 48;
 
 pub const MOD_MATRIX_HEIGHT: f32 = 120.0;
 pub const MOD_ROW_HEIGHT: f32 = 22.0;

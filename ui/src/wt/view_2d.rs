@@ -1,4 +1,4 @@
-use egui::{CursorIcon, Pos2, Rect, Sense, Shape, Ui, Vec2};
+use egui::{Color32, CursorIcon, Pos2, Rect, Sense, Shape, Ui, Vec2};
 use reelsynth::patch::Patch;
 use reelsynth::WavetableBank;
 use reelsynth_ui_theme::{ACCENT_UI, Tokens};
@@ -138,6 +138,8 @@ impl WtView2d<'_> {
             egui::Stroke::new(1.0_f32, tokens.border),
         );
 
+        paint_grid(&painter, inner, tokens.border);
+
         region(
             ui,
             Rect::from_min_max(rect.min, egui::pos2(rect.max.x, plot_top)),
@@ -209,7 +211,7 @@ impl WtView2d<'_> {
 
         painter.line_segment(
             [Pos2::new(inner.min.x, mid_y), Pos2::new(inner.max.x, mid_y)],
-            egui::Stroke::new(1.0_f32, tokens.border),
+            egui::Stroke::new(1.0_f32, tokens.border.gamma_multiply(0.75)),
         );
 
         let label = if let Some(name) = self.bank_name {
@@ -263,6 +265,27 @@ impl WtView2d<'_> {
             position_changed,
             morph_changed,
         }
+    }
+}
+
+fn paint_grid(painter: &egui::Painter, rect: Rect, border: Color32) {
+    let step = 24.0;
+    let stroke = egui::Stroke::new(0.5_f32, border.gamma_multiply(0.75));
+    let mut x = rect.min.x;
+    while x <= rect.max.x {
+        painter.line_segment(
+            [Pos2::new(x, rect.min.y), Pos2::new(x, rect.max.y)],
+            stroke,
+        );
+        x += step;
+    }
+    let mut y = rect.min.y;
+    while y <= rect.max.y {
+        painter.line_segment(
+            [Pos2::new(rect.min.x, y), Pos2::new(rect.max.x, y)],
+            stroke,
+        );
+        y += step;
     }
 }
 

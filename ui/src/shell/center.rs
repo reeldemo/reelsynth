@@ -201,7 +201,7 @@ pub(super) fn draw_center(
         if piano_rect.is_positive() && state.piano_visible {
             region(ui, piano_rect, |ui| {
                 let inner = ui.max_rect();
-                let (_, piano) = PianoKeyboard::new(&state.keys_down).show_in_rect(ui, inner);
+                let (_, piano) = PianoKeyboard::compact(&state.keys_down).show_in_rect(ui, inner);
                 if let Some(n) = piano.note_on {
                     actions.note_on = Some(n);
                 }

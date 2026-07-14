@@ -2,11 +2,13 @@
 
 This guide explains how to compose a melody, design the sound in ReelSynth, and get **both** into a DAW for arrangement and mixing.
 
+ReelSynth now includes a **Compose mode** (header toggle) for sketching clips in-app. Export to a DAW remains optional for full arrangement, mixing, and collaboration.
+
 ## The two things you need
 
 | Asset | What it is | Where it lives |
 |-------|------------|----------------|
-| **Performance** | Notes, timing, velocity | MIDI clip in your DAW |
+| **Performance** | Notes, timing, velocity | Compose clips in ReelSynth *or* MIDI clip in your DAW |
 | **Sound** | Wavetable + patch settings | `.reelpreset` + `.reelwt`, or export to Vital / Wavetable |
 
 Keep them separate. Change the melody without re-tweaking the synth, or swap sounds without re-playing.
@@ -33,6 +35,18 @@ flowchart LR
     Track --> Synth
   end
 ```
+
+---
+
+## Path A1 — Compose in ReelSynth (new)
+
+1. Launch the standalone app and toggle **Compose** in the header.
+2. **Design** your sound first (switch back to Design mode), then return to Compose.
+3. Double-click the arrangement to create clips; draw notes in the piano roll.
+4. Arm a track ( **R** ), press record **●** , and play via the 88-key strip, QWERTY, or MIDI.
+5. Use scenes for session-style clip launch; arrangement playhead for linear playback.
+6. Save `.reelpreset` — sequence data will embed in the patch schema (backend in progress).
+7. Optional: export reelpack for DAW handoff when full SMF export lands.
 
 ---
 

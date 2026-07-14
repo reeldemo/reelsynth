@@ -29,11 +29,11 @@ Index: [docs/README.md](docs/README.md)
 
 ## Hard constraints (do not mislead users)
 
-1. **No in-app MIDI recording** — melody must be recorded in a DAW.
-2. **Export `daw/midi/melody.mid` is a single demo note** — not user performance.
+1. **Compose mode** — in-app MIDI clip editing and recording; full transport playback requires the sequence engine (in progress).
+2. **Export `daw/midi/melody.mid`** — demo note until full `SequenceProject` SMF export lands.
 3. **Plugin is UI-only** — no host audio/MIDI I/O until S7.
 4. **Exports to Vital/Serum/Ableton are lossy** — cite [docs/INTEROP.md](docs/INTEROP.md).
-5. **Canonical state** is `.reelpreset` + `.reelwt` — everything else is a target format.
+5. **Canonical state** is `.reelpreset` + `.reelwt` — sequence data will embed in patch schema.
 
 ## Build commands
 

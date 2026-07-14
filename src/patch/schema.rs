@@ -1,6 +1,7 @@
 //! Patch schema parsing (reelsynth-preset-v2 with v1 migration).
 
 use crate::performance::PerformanceSettings;
+use crate::sequence::SequenceProject;
 use serde::{Deserialize, Serialize};
 
 pub const SCHEMA_V1: &str = "reelsynth-preset-v1";
@@ -405,6 +406,9 @@ pub struct Patch {
     /// Key, scale, and performance keyboard layout.
     #[serde(default)]
     pub performance: PerformanceSettings,
+    /// Compose-mode arrangement (clips, scenes, transport defaults).
+    #[serde(default)]
+    pub sequence: SequenceProject,
 }
 
 pub(crate) fn default_filter2() -> Filter {

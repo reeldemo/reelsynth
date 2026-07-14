@@ -8,6 +8,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Compose mode** — header toggle switches from Design (sound engineering) to a mini-DAW layout: transport bar, multi-track arrangement, piano roll editor, scene grid, 88-key keyboard strip
 - User documentation pack: GETTING_STARTED, UI, WORKFLOW, FREE_STACK, SDK, REELDEMO_INTEGRATION
 - [docs/README.md](docs/README.md) documentation index
 - [AGENTS.md](AGENTS.md), [CONTRIBUTING.md](CONTRIBUTING.md) for agents and contributors
@@ -18,6 +19,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 
 - README expanded with doc links and capability matrix
+- **Design ↔ Compose** mode switch in header; Compose hides WT editor and osc column
+- On-screen piano upgraded to **88 keys (A0–C8)** with horizontal scroll and scale-fold dimming
 
 ## [0.1.0] - 2026-07-12
 

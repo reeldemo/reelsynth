@@ -6,12 +6,35 @@ The standalone app (`reelsynth-app`) uses a fixed **1280×880** layout (see `ui/
 
 | # | Region | Purpose |
 |---|--------|---------|
-| 1 | Header | Open/Save preset, WT menu, MIDI device, Piano toggle, status |
-| 2 | Oscillator column (left rail) | Per-osc level, pan, detune, unison, FM |
-| 3 | Center column | Filter, ADSR, LFO, mod matrix, FX rack |
-| 4 | WT editor | Position strip, 2D waveform, 3D surface, morph A/B |
+| 1 | Header | Open/Save preset, **Design / Compose** toggle, WT menu, MIDI device, Piano toggle, status |
+| 2 | Oscillator column (left rail) | Per-osc level, pan, detune, unison, FM — **Design mode only** |
+| 3 | Center column | Filter, ADSR, LFO, mod matrix, FX rack — **Design mode only** |
+| 4 | WT editor | Position strip, 2D waveform, 3D surface, morph A/B — **Design mode only** |
 | 5 | Scope strip | Live osc → filter → FX → out |
-| 6 | Piano (optional) | On-screen keyboard, 3 octaves from C3 |
+| 6 | Piano (optional) | On-screen keyboard, **88 keys A0–C8** with horizontal scroll |
+
+---
+
+## Compose mode
+
+Toggle **Compose** in the header to replace the center column with a mini-DAW layout:
+
+| Region | ~Height | Purpose |
+|--------|---------|---------|
+| Transport bar | 40 px | Play / stop / record, loop, metronome, BPM, snap grid |
+| Track list | left rail | Mute / solo / arm / select (180 px) |
+| Arrangement | 35% | Multi-track timeline, clip blocks, playhead scrub |
+| Piano roll | 45% | Selected clip editor — draw, move, resize notes; velocity lane |
+| Scene grid | 12% | 8 scenes × track columns — session launch |
+| Keyboard strip | 8% | 88-key piano (bottom) — record when armed, else monitor |
+
+**Interactions**
+
+- Click arrangement clip → loads into piano roll
+- Double-click empty bar → create clip
+- Pencil tool → draw notes; Select → move; Eraser → delete
+- `Delete` removes selected notes; Undo / Redo in piano roll toolbar
+- Arm track + record → live input writes notes at playhead (UI-side; engine sync pending)
 
 ---
 
@@ -23,6 +46,7 @@ The standalone app (`reelsynth-app`) uses a fixed **1280×880** layout (see `ui/
 |---------|--------|
 | **Open** | Load `.reelpreset`; resolves sibling `.reelwt` |
 | **Save** | Write current patch as `.reelpreset` |
+| **Design** / **Compose** | Switch shell mode — sound design vs mini-DAW |
 | **WT** menu | Open/Save `.reelwt`, factory banks, Vital/WAV/Serum import |
 | **Piano** | Show/hide on-screen keyboard |
 | **Key / Scale / Layout** | Performance input: root key, scale mode, piano vs scale-fold vs chord row |
@@ -39,7 +63,7 @@ The standalone app (`reelsynth-app`) uses a fixed **1280×880** layout (see `ui/
 | Click piano keys | Same as QWERTY when piano visible |
 | MIDI controller | Full keyboard range; MPE dual-zone enabled in engine |
 
-No global DAW-style transport — ReelSynth is a sound-design instrument, not a sequencer.
+In **Compose** mode, QWERTY and piano input route to the armed clip when recording; otherwise they monitor through the synth. Piano roll focus + pencil tool auditions quietly.
 
 ---
 
@@ -107,9 +131,10 @@ Morph settings are per-oscillator; active tab syncs with WT controls.
 
 ![Piano keyboard](https://github.com/reeldemo/reelsynth/releases/download/v0.1.0/06-piano-keyboard.png)
 
-- **3 octaves** starting at C3 (MIDI note 48)
+- **88 keys** — MIDI 21–108 (A0–C8) with horizontal scroll
 - Toggle via header **Piano** button
-- Height: 88 px; white keys 16 px wide
+- **Scale fold** — out-of-scale keys dimmed per performance settings (Compose mode and Scale layout)
+- Height: 128 px; white keys 28 px wide (scroll when window is narrow)
 
 ---
 

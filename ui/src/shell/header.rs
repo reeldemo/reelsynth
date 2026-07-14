@@ -12,6 +12,7 @@ use crate::layout_audit::{
 };
 use crate::osc_column::{draw_osc_column, OscColumnInput, OscColumnState};
 use crate::region::region;
+use crate::state::ShellMode;
 use crate::widgets::{button_ghost, button_toggle, menu_action, menu_divider, menu_section_label, menu_selectable, reel_combo, select_value_text, styled_menu_body};
 use crate::performance::draw_performance_header;
 use crate::state::OscStripContext;
@@ -48,6 +49,17 @@ pub(super) fn draw_header(
                     }
                     if button_ghost(ui, "Save").clicked() {
                         actions.save_preset = true;
+                    }
+
+                    ui.add_space(GRID_UNIT);
+
+                    if button_toggle(ui, "Design", state.shell_mode == ShellMode::Design).clicked()
+                    {
+                        state.shell_mode = ShellMode::Design;
+                    }
+                    if button_toggle(ui, "Compose", state.shell_mode == ShellMode::Compose).clicked()
+                    {
+                        state.shell_mode = ShellMode::Compose;
                     }
 
                     ui.add_space(GRID_UNIT);

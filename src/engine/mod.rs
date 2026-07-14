@@ -16,7 +16,9 @@ pub use voice_rt::RtVoice;
 pub use crate::scope::ScopeMonitor;
 
 use crate::fx::FxChain;
+use crate::modulation::apply_mods_to_patch;
 use crate::patch::Patch;
+use crate::sequence::{SequencerRuntime, TransportState};
 use crate::voice::render_note;
 use crate::wavetable::WavetableBank;
 
@@ -34,6 +36,7 @@ pub struct SynthEngine {
     global_time: f32,
     scope: ScopeMonitor,
     mpe: MpeState,
+    sequencer: SequencerRuntime,
 }
 
 impl SynthEngine {
@@ -42,6 +45,9 @@ impl SynthEngine {
         let pool = VoicePool::new(&patch);
         let fx = FxChain::new(sample_rate);
         let banks = BankSet::from_primary(bank, &patch);
+        let bpm = patch.sequence.bpm;
+        let mut sequencer = SequencerRuntime::new(bpm);
+        sequencer.sync_from_project(&patch.sequence);
         Self {
             banks,
             patch,
@@ -52,6 +58,7 @@ impl SynthEngine {
             global_time: 0.0,
             scope: ScopeMonitor::new(),
             mpe: MpeState::new(),
+            sequencer,
         }
     }
 
@@ -67,7 +74,24 @@ impl SynthEngine {
         &self.patch
     }
 
+    pub fn patch_mut(&mut self) -> &mut Patch {
+        &mut self.patch
+    }
+
+    pub fn transport(&self) -> &TransportState {
+        &self.sequencer.transport
+    }
+
+    pub fn sequencer(&self) -> &SequencerRuntime {
+        &self.sequencer
+    }
+
+    pub fn sequencer_mut(&mut self) -> &mut SequencerRuntime {
+        &mut self.sequencer
+    }
+
     pub fn set_patch(&mut self, patch: Patch) {
+        self.sequencer.sync_from_project(&patch.sequence);
         self.params.sync_from_patch(&patch);
         self.pool.reset_patch(&patch);
         self.fx.set_effects(patch.effects.clone());
@@ -285,6 +309,9 @@ impl SynthEngine {
     }
 
     pub fn note_on(&mut self, channel: u8, note: u8, velocity: f32) {
+        if channel != SequencerRuntime::seq_channel() && self.sequencer.transport.recording {
+            self.sequencer.live_note_on(note, velocity);
+        }
         let freq = note_to_freq(note);
         self.note_on_freq(channel, note, freq, velocity);
     }
@@ -304,6 +331,9 @@ impl SynthEngine {
     }
 
     pub fn note_off(&mut self, channel: u8, note: u8) {
+        if channel != SequencerRuntime::seq_channel() && self.sequencer.transport.recording {
+            self.sequencer.live_note_off(note);
+        }
         self.pool.note_off(channel, note);
     }
 
@@ -383,12 +413,20 @@ impl SynthEngine {
         let sr = self.sample_rate as f32;
         let dt = 1.0 / sr;
         let bank_slice = self.banks.banks().to_vec();
+        let frames = out.len();
 
-        for sample in out.iter_mut() {
+        self.sequencer
+            .begin_buffer(&self.patch.sequence, frames, sr);
+
+        for (frame, sample) in out.iter_mut().enumerate() {
+            self.dispatch_seq_events(frame);
+
             self.params.filter_cutoff.process();
             self.params.master_gain.process();
             let mut patch = self.patch.clone();
             patch.filter.cutoff = self.params.filter_cutoff.current();
+            let auto_mods = self.sequencer.automation_mods(&self.patch.sequence);
+            apply_mods_to_patch(&mut patch, &auto_mods);
             let bank_for_osc = |oi: usize| self.banks.bank_for_osc(&patch, oi);
 
             let mut acc_osc = 0.0f32;
@@ -432,11 +470,18 @@ impl SynthEngine {
         let frames = out.len() / 2;
         let bank_slice = self.banks.banks().to_vec();
 
+        self.sequencer
+            .begin_buffer(&self.patch.sequence, frames, sr);
+
         for frame in 0..frames {
+            self.dispatch_seq_events(frame);
+
             self.params.filter_cutoff.process();
             self.params.master_gain.process();
             let mut patch = self.patch.clone();
             patch.filter.cutoff = self.params.filter_cutoff.current();
+            let auto_mods = self.sequencer.automation_mods(&self.patch.sequence);
+            apply_mods_to_patch(&mut patch, &auto_mods);
             let bank_for_osc = |oi: usize| self.banks.bank_for_osc(&patch, oi);
 
             let mut acc_osc = 0.0f32;
@@ -499,5 +544,25 @@ impl SynthEngine {
             *sample = fx.process_sample(*sample);
         }
         audio
+    }
+
+    fn dispatch_seq_events(&mut self, frame: usize) {
+        let events = self.sequencer.events_at_frame(frame);
+        for ev in events {
+            match ev {
+                crate::sequence::SchedEvent::NoteOn {
+                    channel,
+                    note,
+                    velocity,
+                    ..
+                } => {
+                    let freq = note_to_freq(note);
+                    self.note_on_freq(channel, note, freq, velocity);
+                }
+                crate::sequence::SchedEvent::NoteOff { channel, note, .. } => {
+                    self.pool.note_off(channel, note);
+                }
+            }
+        }
     }
 }

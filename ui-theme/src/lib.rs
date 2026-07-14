@@ -33,12 +33,12 @@ impl Default for Tokens {
             bg_muted: hex("#18181b"),
             surface2: hex("#141416"),
             text: hex("#fafafa"),
-            text_muted: hex("#b4b4be"),
+            text_muted: hex("#a1a1aa"),
             text_secondary: hex("#8b8b96"),
             accent: hex("#183d50"),
             accent_on: hex("#fafafa"),
             accent_muted: hex("#061e2a"),
-            border: hex("#3a3a42"),
+            border: hex("#27272a"),
             border_strong: hex("#52525b"),
         }
     }
@@ -140,7 +140,7 @@ pub fn apply_fonts(ctx: &egui::Context) {
     );
     style.text_styles.insert(
         egui::TextStyle::Body,
-        FontId::new(12.0, FontFamily::Proportional),
+        FontId::new(13.0, FontFamily::Proportional),
     );
     style.text_styles.insert(
         egui::TextStyle::Monospace,

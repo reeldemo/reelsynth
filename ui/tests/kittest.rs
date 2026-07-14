@@ -24,7 +24,7 @@ fn piano_widget_harness_smoke() {
     let keys = HashSet::new();
     let mut harness = Harness::new_ui(|ui| {
         reelsynth_ui_theme::Tokens::default();
-        let _ = PianoKeyboard::new(&keys).show(ui);
+        let _ = PianoKeyboard::compact(&keys).show(ui);
     });
     harness.run();
 }

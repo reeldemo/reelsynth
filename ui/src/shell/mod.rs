@@ -9,6 +9,7 @@ use egui::{Rect, Ui};
 use reelsynth::Patch;
 use reelsynth_ui_theme::Tokens;
 
+use crate::compose::draw_compose_shell;
 use crate::fx_rack::{draw_effect_rack, EffectRackState};
 use crate::layout::{embed_piano_in_center, ShellLayout, ShellLayoutOptions};
 use crate::layout_audit::{fx_strip_used_rect_id, mod_strip_used_rect_id};
@@ -17,7 +18,7 @@ use crate::region::region;
 
 pub use crate::state::{
     OscStripContext, OscStripPreviewState, ScopeStripContext, ShellActions, ShellConfig,
-    ShellMidiDevices, UiState,
+    ShellMidiDevices, ShellMode, UiState,
 };
 
 // Re-exports for shell submodules (`use super::*`).
@@ -49,12 +50,13 @@ pub fn draw_shell(
     scope: Option<ScopeStripContext<'_>>,
     osc_preview: Option<OscStripContext<'_>>,
 ) -> ShellActions {
+    let compose_mode = state.shell_mode == ShellMode::Compose;
     let layout_opts = ShellLayoutOptions {
         piano_visible: state.piano_visible,
-        show_osc_column: config.show_osc_column,
-        show_mod_matrix: config.show_mod_matrix,
+        show_osc_column: config.show_osc_column && !compose_mode,
+        show_mod_matrix: config.show_mod_matrix && !compose_mode,
         mod_matrix_open: state.mod_matrix_open,
-        show_fx_rack: config.show_fx_rack,
+        show_fx_rack: config.show_fx_rack && !compose_mode,
         fx_rack_open: state.fx_rack_open,
     };
     let layout = ShellLayout::compute_with_options(screen, layout_opts);
@@ -111,32 +113,37 @@ pub fn draw_shell(
     );
 
     draw_header(ui, layout.header, state, midi, &mut actions);
-    if layout.osc.is_positive() {
-        draw_osc(
+
+    if compose_mode {
+        draw_compose_shell(ui, layout.main, state, &mut actions, layout.scale);
+    } else {
+        if layout.osc.is_positive() {
+            draw_osc(
+                ui,
+                layout.osc,
+                state,
+                preview_patch,
+                osc_preview,
+                config,
+                &mut actions,
+                layout.scale,
+            );
+        }
+        draw_center(
             ui,
-            layout.osc,
+            layout.center,
             state,
+            bank,
             preview_patch,
-            osc_preview,
             config,
+            scope,
             &mut actions,
             layout.scale,
         );
+        draw_rail(ui, layout.rail, state, config, &mut actions, layout.scale);
     }
-    draw_center(
-        ui,
-        layout.center,
-        state,
-        bank,
-        preview_patch,
-        config,
-        scope,
-        &mut actions,
-        layout.scale,
-    );
-    draw_rail(ui, layout.rail, state, config, &mut actions, layout.scale);
 
-    if layout.mod_matrix.is_positive() {
+    if !compose_mode && layout.mod_matrix.is_positive() {
         region(ui, layout.mod_matrix, |ui| {
             let result = draw_mod_matrix(
                 ui,
@@ -157,7 +164,7 @@ pub fn draw_shell(
         });
     }
 
-    if layout.fx_rack.is_positive() {
+    if !compose_mode && layout.fx_rack.is_positive() {
         region(ui, layout.fx_rack, |ui| {
             let result = draw_effect_rack(
                 ui,

@@ -2,11 +2,19 @@ use std::collections::HashSet;
 
 use reelsynth::{Patch, ScopeLiveTaps, WavetableBank};
 
+use crate::compose::ComposeUi;
 use crate::fx_rack::{effect_slots_from_patch, EffectSlotUi};
 use crate::mod_matrix::{default_mod_slots, ModSlotUi};
 use crate::oscillator_ui::{OscillatorUi, MIN_OSCILLATORS};
 use crate::scope_strip::ScopeStripState;
 use crate::wt::{morph_amount_for_position, position_from_osc_ui, WtEditTool};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ShellMode {
+    #[default]
+    Design,
+    Compose,
+}
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct ShellConfig {
@@ -33,6 +41,16 @@ pub struct ShellActions {
     pub midi_device_selected: Option<usize>,
     pub chord_degree_on: Option<usize>,
     pub chord_degree_off: Option<usize>,
+    /// Compose transport — wired to sequencer engine when backend lands.
+    pub transport_play: bool,
+    pub transport_stop: bool,
+    pub transport_record: bool,
+    pub transport_seek: Option<f32>,
+    pub sequence_changed: bool,
+    pub scene_launch: Option<usize>,
+    /// Live note captured for MIDI recorder (Compose + armed track).
+    pub compose_record_note_on: Option<(u8, f32)>,
+    pub compose_record_note_off: Option<u8>,
 }
 
 pub struct ShellMidiDevices<'a> {
@@ -107,6 +125,8 @@ pub struct UiState {
     pub preset_category: String,
     pub status: String,
     pub midi_device: String,
+    pub shell_mode: ShellMode,
+    pub compose: ComposeUi,
 }
 
 pub struct ScopeStripContext<'a> {
@@ -213,6 +233,8 @@ impl Default for UiState {
             preset_category: "Lead · Wavetable · Saw Morph".into(),
             status: "Audio OK — click keys or use QWERTY row (Z–M)".into(),
             midi_device: "Default".into(),
+            shell_mode: ShellMode::Design,
+            compose: ComposeUi::default(),
         }
     }
 }

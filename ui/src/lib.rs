@@ -1,5 +1,6 @@
 mod ambient;
 mod center_layout;
+mod compose;
 mod region;
 mod fx_rack;
 mod layout;
@@ -46,11 +47,19 @@ pub use osc_column::{
 pub use oscillator_ui::{OscillatorUi, MIN_OSCILLATORS};
 pub use performance::PerformanceUi;
 pub use scope_strip::{draw_scope_strip, ScopeStripInput, ScopeStripState, SCOPE_STRIP_HEIGHT};
+pub use compose::{
+    Clip, ClipRef, ComposeUi, MidiNote, PianoRollTool, QuantizeGrid, Scene, SequenceProject, Track,
+    TransportUi,
+};
+pub use reelsynth::QuantizeDivision;
 pub use shell::draw_shell;
 pub use state::{
-    OscStripContext, OscStripPreviewState, ShellActions, ShellConfig, ShellMidiDevices, UiState,
-    ScopeStripContext,
+    OscStripContext, OscStripPreviewState, ScopeStripContext, ShellActions, ShellConfig,
+    ShellMidiDevices, ShellMode, UiState,
 };
 pub use wt::{factory_bank, factory_label, FactoryBankEntry, FACTORY_BANKS};
 
-pub use state_sync::{filter_mode_from_type, filter_type_from_mode, lfo_shape_from_index, lfo_shape_index, patch_from_state, sync_state_from_patch};
+pub use state_sync::{
+    compose_to_patch_sequence, filter_mode_from_type, filter_type_from_mode, lfo_shape_from_index,
+    lfo_shape_index, patch_from_state, sync_state_from_patch,
+};

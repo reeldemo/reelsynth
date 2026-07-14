@@ -24,3 +24,5 @@ mod invariants;
 mod matrix_factory_lead;
 #[path = "qa/sweep_smoke.rs"]
 mod sweep_smoke;
+#[path = "qa/sequence.rs"]
+mod sequence;

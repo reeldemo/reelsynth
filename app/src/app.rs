@@ -12,11 +12,11 @@ use reelsynth::{
     ScaleBehavior, ScopeMonitor, WavetableBank,
 };
 use reelsynth_ui::{
-    draw_shell, effect_slots_to_patch, factory_bank, factory_label, fm_source_from_index,
-    filter_type_from_mode, lfo_shape_from_index, mod_slots_to_patch, osc_type_from_index,
-    patch_from_state, sync_state_from_patch, warp_mode_from_index, OscStripContext,
-    OscStripPreviewState, ShellConfig, ShellMidiDevices, UiState, ScopeStripContext,
-    ScopeStripState,
+    compose_to_patch_sequence, draw_shell, effect_slots_to_patch, factory_bank, factory_label,
+    fm_source_from_index, filter_type_from_mode, lfo_shape_from_index, mod_slots_to_patch,
+    osc_type_from_index, patch_from_state, sync_state_from_patch, warp_mode_from_index,
+    OscStripContext, OscStripPreviewState, ShellConfig, ShellMidiDevices, ShellMode, UiState,
+    ScopeStripContext, ScopeStripState, PianoRollTool,
 };
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -60,6 +60,7 @@ pub struct ReelSynthApp {
     scope_strip_state: ScopeStripState,
     osc_strip_state: OscStripPreviewState,
     performance: PerformanceInput,
+    pending_record_sync: bool,
 }
 
 impl ReelSynthApp {
@@ -84,6 +85,10 @@ impl ReelSynthApp {
         current_patch.mod_matrix = mod_slots_to_patch(&state.mod_routes);
         current_patch.effects = effect_slots_to_patch(&state.fx_slots);
         let scope = audio.as_ref().map(|a| a.scope()).unwrap_or_default();
+        if let Some(a) = &audio {
+            let seq = compose_to_patch_sequence(&state.compose);
+            a.send(AudioCmd::SetSequence(seq));
+        }
         Self {
             audio,
             state,
@@ -99,6 +104,89 @@ impl ReelSynthApp {
             scope_strip_state: ScopeStripState::default(),
             osc_strip_state: OscStripPreviewState::default(),
             performance: PerformanceInput::default(),
+            pending_record_sync: false,
+        }
+    }
+
+    fn compose_routes_to_recorder(&self) -> bool {
+        self.state.shell_mode == ShellMode::Compose
+            && self.state.compose.transport.recording
+            && self.state.compose.armed_track().is_some()
+            && self.audio.is_none()
+    }
+
+    fn record_note_to_clip(&mut self, note: u8, velocity: f32) {
+        let Some(ti) = self.state.compose.armed_track() else {
+            return;
+        };
+        let playhead = self.state.compose.transport.playhead_beats;
+        let step = self.state.compose.snap_division.beats_per_step();
+        let snapped = self.state.compose.snap_beats(playhead);
+
+        let ci = if let Some(ci) = self.state.compose.selected_clip {
+            if ci < self.state.compose.project.tracks[ti].clips.len() {
+                Some(ci)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        let ci = ci.unwrap_or_else(|| {
+            let len = (self.state.compose.project.loop_region.end_beats - snapped).max(step);
+            let clip = reelsynth_ui::Clip::new(snapped, len);
+            self.state.compose.project.tracks[ti].clips.push(clip);
+            let idx = self.state.compose.project.tracks[ti].clips.len() - 1;
+            self.state.compose.selected_track = ti;
+            self.state.compose.selected_clip = Some(idx);
+            idx
+        });
+
+        use reelsynth_ui::MidiNote;
+        self.state.compose.project.tracks[ti].clips[ci].notes.push(MidiNote {
+            pitch: note,
+            start_beats: snapped,
+            duration_beats: step,
+            velocity: velocity.clamp(0.01, 1.0),
+        });
+        self.state.status = format!("Recorded {note} @ beat {snapped:.2}");
+    }
+
+    fn handle_compose_note_on(&mut self, note: u8, velocity: f32) {
+        if self.compose_routes_to_recorder() {
+            self.record_note_to_clip(note, velocity);
+            return;
+        }
+        if self.state.compose.piano_roll_focused
+            && self.state.compose.piano_roll_tool == PianoRollTool::Pencil
+        {
+            self.engine_note_on(note, velocity * 0.65);
+            return;
+        }
+        self.performance_note_on(PerformanceKey::Note(note), velocity);
+    }
+
+    fn handle_compose_note_off(&mut self, note: u8) {
+        if self.compose_routes_to_recorder() {
+            return;
+        }
+        self.performance_note_off(PerformanceKey::Note(note));
+    }
+
+    fn handle_live_note_on(&mut self, note: u8, velocity: f32) {
+        if self.state.shell_mode == ShellMode::Compose {
+            self.handle_compose_note_on(note, velocity);
+        } else {
+            self.performance_note_on(PerformanceKey::Note(note), velocity);
+        }
+    }
+
+    fn handle_live_note_off(&mut self, note: u8) {
+        if self.state.shell_mode == ShellMode::Compose {
+            self.handle_compose_note_off(note);
+        } else {
+            self.performance_note_off(PerformanceKey::Note(note));
         }
     }
 
@@ -625,6 +713,87 @@ impl ReelSynthApp {
             .as_ref()
             .and_then(|a| a.bank().read().ok().map(|g| (*g).clone()))
     }
+
+    fn poll_compose_transport(&mut self) {
+        if self.state.shell_mode != ShellMode::Compose {
+            return;
+        }
+        let Some(audio) = &self.audio else {
+            return;
+        };
+        if let Ok(t) = audio.transport().read() {
+            self.state.compose.transport.playing = t.playing;
+            self.state.compose.transport.recording = t.recording;
+            self.state.compose.transport.playhead_beats = t.playhead_beats;
+            self.state.compose.transport.loop_enabled = t.loop_enabled;
+            self.state.compose.project.loop_region.start_beats = t.loop_start;
+            self.state.compose.project.loop_region.end_beats = t.loop_end;
+            self.state.compose.project.loop_region.enabled = t.loop_enabled;
+            self.state.compose.project.bpm = t.bpm;
+        }
+    }
+
+    fn sync_compose_sequence_from_engine(&mut self) {
+        let Some(audio) = &self.audio else {
+            return;
+        };
+        let sequence = audio.sequence();
+        let Ok(seq) = sequence.read() else {
+            return;
+        };
+        let selected_track = self.state.compose.selected_track;
+        let selected_clip = self.state.compose.selected_clip;
+        let selected_notes = self.state.compose.selected_notes.clone();
+        let snap_division = self.state.compose.snap_division;
+        self.state.compose.project = seq.clone();
+        self.state.compose.snap_division = snap_division;
+        self.state.compose.selected_track = selected_track.min(seq.tracks.len().saturating_sub(1));
+        self.state.compose.selected_clip = selected_clip.filter(|ci| {
+            self.state
+                .compose
+                .project
+                .tracks
+                .get(self.state.compose.selected_track)
+                .is_some_and(|t| *ci < t.clips.len())
+        });
+        self.state.compose.selected_notes = selected_notes;
+        self.current_patch.sequence = seq.clone();
+    }
+
+    fn handle_compose_actions(&mut self, actions: &reelsynth_ui::ShellActions, was_recording: bool) {
+        let Some(audio) = &self.audio else {
+            return;
+        };
+
+        if actions.transport_play {
+            audio.send(AudioCmd::TransportPlay);
+        }
+        if actions.transport_stop {
+            audio.send(AudioCmd::TransportStop);
+            if was_recording {
+                self.pending_record_sync = true;
+            }
+        }
+        if actions.transport_record {
+            let track = self.state.compose.armed_track();
+            audio.send(AudioCmd::TransportRecord { track });
+        }
+        if let Some(beats) = actions.transport_seek {
+            audio.send(AudioCmd::SeekPlayhead(beats));
+        }
+        if actions.sequence_changed {
+            let seq = compose_to_patch_sequence(&self.state.compose);
+            audio.send(AudioCmd::SetBpm(seq.bpm));
+            audio.send(AudioCmd::SetSequence(seq.clone()));
+            self.current_patch.sequence = seq;
+            for (ti, track) in self.state.compose.project.tracks.iter().enumerate() {
+                audio.send(AudioCmd::SetRecordArm {
+                    track: ti,
+                    armed: track.arm,
+                });
+            }
+        }
+    }
 }
 
 fn freq_to_midi_note(freq: f32) -> u8 {
@@ -728,16 +897,28 @@ impl eframe::App for ReelSynthApp {
                     ..
                 } = event
                 {
-                    if let Some perf_key) = keyboard_performance_key(*key, layout) {
+                    if let Some(perf_key) = keyboard_performance_key(*key, layout) {
                         if *pressed {
-                            self.performance_note_on(perf_key, 0.9);
+                            match perf_key {
+                                PerformanceKey::Note(n) => self.handle_live_note_on(n, 0.9),
+                                other => self.performance_note_on(other, 0.9),
+                            }
                         } else {
-                            self.performance_note_off(perf_key);
+                            match perf_key {
+                                PerformanceKey::Note(n) => self.handle_live_note_off(n),
+                                other => self.performance_note_off(other),
+                            }
                         }
                     }
                 }
             }
         });
+
+        self.poll_compose_transport();
+        if self.pending_record_sync && !self.state.compose.transport.recording {
+            self.sync_compose_sequence_from_engine();
+            self.pending_record_sync = false;
+        }
 
         egui::CentralPanel::default()
             .frame(egui::Frame {
@@ -766,6 +947,8 @@ impl eframe::App for ReelSynthApp {
                     None
                 };
                 let bank_for_osc: &dyn Fn(usize) -> usize = &|_| 0;
+
+                let was_recording = self.state.compose.transport.recording;
 
                 let actions = if let Some(audio) = &self.audio {
                     if let Ok(mut bank) = audio.bank().write() {
@@ -851,10 +1034,10 @@ impl eframe::App for ReelSynthApp {
                 };
 
                 if let Some(n) = actions.note_on {
-                    self.performance_note_on(PerformanceKey::Note(n), 0.9);
+                    self.handle_live_note_on(n, 0.9);
                 }
                 if let Some(n) = actions.note_off {
-                    self.performance_note_off(PerformanceKey::Note(n));
+                    self.handle_live_note_off(n);
                 }
                 if let Some(deg) = actions.chord_degree_on {
                     self.performance_note_on(PerformanceKey::ChordDegree(deg), 0.9);
@@ -881,8 +1064,8 @@ impl eframe::App for ReelSynthApp {
                 if actions.save_wt_file {
                     self.save_wt_file();
                 }
-                if let Some(id) = actions.import_factory_wt {
-                    self.import_factory_wt(&id);
+                if let Some(ref id) = actions.import_factory_wt {
+                    self.import_factory_wt(id);
                 }
                 if actions.import_vital_wt {
                     self.import_vital_wt();
@@ -898,6 +1081,7 @@ impl eframe::App for ReelSynthApp {
                         self.connect_midi(idx);
                     }
                 }
+                self.handle_compose_actions(&actions, was_recording);
             });
 
         if self.audio.is_some() {

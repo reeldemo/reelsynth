@@ -22,7 +22,7 @@ pub fn panel<R>(ui: &mut Ui, title: &str, add_contents: impl FnOnce(&mut Ui) -> 
         ui.label(
             egui::RichText::new(display)
                 .font(heading_font(10.0))
-                .color(tokens.text_secondary),
+                .color(tokens.text_muted),
         );
         ui.add_space(6.0);
         add_contents(ui)

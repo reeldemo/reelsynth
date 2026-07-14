@@ -3062,6 +3062,7 @@ dependencies = [
  "egui_kittest",
  "reelsynth",
  "reelsynth-ui-theme",
+ "serde",
 ]
 
 [[package]]

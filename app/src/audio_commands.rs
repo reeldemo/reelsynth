@@ -2,11 +2,24 @@
 
 use crossbeam_channel::{Receiver, TryRecvError};
 use reelsynth::engine::MidiEvent;
-use reelsynth::{Envelope, Macro, ModSlot, Patch, SynthEngine, WavetableBank};
+use reelsynth::sequence::TransportState;
+use reelsynth::{Envelope, Macro, ModSlot, Patch, SequenceProject, SynthEngine, WavetableBank};
 use std::sync::{Arc, RwLock};
 
 pub(crate) enum AudioCmd {
-  Midi(MidiEvent),
+    Midi(MidiEvent),
+    TransportPlay,
+    TransportStop,
+    TransportRecord {
+        track: Option<usize>,
+    },
+    SetBpm(f32),
+    SeekPlayhead(f32),
+    SetSequence(SequenceProject),
+    SetRecordArm {
+        track: usize,
+        armed: bool,
+    },
     SetWtPosition(f32),
     SetFilterCutoff(f32),
     SetFilterResonance(f32),
@@ -72,9 +85,44 @@ pub(crate) fn drain_commands(
     engine: &mut SynthEngine,
     rx: &Receiver<AudioCmd>,
     bank_shared: &Arc<RwLock<WavetableBank>>,
+    _transport_shared: &Arc<RwLock<TransportState>>,
 ) {
     loop {
         match rx.try_recv() {
+            Ok(AudioCmd::TransportPlay) => engine.sequencer_mut().transport_play(),
+            Ok(AudioCmd::TransportStop) => {
+                let offs = engine.sequencer().stop_note_offs();
+                for ev in offs {
+                    if let reelsynth::sequence::SchedEvent::NoteOff { channel, note, .. } = ev {
+                        engine.note_off(channel, note);
+                    }
+                }
+                engine.sequencer_mut().transport_stop();
+                let mut seq = engine.patch().sequence.clone();
+                engine.sequencer_mut().stop_record_and_commit(&mut seq);
+                engine.patch_mut().sequence = seq;
+            }
+            Ok(AudioCmd::TransportRecord { track }) => {
+                let mut seq = engine.patch().sequence.clone();
+                engine
+                    .sequencer_mut()
+                    .transport_record(&mut seq, track);
+                engine.patch_mut().sequence = seq;
+            }
+            Ok(AudioCmd::SetBpm(bpm)) => {
+                engine.sequencer_mut().set_bpm(bpm);
+                engine.patch_mut().sequence.bpm = bpm;
+            }
+            Ok(AudioCmd::SeekPlayhead(beats)) => engine.sequencer_mut().seek_playhead(beats),
+            Ok(AudioCmd::SetSequence(sequence)) => {
+                engine.patch_mut().sequence = sequence.clone();
+                engine.sequencer_mut().sync_from_project(&sequence);
+            }
+            Ok(AudioCmd::SetRecordArm { track, armed }) => {
+                if let Some(t) = engine.patch_mut().sequence.tracks.get_mut(track) {
+                    t.arm = armed;
+                }
+            }
             Ok(AudioCmd::Midi(event)) => engine.handle_event(event),
             Ok(AudioCmd::SetWtPosition(p)) => engine.set_wt_position(p),
             Ok(AudioCmd::SetFilterCutoff(c)) => engine.set_filter_cutoff(c),

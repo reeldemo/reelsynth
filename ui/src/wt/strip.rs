@@ -1,7 +1,7 @@
 use egui::{Color32, Pos2, Rect, Response, Sense, Shape, Ui, Vec2};
 use reelsynth::patch::{Oscillator, WaveSlot};
 use reelsynth::{resolve_wt_position, WavetableBank};
-use reelsynth_ui_theme::Tokens;
+use reelsynth_ui_theme::{ACCENT_UI, Tokens};
 
 use crate::layout::{RADIUS_SM, WT_STRIP_HEIGHT};
 
@@ -26,7 +26,7 @@ pub struct WtStrip<'a> {
 impl<'a> WtStrip<'a> {
     pub fn show(self, ui: &mut Ui) -> WtStripResponse {
         let tokens = Tokens::default();
-        let accent_ui = Color32::from_rgb(0x2a, 0x6b, 0x8a);
+        let accent_ui = ACCENT_UI;
         let num_frames = self
             .bank
             .map(|b| b.num_frames)
@@ -200,9 +200,9 @@ fn paint_strip(
                     Pos2::new(cell.center().x, cell.max.y - 3.0),
                     egui::Align2::CENTER_BOTTOM,
                     label,
-                    egui::FontId::proportional(8.0),
+                    egui::FontId::proportional(10.0),
                     if is_active {
-                        tokens.accent
+                        accent_ui
                     } else {
                         tokens.text_muted
                     },
@@ -217,7 +217,7 @@ fn paint_strip(
             Pos2::new(playhead_x, inner.min.y),
             Pos2::new(playhead_x, inner.max.y),
         ],
-        egui::Stroke::new(2.0_f32, tokens.accent),
+        egui::Stroke::new(2.0_f32, accent_ui),
     );
 
     let label = if slot_mode {

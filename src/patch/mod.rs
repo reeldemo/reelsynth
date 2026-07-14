@@ -7,6 +7,7 @@ mod schema;
 pub use schema::*;
 
 use crate::performance::PerformanceSettings;
+use crate::SequenceProject;
 use serde_json::Value;
 
 use migrate::{migrate_fx_bypass, migrate_v1_to_v2};
@@ -93,6 +94,7 @@ impl Patch {
             noise_level: 0.0,
             unison_stereo_spread: default_unison_spread(),
             performance: PerformanceSettings::default(),
+            sequence: SequenceProject::default_template(),
         }
     }
 

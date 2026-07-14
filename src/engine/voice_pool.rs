@@ -1,9 +1,9 @@
-//! 16-voice polyphonic pool with steal-on-overflow.
+//! 32-voice polyphonic pool with steal-on-overflow (Compose mode budget).
 
 use super::voice_rt::RtVoice;
 use crate::patch::Patch;
 
-pub const MAX_VOICES: usize = 16;
+pub const MAX_VOICES: usize = 32;
 
 pub struct VoicePool {
     voices: Vec<RtVoice>,

@@ -14,6 +14,7 @@ pub mod lfo;
 pub mod wt_quant;
 pub mod modulation;
 pub mod oversample;
+pub mod sequence;
 
 pub use performance::{
     note_in_scale, resolve_chord, resolve_diatonic_chord, scale_degree_to_midi, snap_note,
@@ -32,7 +33,11 @@ pub use scope::{
 pub use scope::{ScopeLiveTaps, ScopeMonitor, ScopeRingBuffer, SCOPE_DISPLAY_LEN, SCOPE_RING_LEN};
 pub use engine::{BankSet, MidiEvent, SynthEngine, VoiceMpe};
 pub use lfo::{lfo_value, LfoRuntime};
-pub use modulation::{compute_macro_mods, compute_mods, merge_mods, ModSources};
+pub use modulation::{apply_mods_to_patch, compute_macro_mods, compute_mods, merge_mods, ModSources};
+pub use sequence::{
+    AutomationLane, AutomationPoint, Clip, ClipRef, MidiNote, QuantizeDivision, QuantizeGrid,
+    Scene, SequenceProject, Track, TransportState,
+};
 pub use export::{
     export_preset, export_reelpack, export_wavetable, load_preset, parse_targets,
     resolve_bank_for_preset, ExportOptions, ExportReport, ExportTarget,

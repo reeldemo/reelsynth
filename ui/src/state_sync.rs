@@ -158,6 +158,20 @@ pub fn sync_state_from_patch(state: &mut UiState, patch: &Patch) {
     state.mod_route_total = state.mod_routes.len().max(24);
     state.fx_slots = effect_slots_from_patch(&patch.effects);
     state.performance = crate::performance::PerformanceUi::from_settings(&patch.performance);
+    sync_compose_from_patch(state, patch);
+}
+
+fn sync_compose_from_patch(state: &mut UiState, patch: &Patch) {
+    state.compose.project = patch.sequence.clone();
+    state.compose.transport.loop_enabled = patch.sequence.loop_region.enabled;
+    state.compose.snap_division = patch.sequence.quantize.division;
+}
+
+pub fn compose_to_patch_sequence(compose: &crate::compose::ComposeUi) -> reelsynth::SequenceProject {
+    let mut seq = compose.project.clone();
+    seq.loop_region.enabled = compose.transport.loop_enabled;
+    seq.quantize.division = compose.snap_division;
+    seq
 }
 
 pub fn patch_from_state(state: &UiState, base: &Patch) -> Patch {
@@ -203,6 +217,7 @@ pub fn patch_from_state(state: &UiState, base: &Patch) -> Patch {
     patch.mod_matrix = mod_slots_to_patch(&state.mod_routes);
     patch.effects = effect_slots_to_patch(&state.fx_slots);
     patch.performance = state.performance.to_settings();
+    patch.sequence = compose_to_patch_sequence(&state.compose);
     patch
 }
 
@@ -368,5 +383,16 @@ mod tests {
             max_delta > 0.001,
             "enabling chorus via UI patch path should change rendered audio (delta={max_delta})"
         );
+    }
+
+    #[test]
+    fn sequence_bpm_roundtrip() {
+        let mut original = Patch::default_mono();
+        original.sequence.bpm = 140.0;
+        let mut state = UiState::default();
+        sync_state_from_patch(&mut state, &original);
+        assert!((state.compose.project.bpm - 140.0).abs() < 1e-3);
+        let restored = patch_from_state(&state, &Patch::default_mono());
+        assert!((restored.sequence.bpm - 140.0).abs() < 1e-3);
     }
 }

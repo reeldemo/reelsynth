@@ -10,9 +10,12 @@
   --text-muted: #a1a1aa;
   --muted: #a1a1aa;
   --accent: #183d50;
+  --accent-ui: #2a6b8a;
   --accent-on: #fafafa;
   --accent-muted: #061e2a;
+  --text-secondary: #8b8b96;
   --border: #27272a;
+  --border-strong: #52525b;
   --font-heading: "IBM Plex Sans", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
@@ -35,7 +38,10 @@
   --text-muted: #52525b;
   --muted: #52525b;
   --accent: #183d50;
+  --accent-ui: #2a6b8a;
   --accent-on: #fafafa;
   --accent-muted: #061e2a;
+  --text-secondary: #71717a;
   --border: #e4e4e7;
+  --border-strong: #a1a1aa;
 }

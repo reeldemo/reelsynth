@@ -53,7 +53,7 @@ impl ModSources {
 }
 
 /// Target scaling: amount is normalized -1..1 from UI, scaled per target type.
-fn apply_target_scale(target: &str, src: f32, amount: f32) -> f32 {
+pub fn apply_target_scale(target: &str, src: f32, amount: f32) -> f32 {
     let raw = src * amount;
     if target.ends_with("_wave_slot") {
         raw * 4.0
@@ -114,6 +114,32 @@ pub fn merge_mods(
         *out.entry(k).or_insert(0.0) += v;
     }
     out
+}
+
+/// Apply modulation offsets to a patch (automation + runtime overrides).
+pub fn apply_mods_to_patch(patch: &mut crate::patch::Patch, mods: &HashMap<String, f32>) {
+    for (target, delta) in mods {
+        if target == "filter_cutoff" {
+            patch.filter.cutoff = (patch.filter.cutoff + delta).max(25.0);
+        } else if target == "filter_resonance" {
+            patch.filter.resonance = (patch.filter.resonance + delta).clamp(0.0, 0.95);
+        } else if let Some(rest) = target.strip_prefix("osc") {
+            if let Some((idx_str, param)) = rest.split_once('_') {
+                if let Ok(idx) = idx_str.parse::<usize>() {
+                    if let Some(osc) = patch.oscillators.get_mut(idx.saturating_sub(1)) {
+                        match param {
+                            "position" => osc.position = (osc.position + delta).clamp(0.0, 255.0),
+                            "level" => osc.level = (osc.level + delta).clamp(0.0, 1.0),
+                            "fm_index" => osc.fm_index = (osc.fm_index + delta).clamp(0.0, 10.0),
+                            "detune" => osc.detune += delta,
+                            "pan" => osc.pan = (osc.pan + delta).clamp(-1.0, 1.0),
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 #[cfg(test)]

@@ -1,12 +1,15 @@
 //! Modulation matrix section (S4) — matches `.rs-mod-grid` in mockups.
 
-use egui::{FontId, Rect, Ui};
+use egui::{Color32, FontId, Rect, Ui};
 use reelsynth::ModSlot;
-use reelsynth_ui_theme::Tokens;
+use reelsynth_ui_theme::{ACCENT_UI, Tokens};
 
-use crate::layout::{UiScale, GRID_UNIT, RADIUS_SM, SPACE_SM, sidebar_panel_chrome_height};
+use crate::layout::{UiScale, GRID_UNIT, RADIUS_SM, sidebar_panel_chrome_height};
 use crate::region::region;
 use crate::widgets::{button_ghost, button_toggle, card_stroke, collapsible_panel, sidebar_panel};
+
+const POLARITY_POSITIVE: Color32 = Color32::from_rgb(0x4a, 0xde, 0x80);
+const POLARITY_NEGATIVE: Color32 = Color32::from_rgb(0xf8, 0x71, 0x71);
 
 pub const MOD_ROW_HEIGHT: f32 = 22.0;
 pub const MOD_SECTION_HEADER: f32 = 24.0;
@@ -376,7 +379,7 @@ fn draw_mod_row(ui: &mut Ui, route: &mut ModSlotUi, row_h: f32) -> ModRowResult 
         let fill = if active {
             tokens.bg
         } else {
-            tokens.surface2.gamma_multiply(0.45)
+            tokens.surface2.gamma_multiply(0.68)
         };
         let painter = ui.painter_at(rect);
         painter.rect_filled(rect, RADIUS_SM, fill);
@@ -431,32 +434,64 @@ fn draw_mod_row(ui: &mut Ui, route: &mut ModSlotUi, row_h: f32) -> ModRowResult 
                         };
                         changed = true;
                     }
-                    let mut drag = egui::DragValue::new(&mut route.amount)
-                        .speed(0.5)
-                        .range(-100..=100);
-                    match route.polarity {
-                        ModPolarity::Bipolar => {}
-                        ModPolarity::Positive => {
-                            drag = drag.prefix("+");
-                        }
-                        ModPolarity::Negative => {
-                            drag = drag.prefix("−");
-                        }
+                    let (amount_text, amount_fill, amount_stroke) =
+                        polarity_amount_style(route.polarity, &tokens);
+                    egui::Frame {
+                        fill: amount_fill,
+                        stroke: egui::Stroke::new(1.0_f32, amount_stroke),
+                        rounding: egui::Rounding::same(4.0),
+                        inner_margin: egui::Margin::symmetric(4.0, 2.0),
+                        ..Default::default()
                     }
-                    if ui.add(drag).changed() {
-                        if route.polarity != ModPolarity::Bipolar {
-                            route.polarity = if route.amount < 0 {
-                                ModPolarity::Negative
-                            } else {
-                                ModPolarity::Positive
-                            };
+                    .show(ui, |ui| {
+                        let mut drag = egui::DragValue::new(&mut route.amount)
+                            .speed(0.5)
+                            .range(-100..=100);
+                        match route.polarity {
+                            ModPolarity::Bipolar => {}
+                            ModPolarity::Positive => {
+                                drag = drag.prefix("+");
+                            }
+                            ModPolarity::Negative => {
+                                drag = drag.prefix("−");
+                            }
                         }
-                        changed = true;
-                    }
+                        let changed_amount = {
+                            let visuals = ui.visuals_mut();
+                            visuals.override_text_color = Some(amount_text);
+                            ui.add(drag).changed()
+                        };
+                        if changed_amount {
+                            if route.polarity != ModPolarity::Bipolar {
+                                route.polarity = if route.amount < 0 {
+                                    ModPolarity::Negative
+                                } else {
+                                    ModPolarity::Positive
+                                };
+                            }
+                            changed = true;
+                        }
+                    });
                 });
             });
         });
     }
 
     ModRowResult { changed }
+}
+
+fn polarity_amount_style(polarity: ModPolarity, tokens: &Tokens) -> (Color32, Color32, Color32) {
+    match polarity {
+        ModPolarity::Positive => (
+            POLARITY_POSITIVE,
+            tokens.surface2,
+            POLARITY_POSITIVE.gamma_multiply(0.4),
+        ),
+        ModPolarity::Negative => (
+            POLARITY_NEGATIVE,
+            tokens.surface2,
+            POLARITY_NEGATIVE.gamma_multiply(0.4),
+        ),
+        ModPolarity::Bipolar => (tokens.accent_on, tokens.accent_muted, ACCENT_UI),
+    }
 }

@@ -143,7 +143,7 @@ impl<'a> Knob<'a> {
             ui.label(
                 egui::RichText::new(self.label)
                     .size(10.0)
-                    .color(tokens.text_muted),
+                    .color(tokens.text),
             );
             let display = if self.value_text.is_empty() {
                 format!("{:.2}", self.value)

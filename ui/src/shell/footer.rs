@@ -38,7 +38,12 @@ pub(super) fn draw_piano_wrap(
             .inner_margin(egui::Margin::symmetric(SPACE_SM, GRID_UNIT))
             .show(ui, |ui| {
                 let inner = ui.max_rect();
-                let (_, piano) = PianoKeyboard::new(&state.keys_down).show_in_rect(ui, inner);
+                let perf = state.performance.to_settings();
+                let scale_fold = state.shell_mode == crate::state::ShellMode::Compose
+                    || perf.layout == reelsynth::PerformanceLayout::Scale;
+                let piano = PianoKeyboard::new(&state.keys_down)
+                    .with_scale_fold(perf.root, perf.scale, scale_fold);
+                let (_, piano) = piano.show_in_rect(ui, inner);
                 if let Some(n) = piano.note_on {
                     actions.note_on = Some(n);
                 }

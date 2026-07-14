@@ -4,7 +4,6 @@
 @import url("../design/tokens.css");
 
 :root {
-  --accent-ui: #2a6b8a;
   --accent-glow: color-mix(in oklch, var(--accent) 35%, transparent);
   --panel-inset: inset 0 1px 0 color-mix(in oklch, white 6%, transparent),
     inset 0 -1px 0 color-mix(in oklch, black 40%, transparent);
@@ -752,7 +751,7 @@ h4,
   flex: 0 0 var(--piano-white-w);
   width: var(--piano-white-w);
   background: linear-gradient(180deg, #f4f4f5 0%, #d4d4d8 85%, #a1a1aa 100%);
-  border: 1px solid #52525b;
+  border: 1px solid var(--border-strong);
   border-radius: 0 0 4px 4px;
   margin-right: -1px;
   position: relative;
