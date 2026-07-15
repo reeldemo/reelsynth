@@ -8,8 +8,8 @@ use eframe::egui;
 use reelsynth::import::{import_serum_fxp, import_vital, import_wav_folder};
 use reelsynth::{
     load_preset, note_in_scale, resolve_diatonic_chord, scale_degree_to_midi, snap_note,
-    resolve_bank_for_preset, Envelope, MidiEvent, Patch, PerformanceLayout, PerformanceSettings,
-    ScaleBehavior, ScopeMonitor, WavetableBank,
+    resolve_bank_for_preset, ArpEngine, ArpEvent, Envelope, MidiEvent, Patch,
+    PerformanceLayout, PerformanceSettings, ScaleBehavior, ScopeMonitor, WavetableBank,
 };
 use reelsynth_ui::{
     compose_to_patch_sequence, draw_shell, effect_slots_to_patch, factory_bank, factory_label,
@@ -36,6 +36,12 @@ struct PerformanceInput {
     token_notes: HashMap<u64, Vec<u8>>,
 }
 
+#[derive(Default)]
+struct ArpLive {
+    engine: ArpEngine,
+    last_time: Option<f64>,
+}
+
 fn resolve_bank(path: &Path, preset: &Patch) -> Result<WavetableBank, String> {
     resolve_bank_for_preset(path, preset).or_else(|_| match preset.wavetable_id.as_deref() {
         Some("saw_morph") => Ok(WavetableBank::factory_saw_morph()),
@@ -60,6 +66,7 @@ pub struct ReelSynthApp {
     scope_strip_state: ScopeStripState,
     osc_strip_state: OscStripPreviewState,
     performance: PerformanceInput,
+    arp: ArpLive,
     pending_record_sync: bool,
     pending_record_notes: HashMap<u8, PendingRecordNote>,
 }
@@ -112,6 +119,7 @@ impl ReelSynthApp {
             scope_strip_state: ScopeStripState::default(),
             osc_strip_state: OscStripPreviewState::default(),
             performance: PerformanceInput::default(),
+            arp: ArpLive::default(),
             pending_record_sync: false,
             pending_record_notes: HashMap::new(),
         }
@@ -287,7 +295,69 @@ impl ReelSynthApp {
         }
     }
 
-    fn performance_note_on(&mut self, key: PerformanceKey, velocity: f32) {
+    fn current_bpm(&self) -> f32 {
+        if self.state.shell_mode == ShellMode::Compose {
+            self.state.compose.project.bpm.max(1.0)
+        } else {
+            self.current_patch
+                .sequence
+                .bpm
+                .max(1.0)
+        }
+    }
+
+    fn tick_arp(&mut self, now: f64) {
+        let settings = self.state.performance.to_settings();
+        if !settings.arp.enabled {
+            self.arp.last_time = Some(now);
+            return;
+        }
+
+        let dt_secs = self
+            .arp
+            .last_time
+            .map(|t| (now - t).max(0.0) as f32)
+            .unwrap_or(0.0);
+        self.arp.last_time = Some(now);
+        if dt_secs <= 0.0 {
+            return;
+        }
+
+        let bpm = self.current_bpm();
+        let dt_beats = dt_secs * bpm / 60.0;
+        let events = self
+            .arp
+            .engine
+            .tick(dt_beats, &settings.arp, &settings);
+        for event in events {
+            self.dispatch_arp_event(event);
+        }
+    }
+
+    fn dispatch_arp_event(&mut self, event: ArpEvent) {
+        match event {
+            ArpEvent::NoteOn { note, velocity } => {
+                if self.compose_is_recording() {
+                    self.record_note_on(note, velocity);
+                }
+                self.engine_note_on(note, velocity);
+            }
+            ArpEvent::NoteOff { note } => {
+                if self.compose_is_recording() {
+                    self.record_note_off(note);
+                }
+                self.engine_note_off(note);
+            }
+        }
+    }
+
+    fn release_arp_notes(&mut self) {
+        for note in self.arp.engine.pending_note_offs() {
+            self.dispatch_arp_event(ArpEvent::NoteOff { note });
+        }
+    }
+
+    fn performance_note_on_direct(&mut self, key: PerformanceKey, velocity: f32) {
         let settings = self.state.performance.to_settings();
         match key {
             PerformanceKey::Note(raw) => {
@@ -333,7 +403,7 @@ impl ReelSynthApp {
         }
     }
 
-    fn performance_note_off(&mut self, key: PerformanceKey) {
+    fn performance_note_off_direct(&mut self, key: PerformanceKey) {
         let settings = self.state.performance.to_settings();
         match key {
             PerformanceKey::Note(raw) => {
@@ -358,6 +428,92 @@ impl ReelSynthApp {
                 let note = freq_to_midi_note(freq);
                 self.engine_note_off(note);
             }
+        }
+    }
+
+    fn performance_note_on(&mut self, key: PerformanceKey, velocity: f32) {
+        let settings = self.state.performance.to_settings();
+        if !settings.arp.enabled {
+            self.performance_note_on_direct(key, velocity);
+            return;
+        }
+
+        let arp = settings.arp.clone();
+        match key {
+            PerformanceKey::Note(raw) => {
+                let note = self.transform_piano_note(raw, &settings);
+                if settings.scale_behavior == ScaleBehavior::Filter
+                    && !settings.scale.is_chromatic()
+                    && !note_in_scale(note, settings.root, settings.scale)
+                {
+                    return;
+                }
+                self.arp.engine.note_on(note, velocity, &arp, &settings);
+            }
+            PerformanceKey::ScaleDegree(deg) => {
+                let note = scale_degree_to_midi(
+                    settings.root,
+                    settings.scale,
+                    deg,
+                    settings.base_octave,
+                );
+                self.arp.engine.note_on(note, velocity, &arp, &settings);
+            }
+            PerformanceKey::ChordDegree(deg) => {
+                let notes = resolve_diatonic_chord(
+                    settings.root,
+                    settings.scale,
+                    deg,
+                    settings.base_octave,
+                    settings.chord_set,
+                    settings.voicing,
+                );
+                self.arp
+                    .engine
+                    .set_chord_pool(notes, velocity, &arp, &settings);
+                self.state.active_chord_token = None;
+            }
+            PerformanceKey::Freq(freq) => {
+                let note = freq_to_midi_note(freq);
+                self.arp.engine.note_on(note, velocity, &arp, &settings);
+            }
+        }
+    }
+
+    fn performance_note_off(&mut self, key: PerformanceKey) {
+        let settings = self.state.performance.to_settings();
+        if !settings.arp.enabled {
+            self.performance_note_off_direct(key);
+            return;
+        }
+
+        let arp = settings.arp.clone();
+        match key {
+            PerformanceKey::Note(raw) => {
+                let note = self.transform_piano_note(raw, &settings);
+                self.arp.engine.note_off(note, &arp, &settings);
+            }
+            PerformanceKey::ScaleDegree(deg) => {
+                let note = scale_degree_to_midi(
+                    settings.root,
+                    settings.scale,
+                    deg,
+                    settings.base_octave,
+                );
+                self.arp.engine.note_off(note, &arp, &settings);
+            }
+            PerformanceKey::ChordDegree(_) => {
+                self.state.active_chord_token = None;
+                self.arp.engine.all_notes_off(&arp);
+            }
+            PerformanceKey::Freq(freq) => {
+                let note = freq_to_midi_note(freq);
+                self.arp.engine.note_off(note, &arp, &settings);
+            }
+        }
+
+        if self.arp.engine.pool_is_empty() {
+            self.release_arp_notes();
         }
     }
 
@@ -1001,6 +1157,9 @@ impl eframe::App for ReelSynthApp {
             self.sync_compose_sequence_from_engine();
             self.pending_record_sync = false;
         }
+
+        let now_secs = ctx.input(|i| i.time);
+        self.tick_arp(now_secs);
 
         egui::CentralPanel::default()
             .frame(egui::Frame {

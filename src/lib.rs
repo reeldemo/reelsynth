@@ -18,7 +18,8 @@ pub mod sequence;
 pub mod analysis;
 
 pub use performance::{
-    note_in_scale, resolve_chord, resolve_diatonic_chord, scale_degree_to_midi, snap_note,
+    build_pool, note_in_scale, resolve_chord, resolve_diatonic_chord, scale_degree_to_midi,
+    snap_note, ArpDirection, ArpEngine, ArpEvent, ArpInputMode, ArpRate, ArpSettings, ArpStep,
     ChordQuality, ChordSet, ChordVoicing, PerformanceLayout, PerformanceSettings, Scale,
     ScaleBehavior,
 };

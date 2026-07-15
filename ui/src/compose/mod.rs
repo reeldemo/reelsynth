@@ -72,6 +72,9 @@ pub struct ComposeUi {
     pub(crate) drag_state: Option<piano_roll::DragState>,
     /// Live notes from engine recorder overlay (not yet committed to clip).
     pub live_record_overlay: Vec<MidiNote>,
+    pub arp_dialog_open: bool,
+    pub arp_generate_bars: f32,
+    pub arp_replace_notes: bool,
 }
 
 impl Default for ComposeUi {
@@ -92,6 +95,9 @@ impl Default for ComposeUi {
             history: CommandHistory::new(64),
             drag_state: None,
             live_record_overlay: Vec::new(),
+            arp_dialog_open: false,
+            arp_generate_bars: 2.0,
+            arp_replace_notes: true,
         }
     }
 }
@@ -198,6 +204,12 @@ pub fn draw_compose_shell(
 
     let roll_actions = draw_piano_roll(ui, piano_rect, &mut state.compose);
     if roll_actions.sequence_changed {
+        actions.sequence_changed = true;
+    }
+    if roll_actions.open_arp_dialog {
+        state.compose.arp_dialog_open = true;
+    }
+    if piano_roll::draw_arp_generate_dialog(ui.ctx(), &mut state.compose, &state.performance) {
         actions.sequence_changed = true;
     }
     if let Some((note, vel)) = roll_actions.audition_note {

@@ -1,14 +1,29 @@
 //! UI-facing performance settings (indices for dropdowns + labels).
 
+mod arp_panel;
 mod chord_grid;
 mod header;
 
+pub use arp_panel::{draw_arp_panel, ArpPanelActions};
 pub use chord_grid::{draw_chord_grid, ChordGridActions};
 pub use header::{draw_performance_header, PerformanceHeaderActions};
 
 use reelsynth::{
-    ChordSet, ChordVoicing, PerformanceLayout, PerformanceSettings, Scale, ScaleBehavior,
+    ArpDirection, ArpInputMode, ArpRate, ArpSettings, ChordSet, ChordVoicing, PerformanceLayout,
+    PerformanceSettings, Scale, ScaleBehavior,
 };
+
+pub const INPUT_MODE_NAMES: &[&str] = &["Single", "Chord", "Scale"];
+pub const STYLE_NAMES: &[&str] = &[
+    "Up",
+    "Down",
+    "Up-Down",
+    "Down-Up",
+    "Random",
+    "As Played",
+    "Converge",
+];
+pub const RATE_NAMES: &[&str] = &["1/4", "1/8", "1/16", "1/32", "1/8T", "1/16T"];
 
 pub const ROOT_NAMES: &[&str] = &[
     "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B",
@@ -36,6 +51,120 @@ pub const LAYOUT_NAMES: &[&str] = &["Piano", "Scale", "Chords"];
 
 pub const CHORD_DEGREE_LABELS: &[&str] = &["I", "ii", "iii", "IV", "V", "vi", "vii°"];
 
+/// Mirror of [`ArpSettings`] using dropdown indices.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ArpUi {
+    pub enabled: bool,
+    pub input_mode: usize,
+    pub direction: usize,
+    pub rate: usize,
+    pub gate: f32,
+    pub octave_spread: u8,
+    pub latch: bool,
+}
+
+impl Default for ArpUi {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            input_mode: 0,
+            direction: 0,
+            rate: 2,
+            gate: 0.85,
+            octave_spread: 1,
+            latch: false,
+        }
+    }
+}
+
+impl ArpUi {
+    pub fn from_settings(s: &ArpSettings) -> Self {
+        Self {
+            enabled: s.enabled,
+            input_mode: arp_input_index(s.input_mode),
+            direction: arp_direction_index(s.direction),
+            rate: arp_rate_index(s.rate),
+            gate: s.gate,
+            octave_spread: s.octave_spread.clamp(1, 4),
+            latch: s.latch,
+        }
+    }
+
+    pub fn to_settings(&self) -> ArpSettings {
+        ArpSettings {
+            enabled: self.enabled,
+            input_mode: arp_input_from_index(self.input_mode),
+            direction: arp_direction_from_index(self.direction),
+            rate: arp_rate_from_index(self.rate),
+            gate: self.gate.clamp(0.05, 1.0),
+            octave_spread: self.octave_spread.clamp(1, 4),
+            latch: self.latch,
+        }
+    }
+}
+
+pub fn arp_input_index(mode: ArpInputMode) -> usize {
+    match mode {
+        ArpInputMode::SingleNote => 0,
+        ArpInputMode::HeldChord => 1,
+        ArpInputMode::ScaleDegrees => 2,
+    }
+}
+
+pub fn arp_input_from_index(idx: usize) -> ArpInputMode {
+    match idx {
+        1 => ArpInputMode::HeldChord,
+        2 => ArpInputMode::ScaleDegrees,
+        _ => ArpInputMode::SingleNote,
+    }
+}
+
+pub fn arp_direction_index(dir: ArpDirection) -> usize {
+    match dir {
+        ArpDirection::Up => 0,
+        ArpDirection::Down => 1,
+        ArpDirection::UpDown => 2,
+        ArpDirection::DownUp => 3,
+        ArpDirection::Random => 4,
+        ArpDirection::AsPlayed => 5,
+        ArpDirection::Converge => 6,
+    }
+}
+
+pub fn arp_direction_from_index(idx: usize) -> ArpDirection {
+    match idx {
+        1 => ArpDirection::Down,
+        2 => ArpDirection::UpDown,
+        3 => ArpDirection::DownUp,
+        4 => ArpDirection::Random,
+        5 => ArpDirection::AsPlayed,
+        6 => ArpDirection::Converge,
+        _ => ArpDirection::Up,
+    }
+}
+
+pub fn arp_rate_index(rate: ArpRate) -> usize {
+    match rate {
+        ArpRate::Quarter => 0,
+        ArpRate::Eighth => 1,
+        ArpRate::Sixteenth => 2,
+        ArpRate::ThirtySecond => 3,
+        ArpRate::EighthTriplet => 4,
+        ArpRate::SixteenthTriplet => 5,
+    }
+}
+
+pub fn arp_rate_from_index(idx: usize) -> ArpRate {
+    match idx {
+        1 => ArpRate::Eighth,
+        2 => ArpRate::Sixteenth,
+        3 => ArpRate::ThirtySecond,
+        4 => ArpRate::EighthTriplet,
+        5 => ArpRate::SixteenthTriplet,
+        _ => ArpRate::Quarter,
+    }
+}
+
 /// Mirror of [`PerformanceSettings`] using dropdown indices in [`UiState`].
 #[derive(Clone, Debug, PartialEq)]
 pub struct PerformanceUi {
@@ -46,6 +175,7 @@ pub struct PerformanceUi {
     pub voicing: usize,
     pub base_octave: i8,
     pub scale_behavior: ScaleBehavior,
+    pub arp: ArpUi,
 }
 
 impl Default for PerformanceUi {
@@ -58,6 +188,7 @@ impl Default for PerformanceUi {
             voicing: 0,
             base_octave: 4,
             scale_behavior: ScaleBehavior::default(),
+            arp: ArpUi::default(),
         }
     }
 }
@@ -79,6 +210,7 @@ impl PerformanceUi {
             },
             base_octave: s.base_octave,
             scale_behavior: s.scale_behavior,
+            arp: ArpUi::from_settings(&s.arp),
         }
     }
 
@@ -99,6 +231,7 @@ impl PerformanceUi {
                 _ => ChordVoicing::Close,
             },
             base_octave: self.base_octave,
+            arp: self.arp.to_settings(),
         }
     }
 }
@@ -169,6 +302,13 @@ mod tests {
             root: 7,
             scale: Scale::Dorian,
             layout: PerformanceLayout::Chords,
+            arp: ArpSettings {
+                enabled: true,
+                input_mode: ArpInputMode::ScaleDegrees,
+                direction: ArpDirection::UpDown,
+                rate: ArpRate::Sixteenth,
+                ..ArpSettings::default()
+            },
             ..PerformanceSettings::default()
         };
         let ui = PerformanceUi::from_settings(&settings);
@@ -176,5 +316,9 @@ mod tests {
         assert_eq!(back.root, 7);
         assert_eq!(back.scale, Scale::Dorian);
         assert_eq!(back.layout, PerformanceLayout::Chords);
+        assert!(back.arp.enabled);
+        assert_eq!(back.arp.input_mode, ArpInputMode::ScaleDegrees);
+        assert_eq!(back.arp.direction, ArpDirection::UpDown);
+        assert_eq!(back.arp.rate, ArpRate::Sixteenth);
     }
 }

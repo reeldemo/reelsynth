@@ -1,7 +1,7 @@
 //! Piano roll editor — grid, note draw/move/resize, velocity lane, selection, undo.
 
 use egui::{pos2, Color32, Pos2, Rect, Sense, Ui, Vec2};
-use reelsynth::{AutomationLane, AutomationPoint, MidiNote};
+use reelsynth::{ArpEngine, AutomationLane, AutomationPoint, MidiNote};
 use reelsynth_ui_theme::{ACCENT_UI, Tokens};
 
 use crate::layout::GRID_UNIT;
@@ -60,6 +60,7 @@ pub struct PianoRollActions {
     pub sequence_changed: bool,
     pub focus_changed: bool,
     pub audition_note: Option<(u8, f32)>,
+    pub open_arp_dialog: bool,
 }
 
 impl Default for PianoRollActions {
@@ -68,6 +69,7 @@ impl Default for PianoRollActions {
             sequence_changed: false,
             focus_changed: false,
             audition_note: None,
+            open_arp_dialog: false,
         }
     }
 }
@@ -107,6 +109,9 @@ pub fn draw_piano_roll(ui: &mut Ui, rect: Rect, compose: &mut ComposeUi) -> Pian
                             apply_redo(compose, cmd);
                             actions.sequence_changed = true;
                         }
+                    }
+                    if ui.button("Generate Arp").clicked() {
+                        actions.open_arp_dialog = true;
                     }
                 });
 
@@ -1040,6 +1045,14 @@ fn apply_undo(compose: &mut ComposeUi, cmd: ComposeCommand) {
                 }
             }
         }
+        ComposeCommand::AddNotes { track, clip, notes } => {
+            let clip_notes = &mut compose.project.tracks[track].clips[clip].notes;
+            for note in notes {
+                if let Some(pos) = clip_notes.iter().position(|n| n == &note) {
+                    clip_notes.remove(pos);
+                }
+            }
+        }
     }
 }
 
@@ -1074,5 +1087,124 @@ fn apply_redo(compose: &mut ComposeUi, cmd: ComposeCommand) {
                 }
             }
         }
+        ComposeCommand::AddNotes { track, clip, notes } => {
+            compose.project.tracks[track].clips[clip]
+                .notes
+                .extend(notes);
+        }
     }
+}
+
+/// Generate arpeggiated notes into the selected clip using performance arp settings.
+pub fn generate_arp_into_clip(
+    compose: &mut ComposeUi,
+    performance: &crate::performance::PerformanceUi,
+    track: usize,
+    clip: usize,
+) -> bool {
+    let settings = performance.to_settings();
+    let arp = settings.arp.clone();
+    if !arp.enabled {
+        return false;
+    }
+
+    let clip_len = compose.project.tracks[track].clips[clip].length_beats;
+    let length_beats = (compose.arp_generate_bars * 4.0).min(clip_len);
+    if length_beats <= 0.0 {
+        return false;
+    }
+
+    let notes = &compose.project.tracks[track].clips[clip].notes;
+    let pool: Vec<u8> = if !compose.selected_notes.is_empty() {
+        compose
+            .selected_notes
+            .iter()
+            .filter_map(|&i| notes.get(i).map(|n| n.pitch))
+            .collect()
+    } else {
+        notes.iter().map(|n| n.pitch).collect()
+    };
+
+    let pool = if pool.is_empty() {
+        vec![60]
+    } else {
+        reelsynth::build_pool(&pool, &arp, &settings)
+    };
+
+    let generated = ArpEngine::build_pattern_notes(&pool, &arp, length_beats, 0.85);
+    if generated.is_empty() {
+        return false;
+    }
+
+    if compose.arp_replace_notes {
+        compose.project.tracks[track].clips[clip].notes.clear();
+        compose.selected_notes.clear();
+    }
+
+    compose.history.push(ComposeCommand::AddNotes {
+        track,
+        clip,
+        notes: generated.clone(),
+    });
+    compose.project.tracks[track].clips[clip]
+        .notes
+        .extend(generated);
+    true
+}
+
+/// Modal dialog for arp generation parameters.
+pub fn draw_arp_generate_dialog(
+    ctx: &egui::Context,
+    compose: &mut ComposeUi,
+    performance: &crate::performance::PerformanceUi,
+) -> bool {
+    if !compose.arp_dialog_open {
+        return false;
+    }
+
+    let mut committed = false;
+    let close = std::cell::Cell::new(false);
+    let mut open = true;
+    egui::Window::new("Generate Arp")
+        .open(&mut open)
+        .collapsible(false)
+        .resizable(false)
+        .show(ctx, |ui| {
+            ui.label("Bake an arpeggio pattern into the selected clip.");
+            ui.add(
+                egui::Slider::new(&mut compose.arp_generate_bars, 1.0..=8.0)
+                    .text("Bars")
+                    .fixed_decimals(0),
+            );
+            ui.checkbox(&mut compose.arp_replace_notes, "Replace existing notes");
+            let arp = performance.arp.to_settings();
+            ui.label(format!(
+                "Using: {} · {} · {}",
+                super::super::performance::INPUT_MODE_NAMES
+                    [performance.arp.input_mode.min(2)],
+                super::super::performance::STYLE_NAMES
+                    [performance.arp.direction.min(6)],
+                super::super::performance::RATE_NAMES[performance.arp.rate.min(5)],
+            ));
+            if !arp.enabled {
+                ui.colored_label(Color32::YELLOW, "Enable Arp in the footer to generate.");
+            }
+            ui.horizontal(|ui| {
+                if ui.button("Cancel").clicked() {
+                    close.set(true);
+                }
+                if ui.button("Generate").clicked() && arp.enabled {
+                    if let (Some(ti), Some(ci)) = (Some(compose.selected_track), compose.selected_clip) {
+                        if ti < compose.project.tracks.len()
+                            && ci < compose.project.tracks[ti].clips.len()
+                        {
+                            committed = generate_arp_into_clip(compose, performance, ti, ci);
+                        }
+                    }
+                    close.set(true);
+                }
+            });
+        });
+    compose.arp_dialog_open = open && !close.get();
+    committed
 }

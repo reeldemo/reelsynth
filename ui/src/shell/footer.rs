@@ -4,6 +4,7 @@ use reelsynth_ui_theme::Tokens;
 use super::*;
 use crate::layout::UiScale;
 use crate::layout_audit::{footer_used_rect_id, piano_used_rect_id};
+use crate::performance::draw_arp_panel;
 use crate::performance::draw_chord_grid;
 use crate::region::region;
 use crate::widgets::button_ghost;
@@ -89,6 +90,11 @@ pub(super) fn draw_footer(ui: &mut Ui, rect: Rect, state: &mut UiState, actions:
                             .size(10.0)
                             .color(tokens.text_muted),
                     );
+
+                    let arp_actions = draw_arp_panel(ui, state);
+                    if arp_actions.params_changed {
+                        actions.params_changed = true;
+                    }
 
                     ui.label(
                         egui::RichText::new("Hz")

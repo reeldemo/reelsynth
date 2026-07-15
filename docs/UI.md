@@ -50,6 +50,7 @@ Toggle **Compose** in the header to replace the center column with a mini-DAW la
 | **WT** menu | Open/Save `.reelwt`, factory banks, Vital/WAV/Serum import |
 | **Piano** | Show/hide on-screen keyboard |
 | **Key / Scale / Layout** | Performance input: root key, scale mode, piano vs scale-fold vs chord row |
+| **Arp** (footer) | Toggle arpeggiator; input mode, style, rate, octaves, gate, latch |
 | **MIDI** combo | Select hardware MIDI input device |
 | **Status** | Audio/MIDI state, save confirmations, errors |
 
@@ -64,6 +65,23 @@ Toggle **Compose** in the header to replace the center column with a mini-DAW la
 | MIDI controller | Full keyboard range; MPE dual-zone enabled in engine |
 
 In **Compose** mode, QWERTY and piano input route to the armed clip when recording; otherwise they monitor through the synth. Piano roll focus + pencil tool auditions quietly.
+
+---
+
+## Arpeggiator
+
+Footer **Arp** toggle enables live arpeggiation in Design and Compose monitor paths. Settings persist in presets via `PerformanceSettings.arp`.
+
+| Control | Options |
+|---------|---------|
+| Input | Single note (octave spread), held chord, scale degrees |
+| Style | Up, Down, Up-Down, Down-Up, Random, As Played, Converge |
+| Rate | 1/4 … 1/32, triplets — synced to project BPM |
+| Octaves | 1–4 (single-note / scale modes) |
+| Gate | Note length as fraction of step |
+| Latch | Keep arping after key release |
+
+**Compose:** Piano roll toolbar **Generate Arp** bakes a pattern into the selected clip (uses current arp settings). Recording with arp on writes the heard arpeggiated notes, not raw held input.
 
 ---
 

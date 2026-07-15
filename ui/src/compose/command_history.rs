@@ -26,6 +26,11 @@ pub enum ComposeCommand {
         clip: usize,
         entries: Vec<(usize, f32, f32, f32, f32)>,
     },
+    AddNotes {
+        track: usize,
+        clip: usize,
+        notes: Vec<MidiNote>,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Default)]

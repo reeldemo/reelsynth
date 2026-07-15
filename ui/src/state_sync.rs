@@ -246,6 +246,26 @@ mod tests {
     }
 
     #[test]
+    fn arp_settings_preset_roundtrip() {
+        let mut original = Patch::factory_lead();
+        original.performance.arp = reelsynth::ArpSettings {
+            enabled: true,
+            input_mode: reelsynth::ArpInputMode::HeldChord,
+            direction: reelsynth::ArpDirection::UpDown,
+            rate: reelsynth::ArpRate::Eighth,
+            gate: 0.6,
+            octave_spread: 3,
+            latch: true,
+        };
+        let mut state = UiState::default();
+        sync_state_from_patch(&mut state, &original);
+        assert!(state.performance.arp.enabled);
+        assert_eq!(state.performance.arp.octave_spread, 3);
+        let restored = patch_from_state(&state, &Patch::default_mono());
+        assert_eq!(restored.performance.arp, original.performance.arp);
+    }
+
+    #[test]
     fn factory_lead_wave_stack_roundtrip() {
         let original = Patch::factory_lead();
         let mut state = UiState::default();

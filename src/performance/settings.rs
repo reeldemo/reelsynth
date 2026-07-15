@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use super::{ChordSet, ChordVoicing, PerformanceLayout, Scale, ScaleBehavior};
+use super::{ArpSettings, ChordSet, ChordVoicing, PerformanceLayout, Scale, ScaleBehavior};
 
 fn default_root() -> u8 {
     0
@@ -31,6 +31,8 @@ pub struct PerformanceSettings {
     /// Octave for scale-degree and chord-row mapping (4 = middle C octave).
     #[serde(default = "default_base_octave")]
     pub base_octave: i8,
+    #[serde(default)]
+    pub arp: ArpSettings,
 }
 
 impl Default for PerformanceSettings {
@@ -43,6 +45,7 @@ impl Default for PerformanceSettings {
             chord_set: ChordSet::default(),
             voicing: ChordVoicing::default(),
             base_octave: default_base_octave(),
+            arp: ArpSettings::default(),
         }
     }
 }
