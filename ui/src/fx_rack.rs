@@ -287,7 +287,10 @@ fn draw_effect_rack_inner(
         let body_h = (rect.height() - chrome_h).max(0.0);
 
         let body = |ui: &mut Ui| {
-            if active > CPU_WARN_ACTIVE_SLOTS {
+            // Subtract CPU warning height from the scroll/slot budget so the
+            // banner cannot collide with the first slot or double-count body_h.
+            let scroll_h = if active > CPU_WARN_ACTIVE_SLOTS {
+                let before = ui.cursor().min.y;
                 ui.label(
                     egui::RichText::new(format!(
                         "⚠ {active} active FX slots — may increase CPU usage"
@@ -296,15 +299,18 @@ fn draw_effect_rack_inner(
                     .color(Color32::from_rgb(0xe8, 0xa8, 0x40)),
                 );
                 ui.add_space(4.0);
-            }
+                (body_h - (ui.cursor().min.y - before)).max(0.0)
+            } else {
+                body_h
+            };
 
-            ui.set_max_height(body_h);
+            ui.set_max_height(scroll_h);
             match layout {
                 RackLayout::Horizontal => {
                     draw_effect_rack_horizontal(ui, slots, scale, metrics, &mut changed);
                 }
                 RackLayout::VerticalChain => {
-                    draw_effect_rack_chain(ui, slots, scale, &mut changed, body_h);
+                    draw_effect_rack_chain(ui, slots, scale, &mut changed, scroll_h);
                 }
             }
         };
@@ -437,13 +443,21 @@ struct FxSlotResult {
     changed: bool,
 }
 
-fn fx_drag_pct(ui: &mut Ui, label: &str, value: &mut f32, max: f32, stacked: bool, cell_w: f32) -> bool {
+fn fx_drag_pct(
+    ui: &mut Ui,
+    label: &str,
+    value: &mut f32,
+    max: f32,
+    stacked: bool,
+    cell_w: f32,
+    scale: f32,
+) -> bool {
     let tokens = Tokens::default();
     let mut pct = (*value * 100.0).clamp(0.0, max * 100.0);
     let mut changed = false;
     let label_size = if stacked { FX_SIDEBAR_LABEL_SIZE } else { 9.0 };
     let row_h = if stacked {
-        FX_SIDEBAR_PARAM_ROW_HEIGHT
+        FX_SIDEBAR_PARAM_ROW_HEIGHT * scale
     } else {
         FX_PARAM_ROW_HEIGHT
     };
@@ -496,12 +510,13 @@ fn fx_drag_f32(
     suffix: &str,
     stacked: bool,
     cell_w: f32,
+    scale: f32,
 ) -> bool {
     let tokens = Tokens::default();
     let mut changed = false;
     let label_size = if stacked { FX_SIDEBAR_LABEL_SIZE } else { 9.0 };
     let row_h = if stacked {
-        FX_SIDEBAR_PARAM_ROW_HEIGHT
+        FX_SIDEBAR_PARAM_ROW_HEIGHT * scale
     } else {
         FX_PARAM_ROW_HEIGHT
     };
@@ -547,7 +562,7 @@ fn draw_fx_slot_params(ui: &mut Ui, slot: &mut EffectSlotUi, layout: FxParamLayo
         FxParamLayout::CompactRow => {
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = 3.0;
-                changed |= draw_effect_params(ui, slot, false, 0.0);
+                changed |= draw_effect_params(ui, slot, false, 0.0, 1.0);
             });
         }
         FxParamLayout::SidebarStack => {
@@ -558,10 +573,10 @@ fn draw_fx_slot_params(ui: &mut Ui, slot: &mut EffectSlotUi, layout: FxParamLayo
 
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = gap;
-                changed |= draw_effect_params_row1(ui, slot, true, half_w);
+                changed |= draw_effect_params_row1(ui, slot, true, half_w, scale);
             });
             ui.horizontal(|ui| {
-                changed |= draw_effect_params_row2(ui, slot, true, full_w);
+                changed |= draw_effect_params_row2(ui, slot, true, full_w, scale);
             });
         }
     }
@@ -573,38 +588,39 @@ fn draw_effect_params_row1(
     slot: &mut EffectSlotUi,
     stacked: bool,
     cell_w: f32,
+    scale: f32,
 ) -> bool {
     let mut changed = false;
     match slot.effect_type {
         EffectType::Chorus => {
-            if fx_drag_pct(ui, "Mix", &mut slot.mix, 1.0, stacked, cell_w) {
+            if fx_drag_pct(ui, "Mix", &mut slot.mix, 1.0, stacked, cell_w, scale) {
                 changed = true;
             }
-            if fx_drag_f32(ui, "Rate", &mut slot.rate, 0.05..=8.0, 0.02, "Hz", stacked, cell_w) {
+            if fx_drag_f32(ui, "Rate", &mut slot.rate, 0.05..=8.0, 0.02, "Hz", stacked, cell_w, scale) {
                 changed = true;
             }
         }
         EffectType::Delay => {
-            if fx_drag_f32(ui, "Time", &mut slot.time_ms, 1.0..=2000.0, 1.0, "ms", stacked, cell_w) {
+            if fx_drag_f32(ui, "Time", &mut slot.time_ms, 1.0..=2000.0, 1.0, "ms", stacked, cell_w, scale) {
                 changed = true;
             }
-            if fx_drag_pct(ui, "FB", &mut slot.feedback, 0.95, stacked, cell_w) {
+            if fx_drag_pct(ui, "FB", &mut slot.feedback, 0.95, stacked, cell_w, scale) {
                 changed = true;
             }
         }
         EffectType::Reverb => {
-            if fx_drag_pct(ui, "Size", &mut slot.size, 1.0, stacked, cell_w) {
+            if fx_drag_pct(ui, "Size", &mut slot.size, 1.0, stacked, cell_w, scale) {
                 changed = true;
             }
-            if fx_drag_pct(ui, "Mix", &mut slot.mix, 1.0, stacked, cell_w) {
+            if fx_drag_pct(ui, "Mix", &mut slot.mix, 1.0, stacked, cell_w, scale) {
                 changed = true;
             }
         }
         EffectType::Distortion => {
-            if fx_drag_pct(ui, "Drive", &mut slot.drive, 1.0, stacked, cell_w) {
+            if fx_drag_pct(ui, "Drive", &mut slot.drive, 1.0, stacked, cell_w, scale) {
                 changed = true;
             }
-            if fx_drag_pct(ui, "Mix", &mut slot.mix, 1.0, stacked, cell_w) {
+            if fx_drag_pct(ui, "Mix", &mut slot.mix, 1.0, stacked, cell_w, scale) {
                 changed = true;
             }
         }
@@ -618,10 +634,11 @@ fn draw_effect_params_row1(
                 "dB",
                 stacked,
                 cell_w,
+                scale,
             ) {
                 changed = true;
             }
-            if fx_drag_f32(ui, "Ratio", &mut slot.ratio, 1.0..=20.0, 0.05, ":1", stacked, cell_w) {
+            if fx_drag_f32(ui, "Ratio", &mut slot.ratio, 1.0..=20.0, 0.05, ":1", stacked, cell_w, scale) {
                 changed = true;
             }
         }
@@ -634,31 +651,32 @@ fn draw_effect_params_row2(
     slot: &mut EffectSlotUi,
     stacked: bool,
     cell_w: f32,
+    scale: f32,
 ) -> bool {
     let mut changed = false;
     match slot.effect_type {
         EffectType::Chorus => {
-            if fx_drag_pct(ui, "Depth", &mut slot.depth, 1.0, stacked, cell_w) {
+            if fx_drag_pct(ui, "Depth", &mut slot.depth, 1.0, stacked, cell_w, scale) {
                 changed = true;
             }
         }
         EffectType::Delay => {
-            if fx_drag_pct(ui, "Mix", &mut slot.mix, 1.0, stacked, cell_w) {
+            if fx_drag_pct(ui, "Mix", &mut slot.mix, 1.0, stacked, cell_w, scale) {
                 changed = true;
             }
         }
         EffectType::Reverb => {
-            if fx_drag_pct(ui, "Damp", &mut slot.damping, 1.0, stacked, cell_w) {
+            if fx_drag_pct(ui, "Damp", &mut slot.damping, 1.0, stacked, cell_w, scale) {
                 changed = true;
             }
         }
         EffectType::Distortion => {
-            if fx_drag_pct(ui, "Tone", &mut slot.tone, 1.0, stacked, cell_w) {
+            if fx_drag_pct(ui, "Tone", &mut slot.tone, 1.0, stacked, cell_w, scale) {
                 changed = true;
             }
         }
         EffectType::Compressor => {
-            if fx_drag_pct(ui, "Mix", &mut slot.mix, 1.0, stacked, cell_w) {
+            if fx_drag_pct(ui, "Mix", &mut slot.mix, 1.0, stacked, cell_w, scale) {
                 changed = true;
             }
         }
@@ -671,9 +689,10 @@ fn draw_effect_params(
     slot: &mut EffectSlotUi,
     stacked: bool,
     cell_w: f32,
+    scale: f32,
 ) -> bool {
-    let mut changed = draw_effect_params_row1(ui, slot, stacked, cell_w);
-    if draw_effect_params_row2(ui, slot, stacked, cell_w) {
+    let mut changed = draw_effect_params_row1(ui, slot, stacked, cell_w, scale);
+    if draw_effect_params_row2(ui, slot, stacked, cell_w, scale) {
         changed = true;
     }
     changed
@@ -758,20 +777,32 @@ fn draw_fx_slot_column(
             egui::Layout::left_to_right(egui::Align::Center),
             |ui| {
                 ui.spacing_mut().item_spacing.x = 2.0;
-                if idx > 0 && button_icon(ui, "◀").clicked() {
-                    slots.swap(idx, idx - 1);
-                    changed = true;
-                }
-                if idx + 1 < slots.len() && button_icon(ui, "▶").clicked() {
-                    slots.swap(idx, idx + 1);
-                    changed = true;
-                }
-                if slots.len() > 1 && button_icon(ui, "✕").clicked() {
-                    slots.remove(idx);
-                    changed = true;
+                // Fixed icon band so reel_combo never overlaps ◀▶✕.
+                let mut removed = false;
+                ui.allocate_ui_with_layout(
+                    egui::vec2(icon_strip, metrics.controls_height),
+                    egui::Layout::left_to_right(egui::Align::Center),
+                    |ui| {
+                        ui.spacing_mut().item_spacing.x = 2.0;
+                        if idx > 0 && button_icon(ui, "◀").clicked() {
+                            slots.swap(idx, idx - 1);
+                            changed = true;
+                        }
+                        if idx + 1 < slots.len() && button_icon(ui, "▶").clicked() {
+                            slots.swap(idx, idx + 1);
+                            changed = true;
+                        }
+                        if slots.len() > 1 && button_icon(ui, "✕").clicked() {
+                            slots.remove(idx);
+                            changed = true;
+                            removed = true;
+                        }
+                    },
+                );
+                if removed {
                     return;
                 }
-                let combo_w = (ui.available_width() - icon_strip).max(48.0);
+                let combo_w = ui.available_width().max(48.0);
                 reel_combo(
                     ui,
                     format!("fx_type_{idx}"),
