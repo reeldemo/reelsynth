@@ -1,4 +1,4 @@
-use egui::{Color32, CursorIcon, Pos2, Rect, Sense, Shape, Ui, Vec2};
+use egui::{Color32, CursorIcon, Pos2, Rect, Response, Sense, Shape, Ui, Vec2};
 use reelsynth::patch::{Patch, WaveSlot};
 use reelsynth::WavetableBank;
 use reelsynth_ui_theme::{ACCENT_UI, Tokens};
@@ -13,7 +13,31 @@ use super::mod_preview::{has_position_mod_routes, preview_mod_sources, preview_p
 use super::shape_editor::ShapeEditor;
 use super::slots::apply_slot_selection;
 use super::toolbar::{WtEditTool, WtToolbar, WtToolbarResponse};
-use super::waveform::{frame_index, peak_point, waveform_points};
+use super::waveform::{frame_index, hit_test_waveform, peak_point, waveform_points};
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum SelectDragKind {
+    Navigate,
+    Waveform,
+}
+
+fn apply_waveform_drag(
+    bank: &mut WavetableBank,
+    frame_idx: usize,
+    inner: Rect,
+    response: &Response,
+) -> bool {
+    if response.dragged() || response.drag_started() {
+        if let Some(curr) = response.interact_pointer_pos() {
+            let prev = curr - response.drag_delta();
+            let (cx, cy) = view_coords(inner, curr);
+            let (px, py) = view_coords(inner, prev);
+            bank.apply_pencil_segment(frame_idx, px, py, cx, cy);
+            return true;
+        }
+    }
+    false
+}
 
 pub struct WtView2dResponse {
     pub frame_edited: bool,
@@ -113,33 +137,86 @@ impl WtView2d<'_> {
             }
         }
 
+        let frame_idx = self
+            .bank
+            .as_ref()
+            .map(|b| frame_index(*self.position, b.num_frames))
+            .unwrap_or(0);
+
+        let wave = if let Some(bank) = self.bank.as_ref() {
+            let frame = bank.frame(frame_idx);
+            waveform_points(frame, inner, 256, 0.42)
+        } else {
+            placeholder_wave(inner, mid_y)
+        };
+
         if *self.tool == WtEditTool::Select {
             let sense = Sense::click_and_drag();
             let response = ui.allocate_rect(inner, sense);
+            let drag_kind_id = ui.id().with("wt_select_drag_kind");
+            let wave_tolerance = 10.0;
+
+            if response.drag_started() {
+                let kind = response
+                    .interact_pointer_pos()
+                    .map(|pos| {
+                        if wave.len() >= 2 && hit_test_waveform(&wave, pos, wave_tolerance) {
+                            SelectDragKind::Waveform
+                        } else {
+                            SelectDragKind::Navigate
+                        }
+                    })
+                    .unwrap_or(SelectDragKind::Navigate);
+                ui.ctx()
+                    .data_mut(|d| d.insert_temp(drag_kind_id, kind));
+            }
+
             if response.dragged() {
-                let delta = response.drag_delta();
-                if delta.x.abs() > 0.0 {
-                    let px_per_frame = inner.width() / max_pos.max(1.0);
-                    let next = (*self.position + delta.x / px_per_frame).clamp(0.0, max_pos);
-                    if (next - *self.position).abs() > 0.01 {
-                        *self.position = next;
-                        position_changed = true;
+                let kind = ui
+                    .ctx()
+                    .data(|d| d.get_temp(drag_kind_id))
+                    .unwrap_or(SelectDragKind::Navigate);
+                match kind {
+                    SelectDragKind::Waveform => {
+                        if let Some(bank) = self.bank.as_mut() {
+                            if apply_waveform_drag(bank, frame_idx, inner, &response) {
+                                frame_edited = true;
+                            }
+                        }
                     }
-                }
-                if delta.y.abs() > 0.0 {
-                    if let Some(morph) = self.morph_amount {
-                        let delta_amount = -delta.y / inner.height();
-                        let next = (*morph + delta_amount).clamp(0.0, 1.0);
-                        if (next - *morph).abs() > f32::EPSILON {
-                            *morph = next;
-                            morph_changed = true;
+                    SelectDragKind::Navigate => {
+                        let delta = response.drag_delta();
+                        if delta.x.abs() > 0.0 {
+                            let px_per_frame = inner.width() / max_pos.max(1.0);
+                            let next =
+                                (*self.position + delta.x / px_per_frame).clamp(0.0, max_pos);
+                            if (next - *self.position).abs() > 0.01 {
+                                *self.position = next;
+                                position_changed = true;
+                            }
+                        }
+                        if delta.y.abs() > 0.0 {
+                            if let Some(morph) = self.morph_amount {
+                                let delta_amount = -delta.y / inner.height();
+                                let next = (*morph + delta_amount).clamp(0.0, 1.0);
+                                if (next - *morph).abs() > f32::EPSILON {
+                                    *morph = next;
+                                    morph_changed = true;
+                                }
+                            }
                         }
                     }
                 }
             } else if response.clicked() {
                 if let Some(pos) = response.interact_pointer_pos() {
                     if inner.contains(pos) {
-                        if self.wave_quant > 0 {
+                        if wave.len() >= 2 && hit_test_waveform(&wave, pos, wave_tolerance) {
+                            if let Some(bank) = self.bank.as_mut() {
+                                let (x, y) = view_coords(inner, pos);
+                                bank.apply_pencil_segment(frame_idx, x, y, x, y);
+                                frame_edited = true;
+                            }
+                        } else if self.wave_quant > 0 {
                             let slot_t =
                                 ((pos.x - inner.min.x) / inner.width()).clamp(0.0, 1.0);
                             let slot = (slot_t * (self.wave_quant as f32 - 1.0).max(0.0))
@@ -167,16 +244,21 @@ impl WtView2d<'_> {
                     }
                 }
             }
+
             if response.hovered() {
-                ui.ctx().set_cursor_icon(CursorIcon::ResizeHorizontal);
+                let cursor = response
+                    .interact_pointer_pos()
+                    .map(|pos| {
+                        if wave.len() >= 2 && hit_test_waveform(&wave, pos, wave_tolerance) {
+                            CursorIcon::Grab
+                        } else {
+                            CursorIcon::ResizeHorizontal
+                        }
+                    })
+                    .unwrap_or(CursorIcon::ResizeHorizontal);
+                ui.ctx().set_cursor_icon(cursor);
             }
         }
-
-        let frame_idx = self
-            .bank
-            .as_ref()
-            .map(|b| frame_index(*self.position, b.num_frames))
-            .unwrap_or(0);
 
         let pos_mod = if let (Some(patch), Some(macros)) = (self.patch, self.macro_values) {
             let sources = preview_mod_sources(patch, self.time, macros);
@@ -217,13 +299,6 @@ impl WtView2d<'_> {
             painter.rect_filled(band, 0.0, tokens.accent.gamma_multiply(0.08));
             painter.rect_stroke(band, 0.0, egui::Stroke::new(1.0, accent_ui.gamma_multiply(0.35)));
         }
-
-        let wave = if let Some(bank) = self.bank.as_ref() {
-            let frame = bank.frame(frame_idx);
-            waveform_points(frame, inner, 256, 0.42)
-        } else {
-            placeholder_wave(inner, mid_y)
-        };
 
         if wave.len() >= 2 && *self.tool != WtEditTool::Curve {
             let mut fill = wave.clone();
@@ -302,14 +377,11 @@ impl WtView2d<'_> {
             if let Some(bank) = self.bank.as_mut() {
                 let sense = Sense::click_and_drag();
                 let response = ui.allocate_rect(inner, sense);
-                if response.dragged() || response.drag_started() {
-                    if let Some(curr) = response.interact_pointer_pos() {
-                        let prev = curr - response.drag_delta();
-                        let (cx, cy) = view_coords(inner, curr);
-                        let (px, py) = view_coords(inner, prev);
-                        bank.apply_pencil_segment(frame_idx, px, py, cx, cy);
-                        frame_edited = true;
-                    }
+                if apply_waveform_drag(bank, frame_idx, inner, &response) {
+                    frame_edited = true;
+                }
+                if response.hovered() {
+                    ui.ctx().set_cursor_icon(CursorIcon::Grab);
                 }
             }
         }

@@ -38,6 +38,34 @@ pub fn peak_point(points: &[Pos2]) -> Option<Pos2> {
         .copied()
 }
 
+/// Minimum pixel distance from `pos` to the waveform polyline.
+pub fn nearest_waveform_distance(points: &[Pos2], pos: Pos2) -> f32 {
+    if points.len() < 2 {
+        return f32::INFINITY;
+    }
+    points
+        .windows(2)
+        .map(|seg| distance_point_to_segment(pos, seg[0], seg[1]))
+        .fold(f32::INFINITY, f32::min)
+}
+
+/// True when `pos` is within `tolerance` px of the drawn waveform path.
+pub fn hit_test_waveform(points: &[Pos2], pos: Pos2, tolerance: f32) -> bool {
+    nearest_waveform_distance(points, pos) <= tolerance
+}
+
+fn distance_point_to_segment(p: Pos2, a: Pos2, b: Pos2) -> f32 {
+    let ab = b - a;
+    let len_sq = ab.x * ab.x + ab.y * ab.y;
+    if len_sq <= f32::EPSILON {
+        return p.distance(a);
+    }
+    let t = ((p.x - a.x) * ab.x + (p.y - a.y) * ab.y) / len_sq;
+    let t = t.clamp(0.0, 1.0);
+    let closest = Pos2::new(a.x + ab.x * t, a.y + ab.y * t);
+    p.distance(closest)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -69,5 +97,16 @@ mod tests {
             Pos2::new(2.0, 12.0),
         ];
         assert_eq!(peak_point(&pts).unwrap().y, 5.0);
+    }
+
+    #[test]
+    fn hit_test_waveform_near_line() {
+        let pts = vec![
+            Pos2::new(0.0, 50.0),
+            Pos2::new(100.0, 50.0),
+        ];
+        assert!(hit_test_waveform(&pts, Pos2::new(50.0, 50.0), 8.0));
+        assert!(hit_test_waveform(&pts, Pos2::new(50.0, 55.0), 8.0));
+        assert!(!hit_test_waveform(&pts, Pos2::new(50.0, 70.0), 8.0));
     }
 }

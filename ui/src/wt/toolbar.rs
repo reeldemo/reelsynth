@@ -80,18 +80,29 @@ impl WtToolbar {
                 ui.spacing_mut().item_spacing.x = 2.0;
                 for candidate in [
                     WtEditTool::Select,
-                    WtEditTool::Pencil,
                     WtEditTool::Curve,
                     WtEditTool::Shape,
+                    WtEditTool::Pencil,
                 ] {
-                    if button_tool(
+                    let hover = match candidate {
+                        WtEditTool::Select => {
+                            "Drag waveform to shape · drag background to scan position"
+                        }
+                        WtEditTool::Pencil => "Freehand draw (advanced)",
+                        WtEditTool::Curve => "Edit slot → frame morph curve",
+                        WtEditTool::Shape => "Edit control points on the cycle",
+                        _ => "",
+                    };
+                    let mut btn = button_tool(
                         ui,
                         candidate.label(),
                         *tool == candidate,
                         candidate.enabled(),
-                    )
-                    .clicked()
-                    {
+                    );
+                    if !hover.is_empty() {
+                        btn = btn.on_hover_text(hover);
+                    }
+                    if btn.clicked() {
                         if candidate.enabled() {
                             *tool = candidate;
                             tool_changed = true;
