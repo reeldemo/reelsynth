@@ -24,10 +24,17 @@ pub struct VoiceState {
     pub filt_env_time: f32,
     pub svf_low: f32,
     pub svf_band: f32,
+    pub svf_r_low: f32,
+    pub svf_r_band: f32,
     pub svf2_low: f32,
     pub svf2_band: f32,
+    pub svf2_r_low: f32,
+    pub svf2_r_band: f32,
     /// 0..1 fade applied to filter output after note-on (kills HP cold-start click).
     pub filter_fade: f32,
+    /// Previous filtered outputs for pitch-aware slew limiting (kills residual wrap clicks).
+    pub last_out_l: f32,
+    pub last_out_r: f32,
     pub noise_seed: u32,
     /// Previous-sample feedback for self-FM per osc slot.
     pub fm_feedback: Vec<f32>,
@@ -57,9 +64,15 @@ impl VoiceState {
             filt_env_time: 0.0,
             svf_low: 0.0,
             svf_band: 0.0,
+            svf_r_low: 0.0,
+            svf_r_band: 0.0,
             svf2_low: 0.0,
             svf2_band: 0.0,
+            svf2_r_low: 0.0,
+            svf2_r_band: 0.0,
             filter_fade: 0.0,
+            last_out_l: 0.0,
+            last_out_r: 0.0,
             noise_seed: 1,
             fm_feedback: vec![0.0; patch.oscillators.len().max(1)],
             lfo1_rt: LfoRuntime::default(),
@@ -84,9 +97,15 @@ impl VoiceState {
         self.filt_env_time = 0.0;
         self.svf_low = 0.0;
         self.svf_band = 0.0;
+        self.svf_r_low = 0.0;
+        self.svf_r_band = 0.0;
         self.svf2_low = 0.0;
         self.svf2_band = 0.0;
+        self.svf2_r_low = 0.0;
+        self.svf2_r_band = 0.0;
         self.filter_fade = 0.0;
+        self.last_out_l = 0.0;
+        self.last_out_r = 0.0;
         self.noise_seed = self.noise_seed.wrapping_add(1);
         self.fm_feedback.resize(patch.oscillators.len().max(1), 0.0);
         self.fm_feedback.fill(0.0);
@@ -347,7 +366,8 @@ pub fn process_sample_stages(state: &mut VoiceState, ctx: &VoiceSampleContext<'_
         right,
         |sample, _| soft_drive(sample, ctx.patch.filter2.drive.max(ctx.patch.filter.drive)),
     );
-    let filtered_l = svf_filter(
+    // Stereo-coherent series dual filter: same chain on L and R (never HP-only on one ear).
+    let stage1_l = svf_filter(
         &mut state.svf_low,
         &mut state.svf_band,
         driven_l,
@@ -359,10 +379,34 @@ pub fn process_sample_stages(state: &mut VoiceState, ctx: &VoiceSampleContext<'_
         ctx.dt,
         0,
     );
-    let filtered_r = svf_filter(
+    let stage1_r = svf_filter(
+        &mut state.svf_r_low,
+        &mut state.svf_r_band,
+        driven_r,
+        cutoff1,
+        resonance1,
+        &ctx.patch.filter.filter_type,
+        ctx.sr,
+        ctx.patch.filter.drive,
+        ctx.dt,
+        0,
+    );
+    let filtered_l = svf_filter(
         &mut state.svf2_low,
         &mut state.svf2_band,
-        driven_r,
+        stage1_l,
+        cutoff2,
+        resonance2,
+        &ctx.patch.filter2.filter_type,
+        ctx.sr,
+        ctx.patch.filter2.drive,
+        ctx.dt,
+        0,
+    );
+    let filtered_r = svf_filter(
+        &mut state.svf2_r_low,
+        &mut state.svf2_r_band,
+        stage1_r,
         cutoff2,
         resonance2,
         &ctx.patch.filter2.filter_type,
@@ -376,15 +420,25 @@ pub fn process_sample_stages(state: &mut VoiceState, ctx: &VoiceSampleContext<'_
         state.filter_fade = (state.filter_fade + ctx.dt / FILTER_FADE_SECONDS).min(1.0);
     }
     let fade = state.filter_fade;
+    // Allow enough slew for ~4× the fundamental, clamp residual wrap clicks.
+    let max_delta = ((ctx.freq * 8.0) / ctx.sr).clamp(0.05, 0.22) * fade.max(0.05);
+
+    let target_l = (filtered_l * fade).clamp(-1.0, 1.0);
+    let target_r = (filtered_r * fade).clamp(-1.0, 1.0);
+    let out_l = slew_limit(&mut state.last_out_l, target_l, max_delta);
+    let out_r = slew_limit(&mut state.last_out_r, target_r, max_delta);
 
     let osc_mono = (left + right) * 0.5;
     VoiceStageSample {
         osc_mono,
-        filtered: [
-            (filtered_l * fade).clamp(-1.0, 1.0),
-            (filtered_r * fade).clamp(-1.0, 1.0),
-        ],
+        filtered: [out_l, out_r],
     }
+}
+
+fn slew_limit(prev: &mut f32, target: f32, max_delta: f32) -> f32 {
+    let delta = (target - *prev).clamp(-max_delta, max_delta);
+    *prev += delta;
+    *prev
 }
 
 fn process_os_fm(

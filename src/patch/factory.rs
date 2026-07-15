@@ -45,23 +45,23 @@ impl Patch {
                 wave_layers: vec![
                     WaveLayer {
                         source_type: "saw".into(),
-                        level: 0.65,
+                        level: 0.55,
                         ..WaveLayer::default()
                     },
                     WaveLayer {
                         source_type: "sine".into(),
-                        level: 0.35,
+                        level: 0.30,
                         ..WaveLayer::default()
                     },
                     WaveLayer {
                         source_type: "wavetable".into(),
-                        level: 0.22,
+                        level: 0.18,
                         wt_position: 108.0,
                         wavetable_id: Some("saw_morph".into()),
                         ..WaveLayer::default()
                     },
                 ],
-                stack_mode: "add".into(),
+                stack_mode: "avg".into(),
                 ..Oscillator::default_va()
             }],
             filter: Filter {
@@ -73,8 +73,8 @@ impl Patch {
             },
             filter2: Filter {
                 cutoff: 2800.0,
-                resonance: 0.22,
-                filter_type: "highpass".into(),
+                resonance: 0.18,
+                filter_type: "lowpass".into(),
                 key_tracking: 0.45,
                 drive: 0.0,
             },

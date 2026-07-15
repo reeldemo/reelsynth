@@ -85,9 +85,10 @@ fn factory_lead_wave_stack() {
     assert_eq!(layers[0].source_type, "saw");
     assert_eq!(layers[1].source_type, "sine");
     assert_eq!(layers[2].source_type, "wavetable");
-    assert!((layers[0].level - 0.65).abs() < 0.01);
+    assert!((layers[0].level - 0.55).abs() < 0.01);
     assert!((layers[2].wt_position - 108.0).abs() < 0.01);
-    assert_eq!(p.oscillators[0].stack_mode, "add");
+    assert_eq!(p.oscillators[0].stack_mode, "avg");
+    assert_eq!(p.filter2.filter_type, "lowpass");
 }
 
 #[test]

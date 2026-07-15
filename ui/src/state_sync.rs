@@ -314,12 +314,12 @@ mod tests {
         let mut state = UiState::default();
         sync_state_from_patch(&mut state, &original);
         assert_eq!(state.oscillators[0].wave_layers.len(), 3);
-        assert_eq!(state.oscillators[0].stack_mode, "add");
-        assert!((state.oscillators[0].wave_layers[0].level - 0.65).abs() < 1e-4);
+        assert_eq!(state.oscillators[0].stack_mode, "avg");
+        assert!((state.oscillators[0].wave_layers[0].level - 0.55).abs() < 1e-4);
         assert_eq!(state.oscillators[0].wave_layers[0].source_type, "saw");
         let restored = patch_from_state(&state, &Patch::default_mono());
         assert_eq!(restored.oscillators[0].wave_layers.len(), 3);
-        assert_eq!(restored.oscillators[0].stack_mode, "add");
+        assert_eq!(restored.oscillators[0].stack_mode, "avg");
         assert!((restored.oscillators[0].wave_layers[2].wt_position - 108.0).abs() < 0.01);
     }
 

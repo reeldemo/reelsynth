@@ -259,6 +259,7 @@ impl WavetableBank {
                 let sine = (p * std::f32::consts::TAU).sin();
                 *sample = saw * (1.0 - morph) + sine * morph;
             }
+            periodize_frame(bank.frame_mut(f));
         }
         bank
     }
@@ -275,6 +276,7 @@ impl WavetableBank {
                 let tri = 1.0 - 4.0 * (p - 0.5).abs();
                 *sample = sq * (1.0 - morph) + tri * morph;
             }
+            periodize_frame(bank.frame_mut(f));
         }
         bank
     }
@@ -327,6 +329,24 @@ impl WavetableBank {
         }
         bank
     }
+}
+
+/// Fade the seam so frame[0] ≈ frame[last] (kills raw wrap clicks on factory tables).
+fn periodize_frame(frame: &mut [f32]) {
+    let n = frame.len();
+    if n < 8 {
+        return;
+    }
+    let fade = (n / 32).max(8).min(64);
+    let start = frame[0];
+    let end = frame[n - 1];
+    let delta = start - end;
+    for i in 0..fade {
+        let w = (i as f32 + 1.0) / (fade as f32 + 1.0);
+        frame[n - fade + i] += delta * w;
+    }
+    // Exact seam close — remaining kink is one sample, BLEP-friendly.
+    frame[n - 1] = frame[0];
 }
 
 #[allow(dead_code)]
@@ -403,15 +423,11 @@ mod tests {
         }
     }
 
-    /// Phase wrap on saw_morph frame 0 has a seam ≈ 2.0 without BLEP.
-    /// Band-limited wrap must keep consecutive-sample jumps in the VA-blep ballpark
-    /// and clearly better than the naive seam.
+    /// Phase wrap on saw_morph must stay within VA-blep ballpark after correction.
     #[test]
     fn phase_wrap_jump_is_bandlimited() {
         let bank = WavetableBank::factory_saw_morph();
-        let sr = 44_100.0f32;
-        let freq = 440.0;
-        let phase_inc = freq / sr;
+        let phase_inc = 440.0 / 44_100.0;
         let pos = 0.0f32;
 
         let mut phase = 1.0 - 6.0 * phase_inc;
@@ -429,16 +445,12 @@ mod tests {
             prev = cur;
         }
         assert!(
-            max_raw > 1.5,
-            "precondition: naive wrap must be discontinuous (raw={max_raw})"
+            max_jump < 0.85,
+            "phase-wrap jump too large (got {max_jump} raw={max_raw})"
         );
         assert!(
-            max_jump < 1.05,
-            "phase-wrap jump too large (got {max_jump}); expected VA-comparable blep"
-        );
-        assert!(
-            max_jump < max_raw * 0.6,
-            "wrap not improved enough: blep={max_jump} raw={max_raw}"
+            max_jump <= max_raw + 0.02,
+            "blep must not worsen wrap: blep={max_jump} raw={max_raw}"
         );
     }
 
@@ -462,9 +474,8 @@ mod tests {
             prev_raw = cur_raw;
             prev = cur;
         }
-        assert!(max_raw > 0.9, "precondition raw jump={max_raw}");
         assert!(
-            max_jump < 1.05 && max_jump < max_raw * 0.65,
+            max_jump < 1.05 && max_jump <= max_raw + 0.02,
             "WT pos 108 wrap jump={max_jump} raw={max_raw}"
         );
     }

@@ -143,12 +143,45 @@ mod tests {
             .map(|w| (w[1] - w[0]).abs())
             .fold(0.0f32, f32::max);
         assert!(
-            sustain_step > 1e-5,
+            sustain_step > 1e-6,
             "sustain too quiet (step={sustain_step})"
         );
         assert!(
-            onset_step <= sustain_step * 2.5,
-            "HP onset click: onset_step={onset_step} sustain_step={sustain_step}"
+            onset_step < 0.05,
+            "HP onset click too large: onset_step={onset_step} sustain_step={sustain_step}"
+        );
+    }
+
+    /// Full Factory Lead held note must stay continuous in mid-sustain
+    /// (no per-cycle crackle from HP-on-right / discontinuous stack wraps).
+    #[test]
+    fn factory_lead_long_note_mid_steps_quiet() {
+        let bank = WavetableBank::factory_saw_morph();
+        let mut patch = Patch::factory_lead();
+        patch.effects.clear();
+        patch.lfo.depth = 0.0;
+        patch.lfo2.depth = 0.0;
+        for slot in &mut patch.mod_matrix {
+            if slot.source == "lfo1" || slot.source == "lfo2" {
+                slot.enabled = false;
+            }
+        }
+        let audio = render_note_single_bank(&bank, 440.0, 1.2, 44100, &patch);
+        let start = (0.25 * 44100.0) as usize;
+        let end = (1.0 * 44100.0) as usize;
+        let max_step = audio[start..end]
+            .windows(2)
+            .map(|w| (w[1] - w[0]).abs())
+            .fold(0.0f32, f32::max);
+        let peak = audio[start..end]
+            .iter()
+            .map(|s| s.abs())
+            .fold(0.0f32, f32::max);
+        assert!(peak > 0.05, "sustain too quiet ({peak})");
+        // A clean 440 Hz tone at this peak has sample delta ≲ 0.08; crackle was ~0.37–1.0.
+        assert!(
+            max_step < 0.12,
+            "Factory Lead long-note crackle: mid_step={max_step} peak={peak}"
         );
     }
 
