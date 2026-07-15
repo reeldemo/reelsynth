@@ -1,9 +1,8 @@
 param(
-    [string]$EnvFile = "C:\Users\Julian\Documents\Programming\reeldemo.io\.env.local",
     [Parameter(ValueFromRemainingArguments = $true)]
-    [string[]]$Args
+    [string[]]$GitArgs
 )
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-& "$scriptDir\git-with-token.ps1" -EnvFile $EnvFile git pull @Args
+& "$scriptDir\git-with-token.ps1" git pull @GitArgs
 exit $LASTEXITCODE
