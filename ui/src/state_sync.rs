@@ -6,7 +6,7 @@ use crate::{
     mod_slots_from_patch, mod_slots_to_patch, osc_type_from_index, OscillatorUi, UiState,
     warp_mode_from_index,
 };
-use crate::oscillator_ui::WaveLayerUi;
+use crate::oscillator_ui::{ensure_wave_layers, WaveLayerUi};
 use crate::wt::position_from_osc_ui;
 
 pub fn lfo_shape_from_index(idx: usize) -> &'static str {
@@ -119,6 +119,22 @@ pub fn sync_state_from_patch(state: &mut UiState, patch: &Patch) {
             .map(OscillatorUi::from_patch)
             .collect();
     }
+    for osc in &mut state.oscillators {
+        ensure_wave_layers(osc);
+    }
+    if state.selected_layer_idx.is_none() {
+        state.selected_layer_idx = Some(0);
+    }
+    let layer_count = state
+        .oscillators
+        .get(state.active_osc_index())
+        .map(|o| o.wave_layers.len())
+        .unwrap_or(0);
+    if let Some(idx) = state.selected_layer_idx {
+        if idx >= layer_count {
+            state.selected_layer_idx = Some(layer_count.saturating_sub(1));
+        }
+    }
     state.osc_tab = state.osc_tab.min(state.oscillators.len().saturating_sub(1));
 
     state.unison_stereo_spread = patch.unison_stereo_spread;
@@ -228,6 +244,19 @@ pub fn patch_from_state(state: &UiState, base: &Patch) -> Patch {
 mod tests {
     use super::*;
     use reelsynth::patch::Patch;
+
+    #[test]
+    fn empty_wave_layers_seeded_on_sync() {
+        let mut patch = Patch::default_mono();
+        patch.oscillators[0].wave_layers.clear();
+        let mut state = UiState::default();
+        sync_state_from_patch(&mut state, &patch);
+        assert_eq!(state.oscillators[0].wave_layers.len(), 3);
+        assert_eq!(state.oscillators[0].wave_layers[0].source_type, "saw");
+        assert_eq!(state.oscillators[0].wave_layers[1].source_type, "sine");
+        assert_eq!(state.oscillators[0].wave_layers[2].source_type, "square");
+        assert_eq!(state.selected_layer_idx, Some(0));
+    }
 
     #[test]
     fn performance_settings_roundtrip() {

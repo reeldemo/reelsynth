@@ -143,10 +143,10 @@ impl WtToolbar {
                 ui.add_space(4.0);
                 ui.menu_button("Shape", |ui| {
                     for (label, tip, kind) in [
-                        ("Saw", "Assign sawtooth to selected frame", FrameShapeTemplate::Saw),
-                        ("Square", "Assign square to selected frame", FrameShapeTemplate::Square),
-                        ("Sine", "Assign sine to selected frame", FrameShapeTemplate::Sine),
-                        ("Triangle", "Assign triangle to selected frame", FrameShapeTemplate::Tri),
+                        ("Saw", "Set active layer to saw", FrameShapeTemplate::Saw),
+                        ("Square", "Set active layer to square", FrameShapeTemplate::Square),
+                        ("Sine", "Set active layer to sine", FrameShapeTemplate::Sine),
+                        ("Triangle", "Set active layer to triangle", FrameShapeTemplate::Tri),
                     ] {
                         if ui
                             .button(label)
@@ -159,7 +159,7 @@ impl WtToolbar {
                     }
                 })
                 .response
-                .on_hover_text("Assign a basic shape to the selected frame");
+                .on_hover_text("Set basic shape on the active layer");
                 ui.add_space(2.0);
                 if ui
                     .small_button("FFT")

@@ -527,6 +527,7 @@ pub fn audit_center(
             &full_config(),
             layout.scale.ui(),
             embed_piano_in_center(options),
+            false,
         );
         audit_center(layout.center, &regions, layout.scale.ui());
     }
@@ -572,6 +573,7 @@ pub fn audit_center(
                                     &config,
                                     layout.scale.ui(),
                                     embed_piano_in_center(options),
+                                    false,
                                 );
                                 audit_center(layout.center, &regions, layout.scale.ui());
                             }

@@ -390,113 +390,63 @@ pub fn draw_osc_column(
                             changed = true;
                         }
 
-                        let selected = state.selected_layer_idx.unwrap_or(0);
-                        let remove_layer = ui
-                            .horizontal(|ui| {
-                                if ui.button("+ Layer").clicked() {
-                                    osc.wave_layers.push(WaveLayerUi::default());
-                                    changed = true;
-                                }
-                                ui.label(format!("{} layers", osc.wave_layers.len()));
-                            })
-                            .inner;
+                        ui.label(
+                            egui::RichText::new(format!(
+                                "{} layers · edit on center strip",
+                                osc.wave_layers.len()
+                            ))
+                            .size(10.0)
+                            .color(Tokens::default().text_muted),
+                        );
 
-                        let mut remove_at = None;
-                        for (li, layer) in osc.wave_layers.iter_mut().enumerate() {
-                            let row_start = ui.cursor().min;
-                            let is_sel = selected == li;
-                            ui.push_id(("stack_layer", li), |ui| {
-                            ui.horizontal(|ui| {
-                                let label = format!("L{}", li + 1);
-                                let btn = ui.selectable_label(is_sel, label);
-                                if btn.clicked() {
-                                    *state.selected_layer_idx = Some(li);
-                                    changed = true;
+                        egui::CollapsingHeader::new("Advanced layer params")
+                            .default_open(false)
+                            .show(ui, |ui| {
+                                let selected = state.selected_layer_idx.unwrap_or(0);
+                                if let Some(layer) = osc.wave_layers.get_mut(selected) {
+                                    ui.label(format!("Layer {}", selected + 1));
+                                    let mut type_idx = stack_layer_type_index(&layer.source_type);
+                                    if labeled_select(ui, "Type", &STACK_LAYER_TYPES, &mut type_idx) {
+                                        layer.source_type =
+                                            stack_layer_type_from_index(type_idx).into();
+                                        changed = true;
+                                    }
+                                    ui.horizontal(|ui| {
+                                        let det_text = format!("{:.0}", layer.detune);
+                                        let r = Knob::new(&mut layer.detune, -2400.0..=2400.0, "Det")
+                                            .size(KnobSize::Sm)
+                                            .scale(scale)
+                                            .value_text(det_text)
+                                            .show(ui);
+                                        if r.changed {
+                                            changed = true;
+                                        }
+                                        if layer.source_type.eq_ignore_ascii_case("pulse") {
+                                            let pw_text = format!("{:.0}%", layer.pulse_width * 100.0);
+                                            let r2 = Knob::new(&mut layer.pulse_width, 0.01..=0.99, "PW")
+                                                .size(KnobSize::Sm)
+                                                .scale(scale)
+                                                .value_text(pw_text)
+                                                .show(ui);
+                                            if r2.changed {
+                                                changed = true;
+                                            }
+                                        }
+                                    });
+                                    if layer.source_type.eq_ignore_ascii_case("wavetable") {
+                                        let wt_label = format!("{:.0}", layer.wt_position);
+                                        if param_slider(
+                                            ui,
+                                            "WT Pos",
+                                            &mut layer.wt_position,
+                                            0.0..=255.0,
+                                            &wt_label,
+                                        ) {
+                                            changed = true;
+                                        }
+                                    }
                                 }
                             });
-
-                            let mut type_idx = stack_layer_type_index(&layer.source_type);
-                            if labeled_select(ui, "Type", &STACK_LAYER_TYPES, &mut type_idx) {
-                                layer.source_type =
-                                    stack_layer_type_from_index(type_idx).into();
-                                changed = true;
-                            }
-
-                            ui.horizontal(|ui| {
-                                let level_text = format!("{:.2}", layer.level);
-                                let r1 = Knob::new(&mut layer.level, 0.0..=1.0, "Lvl")
-                                    .size(KnobSize::Sm)
-                                    .scale(scale)
-                                    .value_text(level_text)
-                                    .show(ui);
-                                let det_text = format!("{:.0}", layer.detune);
-                                let r2 = Knob::new(&mut layer.detune, -2400.0..=2400.0, "Det")
-                                    .size(KnobSize::Sm)
-                                    .scale(scale)
-                                    .value_text(det_text)
-                                    .show(ui);
-                                if r1.changed || r2.changed {
-                                    changed = true;
-                                }
-                            });
-
-                            if layer.source_type.eq_ignore_ascii_case("wavetable") {
-                                let wt_label = format!("{:.0}", layer.wt_position);
-                                if param_slider(
-                                    ui,
-                                    "WT Pos",
-                                    &mut layer.wt_position,
-                                    0.0..=255.0,
-                                    &wt_label,
-                                ) {
-                                    changed = true;
-                                }
-                            }
-
-                            ui.horizontal(|ui| {
-                                if ui
-                                    .checkbox(&mut layer.enabled, "On")
-                                    .changed()
-                                {
-                                    changed = true;
-                                }
-                                let sign_label = if layer.invert { "−" } else { "+" };
-                                if ui
-                                    .selectable_label(!layer.invert, "+")
-                                    .on_hover_text("Add layer")
-                                    .clicked()
-                                {
-                                    layer.invert = false;
-                                    changed = true;
-                                }
-                                if ui
-                                    .selectable_label(layer.invert, "−")
-                                    .on_hover_text("Subtract layer")
-                                    .clicked()
-                                {
-                                    layer.invert = true;
-                                    changed = true;
-                                }
-                                let _ = sign_label;
-                                if ui.button("Remove").clicked() {
-                                    remove_at = Some(li);
-                                }
-                            });
-                            ui.add_space(GRID_UNIT * 0.15);
-                            record_row(ui.ctx(), AuditId::OscStackLayerRow(li), ui, row_start);
-                            }); // push_id stack_layer
-                        }
-
-                        if let Some(idx) = remove_at {
-                            if idx < osc.wave_layers.len() {
-                                osc.wave_layers.remove(idx);
-                                if *state.selected_layer_idx == Some(idx) {
-                                    *state.selected_layer_idx = None;
-                                }
-                                changed = true;
-                            }
-                        }
-                        let _ = remove_layer;
                     });
                 }
 

@@ -11,6 +11,15 @@ use super::waveform::waveform_points;
 use super::slots::effective_quant_count;
 use super::toolbar::WtEditTool;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum StripMode {
+    /// Full-width layer chips (Design home).
+    #[default]
+    Layers,
+    /// Frame/slot scrub strip (advanced / Compose paths).
+    Frames,
+}
+
 pub struct WtStripResponse {
     pub response: Response,
     pub changed: bool,
@@ -27,9 +36,11 @@ pub struct WtStrip<'a> {
     pub bank_name: Option<&'a str>,
     pub visible_frames: usize,
     pub edit_tool: WtEditTool,
-    pub wave_layers: &'a mut [WaveLayerUi],
+    pub wave_layers: &'a mut Vec<WaveLayerUi>,
     pub selected_layer_idx: &'a mut Option<usize>,
-    /// When false (Design home), never paint L1/+/- layer chips even if `wave_layers` is non-empty.
+    /// Design = `Layers` (full-width chips, no frame scrub). Advanced = `Frames`.
+    pub strip_mode: StripMode,
+    /// Legacy flag: when true and `strip_mode == Frames`, paint layer chips beside frames.
     pub show_layer_chips: bool,
 }
 
@@ -41,8 +52,17 @@ impl<'a> WtStrip<'a> {
             .bank
             .map(|b| b.num_frames)
             .unwrap_or(256);
-        let has_layers = self.show_layer_chips && !self.wave_layers.is_empty();
-        let layer_frac = if has_layers { 0.38 } else { 0.0 };
+        let layers_mode = self.strip_mode == StripMode::Layers;
+        let has_layers = !self.wave_layers.is_empty()
+            && (layers_mode || (self.show_layer_chips && self.strip_mode == StripMode::Frames));
+        let layer_frac = if layers_mode && has_layers {
+            1.0
+        } else if has_layers {
+            0.38
+        } else {
+            0.0
+        };
+        let paint_frames = self.strip_mode == StripMode::Frames;
 
         let (rect, response) =
             ui.allocate_exact_size(Vec2::new(ui.available_width(), WT_STRIP_HEIGHT), Sense::click_and_drag());
@@ -74,18 +94,35 @@ impl<'a> WtStrip<'a> {
                     self.wave_layers,
                     self.selected_layer_idx,
                     self.bank,
+                    layers_mode,
                 );
             }
 
-            changed |= paint_frame_strip(
-                ui,
-                frame_rect,
-                &tokens,
-                accent_ui,
-                num_frames,
-                self,
-                &response,
-            );
+            if paint_frames {
+                changed |= paint_frame_strip(
+                    ui,
+                    frame_rect,
+                    &tokens,
+                    accent_ui,
+                    num_frames,
+                    WtStrip {
+                        position: self.position,
+                        wave_quant: self.wave_quant,
+                        wave_slot: self.wave_slot,
+                        wave_slot_fine: self.wave_slot_fine,
+                        wave_slots: self.wave_slots,
+                        bank: self.bank,
+                        bank_name: self.bank_name,
+                        visible_frames: self.visible_frames,
+                        edit_tool: self.edit_tool,
+                        wave_layers: self.wave_layers,
+                        selected_layer_idx: self.selected_layer_idx,
+                        strip_mode: self.strip_mode,
+                        show_layer_chips: self.show_layer_chips,
+                    },
+                    &response,
+                );
+            }
         }
 
         WtStripResponse {
@@ -101,21 +138,28 @@ fn paint_layer_chips(
     rect: Rect,
     tokens: &Tokens,
     accent_ui: Color32,
-    layers: &mut [WaveLayerUi],
+    layers: &mut Vec<WaveLayerUi>,
     selected: &mut Option<usize>,
     bank: Option<&WavetableBank>,
+    layers_mode: bool,
 ) -> bool {
     let painter = ui.painter_at(rect);
     painter.rect_filled(rect, RADIUS_SM, tokens.surface2);
     painter.rect_stroke(rect, RADIUS_SM, egui::Stroke::new(1.0, tokens.border));
 
     let mut changed = false;
+    let add_remove_w = if layers_mode { 44.0 } else { 0.0 };
+    let inner = rect.shrink2(egui::vec2(4.0, 2.0));
+    let chips_rect = Rect::from_min_max(
+        inner.min,
+        Pos2::new(inner.max.x - add_remove_w, inner.max.y),
+    );
     let chip_count = layers.len().max(1);
-    let chip_w = (rect.width() - 4.0 * (chip_count as f32 - 1.0)) / chip_count as f32;
+    let chip_w = (chips_rect.width() - 4.0 * (chip_count as f32 - 1.0)) / chip_count as f32;
 
     for (i, layer) in layers.iter_mut().enumerate() {
-        let x = rect.min.x + i as f32 * (chip_w + 4.0);
-        let cell = Rect::from_min_size(Pos2::new(x, rect.min.y + 2.0), Vec2::new(chip_w, rect.height() - 4.0));
+        let x = chips_rect.min.x + i as f32 * (chip_w + 4.0);
+        let cell = Rect::from_min_size(Pos2::new(x, chips_rect.min.y), Vec2::new(chip_w, chips_rect.height()));
         let is_sel = *selected == Some(i);
         if is_sel {
             painter.rect_stroke(cell, 4.0, egui::Stroke::new(1.5, accent_ui));
@@ -125,15 +169,28 @@ fn paint_layer_chips(
         painter.rect_filled(cell, 4.0, tokens.bg);
 
         if let Some(bank) = bank {
-            let fi = layer.wt_position.round() as usize;
-            let thumb = cell.shrink2(egui::vec2(4.0, 14.0));
-            paint_waveform_thumbnail(&painter, thumb, bank, fi.min(bank.num_frames.saturating_sub(1)), is_sel, accent_ui, tokens.accent);
+            if layer.is_wavetable() {
+                let fi = layer.wt_position.round() as usize;
+                let thumb = cell.shrink2(egui::vec2(4.0, 14.0));
+                paint_waveform_thumbnail(
+                    &painter,
+                    thumb,
+                    bank,
+                    fi.min(bank.num_frames.saturating_sub(1)),
+                    is_sel,
+                    accent_ui,
+                    tokens.accent,
+                );
+            } else {
+                paint_va_chip_thumbnail(&painter, cell.shrink2(egui::vec2(4.0, 14.0)), &layer.source_type, is_sel, accent_ui, tokens.accent);
+            }
         }
 
+        let type_label = layer.source_type.chars().take(3).collect::<String>();
         painter.text(
             Pos2::new(cell.min.x + 4.0, cell.min.y + 2.0),
             egui::Align2::LEFT_TOP,
-            format!("L{}", i + 1),
+            format!("L{} · {type_label}", i + 1),
             egui::FontId::proportional(9.0),
             if is_sel { accent_ui } else { tokens.text_muted },
         );
@@ -149,6 +206,17 @@ fn paint_layer_chips(
         if chip_resp.clicked() {
             *selected = Some(i);
             changed = true;
+        }
+
+        if chip_resp.dragged() {
+            if let Some(pos) = chip_resp.interact_pointer_pos() {
+                let level_t = 1.0 - ((pos.y - cell.min.y) / cell.height()).clamp(0.0, 1.0);
+                let next = level_t.clamp(0.0, 1.0);
+                if (layer.level - next).abs() > 0.01 {
+                    layer.level = next;
+                    changed = true;
+                }
+            }
         }
 
         let plus = ui.interact(
@@ -184,7 +252,83 @@ fn paint_layer_chips(
             changed = true;
         }
     }
+
+    if layers_mode {
+        let ctrl = Rect::from_min_max(
+            Pos2::new(inner.max.x - add_remove_w + 4.0, inner.min.y),
+            inner.max,
+        );
+        let add_btn = ui.interact(
+            Rect::from_min_size(ctrl.min, Vec2::new(18.0, ctrl.height())),
+            ui.id().with("layer_add"),
+            Sense::click(),
+        );
+        let rem_btn = ui.interact(
+            Rect::from_min_size(ctrl.min + Vec2::new(22.0, 0.0), Vec2::new(18.0, ctrl.height())),
+            ui.id().with("layer_remove"),
+            Sense::click(),
+        );
+        painter.text(
+            add_btn.rect.center(),
+            egui::Align2::CENTER_CENTER,
+            "+",
+            egui::FontId::proportional(14.0),
+            accent_ui,
+        );
+        painter.text(
+            rem_btn.rect.center(),
+            egui::Align2::CENTER_CENTER,
+            "−",
+            egui::FontId::proportional(14.0),
+            if layers.len() > 1 {
+                accent_ui
+            } else {
+                tokens.text_muted
+            },
+        );
+        if add_btn.clicked() {
+            layers.push(WaveLayerUi::default());
+            *selected = Some(layers.len() - 1);
+            changed = true;
+        }
+        if rem_btn.clicked() && layers.len() > 1 {
+            let idx = selected.unwrap_or(layers.len() - 1).min(layers.len() - 1);
+            layers.remove(idx);
+            *selected = Some(idx.min(layers.len().saturating_sub(1)));
+            changed = true;
+        }
+    }
+
     changed
+}
+
+fn paint_va_chip_thumbnail(
+    painter: &egui::Painter,
+    rect: Rect,
+    source_type: &str,
+    active: bool,
+    accent_ui: Color32,
+    accent: Color32,
+) {
+    let points: Vec<Pos2> = (0..=16)
+        .map(|i| {
+            let p = i as f32 / 16.0;
+            let v = match source_type.to_ascii_lowercase().as_str() {
+                "saw" => 2.0 * p - 1.0,
+                "square" => if p < 0.5 { 1.0 } else { -1.0 },
+                "sine" => (p * std::f32::consts::TAU).sin(),
+                "triangle" | "tri" => 1.0 - 4.0 * (p - 0.5).abs(),
+                _ => (p * std::f32::consts::TAU).sin(),
+            };
+            let x = egui::lerp(rect.min.x..=rect.max.x, p);
+            let y = rect.center().y - v * rect.height() * 0.35;
+            Pos2::new(x, y)
+        })
+        .collect();
+    if points.len() >= 2 {
+        let color = if active { accent } else { accent_ui };
+        painter.add(Shape::line(points, egui::Stroke::new(if active { 2.0 } else { 1.5 }, color)));
+    }
 }
 
 fn paint_frame_strip(

@@ -169,7 +169,7 @@ fn full_shell_min_window_no_layout_overlap() {
 
     let scale = layout.scale.ui();
     let inner = layout.center.shrink(SPACE_SM * scale);
-    let regions = compute_center_regions(inner, &config, scale, embed_piano_in_center(options));
+    let regions = compute_center_regions(inner, &config, scale, embed_piano_in_center(options), true);
     audit_center(layout.center, &regions, scale);
 
     let midi = ShellMidiDevices {
@@ -336,6 +336,7 @@ fn interface_used_rects_within_allocated_min_window() {
         &config,
         scale,
         embed_piano_in_center(options),
+        true,
     );
     audit_center(layout.center, &center_regions, scale);
 
@@ -431,8 +432,11 @@ fn interface_used_rects_within_allocated_min_window() {
     let strip_used = get_used(&harness.ctx, center_strip_used_rect_id(), "center strip");
     assert!(fits_max_slack(center_regions.wt_strip, strip_used, 12.0));
 
-    let morph_used = get_used(&harness.ctx, center_morph_used_rect_id(), "center morph");
-    assert!(fits_max_slack(center_regions.morph, morph_used, 12.0));
+    let morph_used = harness.ctx.data(|d| d.get_temp::<egui::Rect>(center_morph_used_rect_id()));
+    assert!(
+        morph_used.is_none() || !center_regions.morph.is_positive(),
+        "Design layer-first layout should not allocate morph bar"
+    );
 
     let views_used = get_used(&harness.ctx, center_views_used_rect_id(), "center views");
     assert!(fits_max_slack(center_regions.wt_views, views_used, 12.0));
@@ -724,6 +728,24 @@ fn design_center_scope() {
 }
 
 #[test]
+fn design_default_three_layers() {
+    let state = UiState::default();
+    assert_eq!(state.selected_layer_idx, Some(0));
+    assert!(
+        state.oscillators[0].wave_layers.len() >= 3,
+        "default Design should seed at least 3 stack layers"
+    );
+}
+
+#[test]
+fn design_shape_template_maps_to_layer_type() {
+    use reelsynth_ui::wt::shape_template_source_type;
+    use reelsynth_ui::wt::FrameShapeTemplate;
+    assert_eq!(shape_template_source_type(FrameShapeTemplate::Saw), "saw");
+    assert_eq!(shape_template_source_type(FrameShapeTemplate::Tri), "triangle");
+}
+
+#[test]
 fn design_wt_strip_morph() {
     let run = run_shell_audit(ShellAuditScenario::default());
     assert_full_ui_audit(&run, &default_audit_options());
@@ -748,12 +770,11 @@ fn design_wt_tool_shape() {
 
 #[test]
 fn design_wt_3d_stack() {
-    // Design home always paints Morph frame stack; Stack mode is not Design chrome.
     let mut scenario = ShellAuditScenario::default();
     scenario.state.wt_view_3d_mode = WtView3dMode::Stack;
     let run = run_shell_audit(scenario);
-    let morph = audit_id_rect(&run.ctx, AuditId::CenterWt3dMorph);
-    assert!(morph.is_some(), "Design right pane should record Morph frame stack");
+    let stack = audit_id_rect(&run.ctx, AuditId::CenterWt3dStack);
+    assert!(stack.is_some(), "Design right pane should record composite stack overlay");
     let toggle = audit_id_rect(&run.ctx, AuditId::CenterWt3dModeToggle);
     assert!(toggle.is_none(), "Stack/Morph toggle hidden on Design home");
     assert_full_ui_audit(&run, &default_audit_options());
@@ -785,11 +806,11 @@ fn design_stack_overlay_with_layers() {
     assert!(views.is_some(), "wt views region should be recorded");
     let chip_rect = audit_id_rect(&run.ctx, AuditId::CenterWtStripLayerChip(0));
     assert!(
-        chip_rect.is_none(),
-        "Design strip is frames-only — no layer chips when layers present"
+        chip_rect.is_some(),
+        "Design strip should show layer chips when layers present"
     );
-    let morph = audit_id_rect(&run.ctx, AuditId::CenterWt3dMorph);
-    assert!(morph.is_some(), "right pane stays Morph frame stack with layers present");
+    let stack = audit_id_rect(&run.ctx, AuditId::CenterWt3dStack);
+    assert!(stack.is_some(), "right pane shows composite stack overlay with layers");
 }
 
 #[test]
@@ -801,18 +822,18 @@ fn design_wt_3d_morph() {
 }
 
 #[test]
-fn design_wt_3d_default_is_morph() {
-    assert_eq!(UiState::default().wt_view_3d_mode, WtView3dMode::Morph);
+fn design_wt_3d_default_is_stack() {
+    assert_eq!(UiState::default().wt_view_3d_mode, WtView3dMode::Stack);
     let run = run_shell_audit(ShellAuditScenario::default());
-    let morph = audit_id_rect(&run.ctx, AuditId::CenterWt3dMorph);
-    assert!(morph.is_some(), "default Design opens Morph frame stack");
+    let stack = audit_id_rect(&run.ctx, AuditId::CenterWt3dStack);
+    assert!(stack.is_some(), "default Design opens composite stack overlay");
     let toggle = audit_id_rect(&run.ctx, AuditId::CenterWt3dModeToggle);
     assert!(toggle.is_none(), "Stack/Morph dual toggle not on Design home");
     assert_full_ui_audit(&run, &default_audit_options());
 }
 
 #[test]
-fn design_strip_frames_only_with_layers() {
+fn design_strip_layer_chips_with_layers() {
     use reelsynth_ui::WaveLayerUi;
     let mut scenario = ShellAuditScenario::default();
     scenario.state.oscillators[0].wave_layers = vec![
@@ -831,16 +852,19 @@ fn design_strip_frames_only_with_layers() {
     ];
     let run = run_shell_audit(scenario);
     assert!(
-        audit_id_rect(&run.ctx, AuditId::CenterWtStripLayerChip(0)).is_none(),
-        "no L1 chip"
+        audit_id_rect(&run.ctx, AuditId::CenterWtStripLayerChip(0)).is_some(),
+        "L1 chip visible"
     );
     assert!(
-        audit_id_rect(&run.ctx, AuditId::CenterWtStripLayerChip(1)).is_none(),
-        "no L2 chip"
+        audit_id_rect(&run.ctx, AuditId::CenterWtStripLayerChip(1)).is_some(),
+        "L2 chip visible"
     );
     let strip = audit_id_rect(&run.ctx, AuditId::CenterWtStrip);
     assert!(strip.is_some());
-    assert!(audit_id_rect(&run.ctx, AuditId::CenterWtStripCell(0)).is_some());
+    assert!(
+        audit_id_rect(&run.ctx, AuditId::CenterWtStripCell(0)).is_none(),
+        "no frame cells on layer-first strip"
+    );
 }
 
 #[test]

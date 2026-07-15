@@ -33,7 +33,43 @@ impl Default for WaveLayerUi {
     }
 }
 
+/// Default additive stack for empty oscillators (saw + sine + square).
+pub fn default_wave_layers() -> Vec<WaveLayerUi> {
+    vec![
+        WaveLayerUi {
+            source_type: "saw".into(),
+            level: 0.5,
+            ..WaveLayerUi::default()
+        },
+        WaveLayerUi {
+            source_type: "sine".into(),
+            level: 0.35,
+            ..WaveLayerUi::default()
+        },
+        WaveLayerUi {
+            source_type: "square".into(),
+            level: 0.25,
+            ..WaveLayerUi::default()
+        },
+    ]
+}
+
+/// Ensure at least three stack layers so Design home is never blank.
+pub fn ensure_wave_layers(osc: &mut OscillatorUi) {
+    if osc.wave_layers.is_empty() {
+        osc.wave_layers = default_wave_layers();
+    }
+}
+
 impl WaveLayerUi {
+    pub fn is_wavetable(&self) -> bool {
+        self.source_type.eq_ignore_ascii_case("wavetable")
+    }
+
+    pub fn is_va(&self) -> bool {
+        !self.is_wavetable()
+    }
+
     pub fn from_patch(layer: &WaveLayer) -> Self {
         Self {
             source_type: layer.source_type.clone(),
@@ -128,6 +164,7 @@ impl OscillatorUi {
             position: 108.0,
             wave_quant: 16,
             wave_slot: 7,
+            wave_layers: default_wave_layers(),
             ..Self::new_silent()
         }
     }

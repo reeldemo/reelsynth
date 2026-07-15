@@ -189,7 +189,9 @@ pub struct WtView3dStack<'a> {
     pub wt_pos_offset: f32,
     pub wt_position: &'a mut f32,
     pub selected_layer: &'a mut Option<usize>,
-    pub view_mode: &'a mut WtView3dMode,
+    pub view_mode: Option<&'a mut WtView3dMode>,
+    /// When false, hide Stack/Morph toggle (Design composite pane).
+    pub show_mode_toggle: bool,
     pub time: f32,
 }
 
@@ -382,7 +384,7 @@ impl WtView3dStack<'_> {
         );
 
         let label = format!(
-            "Stack · {} layers · {} mode",
+            "Composite · {} layers · {} mode",
             active_indices.len(),
             self.stack_mode
         );
@@ -393,26 +395,30 @@ impl WtView3dStack<'_> {
             egui::FontId::proportional(10.0),
             tokens.text_secondary,
         );
-        region(
-            ui,
-            Rect::from_min_max(
-                egui::pos2(rect.max.x - 120.0, rect.min.y + 4.0),
-                egui::pos2(rect.max.x - 4.0, rect.min.y + 22.0),
-            ),
-            |ui| {
-                ui.horizontal(|ui| {
-                    ui.selectable_value(self.view_mode, WtView3dMode::Stack, "Stack");
-                    ui.selectable_value(self.view_mode, WtView3dMode::Morph, "Morph");
-                });
-                let toggle_rect = ui.min_rect();
-                record_region(
-                    ui.ctx(),
-                    AuditId::CenterWt3dModeToggle,
-                    toggle_rect,
-                    toggle_rect,
+        if self.show_mode_toggle {
+            if let Some(mode) = self.view_mode {
+                region(
+                    ui,
+                    Rect::from_min_max(
+                        egui::pos2(rect.max.x - 120.0, rect.min.y + 4.0),
+                        egui::pos2(rect.max.x - 4.0, rect.min.y + 22.0),
+                    ),
+                    |ui| {
+                        ui.horizontal(|ui| {
+                            ui.selectable_value(mode, WtView3dMode::Stack, "Stack");
+                            ui.selectable_value(mode, WtView3dMode::Morph, "Morph");
+                        });
+                        let toggle_rect = ui.min_rect();
+                        record_region(
+                            ui.ctx(),
+                            AuditId::CenterWt3dModeToggle,
+                            toggle_rect,
+                            toggle_rect,
+                        );
+                    },
                 );
-            },
-        );
+            }
+        }
 
         for &(orig_idx, ref pts, inverted) in &layer_points {
             if pts.len() < 2 {

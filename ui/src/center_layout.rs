@@ -38,11 +38,16 @@ pub fn compute_center_regions(
     config: &ShellConfig,
     scale: f32,
     piano_in_center: bool,
+    layer_first_design: bool,
 ) -> CenterRegions {
     let gap = CENTER_GAP * scale;
     let scope_h = SCOPE_STRIP_HEIGHT * scale;
     let strip_h = WT_STRIP_HEIGHT * scale;
-    let morph_line_h = WT_MORPH_HEIGHT * scale;
+    let morph_line_h = if layer_first_design {
+        0.0
+    } else {
+        WT_MORPH_HEIGHT * scale
+    };
 
     let scope = rect_row(inner, inner.min.y, scope_h);
     let mut y = scope.max.y + gap;
@@ -51,7 +56,7 @@ pub fn compute_center_regions(
         let wt_strip = rect_row(inner, y, strip_h);
         y = wt_strip.max.y + gap;
 
-        let morph = if config.show_wt_editor {
+        let morph = if config.show_wt_editor && morph_line_h > EPS {
             let r = rect_row(inner, y, morph_line_h);
             y = r.max.y + gap;
             r
@@ -222,7 +227,7 @@ mod tests {
         };
         let scale = layout.scale.ui();
         let inner = layout.center.shrink(SPACE_SM * scale);
-        let regions = compute_center_regions(inner, &config, scale, false);
+        let regions = compute_center_regions(inner, &config, scale, false, false);
 
         for (name, rect) in regions.named() {
             if rect.is_positive() {
@@ -267,7 +272,7 @@ mod tests {
         };
         let scale = layout.scale.ui();
         let inner = layout.center.shrink(SPACE_SM * scale);
-        let regions = compute_center_regions(inner, &config, scale, false);
+        let regions = compute_center_regions(inner, &config, scale, false, false);
         assert!(regions.scope.is_positive());
         assert!(regions.wt_views.is_positive());
         assert!(regions.wt_strip.is_positive());

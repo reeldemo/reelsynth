@@ -193,7 +193,7 @@ fn draw_rail_panels(
                     actions,
                     s,
                 );
-                let lfo1_used = ui.min_rect();
+                let lfo1_used = clamp_used_below_start(ui.min_rect(), lfo1_start);
                 let lfo1_alloc = Rect::from_min_max(lfo1_start, lfo1_used.max);
                 if lfo1_alloc.is_positive() && lfo1_used.is_positive() {
                     record_region(
@@ -214,7 +214,7 @@ fn draw_rail_panels(
                     actions,
                     s,
                 );
-                let lfo2_used = ui.min_rect();
+                let lfo2_used = clamp_used_below_start(ui.min_rect(), lfo2_start);
                 let lfo2_alloc = Rect::from_min_max(lfo2_start, lfo2_used.max);
                 if lfo2_alloc.is_positive() && lfo2_used.is_positive() {
                     record_region(
@@ -243,7 +243,7 @@ fn draw_rail_panels(
                                 actions,
                                 s,
                             );
-                            let lfo1_used = ui.min_rect();
+                            let lfo1_used = clamp_used_below_start(ui.min_rect(), lfo1_start);
                             let lfo1_alloc = Rect::from_min_max(lfo1_start, lfo1_used.max);
                             if lfo1_alloc.is_positive() && lfo1_used.is_positive() {
                                 record_region(
@@ -270,7 +270,7 @@ fn draw_rail_panels(
                                 actions,
                                 s,
                             );
-                            let lfo2_used = ui.min_rect();
+                            let lfo2_used = clamp_used_below_start(ui.min_rect(), lfo2_start);
                             let lfo2_alloc = Rect::from_min_max(lfo2_start, lfo2_used.max);
                             if lfo2_alloc.is_positive() && lfo2_used.is_positive() {
                                 record_region(
@@ -581,4 +581,11 @@ fn lfo_panel(
             actions.params_changed = true;
         }
     });
+}
+
+fn clamp_used_below_start(used: Rect, start: egui::Pos2) -> Rect {
+    Rect::from_min_max(
+        egui::pos2(used.min.x, used.min.y.max(start.y)),
+        used.max,
+    )
 }

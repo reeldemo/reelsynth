@@ -98,47 +98,49 @@ Footer **Arp** toggle enables live arpeggiation in Design and Compose monitor pa
 
 WT position for the active osc syncs with the center WT strip.
 
-### Wave stack (engine / Advanced)
+### Wave stack (layer-first on Design)
 
-`wave_layers` remain in the engine and Osc-column **Stack** panel for preset compatibility:
-
-- Layer list: type (saw / sine / square / triangle / pulse / wavetable), level, detune, **+/− sign**, on/off
-- Wavetable layers expose **WT Pos**
-- **Mode**: Add, Avg (level-weighted), or **Avg Equal** (1/N per layer)
-- **Autofix levels** when Add mode clips (scope **Result** shows **Stack clipping** warning)
-- **+ Layer** / **Remove** per row
-
-Design home no longer surfaces layer chips or the Stack 3D overlay — combine forms via **frames + morph**, not additive strip chips.
-
-### WT strip (frames-only on Design)
-
-The position strip is **frame/slot scrub only** on the Design surface — no L1/+/- layer chips, even when the patch still has `wave_layers`.
+Design home is built around additive **`wave_layers`** (default **3**: saw + sine + square at balanced levels). Empty presets auto-seed three layers on load without mutating the file until save.
 
 | Region | Content |
 |--------|---------|
-| Full-width strip | Frame/slot thumbnails + scrub; highlights the frame bound to **Edit** |
+| **Layer strip** | Full-width L1/L2/L3 chips — select layer, drag level, **+/−** invert sign, **+ / −** add/remove layers |
+| **Osc column → Stack** | **Mode** (Add / Avg / Avg Equal), **Autofix levels**; per-layer detune / pulse / WT pos under **Advanced layer params** |
 
-### Design WT panes (frames-first)
+- Wavetable layers expose **WT Pos** (Advanced panel or composite-pane scrub)
+- **Autofix levels** when Add mode clips (scope **Result** shows **Stack clipping** warning)
+
+### WT strip (layer-first on Design)
+
+The position strip is **layer chips only** on Design — no 256-frame scrub.
+
+| Region | Content |
+|--------|---------|
+| Full-width strip | Layer thumbnails + select; add/remove layers at strip edge |
+
+### Design WT panes (layer-first)
 
 | Pane | Caption | Job |
 |------|---------|-----|
-| Left 2D | **Edit · Frame N** | Edit the strip-selected frame (knobs on wave = amplitude drag) |
-| Right 3D | **Frame stack · this osc** | Morph mesh of this oscillator’s bank frames (default; Stack/Morph toggle hidden) |
+| Left 2D | **Edit · Layer N · Saw** | Edit the strip-selected layer; VA analytic preview or WT frame tools |
+| Right | **Composite · N layers · add** | Stacked layer curves + composite sum (`WtView3dStack`) |
 
-### Quant hand drag (2D waveform)
+**Shape** menu (Saw / Square / Sine / Triangle) sets the **active layer `source_type`** — it does not overwrite an arbitrary WT frame index.
 
-When **Quant** > 0 and tool is **Select**:
+### Quant hand drag (2D waveform — wavetable layers only)
+
+When the **active layer** is **wavetable** and **Quant** > 0 and tool is **Select**:
 
 - Vertical grid at each slot; **knob handles** at waveform intersections (hover when quant > 64)
 - Drag snaps X to nearest slot on press; **locks slot** for entire gesture; fine Y edits **amplitude** (wave height) at that quant point
 - **Interp** dropdown in the 2D toolbar (right side): **Hold** (step/rectangular bands), **Linear** (segments between knobs), **Spline** (Catmull-Rom smooth curve). Switching mode rebuilds the frame from current knob heights.
 - Tooltip / status: **Drag knobs to reshape this frame**
-- **Shape** menu (Saw / Square / Sine / Triangle) click-assigns a template to the selected frame
-- **Curve** tool still edits slot→frame morph map; Select handles edit wave shape at quant points
+- **Shape** menu (Saw / Square / Sine / Triangle) sets the active layer type
+- **Curve** tool still edits slot→frame morph map when a wavetable layer is active; Select handles edit wave shape at quant points
 - **Pencil** hidden when quant > 0 — use Select + handles instead
 - The performance **piano/keyboard** fills the full-width band above the status footer; left/right sidebars stop above that band and never render into it
 
-Factory Lead may still load engine stack layers for audio; Design UI stays frames-first. Save/reload preserves `wave_layers`, `invert`, and `stack_mode`.
+**Morph A/B bar** is hidden on Design home (frame-bank morph remains in preset schema for compatibility). Save/reload preserves `wave_layers`, `invert`, and `stack_mode`.
 
 ### Effects (osc column sidebar)
 
@@ -196,30 +198,31 @@ Serial chain: delay, reverb, chorus, etc. Per-slot mix and bypass.
 | **Wave stack** | `wave_layers[]` inside one Osc tab (saw + sine + WT…) | Additive thickness; `stack_mode: add` or `avg` |
 | **Osc 1/2/3 tabs** | Separate oscillators + FM | Different from stack — FM routing between voices |
 
-### Wavetable editor (v0.3 — frames-first)
+### Wavetable editor (v0.3 — layer-first Design)
 
 | Element | Function |
 |---------|----------|
-| **Position strip** | Scrub frames; click slots when quant > 0; **Curve** mode shows mini frame-index bar under cells (no layer chips) |
-| **Wave quant** | 8 / 16 / 32 / 64 / **256** / Smooth (256 uses wire value `255`) |
-| **Morph A / B / amount** | Crossfade between frame ranges (overrides slots when active) |
-| **Edit (2D)** | Selected frame; **Select** knobs + drag; **Curve** slot→frame map; **Shape** control points; **Shape→** templates |
-| **Frame stack (3D)** | Default Morph mesh of this osc’s bank (16-frame depth slices); Design home hides Stack overlay toggle |
-| **Toolbar** | Select / **Curve** / **Shape** / **Shape** menu (Saw·Square·Sine·Tri) / **FFT** (engine layers; keeps Morph right pane) |
+| **Layer strip** | Select layers; level drag; add/remove; invert sign per chip |
+| **Wave quant** | 8 / 16 / 32 / 64 / **256** / Smooth — active only for **wavetable** layers with quant > 0 |
+| **Morph A / B / amount** | Hidden on Design home; still in preset schema |
+| **Edit (2D)** | Active layer — VA preview or WT frame edit; **Shape→** sets layer type |
+| **Composite (right)** | Per-layer strokes + summed waveform (`WtView3dStack`; Stack/Morph toggle hidden on Design) |
+| **Toolbar** | Select / **Curve** / **Shape** / **Shape** menu / **FFT** (decompose frame → layers) |
 
-**Three concepts on Design:** **Edit** (selected frame) · **Frame stack** (this osc) · **Result** (all oscs in the scope strip).
+**Three concepts on Design:** **Edit** (active layer) · **Composite** (this osc stack) · **Result** (all oscs in the scope strip).
 
-Morph settings are per-oscillator; active tab syncs with WT controls.
+Morph mesh / frame-bank scrub remain available on non-Design paths (Compose / advanced).
 
 Design spec: [docs/superpowers/specs/2026-07-15-wt-stack-editor-design.md](superpowers/specs/2026-07-15-wt-stack-editor-design.md)  
 Implementation plan: [docs/superpowers/plans/2026-07-15-wt-stack-editor.md](superpowers/plans/2026-07-15-wt-stack-editor.md)
 
-### Legacy reference (pre–frames-first)
+### Legacy reference (frame-bank morph)
 
 | Element | Function |
 |---------|----------|
-| **Stack overlay** | Layer strokes + composite (engine/Advanced; not Design home chrome) |
-| **Hybrid strip chips** | L1/+/- on strip (removed from Design surface) |
+| **Frame strip** | 256-frame / slot scrub (`StripMode::Frames`) |
+| **Morph A/B bar** | Crossfade between frame ranges |
+| **Frame stack (3D mesh)** | `WtView3d` morph mesh (not wired on Design home) |
 
 ---
 

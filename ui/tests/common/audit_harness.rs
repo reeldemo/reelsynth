@@ -182,6 +182,7 @@ pub fn assert_full_ui_audit(run: &ShellAuditRun, options: &FullUiAuditOptions) {
             &run.config,
             scale,
             embed_piano_in_center(shell_options),
+            run.shell_mode == reelsynth_ui::ShellMode::Design,
         );
         audit_center(run.layout.center, &regions, scale);
     }

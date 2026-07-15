@@ -39,7 +39,8 @@ pub(super) fn draw_center(
         let piano_in_center = embed_piano_in_center(layout_opts);
 
         let time = ui.input(|i| i.time);
-        let regions = compute_center_regions(inner, config, s, piano_in_center);
+        let layer_first = state.shell_mode == ShellMode::Design && config.show_wt_editor;
+        let regions = compute_center_regions(inner, config, s, piano_in_center, layer_first);
         let scope_rect = regions.scope;
         let strip_rect = regions.wt_strip;
         let morph_rect = regions.morph;
@@ -92,7 +93,10 @@ pub(super) fn draw_center(
             });
         }
 
-        if config.show_wt_editor && morph_rect.is_positive() {
+        if config.show_wt_editor
+            && morph_rect.is_positive()
+            && state.shell_mode != ShellMode::Design
+        {
             region(ui, morph_rect, |ui| {
             let morph = WtMorph {
                 frame_a: &mut state.wt_morph_a,
@@ -118,8 +122,7 @@ pub(super) fn draw_center(
             let views_h = views_rect.height().max(WT_VIEW_MIN_HEIGHT * s * 0.5);
             region(ui, views_rect, |ui| {
             ui.painter().rect_filled(views_rect, 8.0, Tokens::default().bg);
-            // Design home always uses Morph frame stack (not wave_layers overlay).
-            state.wt_view_3d_mode = WtView3dMode::Morph;
+            state.wt_view_3d_mode = WtView3dMode::Stack;
             if config.show_osc_column {
                 paint_ambient_waves(ui.painter(), views_rect, time);
             }
@@ -133,6 +136,7 @@ pub(super) fn draw_center(
                         let idx = state.active_osc_index();
                         let osc = &mut state.oscillators[idx];
                         let wave_quant = osc.wave_quant;
+                        let selected_layer = state.selected_layer_idx;
                         let view = WtView2d {
                             position: &mut state.wt_position,
                             bank: bank.as_deref_mut(),
@@ -146,6 +150,7 @@ pub(super) fn draw_center(
                             wave_slot: &mut osc.wave_slot,
                             wave_slots: &mut osc.wave_slots,
                             wave_layers: Some(&mut osc.wave_layers),
+                            selected_layer_idx: selected_layer,
                             stack_mode: Some(&mut osc.stack_mode),
                             shape_control_points: state.shape_control_points,
                             analyze_dialog_open: Some(&mut state.analyze_dialog_open),
@@ -183,23 +188,23 @@ pub(super) fn draw_center(
                     egui::vec2(half_w, views_h),
                     egui::Layout::top_down(egui::Align::Min),
                     |ui| {
-                        // Frame morph stack for this osc — Stack/Morph toggle hidden on Design home.
-                        let view3d = WtView3d {
-                            position: &mut state.wt_position,
+                        let idx = state.active_osc_index();
+                        let osc = &mut state.oscillators[idx];
+                        let stack_mode = osc.stack_mode.clone();
+                        let view_stack = WtView3dStack {
+                            layers: &mut osc.wave_layers,
+                            stack_mode: &stack_mode,
                             bank: bank.as_deref(),
-                            morph_amount: Some(&mut state.wt_morph_amount),
-                            view_mode: None,
+                            wt_pos_offset: 0.0,
+                            wt_position: &mut state.wt_position,
+                            selected_layer: &mut state.selected_layer_idx,
+                            view_mode: Some(&mut state.wt_view_3d_mode),
+                            show_mode_toggle: false,
                             time: time as f32,
                         };
-                        let view3d_resp = view3d.show(ui);
-                        if view3d_resp.changed() {
-                            if view3d_resp.morph_changed {
-                                state.wt_position = morph_position(
-                                    state.wt_morph_a,
-                                    state.wt_morph_b,
-                                    state.wt_morph_amount,
-                                );
-                            } else if view3d_resp.position_changed {
+                        let stack_resp = view_stack.show(ui);
+                        if stack_resp.layer_selected || stack_resp.wt_position_changed {
+                            if stack_resp.global_wt_scrub {
                                 state.wt_morph_amount = morph_amount_for_position(
                                     state.wt_morph_a,
                                     state.wt_morph_b,
@@ -266,7 +271,11 @@ pub(super) fn draw_center(
                 edit_tool: state.wt_edit_tool,
                 wave_layers: &mut osc.wave_layers,
                 selected_layer_idx: &mut state.selected_layer_idx,
-                // Design surface is frames-only; layer chips stay off the home strip.
+                strip_mode: if state.shell_mode == ShellMode::Design {
+                    StripMode::Layers
+                } else {
+                    StripMode::Frames
+                },
                 show_layer_chips: false,
             };
             let strip_resp = strip.show(ui);
@@ -360,8 +369,7 @@ fn draw_analyze_dialog(
                         state.oscillators[idx].wave_layers = new_layers;
                     }
                     state.oscillators[idx].stack_mode = "add".into();
-                    // Keep Morph frame stack on Design home (layers remain engine/osc-column).
-                    state.wt_view_3d_mode = WtView3dMode::Morph;
+                    state.wt_view_3d_mode = WtView3dMode::Stack;
                     should_close = true;
                     changed = true;
                 }

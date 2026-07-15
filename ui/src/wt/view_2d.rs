@@ -70,6 +70,7 @@ pub struct WtView2d<'a> {
     pub wave_slot: &'a mut u8,
     pub wave_slots: &'a mut Vec<WaveSlot>,
     pub wave_layers: Option<&'a mut Vec<WaveLayerUi>>,
+    pub selected_layer_idx: Option<usize>,
     pub stack_mode: Option<&'a mut String>,
     pub shape_control_points: usize,
     pub analyze_dialog_open: Option<&'a mut bool>,
@@ -123,11 +124,36 @@ impl WtView2d<'_> {
             .max(1);
         let max_pos = (num_frames - 1) as f32;
 
+        let layer_idx = self
+            .selected_layer_idx
+            .or_else(|| self.wave_layers.as_ref().map(|_| 0))
+            .unwrap_or(0);
+        let active_layer_va = self
+            .wave_layers
+            .as_ref()
+            .and_then(|layers| layers.get(layer_idx))
+            .map(|l| l.is_va())
+            .unwrap_or(true);
+        let active_layer_wt = self
+            .wave_layers
+            .as_ref()
+            .and_then(|layers| layers.get(layer_idx))
+            .map(|l| l.is_wavetable())
+            .unwrap_or(false);
+        let quant_active = active_layer_wt && self.wave_quant > 0;
+
         let toolbar_rect = Rect::from_min_max(rect.min, egui::pos2(rect.max.x, plot_top));
         let toolbar_resp = region(
             ui,
             toolbar_rect,
-            |ui| WtToolbar::show_with_analyze(ui, self.tool, self.wave_quant, self.quant_interp),
+            |ui| {
+                WtToolbar::show_with_analyze(
+                    ui,
+                    self.tool,
+                    if quant_active { self.wave_quant } else { 0 },
+                    self.quant_interp,
+                )
+            },
         );
         record_region(ui.ctx(), AuditId::CenterWt2dToolbar, toolbar_rect, toolbar_rect);
         let WtToolbarResponse {
@@ -143,26 +169,35 @@ impl WtView2d<'_> {
             analyze_requested = true;
         }
         if let Some(kind) = assign_shape {
-            if let Some(bank) = self.bank.as_mut() {
-                let idx = frame_index(*self.position, bank.num_frames);
-                apply_frame_shape_template(bank.frame_mut(idx), kind);
-                frame_edited = true;
-                status_hint = Some(format!(
-                    "Assigned {} to frame {idx}",
-                    shape_template_label(kind)
-                ));
+            if let Some(layers) = self.wave_layers.as_mut() {
+                if let Some(layer) = layers.get_mut(layer_idx) {
+                    layer.source_type = shape_template_source_type(kind).into();
+                    stack_changed = true;
+                    status_hint = Some(format!(
+                        "Layer {} → {}",
+                        layer_idx + 1,
+                        shape_template_source_type(kind)
+                    ));
+                }
             }
         }
+
+        let layer_wt_position = self
+            .wave_layers
+            .as_ref()
+            .and_then(|layers| layers.get(layer_idx))
+            .map(|l| l.wt_position)
+            .unwrap_or(*self.position);
 
         let frame_idx = self
             .bank
             .as_ref()
-            .map(|b| frame_index(*self.position, b.num_frames))
+            .map(|b| frame_index(layer_wt_position, b.num_frames))
             .unwrap_or(0);
 
-        if interp_changed {
+        if interp_changed && quant_active {
             if let Some(bank) = self.bank.as_mut() {
-                if self.wave_quant > 0 {
+                if self.wave_quant > 0 && quant_active {
                     let slot_count = effective_quant_count(self.wave_quant);
                     let frame = bank.frame_mut(frame_idx);
                     let points = quant_control_points(frame, slot_count);
@@ -176,19 +211,25 @@ impl WtView2d<'_> {
             }
         }
 
-        let wave = if let Some(bank) = self.bank.as_ref() {
+        let wave = if active_layer_va {
+            self.wave_layers
+                .as_ref()
+                .and_then(|layers| layers.get(layer_idx))
+                .map(|layer| va_layer_waveform_points(layer, inner, 256))
+                .unwrap_or_else(|| placeholder_wave(inner, mid_y))
+        } else if let Some(bank) = self.bank.as_ref() {
             let frame = bank.frame(frame_idx);
             waveform_points(frame, inner, 256, 0.42)
         } else {
             placeholder_wave(inner, mid_y)
         };
 
-        if *self.tool == WtEditTool::Select {
+        if *self.tool == WtEditTool::Select && active_layer_wt {
             let sense = Sense::click_and_drag();
             let response = ui.allocate_rect(inner, sense);
             let drag_kind_id = ui.id().with("wt_select_drag_kind");
             let wave_tolerance = 10.0;
-            let quant_mode = self.wave_quant > 0;
+            let quant_mode = quant_active;
 
             if response.drag_started() {
                 let kind = response
@@ -321,7 +362,7 @@ impl WtView2d<'_> {
 
         paint_grid(&painter, inner, tokens.border);
 
-        if self.wave_quant > 0 {
+        if self.wave_quant > 0 && quant_active {
             let quant = effective_quant_count(self.wave_quant);
             for i in 0..quant {
                 let x = slot_x(i, quant, inner);
@@ -398,7 +439,7 @@ impl WtView2d<'_> {
 
         let mut status_override: Option<String> = None;
 
-        if *self.tool == WtEditTool::Pencil {
+        if *self.tool == WtEditTool::Pencil && active_layer_wt {
             if let Some(bank) = self.bank.as_mut() {
                 let sense = Sense::click_and_drag();
                 let response = ui.allocate_rect(inner, sense);
@@ -411,7 +452,7 @@ impl WtView2d<'_> {
             }
         }
 
-        if *self.tool == WtEditTool::Curve && self.wave_quant > 0 {
+        if *self.tool == WtEditTool::Curve && quant_active {
             if !self.wave_slots.is_empty() {
                 let curve_before = inner;
                 let curve = CurveEditor {
@@ -426,7 +467,7 @@ impl WtView2d<'_> {
             }
         }
 
-        if *self.tool == WtEditTool::Shape {
+        if *self.tool == WtEditTool::Shape && active_layer_wt {
             if let Some(bank) = self.bank.as_mut() {
                 let shape_before = inner;
                 let shape = ShapeEditor {
@@ -442,7 +483,7 @@ impl WtView2d<'_> {
             }
         }
 
-        if *self.tool == WtEditTool::Select && self.wave_quant > 0 {
+        if *self.tool == WtEditTool::Select && quant_active {
             if let Some(bank) = self.bank.as_mut() {
                 let editor = QuantHandleEditor {
                     plot_rect: inner,
@@ -462,11 +503,19 @@ impl WtView2d<'_> {
             }
         }
 
+        let layer_type = self
+            .wave_layers
+            .as_ref()
+            .and_then(|layers| layers.get(layer_idx))
+            .map(|l| l.source_type.as_str())
+            .unwrap_or("saw");
         let label = status_override.unwrap_or_else(|| {
-            if pos_mod.abs() > 0.01 {
-                format!("Edit · Frame {frame_idx} → {:.0}", modulated_pos)
+            if active_layer_va {
+                format!("Edit · Layer {} · {layer_type}", layer_idx + 1)
+            } else if pos_mod.abs() > 0.01 {
+                format!("Edit · Layer {} · WT · frame {frame_idx} → {:.0}", layer_idx + 1, modulated_pos)
             } else {
-                format!("Edit · Frame {frame_idx}")
+                format!("Edit · Layer {} · WT · frame {frame_idx}", layer_idx + 1)
             }
         });
         painter.text(
@@ -504,7 +553,8 @@ impl WtView2d<'_> {
     }
 }
 
-fn shape_template_label(kind: FrameShapeTemplate) -> &'static str {
+/// Map shape template to layer `source_type` string.
+pub fn shape_template_source_type(kind: FrameShapeTemplate) -> &'static str {
     match kind {
         FrameShapeTemplate::Saw => "saw",
         FrameShapeTemplate::Square => "square",
@@ -584,6 +634,38 @@ fn view_coords(inner: Rect, pos: Pos2) -> (f32, f32) {
     let x = ((pos.x - inner.min.x) / inner.width()).clamp(0.0, 1.0);
     let y = ((pos.y - inner.min.y) / inner.height()).clamp(0.0, 1.0);
     (x, y)
+}
+
+fn va_layer_waveform_points(layer: &WaveLayerUi, inner: Rect, samples: usize) -> Vec<Pos2> {
+    use reelsynth::osc::{layer_sign, sample_layer, WtWarpMode};
+
+    let bank = WavetableBank::factory_saw_morph();
+    let patch = layer.to_patch();
+    let sign = layer_sign(&patch);
+    let level = if layer.enabled { layer.level.max(0.0) } else { 0.0 };
+    let mid_y = inner.center().y;
+    (0..=samples)
+        .map(|i| {
+            let phase = i as f32 / samples as f32;
+            let v = sign
+                * sample_layer(
+                    &patch,
+                    &bank,
+                    phase,
+                    1.0 / 2048.0,
+                    0.0,
+                    WtWarpMode::None,
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0,
+                )
+                * level;
+            let x = egui::lerp(inner.min.x..=inner.max.x, phase);
+            let y = mid_y - v * inner.height() * 0.42;
+            Pos2::new(x, y)
+        })
+        .collect()
 }
 
 fn placeholder_wave(inner: Rect, mid_y: f32) -> Vec<Pos2> {

@@ -26,9 +26,9 @@ pub use slots::{
     resolved_slots_for_ui, sync_slot_from_position, wave_quant_from_index, wave_quant_index,
     WAVE_QUANT_LABELS,
 };
-pub use strip::{WtStrip, WtStripResponse};
+pub use strip::{StripMode, WtStrip, WtStripResponse};
 pub use toolbar::{FrameShapeTemplate, WtEditTool, WtToolbar, WtToolbarResponse};
-pub use view_2d::{apply_frame_shape_template, WtView2d, WtView2dResponse};
+pub use view_2d::{apply_frame_shape_template, shape_template_source_type, WtView2d, WtView2dResponse};
 pub use view_3d::{WtView3d, WtView3dResponse};
 pub use view_3d_stack::{composite_stack_sample, WtView3dStack, WtView3dStackResponse};
 pub use waveform::{frame_index, waveform_points};
