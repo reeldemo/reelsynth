@@ -6,6 +6,8 @@ use reelsynth_ui_theme::{ACCENT_UI, Tokens};
 use crate::layout::{RADIUS_SM, WT_STRIP_HEIGHT};
 
 use super::waveform::waveform_points;
+use super::slots::effective_quant_count;
+use super::toolbar::WtEditTool;
 
 pub struct WtStripResponse {
     pub response: Response,
@@ -21,6 +23,7 @@ pub struct WtStrip<'a> {
     pub bank: Option<&'a WavetableBank>,
     pub bank_name: Option<&'a str>,
     pub visible_frames: usize,
+    pub edit_tool: WtEditTool,
 }
 
 impl<'a> WtStrip<'a> {
@@ -33,7 +36,7 @@ impl<'a> WtStrip<'a> {
             .unwrap_or(256);
         let slot_mode = self.wave_quant > 0;
         let cell_count = if slot_mode {
-            self.wave_quant as usize
+            effective_quant_count(self.wave_quant)
         } else {
             self.visible_frames.min(num_frames).max(8)
         };
@@ -102,7 +105,7 @@ fn select_slot(
     slot: u8,
     num_frames: usize,
 ) {
-    let max_slot = wave_quant.saturating_sub(1);
+    let max_slot = effective_quant_count(wave_quant).saturating_sub(1) as u8;
     *wave_slot = slot.min(max_slot);
     *wave_slot_fine = 0.0;
     let osc = Oscillator {
@@ -206,6 +209,26 @@ fn paint_strip(
                     } else {
                         tokens.text_muted
                     },
+                );
+            }
+            if strip.edit_tool == WtEditTool::Curve {
+                let slot = strip.wave_slots.get(i);
+                let frame_norm = slot
+                    .map(|s| s.frame / 255.0)
+                    .unwrap_or(i as f32 / cell_count.max(1) as f32);
+                let bar_h = 3.0;
+                let bar_y = cell.max.y - 6.0;
+                let bar_w = cell.width() * 0.8;
+                let fill_w = bar_w * frame_norm.clamp(0.0, 1.0);
+                let bar_rect = Rect::from_min_size(
+                    Pos2::new(cell.center().x - bar_w * 0.5, bar_y),
+                    egui::vec2(bar_w, bar_h),
+                );
+                painter.rect_filled(bar_rect, 1.0, tokens.border);
+                painter.rect_filled(
+                    Rect::from_min_size(bar_rect.min, egui::vec2(fill_w, bar_h)),
+                    1.0,
+                    accent_ui.gamma_multiply(0.7),
                 );
             }
         }

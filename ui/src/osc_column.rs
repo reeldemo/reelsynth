@@ -7,19 +7,55 @@ use reelsynth::{
 use reelsynth_ui_theme::Tokens;
 
 use crate::layout::{CENTER_GAP, GRID_UNIT, SPACE_SM};
-use crate::oscillator_ui::{OscillatorUi, MIN_OSCILLATORS};
+use crate::oscillator_ui::{OscillatorUi, WaveLayerUi, MIN_OSCILLATORS};
 use crate::state::OscStripContext;
 use crate::widgets::{
     format_coarse, format_pan, format_unison, knob_value_label, labeled_select, Knob, KnobSize,
     KnobStyle, panel,
 };
-use crate::wt::{sync_slot_from_position, wave_quant_from_index, wave_quant_index, WAVE_QUANT_LABELS};
+use crate::wt::{sync_slot_from_position, wave_quant_from_index, wave_quant_index, effective_quant_count, WAVE_QUANT_LABELS};
 use crate::wt::waveform_points;
 
 const OSC_TYPES: [&str; 5] = ["Wavetable", "Saw", "Square", "Triangle", "Pulse"];
 const WARP_MODES: [&str; 3] = ["None", "Sync", "Bend"];
 const FM_ALGORITHMS: [&str; 4] = ["Off", "2→1", "3→1", "2+3→1"];
 const FM_SOURCES: [&str; 5] = ["None", "Osc 2", "Osc 3", "2+3→1", "Feedback"];
+const STACK_LAYER_TYPES: [&str; 6] = ["Saw", "Sine", "Square", "Triangle", "Pulse", "Wavetable"];
+const STACK_MODES: [&str; 2] = ["Add", "Avg"];
+
+pub fn stack_layer_type_index(ty: &str) -> usize {
+    match ty.to_ascii_lowercase().as_str() {
+        "sine" => 1,
+        "square" => 2,
+        "triangle" | "tri" => 3,
+        "pulse" => 4,
+        "wavetable" => 5,
+        _ => 0,
+    }
+}
+
+pub fn stack_layer_type_from_index(idx: usize) -> &'static str {
+    match idx {
+        1 => "sine",
+        2 => "square",
+        3 => "triangle",
+        4 => "pulse",
+        5 => "wavetable",
+        _ => "saw",
+    }
+}
+
+pub fn stack_mode_index(mode: &str) -> usize {
+    if mode.eq_ignore_ascii_case("avg") {
+        1
+    } else {
+        0
+    }
+}
+
+pub fn stack_mode_from_index(idx: usize) -> &'static str {
+    if idx == 1 { "avg" } else { "add" }
+}
 
 const OSC_CARD_WIDTH: f32 = 72.0;
 const OSC_CARD_HEIGHT: f32 = 48.0;
@@ -107,6 +143,7 @@ pub struct OscColumnState<'a> {
     pub sub_level: &'a mut f32,
     pub noise_level: &'a mut f32,
     pub macro_values: &'a mut [f32; 4],
+    pub selected_layer_idx: &'a mut Option<usize>,
 }
 
 pub struct OscColumnInput<'a> {
@@ -215,10 +252,15 @@ pub fn draw_osc_column(
                     if labeled_select(ui, "WT Quant", &WAVE_QUANT_LABELS, &mut quant_idx) {
                         let new_quant = wave_quant_from_index(quant_idx);
                         osc.wave_quant = new_quant;
-                        if new_quant == 0 {
+                        if new_quant == 255 {
+                            osc.wave_slots = reelsynth::generate_even_wave_slots(256, 256);
+                            osc.wave_slot = osc.wave_slot.min(254);
+                        } else if new_quant == 0 {
                             // Smooth mode — keep continuous position.
                         } else {
-                            osc.wave_slot = osc.wave_slot.min(new_quant.saturating_sub(1));
+                            osc.wave_slot = osc.wave_slot.min(
+                                effective_quant_count(new_quant).saturating_sub(1) as u8,
+                            );
                             osc.wave_slot_fine = 0.0;
                             sync_slot_from_position(osc, 256);
                         }
@@ -291,6 +333,102 @@ pub fn draw_osc_column(
                 }
 
                 ui.add_space(GRID_UNIT * 0.5);
+                if ui.available_height() > min_section_h * 1.8 {
+                    panel(ui, "Stack", |ui| {
+                        let mut stack_mode_idx = stack_mode_index(&osc.stack_mode);
+                        if labeled_select(ui, "Mode", &STACK_MODES, &mut stack_mode_idx) {
+                            osc.stack_mode = stack_mode_from_index(stack_mode_idx).into();
+                            changed = true;
+                        }
+
+                        let selected = state.selected_layer_idx.unwrap_or(0);
+                        let remove_layer = ui
+                            .horizontal(|ui| {
+                                if ui.button("+ Layer").clicked() {
+                                    osc.wave_layers.push(WaveLayerUi::default());
+                                    changed = true;
+                                }
+                                ui.label(format!("{} layers", osc.wave_layers.len()));
+                            })
+                            .inner;
+
+                        let mut remove_at = None;
+                        for (li, layer) in osc.wave_layers.iter_mut().enumerate() {
+                            let is_sel = selected == li;
+                            ui.horizontal(|ui| {
+                                let label = format!("L{}", li + 1);
+                                let btn = ui.selectable_label(is_sel, label);
+                                if btn.clicked() {
+                                    *state.selected_layer_idx = Some(li);
+                                    changed = true;
+                                }
+                            });
+
+                            let mut type_idx = stack_layer_type_index(&layer.source_type);
+                            if labeled_select(ui, "Type", &STACK_LAYER_TYPES, &mut type_idx) {
+                                layer.source_type =
+                                    stack_layer_type_from_index(type_idx).into();
+                                changed = true;
+                            }
+
+                            ui.horizontal(|ui| {
+                                let level_text = format!("{:.2}", layer.level);
+                                let r1 = Knob::new(&mut layer.level, 0.0..=1.0, "Lvl")
+                                    .size(KnobSize::Sm)
+                                    .scale(scale)
+                                    .value_text(level_text)
+                                    .show(ui);
+                                let det_text = format!("{:.0}", layer.detune);
+                                let r2 = Knob::new(&mut layer.detune, -2400.0..=2400.0, "Det")
+                                    .size(KnobSize::Sm)
+                                    .scale(scale)
+                                    .value_text(det_text)
+                                    .show(ui);
+                                if r1.changed || r2.changed {
+                                    changed = true;
+                                }
+                            });
+
+                            if layer.source_type.eq_ignore_ascii_case("wavetable") {
+                                let wt_label = format!("{:.0}", layer.wt_position);
+                                if param_slider(
+                                    ui,
+                                    "WT Pos",
+                                    &mut layer.wt_position,
+                                    0.0..=255.0,
+                                    &wt_label,
+                                ) {
+                                    changed = true;
+                                }
+                            }
+
+                            ui.horizontal(|ui| {
+                                if ui
+                                    .checkbox(&mut layer.enabled, "On")
+                                    .changed()
+                                {
+                                    changed = true;
+                                }
+                                if ui.button("Remove").clicked() {
+                                    remove_at = Some(li);
+                                }
+                            });
+                            ui.add_space(GRID_UNIT * 0.15);
+                        }
+
+                        if let Some(idx) = remove_at {
+                            if idx < osc.wave_layers.len() {
+                                osc.wave_layers.remove(idx);
+                                if *state.selected_layer_idx == Some(idx) {
+                                    *state.selected_layer_idx = None;
+                                }
+                                changed = true;
+                            }
+                        }
+                        let _ = remove_layer;
+                    });
+                }
+
                 if ui.available_height() > min_section_h * 1.8 {
                     panel(ui, "FM", |ui| {
                         let algo_idx = &mut osc.fm_algorithm;

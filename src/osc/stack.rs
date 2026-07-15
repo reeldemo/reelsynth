@@ -58,6 +58,9 @@ pub fn sample_layer(
     let layer_phase = (phase * ratio + phase_off).fract();
 
     if let Some(wave) = VaWaveform::from_osc_type(&layer.source_type) {
+        if wave == VaWaveform::Sine {
+            return (layer_phase.fract() * std::f32::consts::TAU + layer.phase).sin();
+        }
         sample_va(wave, layer_phase, layer_inc, layer.pulse_width)
     } else if layer.source_type.eq_ignore_ascii_case("wavetable") {
         let max_pos = (bank.num_frames.saturating_sub(1)).max(1) as f32;

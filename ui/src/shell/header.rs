@@ -281,6 +281,7 @@ pub(super) fn draw_osc(
                             sub_level: &mut state.sub_level,
                             noise_level: &mut state.noise_level,
                             macro_values: &mut state.macro_values,
+                            selected_layer_idx: &mut state.selected_layer_idx,
                         },
                         OscColumnInput {
                             patch: preview_patch,

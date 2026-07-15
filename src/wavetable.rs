@@ -190,6 +190,37 @@ impl WavetableBank {
         }
     }
 
+    /// Downsample a frame to N evenly-spaced control points (Y values).
+    pub fn downsample_frame_control_points(frame: &[f32], n: usize) -> Vec<f32> {
+        let n = n.clamp(2, frame.len().max(2));
+        (0..n)
+            .map(|i| {
+                let t = i as f32 / n as f32;
+                let idx = (t * frame.len() as f32).floor() as usize;
+                frame[idx.min(frame.len() - 1)]
+            })
+            .collect()
+    }
+
+    /// Upsample control points to a full frame via cubic interpolation with wrap.
+    pub fn upsample_control_points_to_frame(points: &[f32], out: &mut [f32]) {
+        let n = points.len();
+        if n < 2 || out.is_empty() {
+            return;
+        }
+        let len = out.len();
+        for (i, sample) in out.iter_mut().enumerate() {
+            let t = i as f32 / len as f32 * n as f32;
+            let idx = t.floor() as usize;
+            let frac = t - idx as f32;
+            let i0 = idx % n;
+            let i1 = (idx + 1) % n;
+            let i_m1 = (idx + n - 1) % n;
+            let i2 = (idx + 2) % n;
+            *sample = cubic_interp(points[i_m1], points[i0], points[i1], points[i2], frac);
+        }
+    }
+
     pub fn factory_saw_morph() -> Self {
         let mut bank = Self::new(DEFAULT_NUM_FRAMES, DEFAULT_FRAME_SIZE);
         let frame_size = bank.frame_size;
@@ -277,6 +308,14 @@ fn linear_crossfade(a: f32, b: f32, t: f32) -> f32 {
     a * (1.0 - t) + b * t
 }
 
+fn cubic_interp(y0: f32, y1: f32, y2: f32, y3: f32, t: f32) -> f32 {
+    let a = -0.5 * y0 + 1.5 * y1 - 1.5 * y2 + 0.5 * y3;
+    let b = y0 - 2.5 * y1 + 2.0 * y2 - 0.5 * y3;
+    let c = -0.5 * y0 + 0.5 * y2;
+    let d = y1;
+    ((a * t + b) * t + c) * t + d
+}
+
 /// Spectral-power crossfade: interpolates energy while preserving phase from dominant frame.
 /// Reduces beating vs linear amplitude blend when morphing wavetable frames.
 fn spectral_crossfade(a: f32, b: f32, t: f32) -> f32 {
@@ -336,6 +375,39 @@ mod tests {
             );
             prev = cur;
         }
+    }
+
+    #[test]
+    fn control_point_roundtrip_sine() {
+        let bank = WavetableBank::factory_sine();
+        let frame = bank.frame(0);
+        let points = WavetableBank::downsample_frame_control_points(frame, 64);
+        let mut out = [0.0f32; 2048];
+        WavetableBank::upsample_control_points_to_frame(&points, &mut out);
+        let mut err = 0.0f32;
+        for (a, b) in frame.iter().zip(out.iter()) {
+            err += (a - b).abs();
+        }
+        err /= frame.len() as f32;
+        assert!(err < 0.08, "mean err was {err}");
+    }
+
+    #[test]
+    fn control_point_roundtrip_saw() {
+        let mut frame = vec![0.0f32; 2048];
+        for (i, s) in frame.iter_mut().enumerate() {
+            let p = i as f32 / 2048.0;
+            *s = 2.0 * p - 1.0;
+        }
+        let points = WavetableBank::downsample_frame_control_points(&frame, 128);
+        let mut out = [0.0f32; 2048];
+        WavetableBank::upsample_control_points_to_frame(&points, &mut out);
+        let mut err = 0.0f32;
+        for (a, b) in frame.iter().zip(out.iter()) {
+            err += (a - b).abs();
+        }
+        err /= frame.len() as f32;
+        assert!(err < 0.15, "mean err was {err}");
     }
 
     #[test]

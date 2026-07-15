@@ -213,7 +213,7 @@ fn preview_osc_sample_at_phase(
     root: f32,
     fifth: f32,
 ) -> f32 {
-    use crate::osc::{sample_va, VaWaveform, WtWarpMode};
+    use crate::osc::{sample_stack, sample_va, uses_wave_stack, VaWaveform, WtWarpMode};
 
     if osc.level <= 0.0 {
         return 0.0;
@@ -222,6 +222,7 @@ fn preview_osc_sample_at_phase(
     let unison = osc.unison.max(1) as usize;
     let spread_cents = 15.0f32;
     let stereo_spread = patch.unison_stereo_spread.clamp(0.0, 1.0);
+    let wt_ids = patch.wavetable_ids();
     let mut sum = 0.0f32;
 
     for u in 0..unison {
@@ -235,8 +236,34 @@ fn preview_osc_sample_at_phase(
 
         let sample_at = |base_freq: f32| -> f32 {
             let voice_phase = (phase * base_freq * ratio / root).fract();
+            let phase_inc = base_freq * ratio / root / 2048.0;
+
+            if uses_wave_stack(osc) {
+                let bank_idx = bank_for_osc(oi);
+                let default_bank = banks.get(bank_idx).or_else(|| banks.first());
+                let Some(default_bank) = default_bank else {
+                    return 0.0;
+                };
+                let warp = WtWarpMode::from_str(&osc.warp_mode);
+                let wt_pos = preview_wt_position(osc, default_bank.num_frames);
+                return sample_stack(
+                    osc,
+                    default_bank,
+                    banks,
+                    &wt_ids,
+                    voice_phase,
+                    phase_inc,
+                    wt_pos,
+                    warp,
+                    osc.warp_amount,
+                    0.0,
+                    0.0,
+                    1.0,
+                );
+            }
+
             if let Some(wave) = VaWaveform::from_osc_type(&osc.osc_type) {
-                return sample_va(wave, voice_phase, 1.0 / 2048.0, osc.pulse_width);
+                return sample_va(wave, voice_phase, phase_inc, osc.pulse_width);
             }
             let bank_idx = bank_for_osc(oi);
             let bank = banks.get(bank_idx).or_else(|| banks.first());

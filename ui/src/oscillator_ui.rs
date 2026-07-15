@@ -1,10 +1,61 @@
 //! Per-oscillator UI state (unlimited count).
 
-use reelsynth::patch::{Oscillator, WaveSlot};
+use reelsynth::patch::{Oscillator, WaveLayer, WaveSlot};
 
 use crate::osc_column::{fm_algorithm_index, fm_source_index, osc_type_index, warp_mode_index};
 
 pub const MIN_OSCILLATORS: usize = 1;
+
+#[derive(Debug, Clone)]
+pub struct WaveLayerUi {
+    pub source_type: String,
+    pub level: f32,
+    pub detune: f32,
+    pub wt_position: f32,
+    pub pulse_width: f32,
+    pub phase: f32,
+    pub enabled: bool,
+}
+
+impl Default for WaveLayerUi {
+    fn default() -> Self {
+        Self {
+            source_type: "saw".into(),
+            level: 1.0,
+            detune: 0.0,
+            wt_position: 0.0,
+            pulse_width: 0.5,
+            phase: 0.0,
+            enabled: true,
+        }
+    }
+}
+
+impl WaveLayerUi {
+    pub fn from_patch(layer: &WaveLayer) -> Self {
+        Self {
+            source_type: layer.source_type.clone(),
+            level: layer.level,
+            detune: layer.detune,
+            wt_position: layer.wt_position,
+            pulse_width: layer.pulse_width,
+            phase: layer.phase,
+            enabled: layer.level > 0.0,
+        }
+    }
+
+    pub fn to_patch(&self) -> WaveLayer {
+        WaveLayer {
+            source_type: self.source_type.clone(),
+            level: if self.enabled { self.level } else { 0.0 },
+            detune: self.detune,
+            wt_position: self.wt_position,
+            pulse_width: self.pulse_width,
+            phase: self.phase,
+            wavetable_id: None,
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct OscillatorUi {
@@ -28,6 +79,8 @@ pub struct OscillatorUi {
     pub wave_slot: u8,
     pub wave_slot_fine: f32,
     pub wave_slots: Vec<WaveSlot>,
+    pub wave_layers: Vec<WaveLayerUi>,
+    pub stack_mode: String,
 }
 
 impl Default for OscillatorUi {
@@ -59,6 +112,8 @@ impl OscillatorUi {
             wave_slot: 7,
             wave_slot_fine: 0.0,
             wave_slots: Vec::new(),
+            wave_layers: Vec::new(),
+            stack_mode: "add".into(),
         }
     }
 
@@ -74,6 +129,9 @@ impl OscillatorUi {
     }
 
     pub fn effective_wave_quant(&self) -> u8 {
+        if self.wave_quant == 255 {
+            return 255;
+        }
         if self.wave_quant > 0 {
             self.wave_quant
         } else if !self.wave_slots.is_empty() {
@@ -105,6 +163,8 @@ impl OscillatorUi {
             wave_slot: osc.wave_slot,
             wave_slot_fine: osc.wave_slot_fine,
             wave_slots: osc.wave_slots.clone(),
+            wave_layers: osc.wave_layers.iter().map(WaveLayerUi::from_patch).collect(),
+            stack_mode: osc.stack_mode.clone(),
         }
     }
 }

@@ -4,6 +4,9 @@ use reelsynth_ui_theme::{ACCENT_UI, Tokens};
 
 use crate::layout::RADIUS_SM;
 
+use crate::state::WtView3dMode;
+use crate::region::region;
+
 use super::waveform::{frame_index, waveform_points};
 
 const NUM_SLICES: usize = 16;
@@ -48,6 +51,7 @@ pub struct WtView3d<'a> {
     pub position: &'a mut f32,
     pub bank: Option<&'a WavetableBank>,
     pub morph_amount: Option<&'a mut f32>,
+    pub view_mode: Option<&'a mut WtView3dMode>,
     pub time: f32,
 }
 
@@ -147,6 +151,22 @@ impl WtView3d<'_> {
             egui::FontId::proportional(10.0),
             tokens.text_secondary,
         );
+
+        if let Some(mode) = self.view_mode {
+            region(
+                ui,
+                Rect::from_min_max(
+                    egui::pos2(rect.max.x - 120.0, rect.min.y + 4.0),
+                    egui::pos2(rect.max.x - 4.0, rect.min.y + 22.0),
+                ),
+                |ui| {
+                    ui.horizontal(|ui| {
+                        ui.selectable_value(mode, WtView3dMode::Stack, "Stack");
+                        ui.selectable_value(mode, WtView3dMode::Morph, "Morph");
+                    });
+                },
+            );
+        }
 
         paint_grid(&painter, inner, tokens.border);
 

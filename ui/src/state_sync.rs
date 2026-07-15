@@ -4,8 +4,9 @@ use reelsynth::patch::{Envelope, Oscillator, Patch};
 use crate::{
     effect_slots_from_patch, effect_slots_to_patch, factory_label, fm_source_from_index,
     mod_slots_from_patch, mod_slots_to_patch, osc_type_from_index, OscillatorUi, UiState,
-    warp_mode_from_index, warp_mode_index,
+    warp_mode_from_index,
 };
+use crate::oscillator_ui::WaveLayerUi;
 use crate::wt::position_from_osc_ui;
 
 pub fn lfo_shape_from_index(idx: usize) -> &'static str {
@@ -74,6 +75,8 @@ fn osc_ui_to_patch(osc: &OscillatorUi) -> Oscillator {
         wave_slot: osc.wave_slot,
         wave_slot_fine: osc.wave_slot_fine,
         wave_slots: osc.wave_slots.clone(),
+        wave_layers: osc.wave_layers.iter().map(WaveLayerUi::to_patch).collect(),
+        stack_mode: osc.stack_mode.clone(),
         ..Oscillator::default_va()
     };
     if osc.morph_amount > 0.0 {
@@ -240,6 +243,21 @@ mod tests {
         assert_eq!(restored.performance.root, 9);
         assert_eq!(restored.performance.scale, reelsynth::Scale::Mixolydian);
         assert_eq!(restored.performance.layout, reelsynth::PerformanceLayout::Scale);
+    }
+
+    #[test]
+    fn factory_lead_wave_stack_roundtrip() {
+        let original = Patch::factory_lead();
+        let mut state = UiState::default();
+        sync_state_from_patch(&mut state, &original);
+        assert_eq!(state.oscillators[0].wave_layers.len(), 3);
+        assert_eq!(state.oscillators[0].stack_mode, "add");
+        assert!((state.oscillators[0].wave_layers[0].level - 0.65).abs() < 1e-4);
+        assert_eq!(state.oscillators[0].wave_layers[0].source_type, "saw");
+        let restored = patch_from_state(&state, &Patch::default_mono());
+        assert_eq!(restored.oscillators[0].wave_layers.len(), 3);
+        assert_eq!(restored.oscillators[0].stack_mode, "add");
+        assert!((restored.oscillators[0].wave_layers[2].wt_position - 108.0).abs() < 0.01);
     }
 
     #[test]

@@ -1,24 +1,31 @@
 use egui::{Color32, CursorIcon, Pos2, Rect, Sense, Shape, Ui, Vec2};
-use reelsynth::patch::Patch;
+use reelsynth::patch::{Patch, WaveSlot};
 use reelsynth::WavetableBank;
 use reelsynth_ui_theme::{ACCENT_UI, Tokens};
 
 use crate::layout::{RADIUS_SM, WT_TOOLBAR_HEIGHT};
+use crate::oscillator_ui::WaveLayerUi;
 use crate::region::region;
 
+use super::curve_editor::CurveEditor;
 use super::mod_preview::{has_position_mod_routes, preview_mod_sources, preview_position_mod};
-use super::toolbar::{WtEditTool, WtToolbar};
+use super::shape_editor::ShapeEditor;
+use super::slots::apply_slot_selection;
+use super::toolbar::{WtEditTool, WtToolbar, WtToolbarResponse};
 use super::waveform::{frame_index, peak_point, waveform_points};
 
 pub struct WtView2dResponse {
     pub frame_edited: bool,
     pub position_changed: bool,
     pub morph_changed: bool,
+    pub slots_changed: bool,
+    pub stack_changed: bool,
+    pub analyze_requested: bool,
 }
 
 impl WtView2dResponse {
     pub fn changed(&self) -> bool {
-        self.position_changed || self.morph_changed
+        self.position_changed || self.morph_changed || self.slots_changed || self.stack_changed
     }
 }
 
@@ -30,12 +37,19 @@ pub struct WtView2d<'a> {
     pub morph_amount: Option<&'a mut f32>,
     pub patch: Option<&'a Patch>,
     pub macro_values: Option<&'a [f32; 4]>,
+    pub wave_quant: u8,
+    pub wave_slot: &'a mut u8,
+    pub wave_slots: &'a mut Vec<WaveSlot>,
+    pub wave_layers: Option<&'a mut Vec<WaveLayerUi>>,
+    pub stack_mode: Option<&'a mut String>,
+    pub shape_control_points: usize,
+    pub analyze_dialog_open: Option<&'a mut bool>,
     pub animate: bool,
     pub time: f32,
 }
 
 impl WtView2d<'_> {
-    pub fn show(self, ui: &mut Ui) -> WtView2dResponse {
+    pub fn show(mut self, ui: &mut Ui) -> WtView2dResponse {
         let tokens = Tokens::default();
         let accent_ui = ACCENT_UI;
         let view_h = ui.available_height().max(48.0);
@@ -47,12 +61,18 @@ impl WtView2d<'_> {
         let mut frame_edited = false;
         let mut position_changed = false;
         let mut morph_changed = false;
+        let mut slots_changed = false;
+        let mut stack_changed = false;
+        let mut analyze_requested = false;
 
         if !ui.is_rect_visible(rect) {
             return WtView2dResponse {
                 frame_edited,
                 position_changed,
                 morph_changed,
+                slots_changed,
+                stack_changed,
+                analyze_requested,
             };
         }
 
@@ -72,7 +92,25 @@ impl WtView2d<'_> {
             .max(1);
         let max_pos = (num_frames - 1) as f32;
 
-        if *self.tool != WtEditTool::Pencil {
+        let toolbar_resp = region(
+            ui,
+            Rect::from_min_max(rect.min, egui::pos2(rect.max.x, plot_top)),
+            |ui| WtToolbar::show_with_analyze(ui, self.tool),
+        );
+        if let WtToolbarResponse {
+            analyze_requested: req,
+            ..
+        } = toolbar_resp
+        {
+            if req {
+                if let Some(open) = self.analyze_dialog_open {
+                    *open = true;
+                }
+                analyze_requested = true;
+            }
+        }
+
+        if *self.tool == WtEditTool::Select {
             let sense = Sense::click_and_drag();
             let response = ui.allocate_rect(inner, sense);
             if response.dragged() {
@@ -98,10 +136,30 @@ impl WtView2d<'_> {
             } else if response.clicked() {
                 if let Some(pos) = response.interact_pointer_pos() {
                     if inner.contains(pos) {
-                        let next = position_from_plot_x(inner, pos.x, num_frames);
-                        if (next - *self.position).abs() > 0.01 {
-                            *self.position = next;
-                            position_changed = true;
+                        if self.wave_quant > 0 {
+                            let slot_t =
+                                ((pos.x - inner.min.x) / inner.width()).clamp(0.0, 1.0);
+                            let slot = (slot_t * (self.wave_quant as f32 - 1.0).max(0.0))
+                                .round() as u8;
+                            let prev = *self.wave_slot;
+                            apply_slot_selection_from_parts(
+                                self.wave_quant,
+                                self.wave_slot,
+                                self.wave_slots,
+                                self.position,
+                                slot,
+                                num_frames,
+                            );
+                            if *self.wave_slot != prev {
+                                slots_changed = true;
+                                position_changed = true;
+                            }
+                        } else {
+                            let next = position_from_plot_x(inner, pos.x, num_frames);
+                            if (next - *self.position).abs() > 0.01 {
+                                *self.position = next;
+                                position_changed = true;
+                            }
                         }
                     }
                 }
@@ -140,13 +198,22 @@ impl WtView2d<'_> {
 
         paint_grid(&painter, inner, tokens.border);
 
-        region(
-            ui,
-            Rect::from_min_max(rect.min, egui::pos2(rect.max.x, plot_top)),
-            |ui| {
-                WtToolbar::show(ui, self.tool);
-            },
-        );
+        if self.wave_quant > 0 {
+            let quant = self.wave_quant as f32;
+            let slot_t = if quant > 1.0 {
+                *self.wave_slot as f32 / (quant - 1.0)
+            } else {
+                0.0
+            };
+            let band_x = egui::lerp(inner.min.x..=inner.max.x, slot_t);
+            let band_w = inner.width() / quant.max(1.0);
+            let band = Rect::from_min_max(
+                Pos2::new(band_x - band_w * 0.5, inner.min.y),
+                Pos2::new(band_x + band_w * 0.5, inner.max.y),
+            );
+            painter.rect_filled(band, 0.0, tokens.accent.gamma_multiply(0.08));
+            painter.rect_stroke(band, 0.0, egui::Stroke::new(1.0, accent_ui.gamma_multiply(0.35)));
+        }
 
         let wave = if let Some(bank) = self.bank.as_ref() {
             let frame = bank.frame(frame_idx);
@@ -155,7 +222,7 @@ impl WtView2d<'_> {
             placeholder_wave(inner, mid_y)
         };
 
-        if wave.len() >= 2 {
+        if wave.len() >= 2 && *self.tool != WtEditTool::Curve {
             let mut fill = wave.clone();
             fill.push(Pos2::new(inner.max.x, mid_y));
             fill.push(Pos2::new(inner.min.x, mid_y));
@@ -181,14 +248,6 @@ impl WtView2d<'_> {
                 let ghost = waveform_points(ghost_frame, inner, 256, 0.42);
                 if ghost.len() >= 2 {
                     let ghost_stroke = accent_ui.gamma_multiply(0.45);
-                    let mut ghost_fill = ghost.clone();
-                    ghost_fill.push(Pos2::new(inner.max.x, mid_y));
-                    ghost_fill.push(Pos2::new(inner.min.x, mid_y));
-                    painter.add(Shape::convex_polygon(
-                        ghost_fill,
-                        tokens.accent.gamma_multiply(0.12),
-                        egui::Stroke::NONE,
-                    ));
                     painter.add(Shape::line(
                         ghost,
                         egui::Stroke::new(1.5_f32, ghost_stroke),
@@ -237,7 +296,7 @@ impl WtView2d<'_> {
         );
 
         if *self.tool == WtEditTool::Pencil {
-            if let Some(bank) = self.bank {
+            if let Some(bank) = self.bank.as_mut() {
                 let sense = Sense::click_and_drag();
                 let response = ui.allocate_rect(inner, sense);
                 if response.dragged() || response.drag_started() {
@@ -252,6 +311,37 @@ impl WtView2d<'_> {
             }
         }
 
+        if *self.tool == WtEditTool::Curve && self.wave_quant > 0 {
+            if !self.wave_slots.is_empty() {
+                let curve = CurveEditor {
+                    plot_rect: inner,
+                    wave_quant: self.wave_quant,
+                    wave_slots: self.wave_slots.as_mut_slice(),
+                };
+                if curve.show(ui).changed {
+                    slots_changed = true;
+                }
+            }
+        }
+
+        if *self.tool == WtEditTool::Shape {
+            if let Some(bank) = self.bank.as_mut() {
+                let shape = ShapeEditor {
+                    plot_rect: inner,
+                    bank,
+                    frame_idx,
+                    control_points: self.shape_control_points,
+                };
+                if shape.show(ui).frame_edited {
+                    frame_edited = true;
+                }
+            }
+        }
+
+        if analyze_requested {
+            stack_changed = true;
+        }
+
         if self.animate {
             if let Some(patch) = self.patch {
                 if has_position_mod_routes(patch) {
@@ -264,8 +354,31 @@ impl WtView2d<'_> {
             frame_edited,
             position_changed,
             morph_changed,
+            slots_changed,
+            stack_changed,
+            analyze_requested,
         }
     }
+}
+
+fn apply_slot_selection_from_parts(
+    wave_quant: u8,
+    wave_slot: &mut u8,
+    wave_slots: &[WaveSlot],
+    position: &mut f32,
+    slot: u8,
+    num_frames: usize,
+) {
+    let mut osc_ui = crate::oscillator_ui::OscillatorUi {
+        wave_quant,
+        wave_slot: *wave_slot,
+        wave_slots: wave_slots.to_vec(),
+        position: *position,
+        ..crate::oscillator_ui::OscillatorUi::new_silent()
+    };
+    apply_slot_selection(&mut osc_ui, slot, num_frames);
+    *wave_slot = osc_ui.wave_slot;
+    *position = osc_ui.position;
 }
 
 fn paint_grid(painter: &egui::Painter, rect: Rect, border: Color32) {

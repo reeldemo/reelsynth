@@ -125,6 +125,9 @@ pub(super) fn draw_center(
                     egui::vec2(half_w, views_h),
                     egui::Layout::top_down(egui::Align::Min),
                     |ui| {
+                        let idx = state.active_osc_index();
+                        let osc = &mut state.oscillators[idx];
+                        let wave_quant = osc.wave_quant;
                         let view = WtView2d {
                             position: &mut state.wt_position,
                             bank: bank.as_deref_mut(),
@@ -133,6 +136,13 @@ pub(super) fn draw_center(
                             morph_amount: Some(&mut state.wt_morph_amount),
                             patch: Some(preview_patch),
                             macro_values: Some(&state.macro_values),
+                            wave_quant,
+                            wave_slot: &mut osc.wave_slot,
+                            wave_slots: &mut osc.wave_slots,
+                            wave_layers: Some(&mut osc.wave_layers),
+                            stack_mode: Some(&mut osc.stack_mode),
+                            shape_control_points: state.shape_control_points,
+                            analyze_dialog_open: Some(&mut state.analyze_dialog_open),
                             animate: true,
                             time: time as f32,
                         };
@@ -140,7 +150,7 @@ pub(super) fn draw_center(
                         if view2d_resp.frame_edited {
                             actions.frame_edited = true;
                         }
-                        if view2d_resp.changed() {
+                        if view2d_resp.changed() || view2d_resp.stack_changed {
                             if view2d_resp.morph_changed {
                                 state.wt_position = morph_position(
                                     state.wt_morph_a,
@@ -164,30 +174,56 @@ pub(super) fn draw_center(
                     egui::vec2(half_w, views_h),
                     egui::Layout::top_down(egui::Align::Min),
                     |ui| {
-                        let view3d = WtView3d {
-                            position: &mut state.wt_position,
-                            bank: bank.as_deref(),
-                            morph_amount: Some(&mut state.wt_morph_amount),
-                            time: time as f32,
-                        };
-                        let view3d_resp = view3d.show(ui);
-                        if view3d_resp.changed() {
-                            if view3d_resp.morph_changed {
-                                state.wt_position = morph_position(
-                                    state.wt_morph_a,
-                                    state.wt_morph_b,
-                                    state.wt_morph_amount,
-                                );
-                            } else if view3d_resp.position_changed {
-                                state.wt_morph_amount = morph_amount_for_position(
-                                    state.wt_morph_a,
-                                    state.wt_morph_b,
-                                    state.wt_position,
-                                );
+                        let idx = state.active_osc_index();
+                        match state.wt_view_3d_mode {
+                            WtView3dMode::Stack => {
+                                let stack_mode = state.oscillators[idx].stack_mode.clone();
+                                let layers = &mut state.oscillators[idx].wave_layers;
+                                if state.selected_layer_idx.is_none() && !layers.is_empty() {
+                                    state.selected_layer_idx = Some(0);
+                                }
+                                let stack_resp = WtView3dStack {
+                                    layers,
+                                    stack_mode: &stack_mode,
+                                    bank: bank.as_deref(),
+                                    wt_pos_offset: state.wt_position,
+                                    selected_layer: &mut state.selected_layer_idx,
+                                    view_mode: &mut state.wt_view_3d_mode,
+                                    time: time as f32,
+                                }
+                                .show(ui);
+                                if stack_resp.layer_selected || stack_resp.wt_position_changed {
+                                    actions.params_changed = true;
+                                }
                             }
-                            sync_osc_from_wt(state, num_frames);
-                            sync_morph_from_active_tab(state);
-                            actions.params_changed = true;
+                            WtView3dMode::Morph => {
+                                let view3d = WtView3d {
+                                    position: &mut state.wt_position,
+                                    bank: bank.as_deref(),
+                                    morph_amount: Some(&mut state.wt_morph_amount),
+                                    view_mode: Some(&mut state.wt_view_3d_mode),
+                                    time: time as f32,
+                                };
+                                let view3d_resp = view3d.show(ui);
+                                if view3d_resp.changed() {
+                                    if view3d_resp.morph_changed {
+                                        state.wt_position = morph_position(
+                                            state.wt_morph_a,
+                                            state.wt_morph_b,
+                                            state.wt_morph_amount,
+                                        );
+                                    } else if view3d_resp.position_changed {
+                                        state.wt_morph_amount = morph_amount_for_position(
+                                            state.wt_morph_a,
+                                            state.wt_morph_b,
+                                            state.wt_position,
+                                        );
+                                    }
+                                    sync_osc_from_wt(state, num_frames);
+                                    sync_morph_from_active_tab(state);
+                                    actions.params_changed = true;
+                                }
+                            }
                         }
                     },
                 );
@@ -196,6 +232,12 @@ pub(super) fn draw_center(
             ui.ctx()
                 .data_mut(|d| d.insert_temp(center_views_used_rect_id(), used));
             });
+        }
+
+        if state.analyze_dialog_open {
+            if draw_analyze_dialog(ui, state, bank.as_deref(), num_frames) {
+                actions.params_changed = true;
+            }
         }
 
         if piano_rect.is_positive() && state.piano_visible {
@@ -227,6 +269,7 @@ pub(super) fn draw_center(
                 bank: bank.as_deref(),
                 bank_name: Some(bank_name.as_str()),
                 visible_frames: 16,
+                edit_tool: state.wt_edit_tool,
             };
             if strip.show(ui).changed {
                 sync_osc_from_wt(state, num_frames);
@@ -249,4 +292,81 @@ pub(super) fn draw_center(
             ui.ctx().request_repaint();
         }
     });
+}
+
+fn draw_analyze_dialog(
+    ui: &mut Ui,
+    state: &mut UiState,
+    bank: Option<&WavetableBank>,
+    num_frames: usize,
+) -> bool {
+    use crate::oscillator_ui::WaveLayerUi;
+    use crate::wt::frame_index;
+    use reelsynth::decompose_frame;
+
+    let Some(bank) = bank else {
+        state.analyze_dialog_open = false;
+        return false;
+    };
+
+    let frame_idx = frame_index(state.wt_position, num_frames.max(1));
+    let frame_data = bank.frame(frame_idx);
+    if frame_data.len() != 2048 {
+        state.analyze_dialog_open = false;
+        return false;
+    }
+    let mut frame = [0.0f32; 2048];
+    frame.copy_from_slice(frame_data);
+
+    let mut changed = false;
+    let mut should_close = false;
+    egui::Window::new("Analyze → Stack")
+        .collapsible(false)
+        .resizable(false)
+        .show(ui.ctx(), |ui| {
+            ui.label(format!("Decompose frame {frame_idx} into sine wave layers"));
+            ui.add(
+                egui::Slider::new(&mut state.analyze_harmonics, 1..=32).text("Harmonics"),
+            );
+            ui.add(
+                egui::Slider::new(&mut state.analyze_min_mag, 0.001..=0.1)
+                    .logarithmic(true)
+                    .text("Min magnitude"),
+            );
+            ui.checkbox(&mut state.analyze_append, "Append (instead of replace)");
+            ui.horizontal(|ui| {
+                if ui.button("Analyze").clicked() {
+                    let decomposed =
+                        decompose_frame(&frame, state.analyze_harmonics, state.analyze_min_mag);
+                    let new_layers: Vec<WaveLayerUi> = decomposed
+                        .into_iter()
+                        .map(|l| WaveLayerUi {
+                            source_type: l.source_type,
+                            level: l.level,
+                            detune: l.detune,
+                            phase: l.phase,
+                            enabled: true,
+                            ..WaveLayerUi::default()
+                        })
+                        .collect();
+                    let idx = state.active_osc_index();
+                    if state.analyze_append {
+                        state.oscillators[idx].wave_layers.extend(new_layers);
+                    } else {
+                        state.oscillators[idx].wave_layers = new_layers;
+                    }
+                    state.oscillators[idx].stack_mode = "add".into();
+                    state.wt_view_3d_mode = WtView3dMode::Stack;
+                    should_close = true;
+                    changed = true;
+                }
+                if ui.button("Cancel").clicked() {
+                    should_close = true;
+                }
+            });
+        });
+    if should_close {
+        state.analyze_dialog_open = false;
+    }
+    changed
 }

@@ -78,6 +78,18 @@ In **Compose** mode, QWERTY and piano input route to the armed clip when recordi
 
 WT position for the active osc syncs with the center WT strip.
 
+### Wave stack (Osc column)
+
+Collapsible **Stack** panel on the active oscillator tab:
+
+- Layer list: type (saw / sine / square / triangle / pulse / wavetable), level, detune, on/off
+- Wavetable layers expose **WT Pos**
+- **Mode**: Add or Avg (`stack_mode`)
+- **+ Layer** / **Remove** per row
+- Click a layer row or a plane in **3D Stack** to select it (highlight sync)
+
+Factory Lead loads with three stack layers (saw + sine + wavetable); save/reload preserves `wave_layers`.
+
 ---
 
 ## Center column
@@ -113,17 +125,36 @@ Serial chain: delay, reverb, chorus, etc. Per-slot mix and bypass.
 
 ![WT 2D and 3D views](https://github.com/reeldemo/reelsynth/releases/download/v0.1.0/04-wt-editor-2d-3d.png)
 
+### Concepts (engine)
+
+| Concept | What it is | Sound effect |
+|---------|------------|--------------|
+| **Wavetable bank** | 256 frames × 2048 samples | Position picks timbre; morph moves between frames |
+| **Wave quant** | Discrete slots (8–256) mapping to frame indices | Mod/LFO walks a **slot curve** — non-uniform slots = non-linear scans |
+| **Wave stack** | `wave_layers[]` inside one Osc tab (saw + sine + WT…) | Additive thickness; `stack_mode: add` or `avg` |
+| **Osc 1/2/3 tabs** | Separate oscillators + FM | Different from stack — FM routing between voices |
+
+### Wavetable editor (v0.2 — stack editor)
+
 | Element | Function |
 |---------|----------|
-| **Position strip** | Scrub through 256 frames; click slots when quant is 8/16/32/64 |
-| **Wave quant** | Roland-style discrete slots (8–64) or Smooth for continuous morph |
-| **Wave stack** | Preset-defined additive layers (e.g. saw + sine + WT) summed per oscillator |
-| **Morph A / B / amount** | Crossfade between frame ranges |
-| **2D view** | Current frame waveform |
-| **3D view** | Bank surface (frame index × sample) |
-| **Toolbar** | View options |
+| **Position strip** | Scrub frames; click slots when quant > 0; **Curve** mode shows mini frame-index bar under cells |
+| **Wave quant** | 8 / 16 / 32 / 64 / **256** / Smooth (256 uses wire value `255`) |
+| **Morph A / B / amount** | Crossfade between frame ranges (overrides slots when active) |
+| **2D view** | Current frame; **Select** drag ↔ position / click slot band; **Pencil** edits samples; **Curve** slot→frame map; **Shape** control points → 2048-sample frame |
+| **3D view** | **Stack** (default): depth plane per `wave_layer` + composite sum; **Morph**: 16-frame mesh (legacy) |
+| **Toolbar** | Select / Pencil / **Curve** / **Shape** / **Analyze → Stack** (FFT harmonics → sine layers) |
 
 Morph settings are per-oscillator; active tab syncs with WT controls.
+
+Design spec: [docs/superpowers/specs/2026-07-15-wt-stack-editor-design.md](superpowers/specs/2026-07-15-wt-stack-editor-design.md)  
+Implementation plan: [docs/superpowers/plans/2026-07-15-wt-stack-editor.md](superpowers/plans/2026-07-15-wt-stack-editor.md)
+
+### Legacy reference (pre–stack editor)
+
+| Element | Function |
+|---------|----------|
+| **3D morph mesh** | 16 adjacent frames as depth slices (still available via **Morph** toggle) |
 
 ---
 

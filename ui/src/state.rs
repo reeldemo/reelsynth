@@ -10,6 +10,13 @@ use crate::scope_strip::ScopeStripState;
 use crate::wt::{morph_amount_for_position, position_from_osc_ui, WtEditTool};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum WtView3dMode {
+    #[default]
+    Stack,
+    Morph,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ShellMode {
     #[default]
     Design,
@@ -80,6 +87,13 @@ pub struct UiState {
     pub wt_position: f32,
     pub wt_bank_name: String,
     pub wt_edit_tool: WtEditTool,
+    pub wt_view_3d_mode: WtView3dMode,
+    pub selected_layer_idx: Option<usize>,
+    pub analyze_dialog_open: bool,
+    pub analyze_harmonics: usize,
+    pub analyze_min_mag: f32,
+    pub analyze_append: bool,
+    pub shape_control_points: usize,
     pub wt_morph_a: f32,
     pub wt_morph_b: f32,
     pub wt_morph_amount: f32,
@@ -190,6 +204,13 @@ impl Default for UiState {
             wt_position: wt_pos,
             wt_bank_name: "Saw Morph".into(),
             wt_edit_tool: WtEditTool::Select,
+            wt_view_3d_mode: WtView3dMode::Stack,
+            selected_layer_idx: None,
+            analyze_dialog_open: false,
+            analyze_harmonics: 16,
+            analyze_min_mag: 0.01,
+            analyze_append: false,
+            shape_control_points: 256,
             wt_morph_a: 0.0,
             wt_morph_b: 180.0,
             wt_morph_amount: morph_amount_for_position(0.0, 180.0, wt_pos),

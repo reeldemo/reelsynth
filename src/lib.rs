@@ -15,6 +15,7 @@ pub mod wt_quant;
 pub mod modulation;
 pub mod oversample;
 pub mod sequence;
+pub mod analysis;
 
 pub use performance::{
     note_in_scale, resolve_chord, resolve_diatonic_chord, scale_degree_to_midi, snap_note,
@@ -42,6 +43,7 @@ pub use export::{
     export_preset, export_reelpack, export_wavetable, load_preset, parse_targets,
     resolve_bank_for_preset, ExportOptions, ExportReport, ExportTarget,
 };
+pub use analysis::{decompose_frame, resynthesis_error, resynthesize_frame};
 
 #[cfg(feature = "python")]
 use numpy::{PyArray1, PyReadonlyArray1};

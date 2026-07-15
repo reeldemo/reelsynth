@@ -18,7 +18,7 @@ use crate::region::region;
 
 pub use crate::state::{
     OscStripContext, OscStripPreviewState, ScopeStripContext, ShellActions, ShellConfig,
-    ShellMidiDevices, ShellMode, UiState,
+    ShellMidiDevices, ShellMode, UiState, WtView3dMode,
 };
 
 // Re-exports for shell submodules (`use super::*`).
@@ -36,7 +36,8 @@ pub(super) use crate::widgets::{
     adsr_graph, format_depth, format_env_time, format_lfo_rate, format_sustain, PianoKeyboard,
 };
 pub(super) use crate::wt::{
-    morph_amount_for_position, morph_position, WtMorph, WtStrip, WtView2d, WtView3d, FACTORY_BANKS,
+    morph_amount_for_position, morph_position, WtMorph, WtStrip, WtView2d, WtView3d,
+    WtView3dStack, FACTORY_BANKS,
 };
 
 pub fn draw_shell(

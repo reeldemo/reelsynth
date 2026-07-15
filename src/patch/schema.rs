@@ -32,6 +32,9 @@ pub struct WaveLayer {
     pub pulse_width: f32,
     #[serde(default)]
     pub wavetable_id: Option<String>,
+    /// Phase offset in radians at layer phase origin (sine layers).
+    #[serde(default)]
+    pub phase: f32,
 }
 
 impl Default for WaveLayer {
@@ -43,6 +46,7 @@ impl Default for WaveLayer {
             wt_position: 0.0,
             pulse_width: default_pulse_width(),
             wavetable_id: None,
+            phase: 0.0,
         }
     }
 }

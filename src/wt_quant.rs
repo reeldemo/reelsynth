@@ -3,10 +3,10 @@
 use crate::patch::{Oscillator, WaveSlot};
 
 /// Evenly spaced slot frames across `0..max_frame`.
-pub fn generate_even_wave_slots(quant: u8, num_frames: usize) -> Vec<WaveSlot> {
+pub fn generate_even_wave_slots(quant: usize, num_frames: usize) -> Vec<WaveSlot> {
     let quant = quant.max(1);
     let max_frame = (num_frames.saturating_sub(1)).max(1) as f32;
-    (0..quant as usize)
+    (0..quant)
         .map(|i| {
             let frame = if quant <= 1 {
                 0.0
@@ -21,12 +21,21 @@ pub fn generate_even_wave_slots(quant: u8, num_frames: usize) -> Vec<WaveSlot> {
         .collect()
 }
 
+/// Map wire `wave_quant` to slot count (255 → 256).
+pub fn quant_slot_count(wave_quant: u8) -> usize {
+    if wave_quant == 255 {
+        256
+    } else {
+        wave_quant as usize
+    }
+}
+
 /// Resolve slot map, auto-generating evenly spaced entries when empty.
 pub fn resolved_wave_slots(osc: &Oscillator, num_frames: usize) -> Vec<WaveSlot> {
     if !osc.wave_slots.is_empty() {
         osc.wave_slots.clone()
     } else {
-        generate_even_wave_slots(osc.effective_wave_quant(), num_frames)
+        generate_even_wave_slots(quant_slot_count(osc.effective_wave_quant()), num_frames)
     }
 }
 
@@ -89,6 +98,14 @@ mod tests {
             position: 108.0,
             ..Oscillator::default_va()
         }
+    }
+
+    #[test]
+    fn even_slots_256_span_bank() {
+        let slots = generate_even_wave_slots(256, 256);
+        assert_eq!(slots.len(), 256);
+        assert!((slots[0].frame - 0.0).abs() < 0.01);
+        assert!((slots[255].frame - 255.0).abs() < 0.01);
     }
 
     #[test]

@@ -5,7 +5,7 @@ use reelsynth::{resolve_wt_position, resolved_wave_slots};
 
 use crate::oscillator_ui::OscillatorUi;
 
-pub const WAVE_QUANT_LABELS: [&str; 5] = ["8", "16", "32", "64", "Smooth"];
+pub const WAVE_QUANT_LABELS: [&str; 6] = ["8", "16", "32", "64", "256", "Smooth"];
 
 pub fn wave_quant_index(quant: u8) -> usize {
     match quant {
@@ -13,7 +13,8 @@ pub fn wave_quant_index(quant: u8) -> usize {
         16 => 1,
         32 => 2,
         64 => 3,
-        _ => 4,
+        255 => 4, // wire encoding for 256 quant
+        _ => 5,
     }
 }
 
@@ -23,7 +24,19 @@ pub fn wave_quant_from_index(idx: usize) -> u8 {
         1 => 16,
         2 => 32,
         3 => 64,
+        4 => 255, // 256 quant (u8 wire value)
         _ => 0,
+    }
+}
+
+/// Resolve UI/engine quant count (255 wire value → 256 slots).
+pub fn effective_quant_count(quant: u8) -> usize {
+    if quant == 255 {
+        256
+    } else if quant > 0 {
+        quant as usize
+    } else {
+        0
     }
 }
 
@@ -51,7 +64,7 @@ pub fn position_from_osc_ui(osc: &OscillatorUi, num_frames: usize) -> f32 {
 }
 
 pub fn apply_slot_selection(osc: &mut OscillatorUi, slot: u8, num_frames: usize) {
-    let max_slot = osc.effective_wave_quant().saturating_sub(1);
+    let max_slot = effective_quant_count(osc.effective_wave_quant()).saturating_sub(1) as u8;
     osc.wave_slot = slot.min(max_slot);
     osc.wave_slot_fine = 0.0;
     osc.position = position_from_osc_ui(osc, num_frames);
@@ -128,7 +141,7 @@ mod tests {
 
     #[test]
     fn quant_index_roundtrip() {
-        for (q, idx) in [(8, 0), (16, 1), (32, 2), (64, 3), (0, 4)] {
+        for (q, idx) in [(8, 0), (16, 1), (32, 2), (64, 3), (255, 4), (0, 5)] {
             assert_eq!(wave_quant_index(q), idx);
             assert_eq!(wave_quant_from_index(idx), q);
         }
