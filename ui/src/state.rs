@@ -7,7 +7,7 @@ use crate::fx_rack::{effect_slots_from_patch, EffectSlotUi};
 use crate::mod_matrix::{default_mod_slots, ModSlotUi};
 use crate::oscillator_ui::{OscillatorUi, MIN_OSCILLATORS};
 use crate::scope_strip::ScopeStripState;
-use crate::wt::{morph_amount_for_position, position_from_osc_ui, WtEditTool};
+use crate::wt::{morph_amount_for_position, position_from_osc_ui, WtEditTool, WtQuantInterp};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum WtView3dMode {
@@ -88,6 +88,7 @@ pub struct UiState {
     pub wt_position: f32,
     pub wt_bank_name: String,
     pub wt_edit_tool: WtEditTool,
+    pub wt_quant_interp: WtQuantInterp,
     pub wt_view_3d_mode: WtView3dMode,
     pub selected_layer_idx: Option<usize>,
     pub analyze_dialog_open: bool,
@@ -205,6 +206,7 @@ impl Default for UiState {
             wt_position: wt_pos,
             wt_bank_name: "Saw Morph".into(),
             wt_edit_tool: WtEditTool::Select,
+            wt_quant_interp: WtQuantInterp::default(),
             wt_view_3d_mode: WtView3dMode::Morph,
             selected_layer_idx: None,
             analyze_dialog_open: false,

@@ -10,7 +10,7 @@ use crate::region::region;
 
 use super::curve_editor::CurveEditor;
 use super::mod_preview::{has_position_mod_routes, preview_mod_sources, preview_position_mod};
-use super::quant_handles::{QuantHandleEditor, slot_x};
+use super::quant_handles::{QuantHandleEditor, WtQuantInterp, quant_control_points, resample_frame_from_quant_points, slot_x};
 use super::shape_editor::ShapeEditor;
 use super::slots::{apply_slot_selection, effective_quant_count};
 use super::toolbar::{FrameShapeTemplate, WtEditTool, WtToolbar, WtToolbarResponse};
@@ -66,6 +66,7 @@ pub struct WtView2d<'a> {
     pub patch: Option<&'a Patch>,
     pub macro_values: Option<&'a [f32; 4]>,
     pub wave_quant: u8,
+    pub quant_interp: &'a mut WtQuantInterp,
     pub wave_slot: &'a mut u8,
     pub wave_slots: &'a mut Vec<WaveSlot>,
     pub wave_layers: Option<&'a mut Vec<WaveLayerUi>>,
@@ -126,12 +127,13 @@ impl WtView2d<'_> {
         let toolbar_resp = region(
             ui,
             toolbar_rect,
-            |ui| WtToolbar::show_with_analyze(ui, self.tool, self.wave_quant),
+            |ui| WtToolbar::show_with_analyze(ui, self.tool, self.wave_quant, self.quant_interp),
         );
         record_region(ui.ctx(), AuditId::CenterWt2dToolbar, toolbar_rect, toolbar_rect);
         let WtToolbarResponse {
             analyze_requested: req,
             assign_shape,
+            interp_changed,
             ..
         } = toolbar_resp;
         if req {
@@ -157,6 +159,22 @@ impl WtView2d<'_> {
             .as_ref()
             .map(|b| frame_index(*self.position, b.num_frames))
             .unwrap_or(0);
+
+        if interp_changed {
+            if let Some(bank) = self.bank.as_mut() {
+                if self.wave_quant > 0 {
+                    let slot_count = effective_quant_count(self.wave_quant);
+                    let frame = bank.frame_mut(frame_idx);
+                    let points = quant_control_points(frame, slot_count);
+                    resample_frame_from_quant_points(frame, &points, *self.quant_interp);
+                    frame_edited = true;
+                    status_hint = Some(format!(
+                        "Interp → {} (frame rebuilt)",
+                        self.quant_interp.label()
+                    ));
+                }
+            }
+        }
 
         let wave = if let Some(bank) = self.bank.as_ref() {
             let frame = bank.frame(frame_idx);
@@ -431,6 +449,7 @@ impl WtView2d<'_> {
                     wave_quant: self.wave_quant,
                     bank,
                     frame_idx,
+                    interp: *self.quant_interp,
                 };
                 let qh = editor.show(ui);
                 if qh.frame_edited {

@@ -18,8 +18,8 @@ pub use gpu_waveform::{paint_waveform_line, set_gpu_renderer_active, use_gpu_wav
 pub use morph::{morph_amount_for_position, morph_position, WtMorph, WtMorphResponse};
 pub use quant_handles::{
     apply_quant_slot_amplitude, frame_to_y, nearest_slot, quant_control_points,
-    sample_at_quant_phase, sample_to_y, snap_x_to_slot, slot_x, y_to_frame, y_to_sample,
-    QuantHandleEditor, QuantHandleResponse,
+    resample_frame_from_quant_points, sample_at_quant_phase, sample_to_y, snap_x_to_slot, slot_x,
+    y_to_frame, y_to_sample, QuantHandleEditor, QuantHandleResponse, WtQuantInterp,
 };
 pub use slots::{
     apply_slot_selection, effective_quant_count, frame_to_slot_coord, position_from_osc_ui,

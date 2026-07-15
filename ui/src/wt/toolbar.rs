@@ -7,6 +7,8 @@ use crate::layout::{RADIUS_SM, WT_TOOLBAR_HEIGHT};
 use crate::region::region;
 use crate::widgets::button_tool;
 
+use super::quant_handles::WtQuantInterp;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum WtEditTool {
     #[default]
@@ -51,16 +53,22 @@ pub struct WtToolbarResponse {
     pub tool_changed: bool,
     pub analyze_requested: bool,
     pub assign_shape: Option<FrameShapeTemplate>,
+    pub interp_changed: bool,
 }
 
 pub struct WtToolbar;
 
 impl WtToolbar {
-    pub fn show(ui: &mut Ui, tool: &mut WtEditTool, wave_quant: u8) -> bool {
-        Self::show_with_analyze(ui, tool, wave_quant).tool_changed
+    pub fn show(ui: &mut Ui, tool: &mut WtEditTool, wave_quant: u8, quant_interp: &mut WtQuantInterp) -> bool {
+        Self::show_with_analyze(ui, tool, wave_quant, quant_interp).tool_changed
     }
 
-    pub fn show_with_analyze(ui: &mut Ui, tool: &mut WtEditTool, wave_quant: u8) -> WtToolbarResponse {
+    pub fn show_with_analyze(
+        ui: &mut Ui,
+        tool: &mut WtEditTool,
+        wave_quant: u8,
+        quant_interp: &mut WtQuantInterp,
+    ) -> WtToolbarResponse {
         let tokens = Tokens::default();
         let (rect, _) = ui.allocate_exact_size(
             egui::vec2(ui.available_width(), WT_TOOLBAR_HEIGHT),
@@ -70,12 +78,14 @@ impl WtToolbar {
         let mut tool_changed = false;
         let mut analyze_requested = false;
         let mut assign_shape = None;
+        let mut interp_changed = false;
 
         if !ui.is_rect_visible(rect) {
             return WtToolbarResponse {
                 tool_changed,
                 analyze_requested,
                 assign_shape,
+                interp_changed,
             };
         }
 
@@ -158,6 +168,31 @@ impl WtToolbar {
                 {
                     analyze_requested = true;
                 }
+                if wave_quant > 0 {
+                    const COMBO_W: f32 = 84.0;
+                    ui.add_space((ui.available_width() - COMBO_W).max(0.0));
+                    let combo = egui::ComboBox::from_id_salt("wt_quant_interp")
+                        .selected_text(quant_interp.label())
+                        .width(COMBO_W - 4.0)
+                        .show_ui(ui, |ui| {
+                            for (idx, &label) in WtQuantInterp::LABELS.iter().enumerate() {
+                                let mode = WtQuantInterp::from_index(idx);
+                                if ui
+                                    .selectable_label(quant_interp.index() == idx, label)
+                                    .on_hover_text(mode.tooltip())
+                                    .clicked()
+                                {
+                                    if *quant_interp != mode {
+                                        *quant_interp = mode;
+                                        interp_changed = true;
+                                    }
+                                }
+                            }
+                        });
+                    combo.response.on_hover_text(
+                        "Interpolation between quant knobs when reshaping the frame",
+                    );
+                }
             });
         });
 
@@ -165,6 +200,7 @@ impl WtToolbar {
             tool_changed,
             analyze_requested,
             assign_shape,
+            interp_changed,
         }
     }
 }

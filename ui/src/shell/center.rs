@@ -142,6 +142,7 @@ pub(super) fn draw_center(
                             patch: Some(preview_patch),
                             macro_values: Some(&state.macro_values),
                             wave_quant,
+                            quant_interp: &mut state.wt_quant_interp,
                             wave_slot: &mut osc.wave_slot,
                             wave_slots: &mut osc.wave_slots,
                             wave_layers: Some(&mut osc.wave_layers),

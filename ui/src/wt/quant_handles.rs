@@ -13,11 +13,56 @@ use super::slots::effective_quant_count;
 const HANDLE_RADIUS: f32 = 6.0;
 const WAVE_AMP: f32 = 0.42;
 
+/// How quant knob amplitudes are written into the 2048-sample frame.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum WtQuantInterp {
+    /// Flat band per slot (step / rectangular — current legacy behavior).
+    #[default]
+    Hold,
+    /// Straight segments between knob heights.
+    Linear,
+    /// Catmull-Rom spline through knob heights (smooth, same family as Shape upsample).
+    Cubic,
+}
+
+impl WtQuantInterp {
+    pub const LABELS: [&'static str; 3] = ["Hold", "Linear", "Spline"];
+
+    pub fn label(self) -> &'static str {
+        Self::LABELS[self.index()]
+    }
+
+    pub fn index(self) -> usize {
+        match self {
+            Self::Hold => 0,
+            Self::Linear => 1,
+            Self::Cubic => 2,
+        }
+    }
+
+    pub fn from_index(idx: usize) -> Self {
+        match idx {
+            1 => Self::Linear,
+            2 => Self::Cubic,
+            _ => Self::Hold,
+        }
+    }
+
+    pub fn tooltip(self) -> &'static str {
+        match self {
+            Self::Hold => "Step — flat band per slot (rectangular)",
+            Self::Linear => "Linear — straight lines between knobs",
+            Self::Cubic => "Spline — smooth Catmull-Rom curve through knobs",
+        }
+    }
+}
+
 pub struct QuantHandleEditor<'a> {
     pub plot_rect: Rect,
     pub wave_quant: u8,
     pub bank: &'a mut WavetableBank,
     pub frame_idx: usize,
+    pub interp: WtQuantInterp,
 }
 
 pub struct QuantHandleResponse {
@@ -91,12 +136,14 @@ impl QuantHandleEditor<'_> {
                             slot,
                             slot_count,
                             sample,
+                            self.interp,
                         );
                         frame_edited = true;
                         status_label = Some(format!(
-                            "Slot {} → amp {:+.2}",
+                            "Slot {} → amp {:+.2} · {}",
                             slot + 1,
-                            sample
+                            sample,
+                            self.interp.label()
                         ));
                     }
                 }
@@ -172,35 +219,84 @@ impl QuantHandleEditor<'_> {
     }
 }
 
-/// Write amplitude across the Voronoi phase band of a quant slot so vertical
-/// drag clearly reshapes the wave around that knob.
+/// Update one quant knob, then rebuild the frame using the chosen interpolation.
 pub fn apply_quant_slot_amplitude(
     frame: &mut [f32],
     slot: usize,
     slot_count: usize,
     sample: f32,
+    mode: WtQuantInterp,
 ) {
     if frame.is_empty() || slot_count == 0 {
         return;
     }
-    let sample = sample.clamp(-1.0, 1.0);
-    let len = frame.len() as f32;
-    let denom = (slot_count - 1).max(1) as f32;
-    let left = if slot == 0 {
-        0.0
-    } else {
-        (slot as f32 - 0.5) / denom
-    };
-    let right = if slot + 1 >= slot_count {
-        1.0
-    } else {
-        (slot as f32 + 0.5) / denom
-    };
-    let i0 = (left * len).floor() as usize;
-    let i1 = ((right * len).ceil() as usize).min(frame.len()).max(i0 + 1);
-    for s in &mut frame[i0..i1] {
-        *s = sample;
+    let mut points = quant_control_points(frame, slot_count);
+    if slot < points.len() {
+        points[slot] = sample.clamp(-1.0, 1.0);
     }
+    resample_frame_from_quant_points(frame, &points, mode);
+}
+
+/// Fill `frame` from evenly spaced control-point amplitudes.
+pub fn resample_frame_from_quant_points(
+    frame: &mut [f32],
+    points: &[f32],
+    mode: WtQuantInterp,
+) {
+    let n = points.len();
+    if n == 0 || frame.is_empty() {
+        return;
+    }
+    if n == 1 {
+        frame.fill(points[0]);
+        return;
+    }
+    let len = frame.len();
+    for (i, sample) in frame.iter_mut().enumerate() {
+        let phase = i as f32 / len as f32;
+        *sample = sample_interp_at_phase(points, phase, mode);
+    }
+}
+
+fn sample_interp_at_phase(points: &[f32], phase: f32, mode: WtQuantInterp) -> f32 {
+    let n = points.len();
+    debug_assert!(n >= 1);
+    if n == 1 {
+        return points[0];
+    }
+    let phase = phase.clamp(0.0, 1.0);
+    let t = phase * (n - 1) as f32;
+    match mode {
+        WtQuantInterp::Hold => {
+            let slot = t.floor() as usize;
+            points[slot.min(n - 1)]
+        }
+        WtQuantInterp::Linear => {
+            let i = t.floor() as usize;
+            if i >= n - 1 {
+                return points[n - 1];
+            }
+            let frac = t - i as f32;
+            egui::lerp(points[i]..=points[i + 1], frac)
+        }
+        WtQuantInterp::Cubic => {
+            let i = (t.floor() as usize).min(n - 2);
+            let frac = (t - i as f32).clamp(0.0, 1.0);
+            let y0 = points[i.saturating_sub(1)];
+            let y1 = points[i];
+            let y2 = points[(i + 1).min(n - 1)];
+            let y3 = points[(i + 2).min(n - 1)];
+            cubic_catmull(y0, y1, y2, y3, frac)
+        }
+    }
+}
+
+fn cubic_catmull(y0: f32, y1: f32, y2: f32, y3: f32, t: f32) -> f32 {
+    let a = -0.5 * y0 + 1.5 * y1 - 1.5 * y2 + 0.5 * y3;
+    let b = y0 - 2.5 * y1 + 2.0 * y2 - 0.5 * y3;
+    let c = -0.5 * y0 + 0.5 * y2;
+    let d = y1;
+    ((a * t + b) * t + c) * t + d
 }
 
 /// Control-point amplitudes at each quant slot phase (aligned with [`slot_x`]).
@@ -331,10 +427,30 @@ mod tests {
         let mut bank = WavetableBank::factory_sine();
         let slot_count = 8;
         let before = sample_at_quant_phase(bank.frame(0), 3, slot_count);
-        apply_quant_slot_amplitude(bank.frame_mut(0), 3, slot_count, 0.85);
+        apply_quant_slot_amplitude(bank.frame_mut(0), 3, slot_count, 0.85, WtQuantInterp::Hold);
         let after = sample_at_quant_phase(bank.frame(0), 3, slot_count);
         assert!((after - before).abs() > 0.2);
         assert!((after - 0.85).abs() < 1e-3);
+    }
+
+    #[test]
+    fn linear_interp_smooths_between_slots() {
+        let mut frame = vec![0.0_f32; 256];
+        let points = vec![-1.0, 1.0, -1.0, 1.0];
+        resample_frame_from_quant_points(&mut frame, &points, WtQuantInterp::Linear);
+        let mid = frame[frame.len() / 4];
+        assert!(mid.abs() < 0.95 && mid.abs() > 0.05, "mid should blend, got {mid}");
+    }
+
+    #[test]
+    fn hold_flat_per_slot_band() {
+        let mut frame = vec![0.0_f32; 256];
+        let points = vec![0.0, 1.0, 0.0, 1.0];
+        resample_frame_from_quant_points(&mut frame, &points, WtQuantInterp::Hold);
+        let q1 = frame[32];
+        let q2 = frame[96];
+        assert!((q1 - 0.0).abs() < 1e-3);
+        assert!((q2 - 1.0).abs() < 1e-3);
     }
 
     #[test]

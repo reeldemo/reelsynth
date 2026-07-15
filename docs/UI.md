@@ -131,6 +131,7 @@ When **Quant** > 0 and tool is **Select**:
 
 - Vertical grid at each slot; **knob handles** at waveform intersections (hover when quant > 64)
 - Drag snaps X to nearest slot on press; **locks slot** for entire gesture; fine Y edits **amplitude** (wave height) at that quant point
+- **Interp** dropdown in the 2D toolbar (right side): **Hold** (step/rectangular bands), **Linear** (segments between knobs), **Spline** (Catmull-Rom smooth curve). Switching mode rebuilds the frame from current knob heights.
 - Tooltip / status: **Drag knobs to reshape this frame**
 - **Shape** menu (Saw / Square / Sine / Triangle) click-assigns a template to the selected frame
 - **Curve** tool still edits slot→frame morph map; Select handles edit wave shape at quant points
