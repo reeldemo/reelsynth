@@ -2,6 +2,7 @@
 
 use super::audio_commands::{drain_commands, AudioCmd};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use cpal::{Sample, SampleFormat, SupportedStreamConfig};
 use crossbeam_channel::Sender;
 use reelsynth::{Patch, ScopeMonitor, SequenceProject, SynthEngine, TransportState, WavetableBank};
 use std::sync::{Arc, RwLock};
@@ -37,6 +38,77 @@ impl AudioHandle {
     }
 }
 
+fn sync_transport_and_sequence(
+    engine: &SynthEngine,
+    transport_for_audio: &Arc<RwLock<TransportState>>,
+    sequence_for_audio: &Arc<RwLock<SequenceProject>>,
+) {
+    if let Ok(mut t) = transport_for_audio.write() {
+        let mut snap = engine.transport().clone();
+        if snap.recording {
+            let step = engine.patch().sequence.quantize.division.beats_per_step();
+            snap.live_recorded = engine.sequencer().recorder.snapshot(step);
+        } else {
+            snap.live_recorded.clear();
+        }
+        *t = snap;
+    }
+    if let Ok(mut s) = sequence_for_audio.write() {
+        *s = engine.patch().sequence.clone();
+    }
+}
+
+fn render_f32(engine: &mut SynthEngine, stereo: bool, out: &mut [f32]) {
+    if stereo {
+        engine.process_stereo(out);
+    } else {
+        engine.process(out);
+    }
+}
+
+fn build_stream<T>(
+    device: &cpal::Device,
+    config: SupportedStreamConfig,
+    stereo: bool,
+    mut engine: SynthEngine,
+    rx: crossbeam_channel::Receiver<AudioCmd>,
+    bank_for_audio: Arc<RwLock<WavetableBank>>,
+    transport_for_audio: Arc<RwLock<TransportState>>,
+    sequence_for_audio: Arc<RwLock<SequenceProject>>,
+) -> Result<cpal::Stream, String>
+where
+    T: Sample + cpal::SizedSample,
+    f32: cpal::FromSample<T>,
+    T: cpal::FromSample<f32>,
+{
+    let err_fn = |e| eprintln!("audio stream error: {e}");
+    device
+        .build_output_stream(
+            &config.into(),
+            move |data: &mut [T], _| {
+                drain_commands(
+                    &mut engine,
+                    &rx,
+                    &bank_for_audio,
+                    &transport_for_audio,
+                );
+                let mut buf = vec![0.0f32; data.len()];
+                render_f32(&mut engine, stereo, &mut buf);
+                for (out, sample) in data.iter_mut().zip(buf.iter()) {
+                    *out = T::from_sample(*sample);
+                }
+                sync_transport_and_sequence(
+                    &engine,
+                    &transport_for_audio,
+                    &sequence_for_audio,
+                );
+            },
+            err_fn,
+            None,
+        )
+        .map_err(|e| e.to_string())
+}
+
 pub fn start_audio(sample_rate: u32) -> Result<AudioHandle, String> {
     let bank = WavetableBank::factory_saw_morph();
     let patch = Patch::factory_lead();
@@ -62,100 +134,62 @@ pub fn start_audio(sample_rate: u32) -> Result<AudioHandle, String> {
         engine = SynthEngine::new(WavetableBank::factory_saw_morph(), Patch::factory_lead(), sr);
     }
     let scope_monitor = engine.scope_monitor().clone();
+    let stereo = config.channels() >= 2;
+    let sample_format = config.sample_format();
 
-    let mut engine = engine;
-    let err_fn = |e| eprintln!("audio stream error: {e}");
-
-    let stream = match config.sample_format() {
-        cpal::SampleFormat::F32 => {
-            let channels = config.channels() as usize;
-            if channels >= 2 {
-                device.build_output_stream(
-                    &config.into(),
-                    move |data: &mut [f32], _| {
-                        drain_commands(
-                            &mut engine,
-                            &rx,
-                            &bank_for_audio,
-                            &transport_for_audio,
-                        );
-                        engine.process_stereo(data);
-                        if let Ok(mut t) = transport_for_audio.write() {
-                            let mut snap = engine.transport().clone();
-                            if snap.recording {
-                                let step = engine.patch().sequence.quantize.division.beats_per_step();
-                                snap.live_recorded =
-                                    engine.sequencer().recorder.snapshot(step);
-                            } else {
-                                snap.live_recorded.clear();
-                            }
-                            *t = snap;
-                        }
-                        if let Ok(mut s) = sequence_for_audio.write() {
-                            *s = engine.patch().sequence.clone();
-                        }
-                    },
-                    err_fn,
-                    None,
-                )
-            } else {
-                device.build_output_stream(
-                    &config.into(),
-                    move |data: &mut [f32], _| {
-                        drain_commands(
-                            &mut engine,
-                            &rx,
-                            &bank_for_audio,
-                            &transport_for_audio,
-                        );
-                        engine.process(data);
-                        if let Ok(mut t) = transport_for_audio.write() {
-                            let mut snap = engine.transport().clone();
-                            if snap.recording {
-                                let step = engine.patch().sequence.quantize.division.beats_per_step();
-                                snap.live_recorded =
-                                    engine.sequencer().recorder.snapshot(step);
-                            } else {
-                                snap.live_recorded.clear();
-                            }
-                            *t = snap;
-                        }
-                        if let Ok(mut s) = sequence_for_audio.write() {
-                            *s = engine.patch().sequence.clone();
-                        }
-                    },
-                    err_fn,
-                    None,
-                )
-            }
-        }
-        cpal::SampleFormat::I16 => device.build_output_stream(
-            &config.into(),
-            move |data: &mut [i16], _| {
-                drain_commands(
-                    &mut engine,
-                    &rx,
-                    &bank_for_audio,
-                    &transport_for_audio,
-                );
-                let mut buf = vec![0.0f32; data.len()];
-                engine.process(&mut buf);
-                if let Ok(mut t) = transport_for_audio.write() {
-                    *t = engine.transport().clone();
-                }
-                if let Ok(mut s) = sequence_for_audio.write() {
-                    *s = engine.patch().sequence.clone();
-                }
-                for (out, sample) in data.iter_mut().zip(buf.iter()) {
-                    *out = (sample.clamp(-1.0, 1.0) * i16::MAX as f32) as i16;
-                }
-            },
-            err_fn,
-            None,
-        ),
+    let stream = match sample_format {
+        SampleFormat::F32 => build_stream::<f32>(
+            &device,
+            config,
+            stereo,
+            engine,
+            rx,
+            bank_for_audio,
+            transport_for_audio,
+            sequence_for_audio,
+        )?,
+        SampleFormat::I16 => build_stream::<i16>(
+            &device,
+            config,
+            stereo,
+            engine,
+            rx,
+            bank_for_audio,
+            transport_for_audio,
+            sequence_for_audio,
+        )?,
+        SampleFormat::I32 => build_stream::<i32>(
+            &device,
+            config,
+            stereo,
+            engine,
+            rx,
+            bank_for_audio,
+            transport_for_audio,
+            sequence_for_audio,
+        )?,
+        SampleFormat::U8 => build_stream::<u8>(
+            &device,
+            config,
+            stereo,
+            engine,
+            rx,
+            bank_for_audio,
+            transport_for_audio,
+            sequence_for_audio,
+        )?,
+        SampleFormat::U16 => build_stream::<u16>(
+            &device,
+            config,
+            stereo,
+            engine,
+            rx,
+            bank_for_audio,
+            transport_for_audio,
+            sequence_for_audio,
+        )?,
         other => return Err(format!("unsupported sample format: {other:?}")),
-    }
-    .map_err(|e| e.to_string())?;
+    };
 
     stream.play().map_err(|e| e.to_string())?;
 
@@ -168,4 +202,3 @@ pub fn start_audio(sample_rate: u32) -> Result<AudioHandle, String> {
         scope: scope_monitor,
     })
 }
-
