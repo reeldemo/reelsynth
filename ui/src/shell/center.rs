@@ -118,7 +118,7 @@ pub(super) fn draw_center(
             let views_h = views_rect.height().max(WT_VIEW_MIN_HEIGHT * s * 0.5);
             region(ui, views_rect, |ui| {
             ui.painter().rect_filled(views_rect, 8.0, Tokens::default().bg);
-            if config.show_osc_column {
+            if config.show_osc_column && state.wt_view_3d_mode != WtView3dMode::Stack {
                 paint_ambient_waves(ui.painter(), views_rect, time);
             }
             ui.horizontal(|ui| {
