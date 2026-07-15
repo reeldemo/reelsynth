@@ -49,7 +49,7 @@ Run from repo root after build + launch. Output: `brand/mockups/audits/YYYY-MM-D
 ### Build + launch
 
 ```bash
-cd /Users/julian/Documents/coding-projects/reeldemo.io/reelsynth
+cd "$(git rev-parse --show-toplevel)"
 pkill -f 'target/debug/reelsynth-ui' || true
 cargo build -p reelsynth-app --bin reelsynth-ui
 ./target/debug/reelsynth-ui &
@@ -320,9 +320,9 @@ Check these when audit findings point to "looks wrong" but layout numbers seem f
 Open locally for side-by-side (adjust path):
 
 ```
-file:///Users/julian/Documents/coding-projects/reeldemo.io/reelsynth/brand/mockups/s1-performance.html
-file:///Users/julian/Documents/coding-projects/reeldemo.io/reelsynth/brand/mockups/index.html
-file:///Users/julian/Documents/coding-projects/reeldemo.io/reelsynth/brand/mockups/components.html
+file://{repo-root}/brand/mockups/s1-performance.html
+file://{repo-root}/brand/mockups/index.html
+file://{repo-root}/brand/mockups/components.html
 ```
 
 With browser MCP: navigate, snapshot, screenshot mockup at same viewport as app screenshot.

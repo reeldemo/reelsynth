@@ -131,7 +131,7 @@ When no screenshot is attached, the agent **must** capture the running app itsel
 #### 1. Build and launch
 
 ```bash
-cd /Users/julian/Documents/coding-projects/reeldemo.io/reelsynth
+cd "$(git rev-parse --show-toplevel)"
 cargo build -p reelsynth-app --bin reelsynth-ui
 ./target/debug/reelsynth-ui &
 sleep 3   # wait for window to appear and first frame to paint

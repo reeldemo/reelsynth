@@ -37,3 +37,7 @@ See [CONTRIBUTING.md](../CONTRIBUTING.md) for capture and release upload steps.
 ## License
 
 ReelSynth engine: **MIT**. Reeldemo Studio (agent compose, Ableton handoff) is commercial and documented separately in [REELDEMO_INTEGRATION.md](REELDEMO_INTEGRATION.md).
+
+## Marketing docs
+
+Go-to-market and landing-page funnel docs live in the [reeldemo.github.io](https://github.com/reeldemo/reeldemo.github.io/tree/main/docs) repo (`docs/GTM.md`), not here.
