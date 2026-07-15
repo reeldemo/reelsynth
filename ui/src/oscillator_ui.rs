@@ -15,6 +15,7 @@ pub struct WaveLayerUi {
     pub pulse_width: f32,
     pub phase: f32,
     pub enabled: bool,
+    pub invert: bool,
 }
 
 impl Default for WaveLayerUi {
@@ -27,6 +28,7 @@ impl Default for WaveLayerUi {
             pulse_width: 0.5,
             phase: 0.0,
             enabled: true,
+            invert: false,
         }
     }
 }
@@ -41,6 +43,7 @@ impl WaveLayerUi {
             pulse_width: layer.pulse_width,
             phase: layer.phase,
             enabled: layer.level > 0.0,
+            invert: layer.invert,
         }
     }
 
@@ -53,6 +56,7 @@ impl WaveLayerUi {
             pulse_width: self.pulse_width,
             phase: self.phase,
             wavetable_id: None,
+            invert: self.invert,
         }
     }
 }

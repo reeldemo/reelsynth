@@ -1,21 +1,25 @@
 //! ReelSynth standalone app entry point.
 
 mod app;
+mod app_settings;
 mod audio_commands;
 mod audio_host;
+mod keyboard_layout;
 mod midi_host;
 mod midi_input;
 
 use app::ReelSynthApp;
+use app_settings::AppSettings;
 use audio_host::start_audio;
 use crossbeam_channel;
 use eframe::egui;
 use midi_host::MidiDevices;
 use reelsynth::engine::MidiEvent;
-use reelsynth_ui::{APP_HEIGHT_FULL, APP_MIN_HEIGHT, APP_MIN_WIDTH};
+use reelsynth_ui::{set_gpu_renderer_active, APP_HEIGHT_FULL, APP_MIN_HEIGHT, APP_MIN_WIDTH};
 use std::sync::Arc;
 
 fn main() -> eframe::Result<()> {
+    let settings = AppSettings::load();
     let midi_devices = MidiDevices::enumerate();
     let (midi_event_tx, midi_event_rx) = crossbeam_channel::unbounded::<MidiEvent>();
 
@@ -24,21 +28,24 @@ fn main() -> eframe::Result<()> {
         .with_min_inner_size([APP_MIN_WIDTH, APP_MIN_HEIGHT])
         .with_title("ReelSynth");
 
-    // cpal (WASAPI) and winit both touch COM on Windows; disable OLE drag-and-drop
-    // so audio init after the window is created stays compatible with cpal.
     #[cfg(windows)]
     {
         viewport = viewport.with_drag_and_drop(false);
     }
 
+    let renderer = settings.graphics_backend.to_renderer();
+    let gpu_waveforms = settings.gpu_waveforms;
+
     eframe::run_native(
         "ReelSynth",
         eframe::NativeOptions {
             viewport,
+            renderer,
             ..Default::default()
         },
         Box::new(move |cc| {
             reelsynth_ui_theme::apply(&cc.egui_ctx);
+            set_gpu_renderer_active(&cc.egui_ctx, gpu_waveforms);
 
             let audio = match start_audio(44100) {
                 Ok(a) => Some(Arc::new(a)),
@@ -53,6 +60,7 @@ fn main() -> eframe::Result<()> {
                 midi_devices,
                 midi_event_tx,
                 midi_event_rx,
+                settings,
             )))
         }),
     )

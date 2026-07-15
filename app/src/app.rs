@@ -1,7 +1,9 @@
 //! ReelSynth standalone application state.
 
+use crate::app_settings::{AppSettings, GraphicsBackend, KeyboardLayoutSetting};
 use crate::audio_commands::AudioCmd;
 use crate::audio_host::AudioHandle;
+use crate::keyboard_layout::{detect_layout, keyboard_note, qwer_index, ComputerLayout};
 use crate::midi_host::{MidiDevices, MidiInputHandle};
 use crossbeam_channel::{Receiver, Sender};
 use eframe::egui;
@@ -69,6 +71,9 @@ pub struct ReelSynthApp {
     arp: ArpLive,
     pending_record_sync: bool,
     pending_record_notes: HashMap<u8, PendingRecordNote>,
+    app_settings: AppSettings,
+    keyboard_layout: ComputerLayout,
+    last_midi_poll_secs: f64,
 }
 
 #[derive(Clone, Debug)]
@@ -84,11 +89,21 @@ impl ReelSynthApp {
         midi_devices: MidiDevices,
         midi_event_tx: Sender<MidiEvent>,
         midi_event_rx: Receiver<MidiEvent>,
+        app_settings: AppSettings,
     ) -> Self {
+        let keyboard_layout = match app_settings.keyboard_layout {
+            KeyboardLayoutSetting::Auto => detect_layout(),
+            KeyboardLayoutSetting::Qwerty => ComputerLayout::Qwerty,
+            KeyboardLayoutSetting::Azerty => ComputerLayout::Azerty,
+            KeyboardLayoutSetting::Qwertz => ComputerLayout::Qwertz,
+        };
         let status = if audio.is_some() {
-            "Audio OK — click keys, QWERTY (Z–M), or MIDI".into()
+            format!(
+                "Audio OK — keys: {} · click or MIDI",
+                keyboard_layout.label()
+            )
         } else {
-            "No audio — UI only".into()
+            format!("No audio — UI only · keys: {}", keyboard_layout.label())
         };
         let midi_handle = MidiInputHandle::disconnected();
         let mut state = UiState {
@@ -122,7 +137,112 @@ impl ReelSynthApp {
             arp: ArpLive::default(),
             pending_record_sync: false,
             pending_record_notes: HashMap::new(),
+            app_settings,
+            keyboard_layout,
+            last_midi_poll_secs: 0.0,
         }
+    }
+
+    fn effective_keyboard_layout(&self) -> ComputerLayout {
+        match self.app_settings.keyboard_layout {
+            KeyboardLayoutSetting::Auto => self.keyboard_layout,
+            KeyboardLayoutSetting::Qwerty => ComputerLayout::Qwerty,
+            KeyboardLayoutSetting::Azerty => ComputerLayout::Azerty,
+            KeyboardLayoutSetting::Qwertz => ComputerLayout::Qwertz,
+        }
+    }
+
+    fn poll_midi_autoconnect(&mut self, now_secs: f64) {
+        if now_secs - self.last_midi_poll_secs < 2.0 {
+            return;
+        }
+        self.last_midi_poll_secs = now_secs;
+        let changed = self.midi_devices.refresh();
+        if !self.app_settings.auto_midi_keyboard {
+            return;
+        }
+        if let Some(idx) = self.midi_devices.keyboard_like_index() {
+            if self.midi_selected != idx || changed {
+                self.midi_selected = idx;
+                self.midi_handle = MidiInputHandle::connect(
+                    &self.midi_devices,
+                    idx,
+                    self.midi_event_tx.clone(),
+                )
+                .unwrap_or_else(|_| MidiInputHandle::disconnected());
+                let name = self
+                    .midi_devices
+                    .names
+                    .get(idx)
+                    .cloned()
+                    .unwrap_or_else(|| "MIDI".into());
+                self.state.midi_device = name.clone();
+                self.state.status = format!("MIDI: {name}");
+            }
+        } else if self.midi_selected != 0 && changed {
+            self.midi_selected = 0;
+            self.midi_handle = MidiInputHandle::disconnected();
+            self.state.midi_device = "None".into();
+        }
+    }
+
+    fn draw_settings_window(&mut self, ctx: &egui::Context) {
+        egui::Window::new("Settings")
+            .collapsible(true)
+            .default_width(280.0)
+            .show(ctx, |ui| {
+                ui.label("Graphics");
+                let mut backend_idx = self.app_settings.graphics_backend.index();
+                egui::ComboBox::from_label("Backend")
+                    .selected_text(self.app_settings.graphics_backend.label())
+                    .show_ui(ui, |ui| {
+                        for (i, label) in ["Auto", "GPU (WGPU)", "OpenGL (Glow)"].iter().enumerate() {
+                            if ui.selectable_label(backend_idx == i, *label).clicked() {
+                                backend_idx = i;
+                                self.app_settings.graphics_backend = GraphicsBackend::from_index(i);
+                                self.app_settings.pending_backend_restart = true;
+                                self.app_settings.save();
+                            }
+                        }
+                    });
+                if ui.checkbox(&mut self.app_settings.gpu_waveforms, "GPU waveforms").changed() {
+                    self.app_settings.save();
+                }
+                if self.app_settings.pending_backend_restart {
+                    ui.colored_label(
+                        egui::Color32::from_rgb(0xde, 0xa0, 0x4a),
+                        "Restart required for graphics backend change",
+                    );
+                }
+                ui.separator();
+                ui.label("Input");
+                if ui
+                    .checkbox(
+                        &mut self.app_settings.auto_midi_keyboard,
+                        "Auto-connect MIDI keyboard",
+                    )
+                    .changed()
+                {
+                    self.app_settings.save();
+                }
+                let mut layout_idx = self.app_settings.keyboard_layout.index();
+                egui::ComboBox::from_label("Keyboard layout")
+                    .selected_text(self.app_settings.keyboard_layout.label())
+                    .show_ui(ui, |ui| {
+                        for (i, label) in ["Auto", "QWERTY", "AZERTY", "QWERTZ"].iter().enumerate() {
+                            if ui.selectable_label(layout_idx == i, *label).clicked() {
+                                layout_idx = i;
+                                self.app_settings.keyboard_layout =
+                                    KeyboardLayoutSetting::from_index(i);
+                                self.app_settings.save();
+                            }
+                        }
+                    });
+                ui.label(format!(
+                    "Detected: {}",
+                    self.effective_keyboard_layout().label()
+                ));
+            });
     }
 
     fn compose_is_recording(&self) -> bool {
@@ -1027,49 +1147,19 @@ fn freq_to_midi_note(freq: f32) -> u8 {
     midi.round().clamp(0.0, 127.0) as u8
 }
 
-fn keyboard_note(key: egui::Key) -> Option<u8> {
-    use egui::Key;
-    Some(match key {
-        Key::Z => 48,
-        Key::S => 49,
-        Key::X => 50,
-        Key::D => 51,
-        Key::C => 52,
-        Key::V => 53,
-        Key::G => 54,
-        Key::B => 55,
-        Key::H => 56,
-        Key::N => 57,
-        Key::J => 58,
-        Key::M => 59,
-        _ => return None,
-    })
-}
-
-fn qwer_index(key: egui::Key) -> Option<usize> {
-    use egui::Key;
-    Some(match key {
-        Key::Z => 0,
-        Key::S => 1,
-        Key::X => 2,
-        Key::D => 3,
-        Key::C => 4,
-        Key::V => 5,
-        Key::G => 6,
-        Key::B => 7,
-        Key::H => 8,
-        Key::N => 9,
-        Key::J => 10,
-        Key::M => 11,
-        _ => return None,
-    })
-}
-
-fn keyboard_performance_key(key: egui::Key, layout: PerformanceLayout) -> Option<PerformanceKey> {
+fn keyboard_performance_key(
+    key: egui::Key,
+    layout: PerformanceLayout,
+    computer_layout: ComputerLayout,
+) -> Option<PerformanceKey> {
     match layout {
-        PerformanceLayout::Piano => keyboard_note(key).map(PerformanceKey::Note),
-        PerformanceLayout::Scale => qwer_index(key).map(PerformanceKey::ScaleDegree),
-        PerformanceLayout::Chords => qwer_index(key).and_then(|i| {
+        PerformanceLayout::Piano => {
+            keyboard_note(key, computer_layout).map(PerformanceKey::Note)
+        }
+        PerformanceLayout::Scale => {
+            qwer_index(key, computer_layout).map(PerformanceKey::ScaleDegree)
+        }
+        PerformanceLayout::Chords => qwer_index(key, computer_layout).and_then(|i| {
             if i < 7 {
                 Some(PerformanceKey::ChordDegree(i))
             } else {
@@ -1126,6 +1216,7 @@ impl eframe::App for ReelSynthApp {
             .performance
             .to_settings()
             .layout;
+        let computer_layout = self.effective_keyboard_layout();
         ctx.input(|i| {
             for event in &i.events {
                 if let egui::Event::Key {
@@ -1135,7 +1226,9 @@ impl eframe::App for ReelSynthApp {
                     ..
                 } = event
                 {
-                    if let Some(perf_key) = keyboard_performance_key(*key, layout) {
+                    if let Some(perf_key) =
+                        keyboard_performance_key(*key, layout, computer_layout)
+                    {
                         if *pressed {
                             match perf_key {
                                 PerformanceKey::Note(n) => self.handle_live_note_on(n, 0.9),
@@ -1151,6 +1244,10 @@ impl eframe::App for ReelSynthApp {
                 }
             }
         });
+
+        let now_secs = ctx.input(|i| i.time);
+        self.poll_midi_autoconnect(now_secs);
+        self.draw_settings_window(ctx);
 
         self.poll_compose_transport();
         if self.pending_record_sync && !self.state.compose.transport.recording {

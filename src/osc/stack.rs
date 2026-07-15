@@ -10,15 +10,22 @@ pub enum StackMode {
     #[default]
     Add,
     Avg,
+    AvgEqual,
 }
 
 impl StackMode {
     pub fn from_str(s: &str) -> Self {
         match s.to_ascii_lowercase().as_str() {
             "avg" | "average" => Self::Avg,
+            "avg_equal" | "avgequal" | "avg equal" => Self::AvgEqual,
             _ => Self::Add,
         }
     }
+}
+
+/// Signed contribution multiplier for a stack layer.
+pub fn layer_sign(layer: &WaveLayer) -> f32 {
+    if layer.invert { -1.0 } else { 1.0 }
 }
 
 /// Resolve a wavetable bank for a stack layer (falls back to the osc default bank).
@@ -89,6 +96,7 @@ pub fn sample_stack(
     let mode = StackMode::from_str(&osc.stack_mode);
     let mut sum = 0.0f32;
     let mut weight = 0.0f32;
+    let mut count = 0u32;
 
     for layer in &osc.wave_layers {
         if layer.level <= 0.0 {
@@ -107,16 +115,37 @@ pub fn sample_stack(
             wt_pos_off,
             freq_mult,
         );
-        sum += sample * layer.level;
-        weight += layer.level;
+        let sign = layer_sign(layer);
+        let signed = sign * sample * layer.level;
+        match mode {
+            StackMode::Add => sum += signed,
+            StackMode::Avg => {
+                sum += signed;
+                weight += layer.level.abs();
+            }
+            StackMode::AvgEqual => {
+                sum += sign * sample;
+                count += 1;
+            }
+        }
     }
 
-    if weight <= 0.0 {
-        return 0.0;
-    }
     match mode {
         StackMode::Add => sum,
-        StackMode::Avg => sum / weight,
+        StackMode::Avg => {
+            if weight <= 0.0 {
+                0.0
+            } else {
+                sum / weight
+            }
+        }
+        StackMode::AvgEqual => {
+            if count == 0 {
+                0.0
+            } else {
+                sum / count as f32
+            }
+        }
     }
 }
 
@@ -209,6 +238,99 @@ mod tests {
         assert!(
             (low - high).abs() > 1e-4,
             "wt stack should morph: low={low} high={high}"
+        );
+    }
+
+    #[test]
+    fn stack_invert_cancels_in_add_mode() {
+        let bank = WavetableBank::factory_saw_morph();
+        let osc = Oscillator {
+            wave_layers: vec![
+                WaveLayer {
+                    source_type: "sine".into(),
+                    level: 1.0,
+                    ..WaveLayer::default()
+                },
+                WaveLayer {
+                    source_type: "sine".into(),
+                    level: 1.0,
+                    invert: true,
+                    ..WaveLayer::default()
+                },
+            ],
+            stack_mode: "add".into(),
+            ..Oscillator::default_va()
+        };
+        let s = sample_stack(
+            &osc,
+            &bank,
+            std::slice::from_ref(&bank),
+            &[],
+            0.25,
+            0.01,
+            0.0,
+            WtWarpMode::None,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+        );
+        assert!(s.abs() < 1e-4, "inverted sine should cancel: {s}");
+    }
+
+    #[test]
+    fn avg_equal_differs_from_weighted_avg() {
+        let bank = WavetableBank::factory_saw_morph();
+        let layers = Oscillator {
+            wave_layers: vec![
+                WaveLayer {
+                    source_type: "saw".into(),
+                    level: 1.0,
+                    ..WaveLayer::default()
+                },
+                WaveLayer {
+                    source_type: "sine".into(),
+                    level: 0.25,
+                    ..WaveLayer::default()
+                },
+            ],
+            ..Oscillator::default_va()
+        };
+        let mut avg_osc = layers.clone();
+        avg_osc.stack_mode = "avg".into();
+        let mut eq_osc = layers;
+        eq_osc.stack_mode = "avg_equal".into();
+        let avg = sample_stack(
+            &avg_osc,
+            &bank,
+            std::slice::from_ref(&bank),
+            &[],
+            0.25,
+            0.01,
+            0.0,
+            WtWarpMode::None,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+        );
+        let eq = sample_stack(
+            &eq_osc,
+            &bank,
+            std::slice::from_ref(&bank),
+            &[],
+            0.25,
+            0.01,
+            0.0,
+            WtWarpMode::None,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+        );
+        assert!(
+            (avg - eq).abs() > 1e-4,
+            "avg ({avg}) vs avg_equal ({eq}) should differ"
         );
     }
 }

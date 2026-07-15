@@ -152,6 +152,7 @@ pub enum AuditId {
     CenterScopeCellOut,
     CenterWtStrip,
     CenterWtStripCell(usize),
+    CenterWtStripLayerChip(usize),
     CenterWtMorph,
     CenterWtViews,
     CenterWt2d,
@@ -227,6 +228,7 @@ impl AuditId {
             Self::OscModTargetSelect(i) => format!("osc.mod.target_select[{i}]"),
             Self::OscModAmountDrag(i) => format!("osc.mod.amount_drag[{i}]"),
             Self::CenterWtStripCell(i) => format!("center.wt_strip.cell[{i}]"),
+            Self::CenterWtStripLayerChip(i) => format!("center.wt_strip.layer[{i}]"),
             Self::FooterChordPad(i) => format!("footer.chord_pad[{i}]"),
             Self::ComposeTrackRow(i) => format!("compose.track_row[{i}]"),
             Self::ComposeArrangementClip(i) => format!("compose.arrangement_clip[{i}]"),
@@ -260,7 +262,8 @@ impl AuditId {
             | Self::ComposeRollToolbar | Self::ComposeRollKeys | Self::ComposeRollGrid
             | Self::ComposeRollVelocity | Self::ComposeRollAutomation
             | Self::ComposeSceneCell(_) | Self::WidgetTabBar | Self::WidgetAdsrGraph
-            | Self::CenterWtStripCell(_) | Self::CenterScopeCellOsc | Self::CenterScopeCellFilter
+            | Self::CenterWtStripCell(_) | Self::CenterWtStripLayerChip(_)
+            | Self::CenterScopeCellOsc | Self::CenterScopeCellFilter
             | Self::CenterScopeCellFx | Self::CenterScopeCellOut | Self::RailFilterTabs
             | Self::RailFiltEnvGraph | Self::RailAmpEnvGraph | Self::CenterWt2d
             | Self::CenterWt2dPlot | Self::CenterWt2dCurveEditor | Self::CenterWt2dShapeEditor
@@ -616,7 +619,7 @@ fn parent_bounds(
         | AuditId::CenterScopeCellFilter
         | AuditId::CenterScopeCellFx
         | AuditId::CenterScopeCellOut => Some(AuditId::CenterScope),
-        AuditId::CenterWtStripCell(_) => Some(AuditId::CenterWtStrip),
+        AuditId::CenterWtStripCell(_) | AuditId::CenterWtStripLayerChip(_) => Some(AuditId::CenterWtStrip),
         AuditId::CenterWt2dToolbar
         | AuditId::CenterWt2dPlot
         | AuditId::CenterWt2dCurveEditor

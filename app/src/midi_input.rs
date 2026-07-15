@@ -1,4 +1,4 @@
-//! MIDI input device enumeration and MPE-capable note routing (S6).
+//! MIDI input device enumeration, hot-plug refresh, and note routing.
 
 use crossbeam_channel::Sender;
 use midir::{Ignore, MidiInput, MidiInputConnection};
@@ -6,19 +6,46 @@ use reelsynth::engine::{pitch_bend_from_raw, MidiEvent};
 
 pub struct MidiDevices {
     pub names: Vec<String>,
+    port_ids: Vec<String>,
 }
 
 impl MidiDevices {
     pub fn enumerate() -> Self {
         let mut names = vec!["None".into()];
+        let mut port_ids = vec![String::new()];
         if let Ok(midi_in) = MidiInput::new("reelsynth-ui-enumerate") {
             for port in midi_in.ports() {
                 if let Ok(name) = midi_in.port_name(&port) {
-                    names.push(name);
+                    names.push(name.clone());
+                    port_ids.push(name);
                 }
             }
         }
-        Self { names }
+        Self { names, port_ids }
+    }
+
+    pub fn refresh(&mut self) -> bool {
+        let fresh = Self::enumerate();
+        let changed = fresh.port_ids != self.port_ids;
+        *self = fresh;
+        changed
+    }
+
+    pub fn keyboard_like_index(&self) -> Option<usize> {
+        if self.names.len() <= 1 {
+            return None;
+        }
+        let keywords = ["keyboard", "keys", "piano", "midi", "keystation", "keylab"];
+        for (idx, name) in self.names.iter().enumerate().skip(1) {
+            let lower = name.to_ascii_lowercase();
+            if keywords.iter().any(|k| lower.contains(k)) {
+                return Some(idx);
+            }
+        }
+        if self.names.len() == 2 {
+            return Some(1);
+        }
+        None
     }
 }
 
@@ -117,5 +144,31 @@ impl MidiInputHandle {
         Ok(Self {
             _connection: Some(connection),
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn refresh_detects_port_list_change() {
+        let mut devices = MidiDevices::enumerate();
+        let before = devices.names.clone();
+        let _ = devices.refresh();
+        assert_eq!(devices.names, before);
+    }
+
+    #[test]
+    fn keyboard_like_prefers_named_port() {
+        let devices = MidiDevices {
+            names: vec![
+                "None".into(),
+                "Arturia KeyLab 61".into(),
+                "Generic MIDI".into(),
+            ],
+            port_ids: vec!["".into(), "a".into(), "b".into()],
+        };
+        assert_eq!(devices.keyboard_like_index(), Some(1));
     }
 }

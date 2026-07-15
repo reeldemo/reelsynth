@@ -46,11 +46,11 @@ pub struct WtToolbarResponse {
 pub struct WtToolbar;
 
 impl WtToolbar {
-    pub fn show(ui: &mut Ui, tool: &mut WtEditTool) -> bool {
-        Self::show_with_analyze(ui, tool).tool_changed
+    pub fn show(ui: &mut Ui, tool: &mut WtEditTool, wave_quant: u8) -> bool {
+        Self::show_with_analyze(ui, tool, wave_quant).tool_changed
     }
 
-    pub fn show_with_analyze(ui: &mut Ui, tool: &mut WtEditTool) -> WtToolbarResponse {
+    pub fn show_with_analyze(ui: &mut Ui, tool: &mut WtEditTool, wave_quant: u8) -> WtToolbarResponse {
         let tokens = Tokens::default();
         let (rect, _) = ui.allocate_exact_size(
             egui::vec2(ui.available_width(), WT_TOOLBAR_HEIGHT),
@@ -82,11 +82,17 @@ impl WtToolbar {
                     WtEditTool::Select,
                     WtEditTool::Curve,
                     WtEditTool::Shape,
-                    WtEditTool::Pencil,
                 ] {
+                    if candidate == WtEditTool::Pencil {
+                        continue;
+                    }
                     let hover = match candidate {
                         WtEditTool::Select => {
-                            "Drag waveform to shape · drag background to scan position"
+                            if wave_quant > 0 {
+                                "Drag quant handles to shape · drag background to scan"
+                            } else {
+                                "Drag waveform to shape · drag background to scan position"
+                            }
                         }
                         WtEditTool::Pencil => "Freehand draw (advanced)",
                         WtEditTool::Curve => "Edit slot → frame morph curve",

@@ -10,7 +10,7 @@ The standalone app (`reelsynth-app`) uses a fixed **1280×880** layout (see `ui/
 | 2 | Oscillator column (left rail) | Per-osc level, pan, detune, unison, FM — **Design mode only** |
 | 3 | Center column | Filter, ADSR, LFO, mod matrix, FX rack — **Design mode only** |
 | 4 | WT editor | Position strip, 2D waveform, 3D surface, morph A/B — **Design mode only** |
-| 5 | Scope strip | Live osc → filter → FX → out |
+| 5 | Scope strip | Live osc → filter → FX → out (scrollable when 3+ oscs) |
 | 6 | Piano (optional) | On-screen keyboard, **88 keys A0–C8** with horizontal scroll |
 
 ---
@@ -52,6 +52,7 @@ Toggle **Compose** in the header to replace the center column with a mini-DAW la
 | **Key / Scale / Layout** | Performance input: root key, scale mode, piano vs scale-fold vs chord row |
 | **Arp** (footer) | Toggle arpeggiator; input mode, style, rate, octaves, gate, latch |
 | **MIDI** combo | Select hardware MIDI input device |
+| **Settings** window | Graphics backend (Auto/WGPU/Glow), GPU waveforms, auto MIDI, keyboard layout |
 | **Status** | Audio/MIDI state, save confirmations, errors |
 
 ---
@@ -60,9 +61,10 @@ Toggle **Compose** in the header to replace the center column with a mini-DAW la
 
 | Input | Notes |
 |-------|-------|
-| `Z S X D C V G B H N J M` | One octave (when app focused) |
-| Click piano keys | Same as QWERTY when piano visible |
-| MIDI controller | Full keyboard range; MPE dual-zone enabled in engine |
+| `Z S X D C V G B H N J M` | One octave — **QWERTY** play row (auto-detected) |
+| AZERTY / QWERTZ | Same semitone positions on locale play row (Settings → Keyboard layout) |
+| Click piano keys | Same as computer keys when piano visible |
+| MIDI controller | Full keyboard range; **auto-connect** when a keyboard-like port appears |
 
 In **Compose** mode, QWERTY and piano input route to the armed clip when recording; otherwise they monitor through the synth. Piano roll focus + pencil tool auditions quietly.
 
@@ -100,13 +102,40 @@ WT position for the active osc syncs with the center WT strip.
 
 Collapsible **Stack** panel on the active oscillator tab:
 
-- Layer list: type (saw / sine / square / triangle / pulse / wavetable), level, detune, on/off
+- Layer list: type (saw / sine / square / triangle / pulse / wavetable), level, detune, **+/− sign**, on/off
 - Wavetable layers expose **WT Pos**
-- **Mode**: Add or Avg (`stack_mode`)
+- **Mode**: Add, Avg (level-weighted), or **Avg Equal** (1/N per layer) — tooltips in panel
+- **Autofix levels** when Add mode clips (scope Out shows **Stack clipping** warning)
 - **+ Layer** / **Remove** per row
-- Click a layer row or a plane in **3D Stack** to select it (highlight sync)
+- Click a layer row, a **strip chip** (left of WT strip), or a stroke in **Stack** view to select
 
-Factory Lead loads with three stack layers (saw + sine + wavetable); save/reload preserves `wave_layers`.
+### WT strip (hybrid)
+
+When the active osc has stack layers, the position strip splits:
+
+| Left (~38%) | Right |
+|-------------|-------|
+| Layer chips **L1…** with mini wave + **+/−** toggle | Frame/slot thumbnails + scrub (unchanged) |
+
+Empty stack → full-width frame strip only.
+
+### Stack overlay (right WT view)
+
+- Layer strokes (semi-transparent) + composite sum fill
+- **Composite drag** → global WT position scrub
+- **Layer drag** → per-layer WT position (wavetable) or phase (sine)
+- Inverted layers: dashed stroke + ↓ badge
+
+### Quant hand drag (2D waveform)
+
+When **Quant** > 0 and tool is **Select**:
+
+- Vertical grid at each slot; **knob handles** at waveform intersections (hover when quant > 64)
+- Drag snaps X to nearest slot on press; **locks slot** for entire gesture; fine Y maps to slot frame
+- **Curve** tool still edits slot→frame morph map; Select handles edit wave shape at quant points
+- **Pencil** hidden when quant > 0 — use Select + handles instead
+
+Factory Lead loads with three stack layers (saw + sine + wavetable); save/reload preserves `wave_layers`, `invert`, and `stack_mode`.
 
 ### Effects (osc column sidebar)
 
@@ -201,7 +230,16 @@ Implementation plan: [docs/superpowers/plans/2026-07-15-wt-stack-editor.md](supe
 
 ## Scopes
 
-Footer scope strip shows four taps: oscillator → filter → FX → output. Useful for debugging clipping and filter behavior while designing.
+Signal-chain strip at top of center column (56 px, horizontally scrollable when 3+ oscillators):
+
+| Cell | Content |
+|------|---------|
+| **Osc** | Per-osc waveform when ≥3 oscillators; combined cycle otherwise |
+| **Filter** | Post-filter tap (responds to cutoff/resonance) |
+| **FX** | Post-FX tap (distinct when delay/chorus active) |
+| **Out** | Spectrum bars; amber border + **Stack clipping** label when Add mode exceeds ±1 |
+
+Settings window (app): **Graphics** backend Auto/WGPU/Glow, GPU waveforms toggle; **Input** auto MIDI + keyboard layout override.
 
 ---
 

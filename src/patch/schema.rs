@@ -35,6 +35,9 @@ pub struct WaveLayer {
     /// Phase offset in radians at layer phase origin (sine layers).
     #[serde(default)]
     pub phase: f32,
+    /// When true, layer contributes with inverted sign (−).
+    #[serde(default)]
+    pub invert: bool,
 }
 
 impl Default for WaveLayer {
@@ -47,6 +50,7 @@ impl Default for WaveLayer {
             pulse_width: default_pulse_width(),
             wavetable_id: None,
             phase: 0.0,
+            invert: false,
         }
     }
 }

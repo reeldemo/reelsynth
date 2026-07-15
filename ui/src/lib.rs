@@ -58,9 +58,11 @@ pub use osc_column::{
     fm_source_index, osc_type_from_index, osc_type_index, warp_mode_from_index,
     warp_mode_index, OscColumnInput, OscColumnResult, OscColumnState,
 };
-pub use oscillator_ui::{OscillatorUi, MIN_OSCILLATORS};
+pub use oscillator_ui::{OscillatorUi, WaveLayerUi, MIN_OSCILLATORS};
 pub use performance::PerformanceUi;
-pub use scope_strip::{draw_scope_strip, ScopeStripInput, ScopeStripState, SCOPE_STRIP_HEIGHT};
+pub use scope_strip::{
+    autofix_stack_levels, draw_scope_strip, ScopeStripInput, ScopeStripState, SCOPE_STRIP_HEIGHT,
+};
 pub use compose::{
     Clip, ClipRef, ComposeUi, MidiNote, PianoRollTool, QuantizeGrid, Scene, SequenceProject, Track,
     TransportUi,
@@ -71,7 +73,10 @@ pub use state::{
     OscStripContext, OscStripPreviewState, ScopeStripContext, ShellActions, ShellConfig,
     ShellMidiDevices, ShellMode, UiState, WtView3dMode,
 };
-pub use wt::{factory_bank, factory_label, FactoryBankEntry, FACTORY_BANKS};
+pub use wt::{
+    composite_stack_sample, factory_bank, factory_label, set_gpu_renderer_active, FactoryBankEntry,
+    FACTORY_BANKS,
+};
 
 pub use state_sync::{
     compose_to_patch_sequence, filter_mode_from_type, filter_type_from_mode, lfo_shape_from_index,

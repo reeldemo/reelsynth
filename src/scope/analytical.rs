@@ -88,7 +88,7 @@ pub fn render_scope_previews(
         let [fx_l, fx_r] = fx.process_stereo(filt_l, filt_r);
         let fx_mono = ((fx_l + fx_r) * 0.5).clamp(-1.0, 1.0);
         fx_buf[i] = fx_mono;
-        out_buf[i] = fx_mono;
+        out_buf[i] = ((fx_l + fx_r) * 0.5 * 0.98 + filt_mono * 0.02).clamp(-1.0, 1.0);
     }
 
     // Osc tap: single-cycle snapshot at the root pitch (power chord composite).

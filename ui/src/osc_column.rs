@@ -22,7 +22,31 @@ const WARP_MODES: [&str; 3] = ["None", "Sync", "Bend"];
 const FM_ALGORITHMS: [&str; 4] = ["Off", "2→1", "3→1", "2+3→1"];
 const FM_SOURCES: [&str; 5] = ["None", "Osc 2", "Osc 3", "2+3→1", "Feedback"];
 const STACK_LAYER_TYPES: [&str; 6] = ["Saw", "Sine", "Square", "Triangle", "Pulse", "Wavetable"];
-const STACK_MODES: [&str; 2] = ["Add", "Avg"];
+const STACK_MODES: [&str; 3] = ["Add", "Avg", "Avg Equal"];
+
+pub fn stack_mode_index(mode: &str) -> usize {
+    match mode.to_ascii_lowercase().as_str() {
+        "avg" | "average" => 1,
+        "avg_equal" | "avgequal" | "avg equal" => 2,
+        _ => 0,
+    }
+}
+
+pub fn stack_mode_from_index(idx: usize) -> &'static str {
+    match idx {
+        1 => "avg",
+        2 => "avg_equal",
+        _ => "add",
+    }
+}
+
+pub fn stack_mode_tooltip(mode: &str) -> &'static str {
+    match mode.to_ascii_lowercase().as_str() {
+        "avg" | "average" => "Level-weighted mean (sign-sensitive)",
+        "avg_equal" | "avgequal" | "avg equal" => "Each layer counts equally (1/N)",
+        _ => "Signed sum of all layers",
+    }
+}
 
 pub fn stack_layer_type_index(ty: &str) -> usize {
     match ty.to_ascii_lowercase().as_str() {
@@ -44,18 +68,6 @@ pub fn stack_layer_type_from_index(idx: usize) -> &'static str {
         5 => "wavetable",
         _ => "saw",
     }
-}
-
-pub fn stack_mode_index(mode: &str) -> usize {
-    if mode.eq_ignore_ascii_case("avg") {
-        1
-    } else {
-        0
-    }
-}
-
-pub fn stack_mode_from_index(idx: usize) -> &'static str {
-    if idx == 1 { "avg" } else { "add" }
 }
 
 const OSC_CARD_WIDTH: f32 = 72.0;
@@ -358,8 +370,21 @@ pub fn draw_osc_column(
                 if ui.available_height() > min_section_h * 1.8 {
                     panel_audit(ui, "Stack", Some(AuditId::OscPanelStack), |ui| {
                         let mut stack_mode_idx = stack_mode_index(&osc.stack_mode);
-                        if labeled_select(ui, "Mode", &STACK_MODES, &mut stack_mode_idx) {
+                        let mode_resp = labeled_select(ui, "Mode", &STACK_MODES, &mut stack_mode_idx);
+                        if mode_resp {
                             osc.stack_mode = stack_mode_from_index(stack_mode_idx).into();
+                            changed = true;
+                        }
+                        if ui.is_enabled() {
+                            ui.label(
+                                egui::RichText::new(stack_mode_tooltip(&osc.stack_mode))
+                                    .size(10.0)
+                                    .color(Tokens::default().text_muted),
+                            );
+                        }
+
+                        if ui.button("Autofix levels").on_hover_text("Normalize layer levels when Add mode clips").clicked() {
+                            crate::scope_strip::autofix_stack_levels(&mut osc.wave_layers);
                             changed = true;
                         }
 
@@ -432,6 +457,24 @@ pub fn draw_osc_column(
                                 {
                                     changed = true;
                                 }
+                                let sign_label = if layer.invert { "−" } else { "+" };
+                                if ui
+                                    .selectable_label(!layer.invert, "+")
+                                    .on_hover_text("Add layer")
+                                    .clicked()
+                                {
+                                    layer.invert = false;
+                                    changed = true;
+                                }
+                                if ui
+                                    .selectable_label(layer.invert, "−")
+                                    .on_hover_text("Subtract layer")
+                                    .clicked()
+                                {
+                                    layer.invert = true;
+                                    changed = true;
+                                }
+                                let _ = sign_label;
                                 if ui.button("Remove").clicked() {
                                     remove_at = Some(li);
                                 }

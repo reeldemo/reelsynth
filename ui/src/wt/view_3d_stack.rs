@@ -1,7 +1,7 @@
 //! 2D stack overlay — all wave layers composited in one scope view.
 
-use egui::{Color32, CursorIcon, Pos2, Rect, Sense, Shape, Ui, Vec2};
-use reelsynth::osc::{sample_layer, StackMode, WtWarpMode};
+use egui::{Color32, CursorIcon, Pos2, Rect, Sense, Shape, Stroke, Ui, Vec2};
+use reelsynth::osc::{layer_sign, sample_layer, StackMode, WtWarpMode};
 use reelsynth::patch::WaveLayer;
 use reelsynth::WavetableBank;
 use reelsynth_ui_theme::{ACCENT_UI, Tokens};
@@ -58,7 +58,7 @@ fn sample_layer_at_phase(
     )
 }
 
-fn composite_stack_sample(
+pub fn composite_stack_sample(
     layers: &[WaveLayerUi],
     bank: &WavetableBank,
     stack_mode: &str,
@@ -68,20 +68,43 @@ fn composite_stack_sample(
     let mode = StackMode::from_str(stack_mode);
     let mut sum = 0.0f32;
     let mut weight = 0.0f32;
+    let mut count = 0u32;
     for layer in layers {
         if !layer.enabled || layer.level <= 0.0 {
             continue;
         }
+        let patch = ui_layer_to_patch(layer);
+        let sign = layer_sign(&patch);
         let s = sample_layer_at_phase(layer, bank, phase, wt_pos_offset);
-        sum += s * layer.level;
-        weight += layer.level;
-    }
-    if weight <= 0.0 {
-        return 0.0;
+        let signed = sign * s * layer.level;
+        match mode {
+            StackMode::Add => sum += signed,
+            StackMode::Avg => {
+                sum += signed;
+                weight += layer.level.abs();
+            }
+            StackMode::AvgEqual => {
+                sum += sign * s;
+                count += 1;
+            }
+        }
     }
     match mode {
         StackMode::Add => sum,
-        StackMode::Avg => sum / weight,
+        StackMode::Avg => {
+            if weight <= 0.0 {
+                0.0
+            } else {
+                sum / weight
+            }
+        }
+        StackMode::AvgEqual => {
+            if count == 0 {
+                0.0
+            } else {
+                sum / count as f32
+            }
+        }
     }
 }
 
@@ -92,11 +115,13 @@ fn layer_waveform_points(
     wt_pos_offset: f32,
     samples: usize,
 ) -> Vec<Pos2> {
+    let patch = ui_layer_to_patch(layer);
+    let sign = layer_sign(&patch);
     let level = if layer.enabled { layer.level.max(0.0) } else { 0.0 };
     let mut pts = Vec::with_capacity(samples + 1);
     for i in 0..=samples {
         let phase = i as f32 / samples as f32;
-        let v = sample_layer_at_phase(layer, bank, phase, wt_pos_offset) * level;
+        let v = sign * sample_layer_at_phase(layer, bank, phase, wt_pos_offset) * level;
         let x = egui::lerp(rect.min.x..=rect.max.x, phase);
         let y = rect.center().y - v * rect.height() * WAVE_AMP;
         pts.push(Pos2::new(x, y));
@@ -144,9 +169,17 @@ fn paint_grid(painter: &egui::Painter, rect: Rect, border: Color32) {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum StackDragTarget {
+    None,
+    Layer(usize),
+    Composite,
+}
+
 pub struct WtView3dStackResponse {
     pub layer_selected: bool,
     pub wt_position_changed: bool,
+    pub global_wt_scrub: bool,
 }
 
 pub struct WtView3dStack<'a> {
@@ -154,6 +187,7 @@ pub struct WtView3dStack<'a> {
     pub stack_mode: &'a str,
     pub bank: Option<&'a WavetableBank>,
     pub wt_pos_offset: f32,
+    pub wt_position: &'a mut f32,
     pub selected_layer: &'a mut Option<usize>,
     pub view_mode: &'a mut WtView3dMode,
     pub time: f32,
@@ -171,16 +205,20 @@ impl WtView3dStack<'_> {
 
         let mut layer_selected = false;
         let mut wt_position_changed = false;
+        let mut global_wt_scrub = false;
 
         if !ui.is_rect_visible(rect) {
             return WtView3dStackResponse {
                 layer_selected,
                 wt_position_changed,
+                global_wt_scrub,
             };
         }
 
         let inner = rect.shrink2(egui::vec2(8.0, 20.0));
         let mid_y = inner.center().y;
+
+        record_region(ui.ctx(), AuditId::CenterWt3dStack, rect, rect);
 
         let bank = match self.bank {
             Some(b) => b,
@@ -197,6 +235,7 @@ impl WtView3dStack<'_> {
                 return WtView3dStackResponse {
                     layer_selected,
                     wt_position_changed,
+                    global_wt_scrub,
                 };
             }
         };
@@ -209,7 +248,7 @@ impl WtView3dStack<'_> {
             .map(|(i, _)| i)
             .collect();
 
-        let layer_points: Vec<(usize, Vec<Pos2>)> = active_indices
+        let layer_points: Vec<(usize, Vec<Pos2>, bool)> = active_indices
             .iter()
             .map(|&idx| {
                 (
@@ -221,6 +260,7 @@ impl WtView3dStack<'_> {
                         self.wt_pos_offset,
                         WAVE_SAMPLES,
                     ),
+                    self.layers[idx].invert,
                 )
             })
             .collect();
@@ -234,46 +274,99 @@ impl WtView3dStack<'_> {
             WAVE_SAMPLES,
         );
 
+        let drag_target_id = ui.id().with("stack_drag_target");
+
         if response.clicked() {
             if let Some(pos) = response.interact_pointer_pos() {
                 let mut best_idx = None;
                 let mut best_dist = HOVER_DISTANCE_PX;
-                for &(orig_idx, ref pts) in &layer_points {
+                for &(orig_idx, ref pts, _) in &layer_points {
                     let dist = nearest_waveform_distance(pts, pos);
                     if dist < best_dist {
                         best_dist = dist;
                         best_idx = Some(orig_idx);
                     }
                 }
-                if nearest_waveform_distance(&composite_pts, pos) < best_dist {
-                    best_idx = None;
-                }
-                if let Some(idx) = best_idx {
+                let composite_dist = nearest_waveform_distance(&composite_pts, pos);
+                let hit_composite = composite_dist < best_dist;
+                if hit_composite {
+                    *self.selected_layer = None;
+                    ui.ctx()
+                        .data_mut(|d| d.insert_temp(drag_target_id, StackDragTarget::Composite));
+                } else if let Some(idx) = best_idx {
                     *self.selected_layer = Some(idx);
                     layer_selected = true;
+                    ui.ctx()
+                        .data_mut(|d| d.insert_temp(drag_target_id, StackDragTarget::Layer(idx)));
                 }
             }
         }
 
+        if response.drag_started() {
+            if let Some(pos) = response.interact_pointer_pos() {
+                let mut best_idx = None;
+                let mut best_dist = HOVER_DISTANCE_PX;
+                for &(orig_idx, ref pts, _) in &layer_points {
+                    let dist = nearest_waveform_distance(pts, pos);
+                    if dist < best_dist {
+                        best_dist = dist;
+                        best_idx = Some(orig_idx);
+                    }
+                }
+                let composite_dist = nearest_waveform_distance(&composite_pts, pos);
+                let target = if composite_dist < best_dist {
+                    StackDragTarget::Composite
+                } else if let Some(idx) = best_idx {
+                    StackDragTarget::Layer(idx)
+                } else {
+                    StackDragTarget::None
+                };
+                ui.ctx()
+                    .data_mut(|d| d.insert_temp(drag_target_id, target));
+            }
+        }
+
         if response.dragged() {
-            if let Some(sel) = *self.selected_layer {
-                if let Some(layer) = self.layers.get_mut(sel) {
-                    if layer.source_type.eq_ignore_ascii_case("wavetable") {
-                        let delta = response.drag_delta();
-                        if delta.x.abs() > 0.0 {
-                            let max_pos = (bank.num_frames.saturating_sub(1)).max(1) as f32;
-                            let px_per_frame = inner.width() / max_pos.max(1.0);
-                            layer.wt_position =
-                                (layer.wt_position + delta.x / px_per_frame).clamp(0.0, max_pos);
-                            wt_position_changed = true;
+            let target = ui
+                .ctx()
+                .data(|d| d.get_temp(drag_target_id))
+                .unwrap_or(StackDragTarget::None);
+            let delta = response.drag_delta();
+            if delta.x.abs() > 0.0 {
+                let max_pos = (bank.num_frames.saturating_sub(1)).max(1) as f32;
+                let px_per_frame = inner.width() / max_pos.max(1.0);
+                match target {
+                    StackDragTarget::Composite => {
+                        *self.wt_position =
+                            (*self.wt_position + delta.x / px_per_frame).clamp(0.0, max_pos);
+                        global_wt_scrub = true;
+                        wt_position_changed = true;
+                    }
+                    StackDragTarget::Layer(sel) => {
+                        if let Some(layer) = self.layers.get_mut(sel) {
+                            if layer.source_type.eq_ignore_ascii_case("wavetable") {
+                                layer.wt_position =
+                                    (layer.wt_position + delta.x / px_per_frame)
+                                        .clamp(0.0, max_pos);
+                                wt_position_changed = true;
+                            } else if layer.source_type.eq_ignore_ascii_case("sine") {
+                                layer.phase += delta.x / inner.width() * std::f32::consts::TAU;
+                                wt_position_changed = true;
+                            }
                         }
                     }
+                    StackDragTarget::None => {}
                 }
             }
         }
 
         if response.hovered() {
-            ui.ctx().set_cursor_icon(CursorIcon::PointingHand);
+            let cursor = if response.dragged() {
+                CursorIcon::Grabbing
+            } else {
+                CursorIcon::Grab
+            };
+            ui.ctx().set_cursor_icon(cursor);
         }
 
         let selected_idx = *self.selected_layer;
@@ -321,7 +414,7 @@ impl WtView3dStack<'_> {
             },
         );
 
-        for &(orig_idx, ref pts) in &layer_points {
+        for &(orig_idx, ref pts, inverted) in &layer_points {
             if pts.len() < 2 {
                 continue;
             }
@@ -329,10 +422,26 @@ impl WtView3dStack<'_> {
             let selected = selected_idx == Some(orig_idx);
             let alpha = if selected { 0.92 } else { 0.45 };
             let stroke_w = if selected { 2.2 } else { 1.4 };
-            painter.add(Shape::line(
-                pts.clone(),
-                egui::Stroke::new(stroke_w, color.gamma_multiply(alpha)),
-            ));
+            if inverted {
+                let dash_stroke = egui::Stroke::new(stroke_w, color.gamma_multiply(alpha));
+                for chunk in pts.windows(2).step_by(2) {
+                    if chunk.len() == 2 {
+                        painter.line_segment([chunk[0], chunk[1]], dash_stroke);
+                    }
+                }
+                painter.text(
+                    pts.first().copied().unwrap_or(inner.left_top()),
+                    egui::Align2::LEFT_TOP,
+                    "↓",
+                    egui::FontId::proportional(9.0),
+                    color.gamma_multiply(0.85),
+                );
+            } else {
+                painter.add(Shape::line(
+                    pts.clone(),
+                    egui::Stroke::new(stroke_w, color.gamma_multiply(alpha)),
+                ));
+            }
         }
 
         if composite_pts.len() >= 2 {
@@ -366,11 +475,10 @@ impl WtView3dStack<'_> {
 
         ui.ctx().request_repaint();
 
-        record_region(ui.ctx(), AuditId::CenterWt3dStack, rect, rect);
-
         WtView3dStackResponse {
             layer_selected,
             wt_position_changed,
+            global_wt_scrub,
         }
     }
 }
@@ -399,6 +507,53 @@ mod tests {
         ];
         let s = composite_stack_sample(&layers, &bank, "add", 0.25, 0.0);
         assert!(s.abs() > 0.0);
+    }
+
+    #[test]
+    fn invert_flips_composite_sign() {
+        let bank = WavetableBank::factory_saw_morph();
+        let positive = vec![WaveLayerUi {
+            source_type: "sine".into(),
+            level: 1.0,
+            enabled: true,
+            invert: false,
+            ..WaveLayerUi::default()
+        }];
+        let negative = vec![WaveLayerUi {
+            source_type: "sine".into(),
+            level: 1.0,
+            enabled: true,
+            invert: true,
+            ..WaveLayerUi::default()
+        }];
+        let p = composite_stack_sample(&positive, &bank, "add", 0.25, 0.0);
+        let n = composite_stack_sample(&negative, &bank, "add", 0.25, 0.0);
+        assert!((p + n).abs() < 1e-4, "invert should flip sign: p={p} n={n}");
+    }
+
+    #[test]
+    fn avg_equal_differs_from_weighted_avg() {
+        let bank = WavetableBank::factory_saw_morph();
+        let layers = vec![
+            WaveLayerUi {
+                source_type: "saw".into(),
+                level: 1.0,
+                enabled: true,
+                ..WaveLayerUi::default()
+            },
+            WaveLayerUi {
+                source_type: "sine".into(),
+                level: 0.25,
+                enabled: true,
+                ..WaveLayerUi::default()
+            },
+        ];
+        let avg = composite_stack_sample(&layers, &bank, "avg", 0.25, 0.0);
+        let eq = composite_stack_sample(&layers, &bank, "avg_equal", 0.25, 0.0);
+        assert!(
+            (avg - eq).abs() > 1e-4,
+            "weighted avg ({avg}) should differ from equal avg ({eq})"
+        );
     }
 
     #[test]

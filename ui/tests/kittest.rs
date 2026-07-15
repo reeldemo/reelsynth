@@ -12,7 +12,7 @@ use egui_kittest::Harness;
 use reelsynth::Patch;
 use reelsynth_ui::{
     audit_center, audit_header_clusters, audit_osc_sidebar_stacks, audit_panel_utilization,
-    audit_shell, audit_theme_tokens, compute_center_regions, count_base_audit_variants,
+    audit_shell, audit_theme_tokens, audit_id_rect, compute_center_regions, count_base_audit_variants,
     default_effect_slots, draw_shell, embed_piano_in_center, osc_type_index, record_region,
     record_used, AuditId, REGISTRY_VARIANT_COUNT, ShellLayout, ShellLayoutOptions, ShellMidiDevices,
     ShellMode, WtView3dMode,
@@ -738,6 +738,37 @@ fn design_wt_3d_stack() {
     scenario.state.wt_view_3d_mode = WtView3dMode::Stack;
     let run = run_shell_audit(scenario);
     assert_full_ui_audit(&run, &default_audit_options());
+}
+
+#[test]
+fn design_stack_overlay_with_layers() {
+    use reelsynth_ui::WaveLayerUi;
+    let mut scenario = ShellAuditScenario::default();
+    scenario.state.wt_view_3d_mode = WtView3dMode::Stack;
+    scenario.state.oscillators[0].wave_layers = vec![
+        WaveLayerUi {
+            source_type: "saw".into(),
+            level: 0.65,
+            enabled: true,
+            ..WaveLayerUi::default()
+        },
+        WaveLayerUi {
+            source_type: "sine".into(),
+            level: 0.35,
+            enabled: true,
+            invert: true,
+            ..WaveLayerUi::default()
+        },
+    ];
+    scenario.state.oscillators[0].stack_mode = "add".into();
+    let run = run_shell_audit(scenario);
+    let views = audit_id_rect(&run.ctx, AuditId::CenterWtViews);
+    assert!(views.is_some(), "wt views region should be recorded");
+    let chip_rect = audit_id_rect(&run.ctx, AuditId::CenterWtStripLayerChip(0));
+    assert!(chip_rect.is_some(), "layer chip visible in hybrid strip");
+    if let Some(r) = chip_rect {
+        assert!(r.width() > 8.0 && r.height() > 8.0);
+    }
 }
 
 #[test]

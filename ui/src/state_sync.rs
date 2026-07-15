@@ -266,6 +266,20 @@ mod tests {
     }
 
     #[test]
+    fn wave_layer_invert_roundtrip() {
+        let mut original = Patch::factory_lead();
+        original.oscillators[0].wave_layers[0].invert = true;
+        original.oscillators[0].stack_mode = "avg_equal".into();
+        let mut state = UiState::default();
+        sync_state_from_patch(&mut state, &original);
+        assert!(state.oscillators[0].wave_layers[0].invert);
+        assert_eq!(state.oscillators[0].stack_mode, "avg_equal");
+        let restored = patch_from_state(&state, &Patch::default_mono());
+        assert!(restored.oscillators[0].wave_layers[0].invert);
+        assert_eq!(restored.oscillators[0].stack_mode, "avg_equal");
+    }
+
+    #[test]
     fn factory_lead_wave_stack_roundtrip() {
         let original = Patch::factory_lead();
         let mut state = UiState::default();

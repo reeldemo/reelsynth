@@ -5,6 +5,7 @@ use reelsynth_ui_theme::{ACCENT_UI, Tokens};
 
 use crate::audit_registry::{record_region, record_used, AuditId};
 use crate::layout::{RADIUS_SM, WT_STRIP_HEIGHT};
+use crate::oscillator_ui::WaveLayerUi;
 
 use super::waveform::waveform_points;
 use super::slots::effective_quant_count;
@@ -13,6 +14,7 @@ use super::toolbar::WtEditTool;
 pub struct WtStripResponse {
     pub response: Response,
     pub changed: bool,
+    pub params_changed: bool,
 }
 
 pub struct WtStrip<'a> {
@@ -25,6 +27,8 @@ pub struct WtStrip<'a> {
     pub bank_name: Option<&'a str>,
     pub visible_frames: usize,
     pub edit_tool: WtEditTool,
+    pub wave_layers: &'a mut [WaveLayerUi],
+    pub selected_layer_idx: &'a mut Option<usize>,
 }
 
 impl<'a> WtStrip<'a> {
@@ -35,58 +39,208 @@ impl<'a> WtStrip<'a> {
             .bank
             .map(|b| b.num_frames)
             .unwrap_or(256);
-        let slot_mode = self.wave_quant > 0;
-        let cell_count = if slot_mode {
-            effective_quant_count(self.wave_quant)
-        } else {
-            self.visible_frames.min(num_frames).max(8)
-        };
+        let has_layers = !self.wave_layers.is_empty();
+        let layer_frac = if has_layers { 0.38 } else { 0.0 };
 
         let (rect, response) =
             ui.allocate_exact_size(Vec2::new(ui.available_width(), WT_STRIP_HEIGHT), Sense::click_and_drag());
 
         let mut changed = false;
-        if response.clicked() || response.dragged() {
-            if let Some(pos) = response.interact_pointer_pos() {
+        let mut params_changed = false;
+
+        if ui.is_rect_visible(rect) {
+            let pad = 4.0;
+            let inner = rect.shrink(pad);
+            let layer_w = inner.width() * layer_frac;
+            let gap = if has_layers { 4.0 } else { 0.0 };
+            let frame_rect = Rect::from_min_max(
+                Pos2::new(inner.min.x + layer_w + gap, inner.min.y),
+                inner.max,
+            );
+            let layer_rect = if has_layers {
+                Some(Rect::from_min_max(inner.min, Pos2::new(inner.min.x + layer_w, inner.max.y)))
+            } else {
+                None
+            };
+
+            if let Some(lr) = layer_rect {
+                params_changed |= paint_layer_chips(
+                    ui,
+                    lr,
+                    &tokens,
+                    accent_ui,
+                    self.wave_layers,
+                    self.selected_layer_idx,
+                    self.bank,
+                );
+            }
+
+            changed |= paint_frame_strip(
+                ui,
+                frame_rect,
+                &tokens,
+                accent_ui,
+                num_frames,
+                self,
+                &response,
+            );
+        }
+
+        WtStripResponse {
+            response,
+            changed,
+            params_changed,
+        }
+    }
+}
+
+fn paint_layer_chips(
+    ui: &mut Ui,
+    rect: Rect,
+    tokens: &Tokens,
+    accent_ui: Color32,
+    layers: &mut [WaveLayerUi],
+    selected: &mut Option<usize>,
+    bank: Option<&WavetableBank>,
+) -> bool {
+    let painter = ui.painter_at(rect);
+    painter.rect_filled(rect, RADIUS_SM, tokens.surface2);
+    painter.rect_stroke(rect, RADIUS_SM, egui::Stroke::new(1.0, tokens.border));
+
+    let mut changed = false;
+    let chip_count = layers.len().max(1);
+    let chip_w = (rect.width() - 4.0 * (chip_count as f32 - 1.0)) / chip_count as f32;
+
+    for (i, layer) in layers.iter_mut().enumerate() {
+        let x = rect.min.x + i as f32 * (chip_w + 4.0);
+        let cell = Rect::from_min_size(Pos2::new(x, rect.min.y + 2.0), Vec2::new(chip_w, rect.height() - 4.0));
+        let is_sel = *selected == Some(i);
+        if is_sel {
+            painter.rect_stroke(cell, 4.0, egui::Stroke::new(1.5, accent_ui));
+        } else {
+            painter.rect_stroke(cell, 4.0, egui::Stroke::new(1.0, tokens.border));
+        }
+        painter.rect_filled(cell, 4.0, tokens.bg);
+
+        if let Some(bank) = bank {
+            let fi = layer.wt_position.round() as usize;
+            let thumb = cell.shrink2(egui::vec2(4.0, 14.0));
+            paint_waveform_thumbnail(&painter, thumb, bank, fi.min(bank.num_frames.saturating_sub(1)), is_sel, accent_ui, tokens.accent);
+        }
+
+        painter.text(
+            Pos2::new(cell.min.x + 4.0, cell.min.y + 2.0),
+            egui::Align2::LEFT_TOP,
+            format!("L{}", i + 1),
+            egui::FontId::proportional(9.0),
+            if is_sel { accent_ui } else { tokens.text_muted },
+        );
+
+        record_used(ui.ctx(), AuditId::CenterWtStripLayerChip(i), cell);
+
+        let sign_rect = Rect::from_min_size(
+            Pos2::new(cell.max.x - 28.0, cell.max.y - 16.0),
+            Vec2::new(26.0, 14.0),
+        );
+
+        let chip_resp = ui.interact(cell, ui.id().with(("layer_chip", i)), Sense::click());
+        if chip_resp.clicked() {
+            *selected = Some(i);
+            changed = true;
+        }
+
+        let plus = ui.interact(
+            Rect::from_min_size(sign_rect.min, Vec2::new(12.0, 14.0)),
+            ui.id().with(("layer_plus", i)),
+            Sense::click(),
+        );
+        let minus = ui.interact(
+            Rect::from_min_size(sign_rect.min + Vec2::new(14.0, 0.0), Vec2::new(12.0, 14.0)),
+            ui.id().with(("layer_minus", i)),
+            Sense::click(),
+        );
+        painter.text(
+            plus.rect.center(),
+            egui::Align2::CENTER_CENTER,
+            "+",
+            egui::FontId::proportional(10.0),
+            if !layer.invert { accent_ui } else { tokens.text_muted },
+        );
+        painter.text(
+            minus.rect.center(),
+            egui::Align2::CENTER_CENTER,
+            "−",
+            egui::FontId::proportional(10.0),
+            if layer.invert { accent_ui } else { tokens.text_muted },
+        );
+        if plus.clicked() {
+            layer.invert = false;
+            changed = true;
+        }
+        if minus.clicked() {
+            layer.invert = true;
+            changed = true;
+        }
+    }
+    changed
+}
+
+fn paint_frame_strip(
+    ui: &mut Ui,
+    rect: Rect,
+    tokens: &Tokens,
+    accent_ui: Color32,
+    num_frames: usize,
+    strip: WtStrip<'_>,
+    outer_response: &Response,
+) -> bool {
+    let slot_mode = strip.wave_quant > 0;
+    let cell_count = if slot_mode {
+        effective_quant_count(strip.wave_quant)
+    } else {
+        strip.visible_frames.min(num_frames).max(8)
+    };
+
+    let mut changed = false;
+    if outer_response.clicked() || outer_response.dragged() {
+        if let Some(pos) = outer_response.interact_pointer_pos() {
+            if rect.contains(pos) {
                 let t = ((pos.x - rect.min.x) / rect.width()).clamp(0.0, 1.0);
                 if slot_mode {
                     let slot = (t * (cell_count.saturating_sub(1)) as f32).round() as u8;
-                    if *self.wave_slot != slot || (*self.wave_slot_fine).abs() > f32::EPSILON {
+                    if *strip.wave_slot != slot || (*strip.wave_slot_fine).abs() > f32::EPSILON {
                         select_slot(
-                            self.wave_quant,
-                            self.wave_slot,
-                            self.wave_slot_fine,
-                            self.wave_slots,
-                            self.position,
+                            strip.wave_quant,
+                            strip.wave_slot,
+                            strip.wave_slot_fine,
+                            strip.wave_slots,
+                            strip.position,
                             slot,
                             num_frames,
                         );
                         changed = true;
                     }
                 } else if let Some(new_pos) = continuous_position(t, num_frames) {
-                    if (*self.position - new_pos).abs() > 0.01 {
-                        *self.position = new_pos;
+                    if (*strip.position - new_pos).abs() > 0.01 {
+                        *strip.position = new_pos;
                         changed = true;
                     }
                 }
             }
         }
-
-        if ui.is_rect_visible(rect) {
-            paint_strip(
-                ui,
-                rect,
-                &tokens,
-                accent_ui,
-                num_frames,
-                cell_count,
-                slot_mode,
-                self,
-            );
-        }
-
-        WtStripResponse { response, changed }
     }
+
+    paint_strip_cells(
+        ui,
+        rect,
+        tokens,
+        accent_ui,
+        num_frames,
+        cell_count,
+        slot_mode,
+        strip,
+    );
+    changed
 }
 
 fn continuous_position(t: f32, num_frames: usize) -> Option<f32> {
@@ -120,7 +274,7 @@ fn select_slot(
     *position = resolve_wt_position(&osc, 0.0, 0.0, num_frames);
 }
 
-fn paint_strip(
+fn paint_strip_cells(
     ui: &mut Ui,
     rect: Rect,
     tokens: &Tokens,

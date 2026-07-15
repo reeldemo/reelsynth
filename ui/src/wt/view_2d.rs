@@ -10,8 +10,9 @@ use crate::region::region;
 
 use super::curve_editor::CurveEditor;
 use super::mod_preview::{has_position_mod_routes, preview_mod_sources, preview_position_mod};
+use super::quant_handles::{nearest_slot, QuantHandleEditor, slot_x};
 use super::shape_editor::ShapeEditor;
-use super::slots::apply_slot_selection;
+use super::slots::{apply_slot_selection, effective_quant_count};
 use super::toolbar::{WtEditTool, WtToolbar, WtToolbarResponse};
 use super::waveform::{frame_index, hit_test_waveform, peak_point, waveform_points};
 
@@ -121,7 +122,7 @@ impl WtView2d<'_> {
         let toolbar_resp = region(
             ui,
             toolbar_rect,
-            |ui| WtToolbar::show_with_analyze(ui, self.tool),
+            |ui| WtToolbar::show_with_analyze(ui, self.tool, self.wave_quant),
         );
         record_region(ui.ctx(), AuditId::CenterWt2dToolbar, toolbar_rect, toolbar_rect);
         if let WtToolbarResponse {
@@ -155,12 +156,15 @@ impl WtView2d<'_> {
             let response = ui.allocate_rect(inner, sense);
             let drag_kind_id = ui.id().with("wt_select_drag_kind");
             let wave_tolerance = 10.0;
+            let quant_mode = self.wave_quant > 0;
 
             if response.drag_started() {
                 let kind = response
                     .interact_pointer_pos()
                     .map(|pos| {
-                        if wave.len() >= 2 && hit_test_waveform(&wave, pos, wave_tolerance) {
+                        if quant_mode {
+                            SelectDragKind::Waveform
+                        } else if wave.len() >= 2 && hit_test_waveform(&wave, pos, wave_tolerance) {
                             SelectDragKind::Waveform
                         } else {
                             SelectDragKind::Navigate
@@ -178,9 +182,11 @@ impl WtView2d<'_> {
                     .unwrap_or(SelectDragKind::Navigate);
                 match kind {
                     SelectDragKind::Waveform => {
-                        if let Some(bank) = self.bank.as_mut() {
-                            if apply_waveform_drag(bank, frame_idx, inner, &response) {
-                                frame_edited = true;
+                        if !quant_mode {
+                            if let Some(bank) = self.bank.as_mut() {
+                                if apply_waveform_drag(bank, frame_idx, inner, &response) {
+                                    frame_edited = true;
+                                }
                             }
                         }
                     }
@@ -284,14 +290,21 @@ impl WtView2d<'_> {
         paint_grid(&painter, inner, tokens.border);
 
         if self.wave_quant > 0 {
-            let quant = self.wave_quant as f32;
-            let slot_t = if quant > 1.0 {
-                *self.wave_slot as f32 / (quant - 1.0)
+            let quant = effective_quant_count(self.wave_quant);
+            for i in 0..quant {
+                let x = slot_x(i, quant, inner);
+                painter.line_segment(
+                    [Pos2::new(x, inner.min.y), Pos2::new(x, inner.max.y)],
+                    egui::Stroke::new(0.5, tokens.border.gamma_multiply(0.5)),
+                );
+            }
+            let slot_t = if quant > 1 {
+                *self.wave_slot as f32 / (quant as f32 - 1.0)
             } else {
                 0.0
             };
             let band_x = egui::lerp(inner.min.x..=inner.max.x, slot_t);
-            let band_w = inner.width() / quant.max(1.0);
+            let band_w = inner.width() / quant as f32;
             let band = Rect::from_min_max(
                 Pos2::new(band_x - band_w * 0.5, inner.min.y),
                 Pos2::new(band_x + band_w * 0.5, inner.max.y),
@@ -414,6 +427,22 @@ impl WtView2d<'_> {
                     frame_edited = true;
                 }
                 record_region(ui.ctx(), AuditId::CenterWt2dShapeEditor, shape_before, inner);
+            }
+        }
+
+        if *self.tool == WtEditTool::Select && self.wave_quant > 0 {
+            if let Some(bank) = self.bank.as_ref() {
+                let editor = QuantHandleEditor {
+                    plot_rect: inner,
+                    wave_quant: self.wave_quant,
+                    wave_slots: self.wave_slots.as_mut_slice(),
+                    bank,
+                    frame_idx,
+                };
+                let qh = editor.show(ui);
+                if qh.changed {
+                    slots_changed = true;
+                }
             }
         }
 

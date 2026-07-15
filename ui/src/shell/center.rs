@@ -190,12 +190,18 @@ pub(super) fn draw_center(
                                     stack_mode: &stack_mode,
                                     bank: bank.as_deref(),
                                     wt_pos_offset: state.wt_position,
+                                    wt_position: &mut state.wt_position,
                                     selected_layer: &mut state.selected_layer_idx,
                                     view_mode: &mut state.wt_view_3d_mode,
                                     time: time as f32,
                                 }
                                 .show(ui);
-                                if stack_resp.layer_selected || stack_resp.wt_position_changed {
+                                if stack_resp.layer_selected
+                                    || stack_resp.wt_position_changed
+                                    || stack_resp.global_wt_scrub
+                                {
+                                    sync_osc_from_wt(state, num_frames);
+                                    sync_morph_from_active_tab(state);
                                     actions.params_changed = true;
                                 }
                             }
@@ -282,12 +288,18 @@ pub(super) fn draw_center(
                 bank_name: Some(bank_name.as_str()),
                 visible_frames: 16,
                 edit_tool: state.wt_edit_tool,
+                wave_layers: &mut osc.wave_layers,
+                selected_layer_idx: &mut state.selected_layer_idx,
             };
-            if strip.show(ui).changed {
+            let strip_resp = strip.show(ui);
+            if strip_resp.changed {
                 sync_osc_from_wt(state, num_frames);
                 state.wt_morph_amount =
                     morph_amount_for_position(state.wt_morph_a, state.wt_morph_b, state.wt_position);
                 sync_morph_from_active_tab(state);
+                actions.params_changed = true;
+            }
+            if strip_resp.params_changed {
                 actions.params_changed = true;
             }
             let used = ui.min_rect().intersect(strip_rect);
