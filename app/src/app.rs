@@ -16,7 +16,8 @@ use reelsynth::{
 use reelsynth_ui::{
     compose_to_patch_sequence, draw_shell, effect_slots_to_patch, factory_bank, factory_label,
     mod_slots_to_patch, patch_from_state, sync_state_from_patch,
-    OscStripContext, OscStripPreviewState, ShellConfig, ShellMidiDevices, ShellMode, UiState,
+    OscStripContext, OscStripPreviewState, ShellAppSettings, ShellConfig, ShellMidiDevices,
+    ShellMode, UiState,
     ScopeStripContext, ScopeStripState,
 };
 use std::collections::HashMap;
@@ -185,63 +186,30 @@ impl ReelSynthApp {
         }
     }
 
-    fn draw_settings_window(&mut self, ctx: &egui::Context) {
-        egui::Window::new("Settings")
-            .collapsible(true)
-            .default_width(280.0)
-            .show(ctx, |ui| {
-                ui.label("Graphics");
-                let mut backend_idx = self.app_settings.graphics_backend.index();
-                egui::ComboBox::from_label("Backend")
-                    .selected_text(self.app_settings.graphics_backend.label())
-                    .show_ui(ui, |ui| {
-                        for (i, label) in ["Auto", "GPU (WGPU)", "OpenGL (Glow)"].iter().enumerate() {
-                            if ui.selectable_label(backend_idx == i, *label).clicked() {
-                                backend_idx = i;
-                                self.app_settings.graphics_backend = GraphicsBackend::from_index(i);
-                                self.app_settings.pending_backend_restart = true;
-                                self.app_settings.save();
-                            }
-                        }
-                    });
-                if ui.checkbox(&mut self.app_settings.gpu_waveforms, "GPU waveforms").changed() {
-                    self.app_settings.save();
-                }
-                if self.app_settings.pending_backend_restart {
-                    ui.colored_label(
-                        egui::Color32::from_rgb(0xde, 0xa0, 0x4a),
-                        "Restart required for graphics backend change",
-                    );
-                }
-                ui.separator();
-                ui.label("Input");
-                if ui
-                    .checkbox(
-                        &mut self.app_settings.auto_midi_keyboard,
-                        "Auto-connect MIDI keyboard",
-                    )
-                    .changed()
-                {
-                    self.app_settings.save();
-                }
-                let mut layout_idx = self.app_settings.keyboard_layout.index();
-                egui::ComboBox::from_label("Keyboard layout")
-                    .selected_text(self.app_settings.keyboard_layout.label())
-                    .show_ui(ui, |ui| {
-                        for (i, label) in ["Auto", "QWERTY", "AZERTY", "QWERTZ"].iter().enumerate() {
-                            if ui.selectable_label(layout_idx == i, *label).clicked() {
-                                layout_idx = i;
-                                self.app_settings.keyboard_layout =
-                                    KeyboardLayoutSetting::from_index(i);
-                                self.app_settings.save();
-                            }
-                        }
-                    });
-                ui.label(format!(
-                    "Detected: {}",
-                    self.effective_keyboard_layout().label()
-                ));
-            });
+    fn shell_app_settings(&self) -> ShellAppSettings {
+        ShellAppSettings {
+            graphics_backend_idx: self.app_settings.graphics_backend.index(),
+            gpu_waveforms: self.app_settings.gpu_waveforms,
+            auto_midi_keyboard: self.app_settings.auto_midi_keyboard,
+            keyboard_layout_idx: self.app_settings.keyboard_layout.index(),
+            pending_backend_restart: self.app_settings.pending_backend_restart,
+            detected_keyboard_label: self.effective_keyboard_layout().label().to_string(),
+            dirty: false,
+        }
+    }
+
+    fn apply_shell_app_settings(&mut self, shell: &ShellAppSettings) {
+        if !shell.dirty {
+            return;
+        }
+        self.app_settings.graphics_backend =
+            GraphicsBackend::from_index(shell.graphics_backend_idx);
+        self.app_settings.gpu_waveforms = shell.gpu_waveforms;
+        self.app_settings.auto_midi_keyboard = shell.auto_midi_keyboard;
+        self.app_settings.keyboard_layout =
+            KeyboardLayoutSetting::from_index(shell.keyboard_layout_idx);
+        self.app_settings.pending_backend_restart = shell.pending_backend_restart;
+        self.app_settings.save();
     }
 
     fn compose_is_recording(&self) -> bool {
@@ -1189,7 +1157,6 @@ impl eframe::App for ReelSynthApp {
 
         let now_secs = ctx.input(|i| i.time);
         self.poll_midi_autoconnect(now_secs);
-        self.draw_settings_window(ctx);
 
         self.poll_compose_transport();
         if self.pending_record_sync && !self.state.compose.transport.recording {
@@ -1229,6 +1196,7 @@ impl eframe::App for ReelSynthApp {
                 let bank_for_osc: &dyn Fn(usize) -> usize = &|_| 0;
 
                 let was_recording = self.state.compose.transport.recording;
+                let mut shell_settings = self.shell_app_settings();
 
                 let actions = if let Some(audio) = &self.audio {
                     if let Ok(mut bank) = audio.bank().write() {
@@ -1257,6 +1225,7 @@ impl eframe::App for ReelSynthApp {
                             &config,
                             Some(scope_ctx),
                             Some(osc_ctx),
+                            Some(&mut shell_settings),
                         )
                     } else {
                         let scope_ctx = ScopeStripContext {
@@ -1283,6 +1252,7 @@ impl eframe::App for ReelSynthApp {
                             &config,
                             Some(scope_ctx),
                             Some(osc_ctx),
+                            Some(&mut shell_settings),
                         )
                     }
                 } else {
@@ -1310,8 +1280,10 @@ impl eframe::App for ReelSynthApp {
                         &config,
                         Some(scope_ctx),
                         Some(osc_ctx),
+                        Some(&mut shell_settings),
                     )
                 };
+                self.apply_shell_app_settings(&shell_settings);
 
                 if let Some(n) = actions.note_on {
                     self.handle_live_note_on(n, 0.9);

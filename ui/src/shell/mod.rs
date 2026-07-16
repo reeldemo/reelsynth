@@ -18,8 +18,8 @@ use crate::mod_matrix::{draw_mod_matrix, ModMatrixState};
 use crate::region::region;
 
 pub use crate::state::{
-    OscStripContext, OscStripPreviewState, ScopeStripContext, ShellActions, ShellConfig,
-    ShellMidiDevices, ShellMode, UiState, WtView3dMode,
+    OscStripContext, OscStripPreviewState, ScopeStripContext, ShellActions, ShellAppSettings,
+    ShellConfig, ShellMidiDevices, ShellMode, UiState, WtView3dMode,
 };
 
 // Re-exports for shell submodules (`use super::*`).
@@ -51,6 +51,7 @@ pub fn draw_shell(
     config: &ShellConfig,
     scope: Option<ScopeStripContext<'_>>,
     osc_preview: Option<OscStripContext<'_>>,
+    app_settings: Option<&mut ShellAppSettings>,
 ) -> ShellActions {
     let compose_mode = state.shell_mode == ShellMode::Compose;
     let layout_opts = ShellLayoutOptions {
@@ -120,7 +121,7 @@ pub fn draw_shell(
         border,
     );
 
-    draw_header(ui, layout.header, state, midi, &mut actions);
+    draw_header(ui, layout.header, state, midi, &mut actions, app_settings);
 
     if compose_mode {
         draw_compose_shell(ui, layout.main, state, &mut actions, layout.scale);

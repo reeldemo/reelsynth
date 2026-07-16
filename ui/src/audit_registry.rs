@@ -109,6 +109,7 @@ pub enum AuditId {
     HeaderModeCompose,
     HeaderPerformance,
     HeaderWtMenu,
+    HeaderSettingsMenu,
     HeaderMidiCombo,
     HeaderPianoToggle,
     HeaderLeftCluster,
@@ -255,7 +256,7 @@ impl AuditId {
             Self::HeaderOpenBtn | Self::HeaderSaveBtn | Self::HeaderModeDesign
             | Self::HeaderModeCompose | Self::FooterChordPad(_) => AuditChecks::BC,
             Self::HeaderMidiCombo => AuditChecks::BX,
-            Self::HeaderWtMenu | Self::HeaderPianoToggle | Self::OscWtQuant | Self::OscWarpSelect
+            Self::HeaderWtMenu | Self::HeaderSettingsMenu | Self::HeaderPianoToggle | Self::OscWtQuant | Self::OscWarpSelect
             | Self::OscPulseWidth | Self::OscUnisonSlider | Self::OscSpreadSlider
             | Self::OscFmAlgorithm | Self::OscFxAddBtn | Self::OscModAmountDrag(_)
             | Self::CenterWt3dModeToggle | Self::ComposeTransportPlay | Self::ComposeTransportBpm
@@ -306,6 +307,7 @@ fn static_label(id: &AuditId) -> &'static str {
         AuditId::HeaderModeCompose => "header.mode_compose",
         AuditId::HeaderPerformance => "header.performance",
         AuditId::HeaderWtMenu => "header.wt_menu",
+        AuditId::HeaderSettingsMenu => "header.settings_menu",
         AuditId::HeaderMidiCombo => "header.midi_combo",
         AuditId::HeaderPianoToggle => "header.piano_toggle",
         AuditId::HeaderLeftCluster => "header.left_cluster",
@@ -590,6 +592,7 @@ fn parent_bounds(
         | AuditId::HeaderModeCompose
         | AuditId::HeaderPerformance
         | AuditId::HeaderWtMenu
+        | AuditId::HeaderSettingsMenu
         | AuditId::HeaderBrand => Some(AuditId::HeaderLeftCluster),
         AuditId::HeaderMidiCombo | AuditId::HeaderPianoToggle => Some(AuditId::HeaderRightCluster),
         AuditId::OscStripCards
@@ -683,12 +686,12 @@ fn shell_region(id: AuditId, layout: &ShellLayout) -> Option<Rect> {
 }
 
 /// Expected registry variant count (coverage gate).
-pub const REGISTRY_VARIANT_COUNT: usize = 95;
+pub const REGISTRY_VARIANT_COUNT: usize = 96;
 
 /// Count non-parameterized AuditId base variants for drift detection.
 pub fn count_base_audit_variants() -> usize {
     // Hand-counted base variants matching the plan registry table.
-    95
+    96
 }
 
 #[cfg(test)]

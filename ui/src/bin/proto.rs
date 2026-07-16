@@ -35,7 +35,7 @@ impl eframe::App for ProtoApp {
                 };
                 let config = ShellConfig::default();
                 let preview = Patch::default_mono();
-                let actions = draw_shell(ui, screen, &mut self.state, None, &preview, &midi, &config, None, None);
+                let actions = draw_shell(ui, screen, &mut self.state, None, &preview, &midi, &config, None, None, None);
 
                 if let Some(n) = actions.note_on {
                     self.state.keys_down.insert(n);

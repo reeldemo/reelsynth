@@ -56,7 +56,7 @@ A default empty clip is selected on first entry so the roll is never blank.
 | **Key / Scale / Layout** | Performance input: root key, scale mode, piano vs scale-fold vs chord row |
 | **Arp** (footer) | Toggle arpeggiator; input mode, style, rate, octaves, gate, latch |
 | **MIDI** combo | Select hardware MIDI input device |
-| **Settings** window | Graphics backend (Auto/WGPU/Glow), GPU waveforms, auto MIDI, keyboard layout |
+| **Settings** | Header **Settings** dropdown (not a modal): graphics backend, GPU waveforms, auto MIDI, keyboard layout |
 | **Status** | Audio/MIDI state, save confirmations, errors |
 
 ---
@@ -250,7 +250,7 @@ Signal-chain strip at top of center column (~68 px, horizontally scrollable when
 | **FX** | Post-FX tap (distinct when delay/chorus active) |
 | **Result** | Spectrum of all oscillators after Filter/FX (tooltip explains mix); slightly wider when ≥2 oscs; amber border + **Stack clipping** when Add-mode layers exceed ±1 |
 
-Settings window (app): **Graphics** backend Auto/WGPU/Glow, GPU waveforms toggle; **Input** auto MIDI + keyboard layout override.
+Settings (header dropdown): **Graphics** backend Auto/WGPU/Glow, GPU waveforms toggle; **Input** auto MIDI + keyboard layout override.
 
 ---
 

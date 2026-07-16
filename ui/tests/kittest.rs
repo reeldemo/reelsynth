@@ -127,6 +127,7 @@ fn compact_mode_collapses_sections() {
                         &config,
                         None,
                         None,
+                        None,
                     );
                 });
             },
@@ -199,6 +200,7 @@ fn full_shell_min_window_no_layout_overlap() {
                         &config,
                         None,
                         None,
+                        None,
                     );
                 });
             },
@@ -263,6 +265,7 @@ fn rail_widgets_within_rail_bounds_min_window() {
                         &preview,
                         &midi,
                         &config,
+                        None,
                         None,
                         None,
                     );
@@ -365,6 +368,7 @@ fn interface_used_rects_within_allocated_min_window() {
                         &preview,
                         &midi,
                         &config,
+                        None,
                         None,
                         None,
                     );
@@ -513,6 +517,7 @@ fn panel_whitespace_utilization_at_1280x880() {
                         &config,
                         None,
                         None,
+                        None,
                     );
                 });
             },
@@ -625,6 +630,7 @@ fn run_header_cluster_audit(test: ShellHarnessTest) {
                         &config,
                         None,
                         None,
+                        None,
                     );
                 });
             },
@@ -663,6 +669,16 @@ fn design_shell_geometry() {
 fn design_header_subelement() {
     let run = run_shell_audit(ShellAuditScenario::default());
     audit_header_clusters(&run.ctx, run.layout.header);
+}
+
+#[test]
+fn design_header_settings_dropdown() {
+    let run = run_shell_audit(ShellAuditScenario::default());
+    let settings = audit_id_rect(&run.ctx, AuditId::HeaderSettingsMenu);
+    assert!(
+        settings.is_some(),
+        "Settings should be a header navbar dropdown, not a modal"
+    );
 }
 
 #[test]

@@ -14,6 +14,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- **Settings** moved from floating modal window to a **Settings** dropdown in the top header navbar
 - Removed Design pane animations (ambient waves, phase playhead scrub, idle repaint loops)
 - README expanded with doc links and capability matrix
 - **Design ↔ Compose** mode switch in header; Compose hides WT editor and osc column

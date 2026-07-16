@@ -71,7 +71,8 @@ pub use compose::{
 pub use reelsynth::QuantizeDivision;
 pub use shell::draw_shell;
 pub use state::{
-    OscStripContext, OscStripPreviewState, ScopeStripContext, ShellActions, ShellConfig,
+    OscStripContext, OscStripPreviewState, ScopeStripContext, ShellActions, ShellAppSettings,
+    ShellConfig,
     ShellMidiDevices, ShellMode, UiState, WtView3dMode,
 };
 pub use wt::{

@@ -96,6 +96,7 @@ impl eframe::App for PluginEditorApp {
                     &shell,
                     None,
                     None,
+                    None,
                 );
 
                 if let Some(n) = actions.note_on {

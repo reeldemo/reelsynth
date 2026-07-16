@@ -32,6 +32,53 @@ pub struct ShellConfig {
     pub show_fx_rack: bool,
 }
 
+/// App-level settings shown in the header **Settings** dropdown (not a modal).
+#[derive(Debug, Clone)]
+pub struct ShellAppSettings {
+    pub graphics_backend_idx: usize,
+    pub gpu_waveforms: bool,
+    pub auto_midi_keyboard: bool,
+    pub keyboard_layout_idx: usize,
+    pub pending_backend_restart: bool,
+    /// Display-only label for detected computer keyboard layout.
+    pub detected_keyboard_label: String,
+    /// Set by the Settings menu when any control changes.
+    pub dirty: bool,
+}
+
+impl Default for ShellAppSettings {
+    fn default() -> Self {
+        Self {
+            graphics_backend_idx: 0,
+            gpu_waveforms: true,
+            auto_midi_keyboard: true,
+            keyboard_layout_idx: 0,
+            pending_backend_restart: false,
+            detected_keyboard_label: "QWERTY".into(),
+            dirty: false,
+        }
+    }
+}
+
+impl ShellAppSettings {
+    pub const BACKEND_LABELS: [&'static str; 3] = ["Auto", "GPU (WGPU)", "OpenGL (Glow)"];
+    pub const LAYOUT_LABELS: [&'static str; 4] = ["Auto", "QWERTY", "AZERTY", "QWERTZ"];
+
+    pub fn backend_label(&self) -> &'static str {
+        Self::BACKEND_LABELS
+            .get(self.graphics_backend_idx)
+            .copied()
+            .unwrap_or("Auto")
+    }
+
+    pub fn layout_label(&self) -> &'static str {
+        Self::LAYOUT_LABELS
+            .get(self.keyboard_layout_idx)
+            .copied()
+            .unwrap_or("Auto")
+    }
+}
+
 #[derive(Default)]
 pub struct ShellActions {
     pub params_changed: bool,

@@ -26,6 +26,7 @@ pub(super) fn draw_header(
     state: &mut UiState,
     midi: &ShellMidiDevices<'_>,
     actions: &mut ShellActions,
+    mut app_settings: Option<&mut ShellAppSettings>,
 ) {
     let tokens = Tokens::default();
     region(ui, rect, |ui| {
@@ -117,6 +118,105 @@ pub(super) fn draw_header(
                         });
                     });
                     record_used(ui.ctx(), AuditId::HeaderWtMenu, wt_menu.response.rect);
+
+                    if let Some(settings) = app_settings.as_deref_mut() {
+                        let settings_menu = ui.menu_button(header_menu_label("Settings"), |ui| {
+                            styled_menu_body(ui, |ui| {
+                                ui.set_min_width(220.0);
+                                menu_section_label(ui, "Graphics");
+                                let backend_label = settings.backend_label();
+                                reel_combo(
+                                    ui,
+                                    "settings_graphics_backend",
+                                    select_value_text(backend_label),
+                                    180.0,
+                                    |ui| {
+                                        for (i, label) in
+                                            ShellAppSettings::BACKEND_LABELS.iter().enumerate()
+                                        {
+                                            if menu_selectable(
+                                                ui,
+                                                settings.graphics_backend_idx == i,
+                                                *label,
+                                            )
+                                            .clicked()
+                                            {
+                                                if settings.graphics_backend_idx != i {
+                                                    settings.graphics_backend_idx = i;
+                                                    settings.pending_backend_restart = true;
+                                                    settings.dirty = true;
+                                                }
+                                            }
+                                        }
+                                    },
+                                );
+                                if ui
+                                    .checkbox(&mut settings.gpu_waveforms, "GPU waveforms")
+                                    .changed()
+                                {
+                                    settings.dirty = true;
+                                }
+                                if settings.pending_backend_restart {
+                                    ui.label(
+                                        egui::RichText::new(
+                                            "Restart required for graphics backend",
+                                        )
+                                        .size(10.0)
+                                        .color(Color32::from_rgb(0xde, 0xa0, 0x4a)),
+                                    );
+                                }
+                                menu_divider(ui);
+                                menu_section_label(ui, "Input");
+                                if ui
+                                    .checkbox(
+                                        &mut settings.auto_midi_keyboard,
+                                        "Auto-connect MIDI keyboard",
+                                    )
+                                    .changed()
+                                {
+                                    settings.dirty = true;
+                                }
+                                let layout_label = settings.layout_label();
+                                reel_combo(
+                                    ui,
+                                    "settings_keyboard_layout",
+                                    select_value_text(layout_label),
+                                    180.0,
+                                    |ui| {
+                                        for (i, label) in
+                                            ShellAppSettings::LAYOUT_LABELS.iter().enumerate()
+                                        {
+                                            if menu_selectable(
+                                                ui,
+                                                settings.keyboard_layout_idx == i,
+                                                *label,
+                                            )
+                                            .clicked()
+                                            {
+                                                if settings.keyboard_layout_idx != i {
+                                                    settings.keyboard_layout_idx = i;
+                                                    settings.dirty = true;
+                                                }
+                                            }
+                                        }
+                                    },
+                                );
+                                ui.label(
+                                    egui::RichText::new(format!(
+                                        "Detected: {}",
+                                        settings.detected_keyboard_label
+                                    ))
+                                    .size(10.0)
+                                    .color(tokens.text_muted),
+                                );
+                            });
+                        });
+                        record_used(
+                            ui.ctx(),
+                            AuditId::HeaderSettingsMenu,
+                            settings_menu.response.rect,
+                        );
+                    }
 
                     let left_cluster = ui.min_rect();
                     ui.ctx().data_mut(|d| {
