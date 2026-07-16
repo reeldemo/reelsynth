@@ -11,8 +11,9 @@ use crate::region::region;
 use super::ComposeUi;
 
 const BEATS_VISIBLE: f32 = 32.0;
-const TRACK_ROW_H: f32 = 28.0;
-const RULER_H: f32 = 18.0;
+/// Slim clip-strip row height (Layout A).
+const TRACK_ROW_H: f32 = 20.0;
+const RULER_H: f32 = 14.0;
 
 pub struct ArrangementActions {
     pub clip_selected: bool,

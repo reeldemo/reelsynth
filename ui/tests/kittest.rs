@@ -1003,6 +1003,19 @@ fn compose_piano_roll_pencil() {
 }
 
 #[test]
+fn compose_piano_roll_keys_region() {
+    let mut scenario = ShellAuditScenario::default().compose_mode();
+    scenario.state.compose.selected_clip = Some(0);
+    scenario.state.keys_down.insert(60);
+    let run = run_shell_audit(scenario);
+    assert_full_ui_audit(&run, &default_audit_options());
+    assert!(
+        audit_id_rect(&run.ctx, AuditId::ComposeRollKeys).is_some(),
+        "playable key column should register ComposeRollKeys"
+    );
+}
+
+#[test]
 fn compose_scene_launch() {
     let mut scenario = ShellAuditScenario::default().compose_mode();
     scenario.state.compose.launched_scene = Some(0);
