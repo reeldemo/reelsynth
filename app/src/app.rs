@@ -1032,6 +1032,32 @@ impl ReelSynthApp {
         };
 
         if actions.transport_play {
+            // Always push the latest clip notes before play so the scheduler
+            // sees UI edits even when sequence_changed did not fire this frame.
+            let seq = compose_to_patch_sequence(&self.state.compose);
+            audio.send(AudioCmd::SetSequence(seq.clone()));
+            self.current_patch.sequence = seq;
+
+            // Clip-editor UX: if playhead is outside the selected clip, seek
+            // to that clip's start so ▶ actually voices the notes on screen.
+            if let Some(ci) = self.state.compose.selected_clip {
+                let ti = self.state.compose.selected_track;
+                if let Some(clip) = self
+                    .state
+                    .compose
+                    .project
+                    .tracks
+                    .get(ti)
+                    .and_then(|t| t.clips.get(ci))
+                {
+                    let ph = self.state.compose.transport.playhead_beats;
+                    let end = clip.start_beats + clip.length_beats;
+                    if ph < clip.start_beats || ph >= end {
+                        audio.send(AudioCmd::SeekPlayhead(clip.start_beats));
+                        self.state.compose.transport.playhead_beats = clip.start_beats;
+                    }
+                }
+            }
             audio.send(AudioCmd::TransportPlay);
         }
         if actions.transport_stop {
