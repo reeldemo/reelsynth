@@ -1,5 +1,7 @@
 //! Piano roll editor — grid, note draw/move/resize, velocity lane, selection, undo.
 
+use std::collections::HashSet;
+
 use egui::{pos2, Color32, Pos2, Rect, Sense, Ui, Vec2};
 use reelsynth::{ArpEngine, AutomationLane, AutomationPoint, MidiNote};
 use reelsynth_ui_theme::{ACCENT_UI, Tokens};
@@ -18,8 +20,28 @@ const PITCH_BOTTOM: u8 = 21;
 const ROW_H: f32 = 14.0;
 const VELOCITY_LANE_H: f32 = 40.0;
 const AUTOMATION_LANE_H: f32 = 44.0;
-const KEY_LABEL_W: f32 = 28.0;
+/// Interactive piano key column width (Layout A).
+const KEY_COLUMN_W: f32 = 52.0;
 const RESIZE_HANDLE_W: f32 = 6.0;
+
+/// QWERTY play-row glyphs for MIDI 48–59 (C3–B3).
+fn qwerty_glyph(pitch: u8) -> Option<&'static str> {
+    match pitch {
+        48 => Some("Z"),
+        49 => Some("S"),
+        50 => Some("X"),
+        51 => Some("D"),
+        52 => Some("C"),
+        53 => Some("V"),
+        54 => Some("G"),
+        55 => Some("B"),
+        56 => Some("H"),
+        57 => Some("N"),
+        58 => Some("J"),
+        59 => Some("M"),
+        _ => None,
+    }
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum HitRegion {
@@ -61,6 +83,7 @@ pub struct PianoRollActions {
     pub sequence_changed: bool,
     pub focus_changed: bool,
     pub audition_note: Option<(u8, f32)>,
+    pub audition_note_off: Option<u8>,
     pub open_arp_dialog: bool,
 }
 
@@ -70,14 +93,25 @@ impl Default for PianoRollActions {
             sequence_changed: false,
             focus_changed: false,
             audition_note: None,
+            audition_note_off: None,
             open_arp_dialog: false,
         }
     }
 }
 
-pub fn draw_piano_roll(ui: &mut Ui, rect: Rect, compose: &mut ComposeUi) -> PianoRollActions {
+pub fn draw_piano_roll(
+    ui: &mut Ui,
+    rect: Rect,
+    compose: &mut ComposeUi,
+    keys_down: &HashSet<u8>,
+) -> PianoRollActions {
     let tokens = Tokens::default();
     let mut actions = PianoRollActions::default();
+
+    // Flush deferred click-audition note-off from the previous frame.
+    if let Some(note) = compose.pending_audition_off.take() {
+        actions.audition_note_off = Some(note);
+    }
 
     region(ui, rect, |ui| {
         egui::Frame::none()
@@ -144,13 +178,16 @@ pub fn draw_piano_roll(ui: &mut Ui, rect: Rect, compose: &mut ComposeUi) -> Pian
                     pos2(grid_rect.max.x, grid_rect.min.y + inner_h.max(80.0)),
                 );
 
-                let (note_actions, focused, audition) =
-                    paint_note_grid(ui, grid_rect, compose, &tokens);
+                let (note_actions, focused, audition, audition_off) =
+                    paint_note_grid(ui, grid_rect, compose, &tokens, keys_down);
                 if note_actions {
                     actions.sequence_changed = true;
                 }
                 if let Some((note, vel)) = audition {
                     actions.audition_note = Some((note, vel));
+                }
+                if let Some(note) = audition_off {
+                    actions.audition_note_off = Some(note);
                 }
                 if focused != compose.piano_roll_focused {
                     compose.piano_roll_focused = focused;
@@ -195,7 +232,7 @@ pub fn draw_piano_roll(ui: &mut Ui, rect: Rect, compose: &mut ComposeUi) -> Pian
                 );
                 let keys_rect = Rect::from_min_max(
                     grid_rect.min,
-                    Pos2::new(grid_rect.min.x + KEY_LABEL_W, grid_rect.max.y),
+                    Pos2::new(grid_rect.min.x + KEY_COLUMN_W, grid_rect.max.y),
                 );
                 record_region(
                     ui.ctx(),
@@ -203,6 +240,7 @@ pub fn draw_piano_roll(ui: &mut Ui, rect: Rect, compose: &mut ComposeUi) -> Pian
                     keys_rect,
                     keys_rect,
                 );
+                record_used(ui.ctx(), AuditId::ComposeRollKeys, keys_rect);
             });
     });
 
@@ -230,35 +268,69 @@ fn paint_note_grid(
     rect: Rect,
     compose: &mut ComposeUi,
     tokens: &Tokens,
-) -> (bool, bool, Option<(u8, f32)>) {
+    keys_down: &HashSet<u8>,
+) -> (bool, bool, Option<(u8, f32)>, Option<u8>) {
     let (ti, ci) = match selected_clip_mut(compose) {
         Some(v) => v,
-        None => return (false, false, None),
+        None => return (false, false, None, None),
     };
 
+    let clip_start = compose.project.tracks[ti].clips[ci].start_beats;
     let clip_len = compose.project.tracks[ti].clips[ci].length_beats;
-    let beat_w = (rect.width() - KEY_LABEL_W) / clip_len.max(1.0);
-    let grid_left = rect.min.x + KEY_LABEL_W;
+    let pitch_top = visible_pitch_top(compose);
+    let visible_beats = (clip_len / compose.beat_zoom.max(0.25)).max(1.0);
+    let max_scroll = (clip_len - visible_beats).max(0.0);
+    compose.beat_scroll = compose.beat_scroll.clamp(0.0, max_scroll);
+    let beat_scroll = compose.beat_scroll;
+    let beat_w = (rect.width() - KEY_COLUMN_W) / visible_beats;
+    let grid_left = rect.min.x + KEY_COLUMN_W;
     let grid_rect = Rect::from_min_max(
         Pos2::new(grid_left, rect.min.y),
         rect.max,
     );
 
-    let (response, painter) =
+    let (response, _painter) =
         ui.allocate_painter(rect.size(), Sense::click_and_drag());
     let rect = response.rect;
     let painter = ui.painter_at(rect);
 
+    // Scroll / zoom (pitch vertical; beat horizontal or Ctrl+wheel zoom).
+    if response.hovered() {
+        let (scroll, zoom_mods) = ui.input(|i| {
+            (
+                i.smooth_scroll_delta,
+                i.modifiers.ctrl || i.modifiers.command,
+            )
+        });
+        if zoom_mods && scroll.y.abs() > 0.0 {
+            let factor = if scroll.y > 0.0 { 1.1 } else { 1.0 / 1.1 };
+            compose.beat_zoom = (compose.beat_zoom * factor).clamp(0.5, 8.0);
+        } else {
+            if scroll.y.abs() > 0.0 {
+                compose.pitch_scroll =
+                    (compose.pitch_scroll - scroll.y / ROW_H).clamp(0.0, (PITCH_TOP - PITCH_BOTTOM) as f32);
+            }
+            if scroll.x.abs() > 0.0 {
+                compose.beat_scroll =
+                    (compose.beat_scroll - scroll.x / beat_w).clamp(0.0, max_scroll);
+            }
+        }
+    }
+
+    let pitch_top = visible_pitch_top(compose);
+    let beat_scroll = compose.beat_scroll;
+
     painter.rect_filled(rect, 0.0, tokens.bg);
 
-    for p in PITCH_BOTTOM..=PITCH_TOP {
-        let row = (PITCH_TOP - p) as f32;
-        let y = rect.min.y + row * ROW_H;
-        if y + ROW_H > rect.max.y {
+    // Visible pitch rows + grid shading.
+    let rows_visible = ((rect.height() / ROW_H).ceil() as u8).saturating_add(1);
+    for row in 0..rows_visible {
+        let p = pitch_top.saturating_sub(row);
+        if p < PITCH_BOTTOM {
             break;
         }
-        let is_black = is_black_key(p);
-        if is_black {
+        let y = rect.min.y + row as f32 * ROW_H;
+        if is_black_key(p) {
             painter.rect_filled(
                 Rect::from_min_max(
                     Pos2::new(grid_left, y),
@@ -276,38 +348,97 @@ fn paint_note_grid(
                 ],
                 egui::Stroke::new(1.0, tokens.border_strong),
             );
-            painter.text(
-                Pos2::new(rect.min.x + 2.0, y + 1.0),
-                egui::Align2::LEFT_TOP,
-                pitch_label(p),
-                egui::FontId::monospace(8.0),
-                tokens.text_secondary,
-            );
+        }
+    }
+
+    // Interactive key column (after grid so keys sit on top for hit-testing paint).
+    let mut audition_note = None;
+    let mut audition_note_off = None;
+    {
+        let keys_rect = Rect::from_min_max(
+            rect.min,
+            Pos2::new(grid_left, rect.max.y),
+        );
+        let key_resp = ui.interact(keys_rect, ui.id().with("roll_keys"), Sense::click_and_drag());
+        paint_key_column(
+            &painter,
+            keys_rect,
+            pitch_top,
+            keys_down,
+            compose.key_pointer_held,
+            tokens,
+        );
+
+        if key_resp.drag_started() || (key_resp.is_pointer_button_down_on() && key_resp.clicked()) {
+            if let Some(pos) = key_resp.interact_pointer_pos() {
+                let pitch = pitch_at_y(pos.y, rect.min.y, pitch_top);
+                if compose.key_pointer_held != Some(pitch) {
+                    if let Some(prev) = compose.key_pointer_held.take() {
+                        audition_note_off = Some(prev);
+                    }
+                    compose.key_pointer_held = Some(pitch);
+                    audition_note = Some((pitch, 0.9));
+                }
+            }
+        }
+        if key_resp.dragged() {
+            if let Some(pos) = key_resp.interact_pointer_pos() {
+                let pitch = pitch_at_y(pos.y, rect.min.y, pitch_top);
+                if compose.key_pointer_held != Some(pitch) {
+                    if let Some(prev) = compose.key_pointer_held.take() {
+                        audition_note_off = Some(prev);
+                    }
+                    compose.key_pointer_held = Some(pitch);
+                    audition_note = Some((pitch, 0.9));
+                }
+            }
+        }
+        if key_resp.drag_stopped() || (!key_resp.is_pointer_button_down_on() && compose.key_pointer_held.is_some() && !key_resp.hovered()) {
+            if let Some(prev) = compose.key_pointer_held.take() {
+                audition_note_off = Some(prev);
+            }
+        }
+        // Release when pointer up anywhere after holding a key.
+        if compose.key_pointer_held.is_some()
+            && ui.input(|i| i.pointer.any_released())
+        {
+            if let Some(prev) = compose.key_pointer_held.take() {
+                audition_note_off = Some(prev);
+            }
         }
     }
 
     let step = compose.snap_division.beats_per_step();
-    let mut beat = 0.0;
-    while beat <= clip_len {
-        let x = grid_left + beat * beat_w;
+    let mut beat = beat_scroll;
+    let beat_end = beat_scroll + visible_beats;
+    while beat <= beat_end + 0.001 {
+        let x = grid_left + (beat - beat_scroll) * beat_w;
         painter.line_segment(
             [Pos2::new(x, rect.min.y), Pos2::new(x, rect.max.y)],
             egui::Stroke::new(
-                if beat % 1.0 < 0.001 { 1.0 } else { 0.5 },
+                if (beat - beat.floor()).abs() < 0.001 {
+                    1.0
+                } else {
+                    0.5
+                },
                 tokens.border,
             ),
         );
         beat += step;
     }
 
-    let playhead_x = grid_left + compose.transport.playhead_beats * beat_w;
-    painter.line_segment(
-        [
-            Pos2::new(playhead_x, rect.min.y),
-            Pos2::new(playhead_x, rect.max.y),
-        ],
-        egui::Stroke::new(1.5, ACCENT_UI),
-    );
+    // Clip-relative playhead.
+    let playhead_local = compose.transport.playhead_beats - clip_start;
+    let playhead_x = grid_left + (playhead_local - beat_scroll) * beat_w;
+    if playhead_x >= grid_left && playhead_x <= rect.max.x {
+        painter.line_segment(
+            [
+                Pos2::new(playhead_x, rect.min.y),
+                Pos2::new(playhead_x, rect.max.y),
+            ],
+            egui::Stroke::new(1.5, ACCENT_UI),
+        );
+    }
 
     let notes: Vec<MidiNote> = compose.project.tracks[ti].clips[ci].notes.clone();
     for (ni, note) in notes.iter().enumerate() {
@@ -317,6 +448,8 @@ fn paint_note_grid(
             grid_rect,
             note,
             beat_w,
+            beat_scroll,
+            pitch_top,
             selected,
             tokens,
             false,
@@ -331,6 +464,8 @@ fn paint_note_grid(
                 grid_rect,
                 note,
                 beat_w,
+                beat_scroll,
+                pitch_top,
                 false,
                 tokens,
                 true,
@@ -342,7 +477,7 @@ fn paint_note_grid(
     if let Some(drag) = &compose.drag_state {
         if let NoteDrag::Pencil { pitch, start_beats } = &drag.drag {
             if let Some(pos) = response.interact_pointer_pos() {
-                let end_beat = ((pos.x - grid_left) / beat_w).clamp(0.0, clip_len);
+                let end_beat = beat_at_pos(pos, grid_left, beat_w, beat_scroll).clamp(0.0, clip_len);
                 let snapped_end = compose.snap_beats(end_beat);
                 let snapped_start = compose.snap_beats(*start_beats);
                 let duration = (snapped_end - snapped_start).max(step);
@@ -353,14 +488,23 @@ fn paint_note_grid(
                         duration_beats: duration,
                         velocity: 0.78,
                     };
-                    paint_note(&painter, grid_rect, &preview, beat_w, false, tokens, true);
+                    paint_note(
+                        &painter,
+                        grid_rect,
+                        &preview,
+                        beat_w,
+                        beat_scroll,
+                        pitch_top,
+                        false,
+                        tokens,
+                        true,
+                    );
                 }
             }
         }
     }
 
     let mut changed = false;
-    let mut audition_note = None;
     let focused = response.hovered() || response.has_focus();
     let shift = ui.input(|i| i.modifiers.shift);
     let recording = compose.transport.recording;
@@ -368,13 +512,15 @@ fn paint_note_grid(
     if response.drag_started() {
         if let Some(pos) = response.interact_pointer_pos() {
             if grid_rect.contains(pos) {
-                let beat = ((pos.x - grid_left) / beat_w).clamp(0.0, clip_len);
-                let pitch = pitch_at_y(pos.y, rect.min.y);
+                let beat = beat_at_pos(pos, grid_left, beat_w, beat_scroll).clamp(0.0, clip_len);
+                let pitch = pitch_at_y(pos.y, rect.min.y, pitch_top);
                 let hit = hit_test_at_pos(
                     &compose.project.tracks[ti].clips[ci].notes,
                     pos,
                     grid_rect,
                     beat_w,
+                    beat_scroll,
+                    pitch_top,
                 );
 
                 match compose.piano_roll_tool {
@@ -387,6 +533,7 @@ fn paint_note_grid(
                             },
                             start_pos: pos,
                         });
+                        audition_note = Some((pitch, 0.85));
                     }
                     PianoRollTool::Select => match hit {
                         HitRegion::LeftEdge(ni) => {
@@ -470,13 +617,15 @@ fn paint_note_grid(
     if response.clicked() {
         if let Some(pos) = response.interact_pointer_pos() {
             if grid_rect.contains(pos) {
-                let beat = ((pos.x - grid_left) / beat_w).clamp(0.0, clip_len);
-                let pitch = pitch_at_y(pos.y, rect.min.y);
+                let beat = beat_at_pos(pos, grid_left, beat_w, beat_scroll).clamp(0.0, clip_len);
+                let pitch = pitch_at_y(pos.y, rect.min.y, pitch_top);
                 let hit = hit_test_at_pos(
                     &compose.project.tracks[ti].clips[ci].notes,
                     pos,
                     grid_rect,
                     beat_w,
+                    beat_scroll,
+                    pitch_top,
                 );
 
                 match compose.piano_roll_tool {
@@ -503,6 +652,7 @@ fn paint_note_grid(
                         if let HitRegion::Body(ni) = hit {
                             let note = &compose.project.tracks[ti].clips[ci].notes[ni];
                             audition_note = Some((note.pitch, note.velocity));
+                            compose.pending_audition_off = Some(note.pitch);
                         }
                     }
                     _ => {}
@@ -513,10 +663,23 @@ fn paint_note_grid(
         }
     }
 
+    if response.drag_stopped() {
+        if matches!(
+            compose.drag_state.as_ref().map(|d| &d.drag),
+            Some(NoteDrag::Pencil { .. })
+        ) {
+            if let Some(NoteDrag::Pencil { pitch, .. }) =
+                compose.drag_state.as_ref().map(|d| d.drag.clone())
+            {
+                audition_note_off = Some(pitch);
+            }
+        }
+    }
+
     if response.dragged() {
         if let Some(drag) = compose.drag_state.as_ref() {
             if let Some(pos) = response.interact_pointer_pos() {
-                let beat = ((pos.x - grid_left) / beat_w).clamp(0.0, clip_len);
+                let beat = beat_at_pos(pos, grid_left, beat_w, beat_scroll).clamp(0.0, clip_len);
                 match &drag.drag {
                     NoteDrag::ResizeLeft { note_idx, orig_start, orig_dur } => {
                         let snapped = compose.snap_beats(beat);
@@ -559,10 +722,10 @@ fn paint_note_grid(
                             let step = snap.beats_per_step();
                             (beats / step).round() * step
                         };
-                        let delta_beats = beat_at_pos(pos, grid_left, beat_w)
-                            - beat_at_pos(drag.start_pos, grid_left, beat_w);
-                        let delta_pitch_i16 = pitch_at_y(pos.y, rect.min.y) as i16
-                            - pitch_at_y(drag.start_pos.y, rect.min.y) as i16;
+                        let delta_beats = beat_at_pos(pos, grid_left, beat_w, beat_scroll)
+                            - beat_at_pos(drag.start_pos, grid_left, beat_w, beat_scroll);
+                        let delta_pitch_i16 = pitch_at_y(pos.y, rect.min.y, pitch_top) as i16
+                            - pitch_at_y(drag.start_pos.y, rect.min.y, pitch_top) as i16;
                         for &(idx, orig_start, orig_pitch) in originals {
                             let new_start =
                                 snap_beats((orig_start + delta_beats).max(0.0));
@@ -593,7 +756,8 @@ fn paint_note_grid(
             if let Some(pos) = response.interact_pointer_pos() {
                 match drag.drag {
                     NoteDrag::Pencil { pitch, start_beats } => {
-                        let end_beat = beat_at_pos(pos, grid_left, beat_w).clamp(0.0, clip_len);
+                        let end_beat =
+                            beat_at_pos(pos, grid_left, beat_w, beat_scroll).clamp(0.0, clip_len);
                         let snapped_start = compose.snap_beats(start_beats.min(end_beat));
                         let snapped_end = compose.snap_beats(start_beats.max(end_beat));
                         let duration = (snapped_end - snapped_start).max(step);
@@ -609,6 +773,7 @@ fn paint_note_grid(
                             note: note.clone(),
                         });
                         compose.project.tracks[ti].clips[ci].notes.push(note);
+                        audition_note_off = Some(pitch);
                         changed = true;
                     }
                     NoteDrag::ResizeLeft { note_idx, orig_start, orig_dur }
@@ -634,10 +799,10 @@ fn paint_note_grid(
                         }
                     }
                     NoteDrag::Move { originals } => {
-                        let delta_beats = beat_at_pos(pos, grid_left, beat_w)
-                            - beat_at_pos(drag.start_pos, grid_left, beat_w);
-                        let delta_pitch = (pitch_at_y(pos.y, rect.min.y) as i16
-                            - pitch_at_y(drag.start_pos.y, rect.min.y) as i16)
+                        let delta_beats = beat_at_pos(pos, grid_left, beat_w, beat_scroll)
+                            - beat_at_pos(drag.start_pos, grid_left, beat_w, beat_scroll);
+                        let delta_pitch = (pitch_at_y(pos.y, rect.min.y, pitch_top) as i16
+                            - pitch_at_y(drag.start_pos.y, rect.min.y, pitch_top) as i16)
                             .clamp(i8::MIN as i16, i8::MAX as i16) as i8;
                         if delta_beats.abs() > 0.001 || delta_pitch != 0 {
                             let entries: Vec<(usize, f32, f32, u8)> = originals
@@ -658,7 +823,76 @@ fn paint_note_grid(
         }
     }
 
-    (changed, focused, audition_note)
+    (changed, focused, audition_note, audition_note_off)
+}
+
+fn paint_key_column(
+    painter: &egui::Painter,
+    keys_rect: Rect,
+    pitch_top: u8,
+    keys_down: &HashSet<u8>,
+    pointer_held: Option<u8>,
+    tokens: &Tokens,
+) {
+    painter.rect_filled(keys_rect, 0.0, tokens.surface2);
+    let rows_visible = ((keys_rect.height() / ROW_H).ceil() as u8).saturating_add(1);
+    for row in 0..rows_visible {
+        let p = pitch_top.saturating_sub(row);
+        if p < PITCH_BOTTOM {
+            break;
+        }
+        let y = keys_rect.min.y + row as f32 * ROW_H;
+        let key_rect = Rect::from_min_max(
+            Pos2::new(keys_rect.min.x, y),
+            Pos2::new(keys_rect.max.x - 1.0, y + ROW_H),
+        );
+        let held = keys_down.contains(&p) || pointer_held == Some(p);
+        let black = is_black_key(p);
+        let fill = if held {
+            ACCENT_UI.gamma_multiply(0.85)
+        } else if black {
+            Color32::from_rgb(0x22, 0x24, 0x2a)
+        } else {
+            Color32::from_rgb(0xe8, 0xea, 0xef)
+        };
+        painter.rect_filled(key_rect, 1.0, fill);
+        painter.rect_stroke(key_rect, 1.0, egui::Stroke::new(0.5, tokens.border));
+        if p % 12 == 0 {
+            painter.text(
+                Pos2::new(key_rect.min.x + 3.0, key_rect.min.y + 1.0),
+                egui::Align2::LEFT_TOP,
+                pitch_label(p),
+                egui::FontId::monospace(8.0),
+                if black || held {
+                    tokens.text
+                } else {
+                    Color32::from_rgb(0x33, 0x36, 0x3d)
+                },
+            );
+        }
+        if let Some(glyph) = qwerty_glyph(p) {
+            if !black {
+                painter.text(
+                    Pos2::new(key_rect.max.x - 3.0, key_rect.center().y),
+                    egui::Align2::RIGHT_CENTER,
+                    glyph,
+                    egui::FontId::monospace(9.0),
+                    if held {
+                        tokens.text
+                    } else {
+                        Color32::from_rgb(0x55, 0x5a, 0x66)
+                    },
+                );
+            }
+        }
+    }
+}
+
+fn visible_pitch_top(compose: &ComposeUi) -> u8 {
+    let scroll = compose
+        .pitch_scroll
+        .clamp(0.0, (PITCH_TOP - PITCH_BOTTOM) as f32);
+    (PITCH_TOP as f32 - scroll).round() as u8
 }
 
 fn paint_velocity_lane(
@@ -873,17 +1107,25 @@ fn paint_note(
     grid: Rect,
     note: &MidiNote,
     beat_w: f32,
+    beat_scroll: f32,
+    pitch_top: u8,
     selected: bool,
     tokens: &Tokens,
     overlay: bool,
 ) {
-    let row = (PITCH_TOP - note.pitch) as f32;
-    let x = grid.min.x + note.start_beats * beat_w;
+    let row = pitch_top as i16 - note.pitch as i16;
+    if row < -1 || row > 200 {
+        return;
+    }
+    let x = grid.min.x + (note.start_beats - beat_scroll) * beat_w;
     let w = note.duration_beats * beat_w;
     let note_rect = Rect::from_min_max(
-        Pos2::new(x + 1.0, grid.min.y + row * ROW_H + 1.0),
-        Pos2::new(x + w - 1.0, grid.min.y + (row + 1.0) * ROW_H - 1.0),
+        Pos2::new(x + 1.0, grid.min.y + row as f32 * ROW_H + 1.0),
+        Pos2::new(x + w - 1.0, grid.min.y + (row as f32 + 1.0) * ROW_H - 1.0),
     );
+    if note_rect.max.x < grid.min.x || note_rect.min.x > grid.max.x {
+        return;
+    }
     let fill = if overlay {
         ACCENT_UI.gamma_multiply(0.55)
     } else if selected {
@@ -905,8 +1147,6 @@ fn paint_note(
         ),
     );
     if selected && !overlay && w > RESIZE_HANDLE_W * 2.0 {
-        let handle_h = note_rect.height();
-        let _ = handle_h;
         let left = Rect::from_min_max(
             note_rect.left_top(),
             Pos2::new(note_rect.min.x + RESIZE_HANDLE_W, note_rect.max.y),
@@ -926,18 +1166,25 @@ pub(crate) struct DragState {
     pub(crate) start_pos: Pos2,
 }
 
-fn pitch_at_y(y: f32, grid_top: f32) -> u8 {
-    let pitch = PITCH_TOP - ((y - grid_top) / ROW_H).floor() as u8;
+fn pitch_at_y(y: f32, grid_top: f32, pitch_top: u8) -> u8 {
+    let pitch = pitch_top.saturating_sub(((y - grid_top) / ROW_H).floor() as u8);
     pitch.clamp(PITCH_BOTTOM, PITCH_TOP)
 }
 
-fn beat_at_pos(pos: Pos2, grid_left: f32, beat_w: f32) -> f32 {
-    (pos.x - grid_left) / beat_w
+fn beat_at_pos(pos: Pos2, grid_left: f32, beat_w: f32, beat_scroll: f32) -> f32 {
+    beat_scroll + (pos.x - grid_left) / beat_w
 }
 
-fn hit_test_at_pos(notes: &[MidiNote], pos: Pos2, grid: Rect, beat_w: f32) -> HitRegion {
-    let beat = beat_at_pos(pos, grid.min.x, beat_w);
-    let pitch = pitch_at_y(pos.y, grid.min.y);
+fn hit_test_at_pos(
+    notes: &[MidiNote],
+    pos: Pos2,
+    grid: Rect,
+    beat_w: f32,
+    beat_scroll: f32,
+    pitch_top: u8,
+) -> HitRegion {
+    let beat = beat_at_pos(pos, grid.min.x, beat_w, beat_scroll);
+    let pitch = pitch_at_y(pos.y, grid.min.y, pitch_top);
     for (i, note) in notes.iter().enumerate().rev() {
         if note.pitch != pitch {
             continue;
@@ -945,7 +1192,7 @@ fn hit_test_at_pos(notes: &[MidiNote], pos: Pos2, grid: Rect, beat_w: f32) -> Hi
         if beat < note.start_beats || beat >= note.start_beats + note.duration_beats {
             continue;
         }
-        let x = grid.min.x + note.start_beats * beat_w;
+        let x = grid.min.x + (note.start_beats - beat_scroll) * beat_w;
         let w = note.duration_beats * beat_w;
         let rel_x = pos.x - x;
         if rel_x <= RESIZE_HANDLE_W {
@@ -956,7 +1203,6 @@ fn hit_test_at_pos(notes: &[MidiNote], pos: Pos2, grid: Rect, beat_w: f32) -> Hi
         }
         return HitRegion::Body(i);
     }
-    let _ = pitch;
     HitRegion::Empty
 }
 

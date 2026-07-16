@@ -17,7 +17,7 @@ use reelsynth_ui::{
     compose_to_patch_sequence, draw_shell, effect_slots_to_patch, factory_bank, factory_label,
     mod_slots_to_patch, patch_from_state, sync_state_from_patch,
     OscStripContext, OscStripPreviewState, ShellConfig, ShellMidiDevices, ShellMode, UiState,
-    ScopeStripContext, ScopeStripState, PianoRollTool,
+    ScopeStripContext, ScopeStripState,
 };
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -332,27 +332,14 @@ impl ReelSynthApp {
     fn handle_compose_note_on(&mut self, note: u8, velocity: f32) {
         if self.compose_is_recording() {
             self.record_note_on(note, velocity);
-            if self.audio.is_some() {
-                self.engine_note_on(note, velocity);
-            }
-            return;
         }
-        if self.state.compose.piano_roll_focused
-            && self.state.compose.piano_roll_tool == PianoRollTool::Pencil
-        {
-            self.engine_note_on(note, velocity * 0.65);
-            return;
-        }
+        // Always monitor through the unified performance path (scale/arp layers apply).
         self.performance_note_on(PerformanceKey::Note(note), velocity);
     }
 
     fn handle_compose_note_off(&mut self, note: u8) {
         if self.compose_is_recording() {
             self.record_note_off(note);
-            if self.audio.is_some() {
-                self.engine_note_off(note);
-            }
-            return;
         }
         self.performance_note_off(PerformanceKey::Note(note));
     }
