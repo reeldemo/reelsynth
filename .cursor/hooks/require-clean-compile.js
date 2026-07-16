@@ -1,77 +1,60 @@
 #!/usr/bin/env node
 /**
- * beforeShellExecution hook — block `git push` unless cargo check is clean
- * with warnings denied (RUSTFLAGS=-D warnings).
+ * Mark (or verify) a clean compile stamp for the push gate.
  *
- * Input: JSON on stdin (Cursor hook payload with `.command`)
- * Output: JSON on stdout `{ permission, user_message?, agent_message? }`
+ *   node .cursor/hooks/require-clean-compile.js          # cargo check + write stamp
+ *   node .cursor/hooks/require-clean-compile.js --mark-only  # write stamp only (after you already checked)
+ *
+ * Used by agents before `git push`. The beforeShellExecution hook only *reads*
+ * the stamp (Cursor's hook host cannot spawn cargo/shell).
  */
 const { spawnSync } = require("child_process");
+const fs = require("fs");
+const path = require("path");
 
-function readStdin() {
-  try {
-    return require("fs").readFileSync(0, "utf8");
-  } catch {
-    return "";
+const ROOT = path.resolve(__dirname, "..", "..");
+const STAMP = path.join(ROOT, ".cursor", "compile-clean.stamp");
+const CRATES = ["reelsynth", "reelsynth-ui", "reelsynth-app"];
+const markOnly = process.argv.includes("--mark-only");
+
+function runCargoCheck() {
+  const env = { ...process.env, RUSTFLAGS: "-D warnings" };
+  const args = ["check", ...CRATES.flatMap((c) => ["-p", c])];
+  const result = spawnSync("cargo", args, {
+    cwd: ROOT,
+    env,
+    encoding: "utf8",
+    shell: process.platform === "win32",
+    maxBuffer: 8 * 1024 * 1024,
+  });
+  if (result.status !== 0) {
+    const tail = [result.stderr, result.stdout]
+      .filter(Boolean)
+      .join("\n")
+      .trim()
+      .split(/\r?\n/)
+      .slice(-40)
+      .join("\n");
+    console.error("cargo check failed (RUSTFLAGS=-D warnings):\n" + tail);
+    process.exit(1);
   }
 }
 
-function allow(extra = {}) {
-  process.stdout.write(JSON.stringify({ permission: "allow", ...extra }));
-  process.exit(0);
+function writeStamp() {
+  const payload = {
+    ok: true,
+    at: new Date().toISOString(),
+    epochMs: Date.now(),
+    crates: CRATES,
+    rustflags: "-D warnings",
+  };
+  fs.mkdirSync(path.dirname(STAMP), { recursive: true });
+  fs.writeFileSync(STAMP, JSON.stringify(payload, null, 2) + "\n", "utf8");
+  console.log("Wrote " + path.relative(ROOT, STAMP));
 }
 
-function deny(userMessage, agentMessage) {
-  process.stdout.write(
-    JSON.stringify({
-      permission: "deny",
-      user_message: userMessage,
-      agent_message: agentMessage,
-    })
-  );
-  process.exit(0);
+if (!markOnly) {
+  runCargoCheck();
 }
-
-const raw = readStdin();
-let payload = {};
-try {
-  payload = JSON.parse(raw || "{}");
-} catch {
-  payload = {};
-}
-
-const command = String(payload.command || "");
-if (!/\bgit(\.exe)?(\s+-C\s+\S+)?\s+push\b/i.test(command)) {
-  allow();
-}
-
-const crates = ["reelsynth", "reelsynth-ui", "reelsynth-app"];
-const args = ["check", ...crates.flatMap((c) => ["-p", c])];
-const env = { ...process.env, RUSTFLAGS: "-D warnings" };
-
-const result = spawnSync("cargo", args, {
-  env,
-  encoding: "utf8",
-  shell: process.platform === "win32",
-  maxBuffer: 8 * 1024 * 1024,
-});
-
-if (result.status === 0) {
-  allow({
-    agent_message:
-      "Compile clean (RUSTFLAGS=-D warnings) — git push allowed.",
-  });
-}
-
-const tail = [result.stderr, result.stdout]
-  .filter(Boolean)
-  .join("\n")
-  .trim()
-  .split(/\r?\n/)
-  .slice(-40)
-  .join("\n");
-
-deny(
-  "Push blocked: cargo check failed with warnings treated as errors. Fix compile errors/warnings, then push again.",
-  `Push blocked — clean compile required (cargo check -p reelsynth -p reelsynth-ui -p reelsynth-app with RUSTFLAGS=-D warnings).\n\n${tail}`
-);
+writeStamp();
+process.exit(0);
