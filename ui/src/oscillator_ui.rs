@@ -18,6 +18,8 @@ pub struct WaveLayerUi {
     pub invert: bool,
     /// Optional bank id for this layer (falls back to patch/osc primary bank).
     pub wavetable_id: Option<String>,
+    /// UI-only: auto-created layer that absorbs Result quant edits.
+    pub residual: bool,
 }
 
 impl Default for WaveLayerUi {
@@ -32,6 +34,7 @@ impl Default for WaveLayerUi {
             enabled: true,
             invert: false,
             wavetable_id: None,
+            residual: false,
         }
     }
 }
@@ -84,6 +87,7 @@ impl WaveLayerUi {
             enabled: layer.level > 0.0,
             invert: layer.invert,
             wavetable_id: layer.wavetable_id.clone(),
+            residual: false,
         }
     }
 

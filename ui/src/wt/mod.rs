@@ -3,6 +3,9 @@ mod curve_editor;
 mod gpu_waveform;
 mod mod_preview;
 mod morph;
+mod residual;
+mod view_result;
+mod view_selected;
 mod quant_handles;
 mod shape_editor;
 mod slots;
@@ -15,6 +18,12 @@ mod waveform;
 
 pub use banks::{factory_bank, factory_label, FactoryBankEntry, FACTORY_BANKS};
 pub use gpu_waveform::{paint_waveform_line, set_gpu_renderer_active, use_gpu_waveforms};
+pub use residual::{
+    ensure_residual_layer, find_residual_layer_idx, layer_curve_label,
+    residual_samples_from_desired,
+};
+pub use view_result::{WtViewResult, WtViewResultResponse};
+pub use view_selected::{WtSelectedLayerView, WtSelectedLayerResponse};
 pub use morph::{morph_amount_for_position, morph_position, WtMorph, WtMorphResponse};
 pub use quant_handles::{
     apply_quant_slot_amplitude, frame_to_y, knob_y_on_curve, nearest_quant_handle, nearest_slot,

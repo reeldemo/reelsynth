@@ -884,15 +884,31 @@ fn design_strip_layer_chips_with_layers() {
 }
 
 #[test]
+fn design_wt_three_columns() {
+    let run = run_shell_audit(ShellAuditScenario::default());
+    let result = audit_id_rect(&run.ctx, AuditId::CenterWtResult);
+    let layers = audit_id_rect(&run.ctx, AuditId::CenterWt3dStack);
+    let selected = audit_id_rect(&run.ctx, AuditId::CenterWtSelected);
+    assert!(result.is_some(), "Col1 Result pane recorded");
+    assert!(layers.is_some(), "Col2 Layers pane recorded");
+    assert!(selected.is_some(), "Col3 Selected pane recorded");
+    let views = audit_id_rect(&run.ctx, AuditId::CenterWtViews);
+    assert!(views.is_some(), "wt views region should be recorded");
+    assert_full_ui_audit(&run, &default_audit_options());
+}
+
+#[test]
 fn design_left_pane_records_result_curve() {
     let run = run_shell_audit(ShellAuditScenario::default());
     let result = audit_id_rect(&run.ctx, AuditId::CenterWt2dResult);
     assert!(
         result.is_some(),
-        "left 2D pane should record distinct Result curve (CenterWt2dResult)"
+        "Result column should record composite curve (CenterWt2dResult)"
     );
     let stack = audit_id_rect(&run.ctx, AuditId::CenterWt3dStack);
-    assert!(stack.is_some(), "right Layers pane still present");
+    assert!(stack.is_some(), "Layers column still present");
+    let selected = audit_id_rect(&run.ctx, AuditId::CenterWtSelected);
+    assert!(selected.is_some(), "Selected column present");
 }
 
 #[test]

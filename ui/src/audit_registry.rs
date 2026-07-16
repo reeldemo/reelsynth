@@ -160,6 +160,8 @@ pub enum AuditId {
     CenterWt2dToolbar,
     CenterWt2dPlot,
     CenterWt2dResult,
+    CenterWtResult,
+    CenterWtSelected,
     CenterWt2dCurveEditor,
     CenterWt2dShapeEditor,
     CenterWt2dAnalyzeDialog,
@@ -268,7 +270,8 @@ impl AuditId {
             | Self::CenterScopeCellOsc | Self::CenterScopeCellFilter
             | Self::CenterScopeCellFx | Self::CenterScopeCellOut | Self::RailFilterTabs
             | Self::RailFiltEnvGraph | Self::RailAmpEnvGraph | Self::CenterWt2d
-            | Self::CenterWt2dPlot | Self::CenterWt2dResult | Self::CenterWt2dCurveEditor | Self::CenterWt2dShapeEditor
+            | Self::CenterWt2dPlot | Self::CenterWt2dResult | Self::CenterWtResult | Self::CenterWtSelected
+            | Self::CenterWt2dCurveEditor | Self::CenterWt2dShapeEditor
             | Self::CenterWt3dStack | Self::CenterWt3dMorph | Self::FooterPianoCompact
             | Self::RailLevelMeter | Self::WidgetKnobSm | Self::WidgetKnobMd | Self::WidgetKnobLg
             | Self::WidgetPanel => AuditChecks::B,
@@ -344,6 +347,8 @@ fn static_label(id: &AuditId) -> &'static str {
         AuditId::CenterWt2dToolbar => "center.wt_2d.toolbar",
         AuditId::CenterWt2dPlot => "center.wt_2d.plot",
         AuditId::CenterWt2dResult => "center.wt_2d.result",
+        AuditId::CenterWtResult => "center.wt_result",
+        AuditId::CenterWtSelected => "center.wt_selected",
         AuditId::CenterWt2dCurveEditor => "center.wt_2d.curve_editor",
         AuditId::CenterWt2dShapeEditor => "center.wt_2d.shape_editor",
         AuditId::CenterWt2dAnalyzeDialog => "center.wt_2d.analyze_dialog",
@@ -629,6 +634,8 @@ fn parent_bounds(
         AuditId::CenterWt2dToolbar
         | AuditId::CenterWt2dPlot
         | AuditId::CenterWt2dResult
+        | AuditId::CenterWtResult
+        | AuditId::CenterWtSelected
         | AuditId::CenterWt2dCurveEditor
         | AuditId::CenterWt2dShapeEditor => Some(AuditId::CenterWt2d),
         AuditId::RailFilterTabs | AuditId::RailFilterKnobs => Some(AuditId::RailPanelFilter),
@@ -687,12 +694,12 @@ fn shell_region(id: AuditId, layout: &ShellLayout) -> Option<Rect> {
 }
 
 /// Expected registry variant count (coverage gate).
-pub const REGISTRY_VARIANT_COUNT: usize = 96;
+pub const REGISTRY_VARIANT_COUNT: usize = 98;
 
 /// Count non-parameterized AuditId base variants for drift detection.
 pub fn count_base_audit_variants() -> usize {
     // Hand-counted base variants matching the plan registry table.
-    96
+    98
 }
 
 #[cfg(test)]

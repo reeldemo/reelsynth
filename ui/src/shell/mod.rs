@@ -36,7 +36,7 @@ pub(super) use crate::widgets::{
     adsr_graph, format_depth, format_env_time, format_lfo_rate, format_sustain, PianoKeyboard,
 };
 pub(super) use crate::wt::{
-    morph_amount_for_position, morph_position, StripMode, WtMorph, WtStrip, WtView2d,
+    morph_amount_for_position, StripMode, WtMorph, WtStrip, WtSelectedLayerView, WtViewResult,
     WtView3dStack, FACTORY_BANKS,
 };
 

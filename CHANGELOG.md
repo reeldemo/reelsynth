@@ -16,6 +16,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- **Design WT layout** — two panes replaced by three equal columns (Result / Layers / Selected); toolbar and per-layer quant moved to Selected column
 - Cleared workspace `cargo check` warnings (`-D warnings` clean for reelsynth / reelsynth-ui / reelsynth-app); Cursor **beforeShellExecution** hook blocks `git push` unless a fresh `.cursor/compile-clean.stamp` exists (refresh via `node .cursor/hooks/require-clean-compile.js`)
 - WT menu section renamed **Factory wavetables** (was “Factory banks”) to match layer-first Design
 - **Settings** moved from floating modal window to a **Settings** dropdown in the top header navbar
@@ -26,6 +27,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Three-column Design WT** — Result · Layers · Selected panes with per-column Quant roles; **Residual** wavetable layer created on first Result quant edit
 - `.cursor/hooks/` — `require-clean-compile.js` runs `cargo check` (`-D warnings`) and writes a stamp; `verify-compile-stamp.js` gates agent `git push` on that stamp (hook host cannot spawn cargo)
 - **Compose mode** — header toggle switches from Design (sound engineering) to a mini-DAW layout: transport bar, multi-track arrangement, piano roll editor, scene grid, 88-key keyboard strip
 - **Ableton-style clip editor** — thin clip strip + dominant piano roll; playable key column with QWERTY glyphs; unified live audition (keys / QWERTY / MIDI / pencil); transport ▶ voices scheduled notes; scenes collapsed by default

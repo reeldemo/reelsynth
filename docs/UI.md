@@ -122,25 +122,33 @@ The position strip is **layer chips only** on Design — no 256-frame scrub.
 |--------|---------|
 | Full-width strip | Layer thumbnails + select; add/remove layers at strip edge |
 
-### Design WT panes (layer-first)
+### Design WT panes (three columns, left → right)
 
-| Pane | Caption | Job |
-|------|---------|-----|
-| Left 2D | **Result · N layers** | Stack sum (**Result**) drawn distinctly with fill; individual layer curves under it — drag Y=level, X=phase/WT pos |
-| Right | **Edit · Layer N · type** | Selected layer is primary (fill + thick); other layers dim — pick / per-layer drag; Quant knobs when WT |
+| Column | Caption | Job |
+|--------|---------|-----|
+| **1 Result** | **Result · N · {stack_mode}** | Stack sum with fill; dim sibling layer strokes. Pick layers; drag Y=level, X=phase/WT. **Result Quant** (when Quant > 0) reshapes the total curve via a one-shot **Residual** wavetable layer |
+| **2 Layers** | **Layers · Osc N** | Every enabled layer labelled (`L1 · saw`, …). Click selects; per-WT **Quant** knobs at the edit frame (nearest-knob hit across WT curves) |
+| **3 Selected** | **Edit · Layer N · {type}** | Single selected layer (fill + thick). Toolbar: **Select / Interp / Shape**; full **QuantHandleEditor** for wavetable layers; Pencil / Curve / Shape tools |
 
-**Shape** menu (Saw / Square / Sine / Triangle) sets the **active layer `source_type`** — it does not overwrite an arbitrary WT frame index.
+**Residual layer** — first Result Quant drag appends one wavetable layer (`residual: true`, shown as **Residual** in the strip). Stack mode switches to **add** if needed. Further Result edits update the same layer; math: `residual[i] = (desired[i] − others[i]) / (sign × level)`.
 
-### Quant hand drag (2D waveform — wavetable layers only)
+**Shape** menu (Saw / Square / Sine / Triangle) sets the **active layer `source_type`** on the Selected column — it does not overwrite an arbitrary WT frame index.
 
-When the **active layer** is **wavetable** and **Quant** > 0 (left: tool **Select**; right: always when selected WT):
+### Quant hand drag
 
-- Vertical grid at each slot on **both** Design panes; **knob handles sit on the selected layer curve** (scaled by level / invert)
-- Grab only works near a dot (curve snap) — not empty slot columns
-- Drag locks that slot for the gesture; Y edits **amplitude**; quantized polyline (Hold / Linear / Spline) updates under the knobs
-- **Interp** dropdown: **Hold** (step), **Linear**, **Spline** (Catmull-Rom). Switching rebuilds the frame from knob heights.
-- Tooltip / status: **Drag dots on the selected curve to reshape**
-- With Quant off, both panes allow dragging individual layer curves (Y=level, X=phase/WT)
+| Pane | Quant target |
+|------|----------------|
+| **Result** | Composite stack sum — writes **Residual** frame |
+| **Layers** | Nearest WT curve knob at edit frame |
+| **Selected** | Active layer curve (level / invert scaled) |
+
+When the **active layer** is **wavetable** and **Quant** > 0:
+
+- Vertical grid at each slot; knob handles sit on the editable curve
+- Grab only works near a dot (curve snap)
+- Drag locks that slot; Y edits **amplitude**; quantized polyline (Hold / Linear / Spline) updates under the knobs
+- **Interp** dropdown on Selected column: **Hold**, **Linear**, **Spline**
+- VA layers: level/phase drag only (no frame quant)
 
 **Morph A/B bar** is hidden on Design home (frame-bank morph remains in preset schema for compatibility). Save/reload preserves `wave_layers`, `invert`, and `stack_mode`.
 
@@ -207,11 +215,11 @@ Serial chain: delay, reverb, chorus, etc. Per-slot mix and bypass.
 | **Layer strip** | Select layers; level drag; add/remove; invert sign per chip |
 | **Wave quant** | 8 / 16 / 32 / 64 / **256** / Smooth — active only for **wavetable** layers with quant > 0 |
 | **Morph A / B / amount** | Hidden on Design home; still in preset schema |
-| **Edit (2D)** | Active layer — VA preview or WT frame edit; **Shape→** sets layer type |
-| **Composite (right)** | Per-layer strokes + summed waveform (`WtView3dStack`; Stack/Morph toggle hidden on Design) |
-| **Toolbar** | Select / **Curve** / **Shape** / **Shape** menu / **FFT** (decompose frame → layers) |
+| **Result (col 1)** | Stack sum + residual quant (`WtViewResult`) |
+| **Layers (col 2)** | Labelled per-layer strokes + multi-WT quant (`WtView3dStack`) |
+| **Selected (col 3)** | Active layer edit + toolbar (`WtSelectedLayerView`) |
 
-**Three concepts on Design:** **Result** (left pane stack sum) · **Layers** (right pane + strip chips) · **Scope Result** (all oscs after Filter/FX).
+**Three concepts on Design:** **Result** (col 1 stack sum + residual quant) · **Layers** (col 2 labelled curves + strip chips) · **Selected** (col 3 edit focus) · **Scope Result** (all oscs after Filter/FX).
 
 Morph mesh / frame-bank scrub remain available on non-Design paths (Compose / advanced).
 

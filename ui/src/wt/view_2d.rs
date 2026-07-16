@@ -26,7 +26,7 @@ enum SelectDragKind {
     Waveform,
 }
 
-fn apply_waveform_drag(
+pub(crate) fn apply_waveform_drag_inner(
     bank: &mut WavetableBank,
     frame_idx: usize,
     inner: Rect,
@@ -363,7 +363,7 @@ impl WtView2d<'_> {
                     SelectDragKind::Waveform => {
                         if !quant_mode {
                             if let Some(bank) = self.bank.as_mut() {
-                                if apply_waveform_drag(bank, frame_idx, inner, &response) {
+                                if apply_waveform_drag_inner(bank, frame_idx, inner, &response) {
                                     frame_edited = true;
                                 }
                             }
@@ -603,7 +603,7 @@ impl WtView2d<'_> {
             if let Some(bank) = self.bank.as_mut() {
                 let sense = Sense::click_and_drag();
                 let response = ui.allocate_rect(inner, sense);
-                if apply_waveform_drag(bank, frame_idx, inner, &response) {
+                if apply_waveform_drag_inner(bank, frame_idx, inner, &response) {
                     frame_edited = true;
                 }
                 if response.hovered() {
@@ -810,7 +810,7 @@ fn view_coords(inner: Rect, pos: Pos2) -> (f32, f32) {
     (x, y)
 }
 
-fn va_layer_waveform_points(layer: &WaveLayerUi, inner: Rect, samples: usize) -> Vec<Pos2> {
+pub(crate) fn va_layer_waveform_points(layer: &WaveLayerUi, inner: Rect, samples: usize) -> Vec<Pos2> {
     use reelsynth::osc::{layer_sign, sample_layer, WtWarpMode};
 
     let bank = WavetableBank::factory_saw_morph();

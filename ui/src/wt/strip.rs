@@ -186,7 +186,11 @@ fn paint_layer_chips(
             }
         }
 
-        let type_label = layer.source_type.chars().take(3).collect::<String>();
+        let type_label = if layer.residual {
+            "Residual".to_string()
+        } else {
+            layer.source_type.chars().take(3).collect::<String>()
+        };
         painter.text(
             Pos2::new(cell.min.x + 4.0, cell.min.y + 2.0),
             egui::Align2::LEFT_TOP,

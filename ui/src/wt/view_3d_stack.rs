@@ -12,9 +12,13 @@ use crate::oscillator_ui::WaveLayerUi;
 use crate::region::region;
 use crate::state::WtView3dMode;
 
-use super::quant_handles::{slot_x, QuantHandleEditor, WtQuantInterp};
+use super::quant_handles::{
+    apply_quant_slot_amplitude, knob_y_on_curve, nearest_quant_handle, quant_control_points,
+    sample_from_knob_y, slot_x, WtQuantInterp,
+};
+use super::residual::layer_curve_label;
 use super::slots::effective_quant_count;
-use super::waveform::{frame_index, nearest_waveform_distance};
+use super::waveform::{frame_index, nearest_waveform_distance, peak_point};
 
 pub(crate) const HOVER_DISTANCE_PX: f32 = 14.0;
 pub(crate) const WAVE_AMP: f32 = 0.42;
@@ -151,7 +155,8 @@ pub(crate) fn composite_waveform_points(
     pts
 }
 
-/// Caption for the right Layers pane — tracks the selected layer type.
+/// Caption for the Selected pane — tracks the selected layer type.
+#[allow(dead_code)]
 pub(crate) fn selected_layer_edit_label(
     selected: Option<usize>,
     layers: &[WaveLayerUi],
@@ -234,6 +239,8 @@ pub struct WtView3dStack<'a> {
     pub view_mode: Option<&'a mut WtView3dMode>,
     /// When false, hide Stack/Morph toggle (Design composite pane).
     pub show_mode_toggle: bool,
+    /// Osc index for pane caption (`Layers · Osc N`).
+    pub active_osc: usize,
     pub time: f32,
     /// Osc quant count — enables snap knobs on selected wavetable layer.
     pub wave_quant: u8,
@@ -250,25 +257,10 @@ impl WtView3dStack<'_> {
         let global_wt_scrub = false;
         let mut frame_edited = false;
 
-        // Quant reshape owns drag when the selected layer is a wavetable.
-        let mut quant_active = (*self.selected_layer)
-            .and_then(|i| self.layers.get(i))
-            .map(|l| l.is_wavetable() && self.wave_quant > 0)
-            .unwrap_or(false);
         let (rect, _) = ui.allocate_exact_size(
             Vec2::new(ui.available_width(), view_h),
             Sense::hover(),
         );
-        // When Quant owns the plot, skip full-rect interact so knobs receive drag.
-        let response = if quant_active {
-            None
-        } else {
-            Some(ui.interact(
-                rect,
-                ui.id().with("stack_interact"),
-                Sense::click_and_drag(),
-            ))
-        };
 
         if !ui.is_rect_visible(rect) {
             return WtView3dStackResponse {
@@ -292,7 +284,7 @@ impl WtView3dStack<'_> {
                 painter.text(
                     rect.center(),
                     egui::Align2::CENTER_CENTER,
-                    "Stack · no bank",
+                    "Layers · no bank",
                     egui::FontId::proportional(11.0),
                     tokens.text_muted,
                 );
@@ -330,7 +322,39 @@ impl WtView3dStack<'_> {
             })
             .collect();
 
+        let selected_idx = *self.selected_layer;
+        let wt_layer_indices: Vec<usize> = active_indices
+            .iter()
+            .copied()
+            .filter(|&i| self.layers[i].is_wavetable())
+            .collect();
+        let quant_active = self.wave_quant > 0 && !wt_layer_indices.is_empty();
+        let edit_frame_idx = selected_idx
+            .and_then(|i| {
+                self.layers
+                    .get(i)
+                    .filter(|l| l.is_wavetable())
+                    .map(|l| l.wt_position)
+            })
+            .map(|p| frame_index(p, bank.num_frames))
+            .unwrap_or_else(|| frame_index(*self.wt_position, bank.num_frames));
+
+        let drag_slot_id = ui.id().with("layers_multi_quant_drag");
+        let drag_layer_id = ui.id().with("layers_multi_quant_layer");
         let drag_target_id = ui.id().with("stack_drag_target");
+
+        let quant_locked = ui.ctx().data(|d| d.get_temp::<usize>(drag_slot_id).is_some());
+        let response = if quant_active && quant_locked {
+            None
+        } else if quant_active {
+            None
+        } else {
+            Some(ui.interact(
+                rect,
+                ui.id().with("stack_interact"),
+                Sense::click_and_drag(),
+            ))
+        };
 
         if let Some(response) = response.as_ref() {
             if response.clicked() {
@@ -387,22 +411,16 @@ impl WtView3dStack<'_> {
                             if delta.x.abs() > 0.0 {
                                 let max_pos = (bank.num_frames.saturating_sub(1)).max(1) as f32;
                                 let px_per_frame = inner.width() / max_pos.max(1.0);
-                                if layer.source_type.eq_ignore_ascii_case("wavetable") {
+                                if layer.is_wavetable() {
                                     layer.wt_position = (layer.wt_position + delta.x / px_per_frame)
                                         .clamp(0.0, max_pos);
                                     wt_position_changed = true;
-                                } else if layer.source_type.eq_ignore_ascii_case("sine")
-                                    || layer.source_type.eq_ignore_ascii_case("saw")
-                                    || layer.source_type.eq_ignore_ascii_case("square")
-                                    || layer.source_type.eq_ignore_ascii_case("triangle")
-                                    || layer.source_type.eq_ignore_ascii_case("pulse")
-                                {
+                                } else {
                                     layer.phase += delta.x / inner.width() * std::f32::consts::TAU;
                                     wt_position_changed = true;
                                 }
                             }
                             if delta.y.abs() > 0.0 {
-                                // Drag up = louder — individual layer levels on the stack pane.
                                 let next = (layer.level - delta.y / inner.height()).clamp(0.0, 1.0);
                                 if (next - layer.level).abs() > f32::EPSILON {
                                     layer.level = next;
@@ -416,21 +434,107 @@ impl WtView3dStack<'_> {
             }
 
             if response.hovered() {
-                let cursor = if response.dragged() {
+                ui.ctx().set_cursor_icon(if response.dragged() {
                     CursorIcon::Grabbing
                 } else {
                     CursorIcon::Grab
-                };
-                ui.ctx().set_cursor_icon(cursor);
+                });
             }
         }
 
-        // Refresh after click so paint/knobs follow the newly selected layer.
-        let selected_idx = *self.selected_layer;
-        quant_active = selected_idx
-            .and_then(|i| self.layers.get(i))
-            .map(|l| l.is_wavetable() && self.wave_quant > 0)
-            .unwrap_or(false);
+        if quant_active {
+            let slot_count = effective_quant_count(self.wave_quant);
+            let locked_slot: Option<usize> = ui.ctx().data(|d| d.get_temp(drag_slot_id));
+            let locked_layer: Option<usize> = ui.ctx().data(|d| d.get_temp(drag_layer_id));
+
+            let sense = Sense::click_and_drag();
+            let q_response = ui.allocate_rect(inner, sense);
+            let pointer = q_response
+                .interact_pointer_pos()
+                .filter(|p| inner.contains(*p));
+
+            let mut nearest: Option<(usize, usize)> = None;
+            let mut nearest_dist = 14.0_f32;
+            for &layer_i in &wt_layer_indices {
+                if let Some(layer) = self.layers.get(layer_i) {
+                    let scale = layer_quant_display_scale(layer);
+                    let points = quant_control_points(bank.frame(edit_frame_idx), slot_count);
+                    if let Some(pos) = pointer {
+                        if let Some(slot) =
+                            nearest_quant_handle(pos, inner, &points, scale, 14.0)
+                        {
+                            let x = slot_x(slot, slot_count, inner);
+                            let y = knob_y_on_curve(points[slot], scale, inner);
+                            let dist = pos.distance(Pos2::new(x, y));
+                            if dist < nearest_dist {
+                                nearest_dist = dist;
+                                nearest = Some((layer_i, slot));
+                            }
+                        }
+                    }
+                }
+            }
+
+            if q_response.drag_started() {
+                if let Some((layer_i, slot)) = nearest {
+                    ui.ctx().data_mut(|d| {
+                        d.insert_temp(drag_slot_id, slot);
+                        d.insert_temp(drag_layer_id, layer_i);
+                    });
+                } else if let Some(pos) = pointer {
+                    let mut best_idx = None;
+                    let mut best_dist = HOVER_DISTANCE_PX;
+                    for &(orig_idx, ref pts, _) in &layer_points {
+                        let dist = nearest_waveform_distance(pts, pos);
+                        if dist < best_dist {
+                            best_dist = dist;
+                            best_idx = Some(orig_idx);
+                        }
+                    }
+                    if let Some(idx) = best_idx {
+                        *self.selected_layer = Some(idx);
+                        layer_selected = true;
+                    }
+                }
+            }
+            if !q_response.dragged() && q_response.drag_stopped() {
+                ui.ctx().data_mut(|d| {
+                    d.remove::<usize>(drag_slot_id);
+                    d.remove::<usize>(drag_layer_id);
+                });
+            }
+
+            let active_layer = locked_layer.or(nearest.map(|(l, _)| l));
+            let active_slot = locked_slot.or(nearest.map(|(_, s)| s));
+
+            if let (Some(layer_i), Some(slot)) = (active_layer, active_slot) {
+                *self.selected_layer = Some(layer_i);
+                layer_selected = true;
+                if q_response.dragged() {
+                    if let Some(pos) = pointer {
+                        if let Some(layer) = self.layers.get(layer_i) {
+                            let scale = layer_quant_display_scale(layer);
+                            let sample = sample_from_knob_y(pos.y, scale, inner);
+                            apply_quant_slot_amplitude(
+                                bank.frame_mut(edit_frame_idx),
+                                slot,
+                                slot_count,
+                                sample,
+                                self.quant_interp,
+                            );
+                            frame_edited = true;
+                        }
+                    }
+                }
+                if q_response.hovered() || q_response.dragged() {
+                    ui.ctx().set_cursor_icon(if q_response.dragged() {
+                        CursorIcon::Grabbing
+                    } else {
+                        CursorIcon::Grab
+                    });
+                }
+            }
+        }
 
         let painter = ui.painter_at(rect);
         painter.rect_filled(rect, RADIUS_SM, tokens.bg);
@@ -453,17 +557,19 @@ impl WtView3dStack<'_> {
             }
         }
 
-        let mut label = selected_layer_edit_label(selected_idx, self.layers);
-        if !quant_active {
-            label = format!(
-                "{label} · {}/{} · {} · drag level / phase",
-                active_indices.len(),
-                self.layers.len(),
-                self.stack_mode
-            );
+        let label = if quant_active {
+            format!(
+                "Layers · Osc {} · Quant · drag WT dots",
+                self.active_osc + 1
+            )
         } else {
-            label = format!("{label} · Quant · drag dots to reshape");
-        }
+            format!(
+                "Layers · Osc {} · {}/{} · drag level / phase",
+                self.active_osc + 1,
+                active_indices.len(),
+                self.layers.len()
+            )
+        };
         painter.text(
             Pos2::new(rect.min.x + 8.0, rect.min.y + 6.0),
             egui::Align2::LEFT_TOP,
@@ -471,6 +577,7 @@ impl WtView3dStack<'_> {
             egui::FontId::proportional(10.0),
             tokens.text_secondary,
         );
+
         if self.show_mode_toggle {
             if let Some(mode) = self.view_mode {
                 region(
@@ -496,17 +603,14 @@ impl WtView3dStack<'_> {
             }
         }
 
-        // Dim non-selected layers first, then primary selected with fill.
         for &(orig_idx, ref pts, inverted) in &layer_points {
             if pts.len() < 2 {
                 continue;
             }
-            if selected_idx == Some(orig_idx) {
-                continue;
-            }
             let color = layer_palette(orig_idx);
-            let alpha = 0.28;
-            let stroke_w = 1.2;
+            let is_sel = selected_idx == Some(orig_idx);
+            let alpha = if is_sel { 0.75 } else { 0.45 };
+            let stroke_w = if is_sel { 2.0 } else { 1.4 };
             if inverted {
                 let dash_stroke = egui::Stroke::new(stroke_w, color.gamma_multiply(alpha));
                 for chunk in pts.windows(2).step_by(2) {
@@ -520,70 +624,56 @@ impl WtView3dStack<'_> {
                     egui::Stroke::new(stroke_w, color.gamma_multiply(alpha)),
                 ));
             }
-        }
-
-        if let Some(sel) = selected_idx {
-            if let Some((_, pts, inverted)) = layer_points.iter().find(|(i, _, _)| *i == sel) {
-                if pts.len() >= 2 {
-                    let color = layer_palette(sel);
-                    let mut fill = pts.clone();
-                    fill.push(Pos2::new(inner.max.x, mid_y));
-                    fill.push(Pos2::new(inner.min.x, mid_y));
-                    painter.add(Shape::convex_polygon(
-                        fill,
-                        color.gamma_multiply(0.22),
-                        egui::Stroke::NONE,
-                    ));
-                    if *inverted {
-                        let dash_stroke = egui::Stroke::new(2.6, color.gamma_multiply(0.95));
-                        for chunk in pts.windows(2).step_by(2) {
-                            if chunk.len() == 2 {
-                                painter.line_segment([chunk[0], chunk[1]], dash_stroke);
-                            }
-                        }
-                        painter.text(
-                            pts.first().copied().unwrap_or(inner.left_top()),
-                            egui::Align2::LEFT_TOP,
-                            "↓",
-                            egui::FontId::proportional(9.0),
-                            color.gamma_multiply(0.85),
-                        );
-                    } else {
-                        painter.add(Shape::line(
-                            pts.clone(),
-                            egui::Stroke::new(2.6, color.gamma_multiply(0.98)),
-                        ));
-                    }
-                }
+            if let Some(peak) = peak_point(pts) {
+                let lbl = layer_curve_label(orig_idx, &self.layers[orig_idx]);
+                painter.text(
+                    Pos2::new(peak.x + 4.0, peak.y - 10.0),
+                    egui::Align2::LEFT_BOTTOM,
+                    lbl,
+                    egui::FontId::proportional(9.0),
+                    color.gamma_multiply(0.9),
+                );
             }
         }
 
-        let phase_anim = 0.0_f32;
-        let play_x = egui::lerp(inner.min.x..=inner.max.x, phase_anim);
-        painter.line_segment(
-            [
-                Pos2::new(play_x, inner.min.y),
-                Pos2::new(play_x, inner.max.y),
-            ],
-            egui::Stroke::new(1.0, tokens.text_muted.gamma_multiply(0.35)),
-        );
-
         if quant_active {
-            if let Some(sel) = selected_idx {
-                if let Some(layer) = self.layers.get(sel) {
-                    let frame_idx = frame_index(layer.wt_position, bank.num_frames);
-                    let display_scale = layer_quant_display_scale(layer);
-                    let editor = QuantHandleEditor {
-                        plot_rect: inner,
-                        wave_quant: self.wave_quant,
-                        bank,
-                        frame_idx,
-                        interp: self.quant_interp,
-                        display_scale,
-                    };
-                    let qh = editor.show(ui);
-                    if qh.frame_edited {
-                        frame_edited = true;
+            let slot_count = effective_quant_count(self.wave_quant);
+            let locked_slot: Option<usize> = ui.ctx().data(|d| d.get_temp(drag_slot_id));
+            let locked_layer: Option<usize> = ui.ctx().data(|d| d.get_temp(drag_layer_id));
+            let accent = Tokens::default().accent;
+            for &layer_i in &wt_layer_indices {
+                if let Some(layer) = self.layers.get(layer_i) {
+                    let scale = layer_quant_display_scale(layer);
+                    let points = quant_control_points(bank.frame(edit_frame_idx), slot_count);
+                    let color = layer_palette(layer_i);
+                    for i in 0..slot_count {
+                        let show = self.wave_quant <= 64
+                            || locked_layer == Some(layer_i) && locked_slot == Some(i)
+                            || i == 0
+                            || i + 1 == slot_count;
+                        if !show {
+                            continue;
+                        }
+                        let x = slot_x(i, slot_count, inner);
+                        let sample = points.get(i).copied().unwrap_or(0.0);
+                        let y = knob_y_on_curve(sample, scale, inner);
+                        let center = Pos2::new(x, y);
+                        let active =
+                            locked_layer == Some(layer_i) && locked_slot == Some(i);
+                        painter.circle_filled(
+                            center,
+                            if active { 7.0 } else { 5.0 },
+                            if active {
+                                color.gamma_multiply(0.5)
+                            } else {
+                                accent.gamma_multiply(0.2)
+                            },
+                        );
+                        painter.circle_stroke(
+                            center,
+                            if active { 7.0 } else { 5.0 },
+                            egui::Stroke::new(if active { 1.5 } else { 1.0 }, color),
+                        );
                     }
                 }
             }
