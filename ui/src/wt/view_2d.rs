@@ -14,7 +14,11 @@ use super::quant_handles::{QuantHandleEditor, WtQuantInterp, quant_control_point
 use super::shape_editor::ShapeEditor;
 use super::slots::{apply_slot_selection, effective_quant_count};
 use super::toolbar::{FrameShapeTemplate, WtEditTool, WtToolbar, WtToolbarResponse};
-use super::waveform::{frame_index, hit_test_waveform, peak_point, waveform_points};
+use super::view_3d_stack::{
+    composite_waveform_points, layer_palette, layer_waveform_points, HOVER_DISTANCE_PX,
+    WAVE_SAMPLES,
+};
+use super::waveform::{frame_index, hit_test_waveform, nearest_waveform_distance, peak_point, waveform_points};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum SelectDragKind {
@@ -70,7 +74,7 @@ pub struct WtView2d<'a> {
     pub wave_slot: &'a mut u8,
     pub wave_slots: &'a mut Vec<WaveSlot>,
     pub wave_layers: Option<&'a mut Vec<WaveLayerUi>>,
-    pub selected_layer_idx: Option<usize>,
+    pub selected_layer_idx: &'a mut Option<usize>,
     pub stack_mode: Option<&'a mut String>,
     pub shape_control_points: usize,
     pub analyze_dialog_open: Option<&'a mut bool>,
@@ -126,7 +130,6 @@ impl WtView2d<'_> {
 
         let layer_idx = self
             .selected_layer_idx
-            .or_else(|| self.wave_layers.as_ref().map(|_| 0))
             .unwrap_or(0);
         let active_layer_va = self
             .wave_layers
@@ -141,6 +144,11 @@ impl WtView2d<'_> {
             .map(|l| l.is_wavetable())
             .unwrap_or(false);
         let quant_active = active_layer_wt && self.wave_quant > 0;
+        let stack_overlay = self
+            .wave_layers
+            .as_ref()
+            .map(|l| !l.is_empty())
+            .unwrap_or(false);
 
         let toolbar_rect = Rect::from_min_max(rect.min, egui::pos2(rect.max.x, plot_top));
         let toolbar_resp = region(
@@ -224,7 +232,104 @@ impl WtView2d<'_> {
             placeholder_wave(inner, mid_y)
         };
 
-        if *self.tool == WtEditTool::Select && active_layer_wt {
+        if *self.tool == WtEditTool::Select && stack_overlay {
+            let sense = Sense::click_and_drag();
+            let response = ui.allocate_rect(inner, sense);
+            let drag_kind_id = ui.id().with("left_result_layer_drag");
+            let bank_ref = self.bank.as_ref().map(|b| &**b);
+            let empty = WavetableBank::factory_saw_morph();
+            let bank = bank_ref.unwrap_or(&empty);
+
+            let layer_pts: Vec<(usize, Vec<Pos2>)> = self
+                .wave_layers
+                .as_ref()
+                .map(|layers| {
+                    layers
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, l)| l.enabled && l.level > 0.0)
+                        .map(|(i, l)| {
+                            (
+                                i,
+                                layer_waveform_points(l, bank, inner, 0.0, WAVE_SAMPLES),
+                            )
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
+
+            if response.clicked() || response.drag_started() {
+                if let Some(pos) = response.interact_pointer_pos() {
+                    let mut best_idx = None;
+                    let mut best_dist = HOVER_DISTANCE_PX;
+                    for &(idx, ref pts) in &layer_pts {
+                        let dist = nearest_waveform_distance(pts, pos);
+                        if dist < best_dist {
+                            best_dist = dist;
+                            best_idx = Some(idx);
+                        }
+                    }
+                    if let Some(idx) = best_idx {
+                        *self.selected_layer_idx = Some(idx);
+                        stack_changed = true;
+                        ui.ctx()
+                            .data_mut(|d| d.insert_temp(drag_kind_id, Some(idx)));
+                    } else {
+                        ui.ctx()
+                            .data_mut(|d| d.insert_temp(drag_kind_id, None::<usize>));
+                    }
+                }
+            }
+
+            if response.dragged() {
+                let sel = ui
+                    .ctx()
+                    .data(|d| d.get_temp::<Option<usize>>(drag_kind_id))
+                    .flatten()
+                    .or(*self.selected_layer_idx);
+                if let Some(idx) = sel {
+                    if let Some(layers) = self.wave_layers.as_mut() {
+                        if let Some(layer) = layers.get_mut(idx) {
+                            let delta = response.drag_delta();
+                            if delta.y.abs() > 0.0 {
+                                let next =
+                                    (layer.level - delta.y / inner.height()).clamp(0.0, 1.0);
+                                if (next - layer.level).abs() > f32::EPSILON {
+                                    layer.level = next;
+                                    stack_changed = true;
+                                }
+                            }
+                            if delta.x.abs() > 0.0 {
+                                let max_pos =
+                                    (bank.num_frames.saturating_sub(1)).max(1) as f32;
+                                let px_per_frame = inner.width() / max_pos.max(1.0);
+                                if layer.is_wavetable() {
+                                    layer.wt_position = (layer.wt_position
+                                        + delta.x / px_per_frame)
+                                        .clamp(0.0, max_pos);
+                                    stack_changed = true;
+                                } else {
+                                    layer.phase +=
+                                        delta.x / inner.width() * std::f32::consts::TAU;
+                                    stack_changed = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if response.hovered() {
+                ui.ctx().set_cursor_icon(if response.dragged() {
+                    CursorIcon::Grabbing
+                } else {
+                    CursorIcon::Grab
+                });
+                status_hint = Some("Result · drag a layer (Y=level, X=phase/WT)".into());
+            }
+        }
+
+        if *self.tool == WtEditTool::Select && active_layer_wt && !stack_overlay {
             let sense = Sense::click_and_drag();
             let response = ui.allocate_rect(inner, sense);
             let drag_kind_id = ui.id().with("wt_select_drag_kind");
@@ -386,7 +491,61 @@ impl WtView2d<'_> {
             painter.rect_stroke(band, 0.0, egui::Stroke::new(1.0, accent_ui.gamma_multiply(0.35)));
         }
 
-        if wave.len() >= 2 && *self.tool != WtEditTool::Curve {
+        if stack_overlay && *self.tool != WtEditTool::Curve {
+            let empty = WavetableBank::factory_saw_morph();
+            let bank = self.bank.as_ref().map(|b| &**b).unwrap_or(&empty);
+            let mode = self
+                .stack_mode
+                .as_ref()
+                .map(|s| s.as_str())
+                .unwrap_or("avg");
+            let layers = self.wave_layers.as_ref().map(|l| l.as_slice()).unwrap_or(&[]);
+            let selected = *self.selected_layer_idx;
+
+            for (i, layer) in layers.iter().enumerate() {
+                if !layer.enabled || layer.level <= 0.0 {
+                    continue;
+                }
+                let pts = layer_waveform_points(layer, bank, inner, 0.0, WAVE_SAMPLES);
+                if pts.len() < 2 {
+                    continue;
+                }
+                let color = layer_palette(i);
+                let is_sel = selected == Some(i);
+                let alpha = if is_sel { 0.85 } else { 0.40 };
+                let stroke_w = if is_sel { 1.8 } else { 1.2 };
+                painter.add(Shape::line(
+                    pts,
+                    egui::Stroke::new(stroke_w, color.gamma_multiply(alpha)),
+                ));
+            }
+
+            let result_pts =
+                composite_waveform_points(layers, bank, mode, inner, 0.0, WAVE_SAMPLES);
+            if result_pts.len() >= 2 {
+                let mut fill = result_pts.clone();
+                fill.push(Pos2::new(inner.max.x, mid_y));
+                fill.push(Pos2::new(inner.min.x, mid_y));
+                painter.add(Shape::convex_polygon(
+                    fill,
+                    tokens.accent.gamma_multiply(0.28),
+                    egui::Stroke::NONE,
+                ));
+                painter.add(Shape::line(
+                    result_pts.clone(),
+                    egui::Stroke::new(2.6, accent_ui),
+                ));
+                if let Some(peak) = peak_point(&result_pts) {
+                    painter.circle_filled(peak, 4.0, tokens.accent);
+                    painter.circle_stroke(
+                        peak,
+                        4.0,
+                        egui::Stroke::new(1.0, tokens.accent_on),
+                    );
+                }
+                record_region(ui.ctx(), AuditId::CenterWt2dResult, inner, inner);
+            }
+        } else if wave.len() >= 2 && *self.tool != WtEditTool::Curve {
             let mut fill = wave.clone();
             fill.push(Pos2::new(inner.max.x, mid_y));
             fill.push(Pos2::new(inner.min.x, mid_y));
@@ -510,7 +669,14 @@ impl WtView2d<'_> {
             .map(|l| l.source_type.as_str())
             .unwrap_or("saw");
         let label = status_override.unwrap_or_else(|| {
-            if active_layer_va {
+            if stack_overlay {
+                let n = self
+                    .wave_layers
+                    .as_ref()
+                    .map(|l| l.iter().filter(|x| x.enabled).count())
+                    .unwrap_or(0);
+                format!("Result · {n} layers · drag curves (Y=level)")
+            } else if active_layer_va {
                 format!("Edit · Layer {} · {layer_type}", layer_idx + 1)
             } else if pos_mod.abs() > 0.01 {
                 format!("Edit · Layer {} · WT · frame {frame_idx} → {:.0}", layer_idx + 1, modulated_pos)
@@ -652,7 +818,7 @@ fn va_layer_waveform_points(layer: &WaveLayerUi, inner: Rect, samples: usize) ->
                     &patch,
                     &bank,
                     phase,
-                    1.0 / 2048.0,
+                    1.0 / samples.max(1) as f32,
                     0.0,
                     WtWarpMode::None,
                     0.0,

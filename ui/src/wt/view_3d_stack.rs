@@ -1,10 +1,10 @@
 //! 2D stack overlay — all wave layers composited in one scope view.
 
-use egui::{Color32, CursorIcon, Pos2, Rect, Sense, Shape, Stroke, Ui, Vec2};
+use egui::{Color32, CursorIcon, Pos2, Rect, Sense, Shape, Ui, Vec2};
 use reelsynth::osc::{layer_sign, sample_layer, StackMode, WtWarpMode};
 use reelsynth::patch::WaveLayer;
 use reelsynth::WavetableBank;
-use reelsynth_ui_theme::{ACCENT_UI, Tokens};
+use reelsynth_ui_theme::Tokens;
 
 use crate::audit_registry::{record_region, AuditId};
 use crate::layout::RADIUS_SM;
@@ -12,13 +12,13 @@ use crate::oscillator_ui::WaveLayerUi;
 use crate::region::region;
 use crate::state::WtView3dMode;
 
-use super::waveform::{nearest_waveform_distance, peak_point};
+use super::waveform::nearest_waveform_distance;
 
-const HOVER_DISTANCE_PX: f32 = 14.0;
-const WAVE_AMP: f32 = 0.42;
-const WAVE_SAMPLES: usize = 256;
+pub(crate) const HOVER_DISTANCE_PX: f32 = 14.0;
+pub(crate) const WAVE_AMP: f32 = 0.42;
+pub(crate) const WAVE_SAMPLES: usize = 256;
 
-fn layer_palette(i: usize) -> Color32 {
+pub(crate) fn layer_palette(i: usize) -> Color32 {
     const COLORS: [Color32; 6] = [
         Color32::from_rgb(0x5b, 0xc0, 0xde),
         Color32::from_rgb(0x4a, 0xde, 0x80),
@@ -48,7 +48,8 @@ fn sample_layer_at_phase(
         &patch_layer,
         bank,
         phase,
-        1.0 / 2048.0,
+        // Display one cycle over WAVE_SAMPLES; blep_dt widens the wrap cliff.
+        1.0 / WAVE_SAMPLES as f32,
         wt_pos_offset,
         WtWarpMode::None,
         0.0,
@@ -108,7 +109,7 @@ pub fn composite_stack_sample(
     }
 }
 
-fn layer_waveform_points(
+pub(crate) fn layer_waveform_points(
     layer: &WaveLayerUi,
     bank: &WavetableBank,
     rect: Rect,
@@ -129,7 +130,7 @@ fn layer_waveform_points(
     pts
 }
 
-fn composite_waveform_points(
+pub(crate) fn composite_waveform_points(
     layers: &[WaveLayerUi],
     bank: &WavetableBank,
     stack_mode: &str,
@@ -173,7 +174,6 @@ fn paint_grid(painter: &egui::Painter, rect: Rect, border: Color32) {
 enum StackDragTarget {
     None,
     Layer(usize),
-    Composite,
 }
 
 pub struct WtView3dStackResponse {
@@ -198,7 +198,6 @@ pub struct WtView3dStack<'a> {
 impl WtView3dStack<'_> {
     pub fn show(self, ui: &mut Ui) -> WtView3dStackResponse {
         let tokens = Tokens::default();
-        let accent_ui = ACCENT_UI;
         let view_h = ui.available_height().max(48.0);
         let (rect, response) = ui.allocate_exact_size(
             Vec2::new(ui.available_width(), view_h),
@@ -207,7 +206,7 @@ impl WtView3dStack<'_> {
 
         let mut layer_selected = false;
         let mut wt_position_changed = false;
-        let mut global_wt_scrub = false;
+        let global_wt_scrub = false;
 
         if !ui.is_rect_visible(rect) {
             return WtView3dStackResponse {
@@ -267,15 +266,6 @@ impl WtView3dStack<'_> {
             })
             .collect();
 
-        let composite_pts = composite_waveform_points(
-            self.layers,
-            bank,
-            self.stack_mode,
-            inner,
-            self.wt_pos_offset,
-            WAVE_SAMPLES,
-        );
-
         let drag_target_id = ui.id().with("stack_drag_target");
 
         if response.clicked() {
@@ -289,13 +279,7 @@ impl WtView3dStack<'_> {
                         best_idx = Some(orig_idx);
                     }
                 }
-                let composite_dist = nearest_waveform_distance(&composite_pts, pos);
-                let hit_composite = composite_dist < best_dist;
-                if hit_composite {
-                    *self.selected_layer = None;
-                    ui.ctx()
-                        .data_mut(|d| d.insert_temp(drag_target_id, StackDragTarget::Composite));
-                } else if let Some(idx) = best_idx {
+                if let Some(idx) = best_idx {
                     *self.selected_layer = Some(idx);
                     layer_selected = true;
                     ui.ctx()
@@ -315,10 +299,7 @@ impl WtView3dStack<'_> {
                         best_idx = Some(orig_idx);
                     }
                 }
-                let composite_dist = nearest_waveform_distance(&composite_pts, pos);
-                let target = if composite_dist < best_dist {
-                    StackDragTarget::Composite
-                } else if let Some(idx) = best_idx {
+                let target = if let Some(idx) = best_idx {
                     StackDragTarget::Layer(idx)
                 } else {
                     StackDragTarget::None
@@ -334,31 +315,37 @@ impl WtView3dStack<'_> {
                 .data(|d| d.get_temp(drag_target_id))
                 .unwrap_or(StackDragTarget::None);
             let delta = response.drag_delta();
-            if delta.x.abs() > 0.0 {
-                let max_pos = (bank.num_frames.saturating_sub(1)).max(1) as f32;
-                let px_per_frame = inner.width() / max_pos.max(1.0);
-                match target {
-                    StackDragTarget::Composite => {
-                        *self.wt_position =
-                            (*self.wt_position + delta.x / px_per_frame).clamp(0.0, max_pos);
-                        global_wt_scrub = true;
-                        wt_position_changed = true;
-                    }
-                    StackDragTarget::Layer(sel) => {
-                        if let Some(layer) = self.layers.get_mut(sel) {
+            match target {
+                StackDragTarget::Layer(sel) => {
+                    if let Some(layer) = self.layers.get_mut(sel) {
+                        if delta.x.abs() > 0.0 {
+                            let max_pos = (bank.num_frames.saturating_sub(1)).max(1) as f32;
+                            let px_per_frame = inner.width() / max_pos.max(1.0);
                             if layer.source_type.eq_ignore_ascii_case("wavetable") {
-                                layer.wt_position =
-                                    (layer.wt_position + delta.x / px_per_frame)
-                                        .clamp(0.0, max_pos);
+                                layer.wt_position = (layer.wt_position + delta.x / px_per_frame)
+                                    .clamp(0.0, max_pos);
                                 wt_position_changed = true;
-                            } else if layer.source_type.eq_ignore_ascii_case("sine") {
+                            } else if layer.source_type.eq_ignore_ascii_case("sine")
+                                || layer.source_type.eq_ignore_ascii_case("saw")
+                                || layer.source_type.eq_ignore_ascii_case("square")
+                                || layer.source_type.eq_ignore_ascii_case("triangle")
+                                || layer.source_type.eq_ignore_ascii_case("pulse")
+                            {
                                 layer.phase += delta.x / inner.width() * std::f32::consts::TAU;
                                 wt_position_changed = true;
                             }
                         }
+                        if delta.y.abs() > 0.0 {
+                            // Drag up = louder — individual layer levels on the stack pane.
+                            let next = (layer.level - delta.y / inner.height()).clamp(0.0, 1.0);
+                            if (next - layer.level).abs() > f32::EPSILON {
+                                layer.level = next;
+                                wt_position_changed = true;
+                            }
+                        }
                     }
-                    StackDragTarget::None => {}
                 }
+                StackDragTarget::None => {}
             }
         }
 
@@ -384,7 +371,7 @@ impl WtView3dStack<'_> {
         );
 
         let label = format!(
-            "Composite · {} layers · {} mode",
+            "Layers · {} · {} mode · drag to set level / phase",
             active_indices.len(),
             self.stack_mode
         );
@@ -426,8 +413,8 @@ impl WtView3dStack<'_> {
             }
             let color = layer_palette(orig_idx);
             let selected = selected_idx == Some(orig_idx);
-            let alpha = if selected { 0.92 } else { 0.45 };
-            let stroke_w = if selected { 2.2 } else { 1.4 };
+            let alpha = if selected { 0.95 } else { 0.55 };
+            let stroke_w = if selected { 2.4 } else { 1.5 };
             if inverted {
                 let dash_stroke = egui::Stroke::new(stroke_w, color.gamma_multiply(alpha));
                 for chunk in pts.windows(2).step_by(2) {
@@ -447,25 +434,6 @@ impl WtView3dStack<'_> {
                     pts.clone(),
                     egui::Stroke::new(stroke_w, color.gamma_multiply(alpha)),
                 ));
-            }
-        }
-
-        if composite_pts.len() >= 2 {
-            let mut fill = composite_pts.clone();
-            fill.push(Pos2::new(inner.max.x, mid_y));
-            fill.push(Pos2::new(inner.min.x, mid_y));
-            painter.add(Shape::convex_polygon(
-                fill,
-                tokens.accent.gamma_multiply(0.22),
-                egui::Stroke::NONE,
-            ));
-            painter.add(Shape::line(
-                composite_pts.clone(),
-                egui::Stroke::new(2.0, accent_ui),
-            ));
-            if let Some(peak) = peak_point(&composite_pts) {
-                painter.circle_filled(peak, 3.5, tokens.accent);
-                painter.circle_stroke(peak, 3.5, egui::Stroke::new(1.0, tokens.accent_on));
             }
         }
 

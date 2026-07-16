@@ -868,6 +868,18 @@ fn design_strip_layer_chips_with_layers() {
 }
 
 #[test]
+fn design_left_pane_records_result_curve() {
+    let run = run_shell_audit(ShellAuditScenario::default());
+    let result = audit_id_rect(&run.ctx, AuditId::CenterWt2dResult);
+    assert!(
+        result.is_some(),
+        "left 2D pane should record distinct Result curve (CenterWt2dResult)"
+    );
+    let stack = audit_id_rect(&run.ctx, AuditId::CenterWt3dStack);
+    assert!(stack.is_some(), "right Layers pane still present");
+}
+
+#[test]
 fn design_scope_result_label() {
     assert_eq!(reelsynth_ui::SCOPE_RESULT_LABEL, "Result");
     // Shell audit harness passes no WT bank, so paint the strip isolated to audit Result.

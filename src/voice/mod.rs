@@ -185,6 +185,36 @@ mod tests {
         );
     }
 
+    /// Held Factory Lead with FX must stay quiet mid- and late-sustain (user-reported
+    /// crackle after holding a note — often FX + residual wrap fighting slew).
+    #[test]
+    fn factory_lead_held_note_stays_quiet_with_fx() {
+        let bank = WavetableBank::factory_saw_morph();
+        let patch = Patch::factory_lead();
+        let sr = 44_100u32;
+        let audio = render_note_single_bank(&bank, 440.0, 2.8, sr, &patch);
+        let peak_all = audio
+            .iter()
+            .map(|s| s.abs())
+            .fold(0.0f32, f32::max);
+        assert!(peak_all > 0.05, "note too quiet ({peak_all})");
+        for (label, a, b) in [
+            ("mid", 0.4, 0.9),
+            ("late", 1.8, 2.5),
+        ] {
+            let start = (a * sr as f32) as usize;
+            let end = ((b * sr as f32) as usize).min(audio.len());
+            let max_step = audio[start..end]
+                .windows(2)
+                .map(|w| (w[1] - w[0]).abs())
+                .fold(0.0f32, f32::max);
+            assert!(
+                max_step < 0.14,
+                "Factory Lead {label}-sustain crackle: step={max_step}"
+            );
+        }
+    }
+
     /// Held note with a discontinuous wavetable must not produce near-full-scale
     /// sample steps after band-limited wrap (naive was ≈1.1–2.0 per wrap).
     #[test]

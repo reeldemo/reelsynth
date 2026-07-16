@@ -122,8 +122,8 @@ The position strip is **layer chips only** on Design — no 256-frame scrub.
 
 | Pane | Caption | Job |
 |------|---------|-----|
-| Left 2D | **Edit · Layer N · Saw** | Edit the strip-selected layer; VA analytic preview or WT frame tools |
-| Right | **Composite · N layers · add** | Stacked layer curves + composite sum (`WtView3dStack`) |
+| Left 2D | **Result · N layers** | Stack sum (**Result**) drawn distinctly with fill; individual layer curves under it — drag Y=level, X=phase/WT pos |
+| Right | **Layers · N · mode** | Layer curves only (no Result) for pick / per-layer drag |
 
 **Shape** menu (Saw / Square / Sine / Triangle) sets the **active layer `source_type`** — it does not overwrite an arbitrary WT frame index.
 
@@ -209,7 +209,7 @@ Serial chain: delay, reverb, chorus, etc. Per-slot mix and bypass.
 | **Composite (right)** | Per-layer strokes + summed waveform (`WtView3dStack`; Stack/Morph toggle hidden on Design) |
 | **Toolbar** | Select / **Curve** / **Shape** / **Shape** menu / **FFT** (decompose frame → layers) |
 
-**Three concepts on Design:** **Edit** (active layer) · **Composite** (this osc stack) · **Result** (all oscs in the scope strip).
+**Three concepts on Design:** **Result** (left pane stack sum) · **Layers** (right pane + strip chips) · **Scope Result** (all oscs after Filter/FX).
 
 Morph mesh / frame-bank scrub remain available on non-Design paths (Compose / advanced).
 

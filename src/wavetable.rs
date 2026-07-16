@@ -123,8 +123,10 @@ impl WavetableBank {
         let mut out = frame[i0] * (1.0 - f) + frame[i1] * f;
         if phase_inc > 0.0 && n > 1 {
             // Match VA saw scaling: discontinuity height ~2 uses half-weighted polyBLEP.
+            // Use widened blep_dt so WT seams are not steeper than VA wraps.
             let seam = frame[n - 1] - frame[0];
-            out -= crate::osc::va::poly_blep(p, phase_inc) * seam * 0.5;
+            let dt = crate::osc::va::blep_dt(phase_inc);
+            out -= crate::osc::va::poly_blep(p, dt) * seam * 0.5;
         }
         out
     }

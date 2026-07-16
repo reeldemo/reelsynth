@@ -136,7 +136,6 @@ pub(super) fn draw_center(
                         let idx = state.active_osc_index();
                         let osc = &mut state.oscillators[idx];
                         let wave_quant = osc.wave_quant;
-                        let selected_layer = state.selected_layer_idx;
                         let view = WtView2d {
                             position: &mut state.wt_position,
                             bank: bank.as_deref_mut(),
@@ -150,7 +149,7 @@ pub(super) fn draw_center(
                             wave_slot: &mut osc.wave_slot,
                             wave_slots: &mut osc.wave_slots,
                             wave_layers: Some(&mut osc.wave_layers),
-                            selected_layer_idx: selected_layer,
+                            selected_layer_idx: &mut state.selected_layer_idx,
                             stack_mode: Some(&mut osc.stack_mode),
                             shape_control_points: state.shape_control_points,
                             analyze_dialog_open: Some(&mut state.analyze_dialog_open),

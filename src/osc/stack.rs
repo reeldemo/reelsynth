@@ -333,4 +333,52 @@ mod tests {
             "avg ({avg}) vs avg_equal ({eq}) should differ"
         );
     }
+
+    /// Result / composite curve must not have a near-vertical wrap cliff at A4.
+    #[test]
+    fn factory_lead_stack_wrap_not_steep() {
+        let bank = WavetableBank::factory_saw_morph();
+        let patch = crate::patch::Patch::factory_lead();
+        let osc = &patch.oscillators[0];
+        let dt = 440.0 / 44_100.0;
+        let mut phase = 1.0 - 8.0 * dt;
+        let mut prev = sample_stack(
+            osc,
+            &bank,
+            std::slice::from_ref(&bank),
+            &[],
+            phase,
+            dt,
+            0.0,
+            WtWarpMode::None,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+        );
+        let mut max_jump = 0.0f32;
+        for _ in 0..16 {
+            phase = (phase + dt).fract();
+            let cur = sample_stack(
+                osc,
+                &bank,
+                std::slice::from_ref(&bank),
+                &[],
+                phase,
+                dt,
+                0.0,
+                WtWarpMode::None,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+            );
+            max_jump = max_jump.max((cur - prev).abs());
+            prev = cur;
+        }
+        assert!(
+            max_jump < 0.22,
+            "result curve wrap too steep: {max_jump}"
+        );
+    }
 }
