@@ -12,7 +12,9 @@ use crate::oscillator_ui::WaveLayerUi;
 use crate::region::region;
 use crate::state::WtView3dMode;
 
-use super::waveform::nearest_waveform_distance;
+use super::quant_handles::{slot_x, QuantHandleEditor, WtQuantInterp};
+use super::slots::effective_quant_count;
+use super::waveform::{frame_index, nearest_waveform_distance};
 
 pub(crate) const HOVER_DISTANCE_PX: f32 = 14.0;
 pub(crate) const WAVE_AMP: f32 = 0.42;
@@ -149,6 +151,44 @@ pub(crate) fn composite_waveform_points(
     pts
 }
 
+/// Caption for the right Layers pane — tracks the selected layer type.
+pub(crate) fn selected_layer_edit_label(
+    selected: Option<usize>,
+    layers: &[WaveLayerUi],
+) -> String {
+    match selected.and_then(|i| layers.get(i).map(|l| (i, l))) {
+        Some((i, layer)) => format!(
+            "Edit · Layer {} · {}",
+            i + 1,
+            layer.source_type
+        ),
+        None => "Layers · pick a layer".into(),
+    }
+}
+
+/// Primary edit curve for the selected layer (right pane focus).
+pub(crate) fn primary_layer_waveform_points(
+    selected: Option<usize>,
+    layers: &[WaveLayerUi],
+    bank: &WavetableBank,
+    rect: Rect,
+    wt_pos_offset: f32,
+    samples: usize,
+) -> Vec<Pos2> {
+    let idx = selected.unwrap_or(0);
+    layers
+        .get(idx)
+        .map(|layer| layer_waveform_points(layer, bank, rect, wt_pos_offset, samples))
+        .unwrap_or_default()
+}
+
+/// Quant knob display scale — matches selected layer level × invert sign.
+pub(crate) fn layer_quant_display_scale(layer: &WaveLayerUi) -> f32 {
+    let sign = if layer.invert { -1.0 } else { 1.0 };
+    let level = if layer.enabled { layer.level.max(0.0) } else { 0.0 };
+    sign * level.max(0.05)
+}
+
 fn paint_grid(painter: &egui::Painter, rect: Rect, border: Color32) {
     let step = 24.0;
     let stroke = egui::Stroke::new(0.5, border.gamma_multiply(0.75));
@@ -180,12 +220,13 @@ pub struct WtView3dStackResponse {
     pub layer_selected: bool,
     pub wt_position_changed: bool,
     pub global_wt_scrub: bool,
+    pub frame_edited: bool,
 }
 
 pub struct WtView3dStack<'a> {
     pub layers: &'a mut [WaveLayerUi],
     pub stack_mode: &'a str,
-    pub bank: Option<&'a WavetableBank>,
+    pub bank: Option<&'a mut WavetableBank>,
     pub wt_pos_offset: f32,
     pub wt_position: &'a mut f32,
     pub selected_layer: &'a mut Option<usize>,
@@ -193,26 +234,47 @@ pub struct WtView3dStack<'a> {
     /// When false, hide Stack/Morph toggle (Design composite pane).
     pub show_mode_toggle: bool,
     pub time: f32,
+    /// Osc quant count — enables snap knobs on selected wavetable layer.
+    pub wave_quant: u8,
+    pub quant_interp: WtQuantInterp,
 }
 
 impl WtView3dStack<'_> {
     pub fn show(self, ui: &mut Ui) -> WtView3dStackResponse {
         let tokens = Tokens::default();
         let view_h = ui.available_height().max(48.0);
-        let (rect, response) = ui.allocate_exact_size(
-            Vec2::new(ui.available_width(), view_h),
-            Sense::click_and_drag(),
-        );
 
         let mut layer_selected = false;
         let mut wt_position_changed = false;
         let global_wt_scrub = false;
+        let mut frame_edited = false;
+
+        // Quant reshape owns drag when the selected layer is a wavetable.
+        let mut quant_active = (*self.selected_layer)
+            .and_then(|i| self.layers.get(i))
+            .map(|l| l.is_wavetable() && self.wave_quant > 0)
+            .unwrap_or(false);
+        let (rect, _) = ui.allocate_exact_size(
+            Vec2::new(ui.available_width(), view_h),
+            Sense::hover(),
+        );
+        // When Quant owns the plot, skip full-rect interact so knobs receive drag.
+        let response = if quant_active {
+            None
+        } else {
+            Some(ui.interact(
+                rect,
+                ui.id().with("stack_interact"),
+                Sense::click_and_drag(),
+            ))
+        };
 
         if !ui.is_rect_visible(rect) {
             return WtView3dStackResponse {
                 layer_selected,
                 wt_position_changed,
                 global_wt_scrub,
+                frame_edited,
             };
         }
 
@@ -237,6 +299,7 @@ impl WtView3dStack<'_> {
                     layer_selected,
                     wt_position_changed,
                     global_wt_scrub,
+                    frame_edited,
                 };
             }
         };
@@ -268,97 +331,105 @@ impl WtView3dStack<'_> {
 
         let drag_target_id = ui.id().with("stack_drag_target");
 
-        if response.clicked() {
-            if let Some(pos) = response.interact_pointer_pos() {
-                let mut best_idx = None;
-                let mut best_dist = HOVER_DISTANCE_PX;
-                for &(orig_idx, ref pts, _) in &layer_points {
-                    let dist = nearest_waveform_distance(pts, pos);
-                    if dist < best_dist {
-                        best_dist = dist;
-                        best_idx = Some(orig_idx);
+        if let Some(response) = response.as_ref() {
+            if response.clicked() {
+                if let Some(pos) = response.interact_pointer_pos() {
+                    let mut best_idx = None;
+                    let mut best_dist = HOVER_DISTANCE_PX;
+                    for &(orig_idx, ref pts, _) in &layer_points {
+                        let dist = nearest_waveform_distance(pts, pos);
+                        if dist < best_dist {
+                            best_dist = dist;
+                            best_idx = Some(orig_idx);
+                        }
+                    }
+                    if let Some(idx) = best_idx {
+                        *self.selected_layer = Some(idx);
+                        layer_selected = true;
+                        ui.ctx().data_mut(|d| {
+                            d.insert_temp(drag_target_id, StackDragTarget::Layer(idx))
+                        });
                     }
                 }
-                if let Some(idx) = best_idx {
-                    *self.selected_layer = Some(idx);
-                    layer_selected = true;
+            }
+
+            if response.drag_started() {
+                if let Some(pos) = response.interact_pointer_pos() {
+                    let mut best_idx = None;
+                    let mut best_dist = HOVER_DISTANCE_PX;
+                    for &(orig_idx, ref pts, _) in &layer_points {
+                        let dist = nearest_waveform_distance(pts, pos);
+                        if dist < best_dist {
+                            best_dist = dist;
+                            best_idx = Some(orig_idx);
+                        }
+                    }
+                    let target = if let Some(idx) = best_idx {
+                        StackDragTarget::Layer(idx)
+                    } else {
+                        StackDragTarget::None
+                    };
                     ui.ctx()
-                        .data_mut(|d| d.insert_temp(drag_target_id, StackDragTarget::Layer(idx)));
+                        .data_mut(|d| d.insert_temp(drag_target_id, target));
                 }
             }
-        }
 
-        if response.drag_started() {
-            if let Some(pos) = response.interact_pointer_pos() {
-                let mut best_idx = None;
-                let mut best_dist = HOVER_DISTANCE_PX;
-                for &(orig_idx, ref pts, _) in &layer_points {
-                    let dist = nearest_waveform_distance(pts, pos);
-                    if dist < best_dist {
-                        best_dist = dist;
-                        best_idx = Some(orig_idx);
+            if response.dragged() {
+                let target = ui
+                    .ctx()
+                    .data(|d| d.get_temp(drag_target_id))
+                    .unwrap_or(StackDragTarget::None);
+                let delta = response.drag_delta();
+                match target {
+                    StackDragTarget::Layer(sel) => {
+                        if let Some(layer) = self.layers.get_mut(sel) {
+                            if delta.x.abs() > 0.0 {
+                                let max_pos = (bank.num_frames.saturating_sub(1)).max(1) as f32;
+                                let px_per_frame = inner.width() / max_pos.max(1.0);
+                                if layer.source_type.eq_ignore_ascii_case("wavetable") {
+                                    layer.wt_position = (layer.wt_position + delta.x / px_per_frame)
+                                        .clamp(0.0, max_pos);
+                                    wt_position_changed = true;
+                                } else if layer.source_type.eq_ignore_ascii_case("sine")
+                                    || layer.source_type.eq_ignore_ascii_case("saw")
+                                    || layer.source_type.eq_ignore_ascii_case("square")
+                                    || layer.source_type.eq_ignore_ascii_case("triangle")
+                                    || layer.source_type.eq_ignore_ascii_case("pulse")
+                                {
+                                    layer.phase += delta.x / inner.width() * std::f32::consts::TAU;
+                                    wt_position_changed = true;
+                                }
+                            }
+                            if delta.y.abs() > 0.0 {
+                                // Drag up = louder — individual layer levels on the stack pane.
+                                let next = (layer.level - delta.y / inner.height()).clamp(0.0, 1.0);
+                                if (next - layer.level).abs() > f32::EPSILON {
+                                    layer.level = next;
+                                    wt_position_changed = true;
+                                }
+                            }
+                        }
                     }
+                    StackDragTarget::None => {}
                 }
-                let target = if let Some(idx) = best_idx {
-                    StackDragTarget::Layer(idx)
+            }
+
+            if response.hovered() {
+                let cursor = if response.dragged() {
+                    CursorIcon::Grabbing
                 } else {
-                    StackDragTarget::None
+                    CursorIcon::Grab
                 };
-                ui.ctx()
-                    .data_mut(|d| d.insert_temp(drag_target_id, target));
+                ui.ctx().set_cursor_icon(cursor);
             }
         }
 
-        if response.dragged() {
-            let target = ui
-                .ctx()
-                .data(|d| d.get_temp(drag_target_id))
-                .unwrap_or(StackDragTarget::None);
-            let delta = response.drag_delta();
-            match target {
-                StackDragTarget::Layer(sel) => {
-                    if let Some(layer) = self.layers.get_mut(sel) {
-                        if delta.x.abs() > 0.0 {
-                            let max_pos = (bank.num_frames.saturating_sub(1)).max(1) as f32;
-                            let px_per_frame = inner.width() / max_pos.max(1.0);
-                            if layer.source_type.eq_ignore_ascii_case("wavetable") {
-                                layer.wt_position = (layer.wt_position + delta.x / px_per_frame)
-                                    .clamp(0.0, max_pos);
-                                wt_position_changed = true;
-                            } else if layer.source_type.eq_ignore_ascii_case("sine")
-                                || layer.source_type.eq_ignore_ascii_case("saw")
-                                || layer.source_type.eq_ignore_ascii_case("square")
-                                || layer.source_type.eq_ignore_ascii_case("triangle")
-                                || layer.source_type.eq_ignore_ascii_case("pulse")
-                            {
-                                layer.phase += delta.x / inner.width() * std::f32::consts::TAU;
-                                wt_position_changed = true;
-                            }
-                        }
-                        if delta.y.abs() > 0.0 {
-                            // Drag up = louder — individual layer levels on the stack pane.
-                            let next = (layer.level - delta.y / inner.height()).clamp(0.0, 1.0);
-                            if (next - layer.level).abs() > f32::EPSILON {
-                                layer.level = next;
-                                wt_position_changed = true;
-                            }
-                        }
-                    }
-                }
-                StackDragTarget::None => {}
-            }
-        }
-
-        if response.hovered() {
-            let cursor = if response.dragged() {
-                CursorIcon::Grabbing
-            } else {
-                CursorIcon::Grab
-            };
-            ui.ctx().set_cursor_icon(cursor);
-        }
-
+        // Refresh after click so paint/knobs follow the newly selected layer.
         let selected_idx = *self.selected_layer;
+        quant_active = selected_idx
+            .and_then(|i| self.layers.get(i))
+            .map(|l| l.is_wavetable() && self.wave_quant > 0)
+            .unwrap_or(false);
 
         let painter = ui.painter_at(rect);
         painter.rect_filled(rect, RADIUS_SM, tokens.bg);
@@ -370,11 +441,28 @@ impl WtView3dStack<'_> {
             egui::Stroke::new(1.0, tokens.border.gamma_multiply(0.75)),
         );
 
-        let label = format!(
-            "Layers · {} · {} mode · drag to set level / phase",
-            active_indices.len(),
-            self.stack_mode
-        );
+        if quant_active {
+            let quant = effective_quant_count(self.wave_quant);
+            for i in 0..quant {
+                let x = slot_x(i, quant, inner);
+                painter.line_segment(
+                    [Pos2::new(x, inner.min.y), Pos2::new(x, inner.max.y)],
+                    egui::Stroke::new(0.5, tokens.border.gamma_multiply(0.5)),
+                );
+            }
+        }
+
+        let mut label = selected_layer_edit_label(selected_idx, self.layers);
+        if !quant_active {
+            label = format!(
+                "{label} · {}/{} · {} · drag level / phase",
+                active_indices.len(),
+                self.layers.len(),
+                self.stack_mode
+            );
+        } else {
+            label = format!("{label} · Quant · drag dots to reshape");
+        }
         painter.text(
             Pos2::new(rect.min.x + 8.0, rect.min.y + 6.0),
             egui::Align2::LEFT_TOP,
@@ -407,14 +495,17 @@ impl WtView3dStack<'_> {
             }
         }
 
+        // Dim non-selected layers first, then primary selected with fill.
         for &(orig_idx, ref pts, inverted) in &layer_points {
             if pts.len() < 2 {
                 continue;
             }
+            if selected_idx == Some(orig_idx) {
+                continue;
+            }
             let color = layer_palette(orig_idx);
-            let selected = selected_idx == Some(orig_idx);
-            let alpha = if selected { 0.95 } else { 0.55 };
-            let stroke_w = if selected { 2.4 } else { 1.5 };
+            let alpha = 0.28;
+            let stroke_w = 1.2;
             if inverted {
                 let dash_stroke = egui::Stroke::new(stroke_w, color.gamma_multiply(alpha));
                 for chunk in pts.windows(2).step_by(2) {
@@ -422,18 +513,47 @@ impl WtView3dStack<'_> {
                         painter.line_segment([chunk[0], chunk[1]], dash_stroke);
                     }
                 }
-                painter.text(
-                    pts.first().copied().unwrap_or(inner.left_top()),
-                    egui::Align2::LEFT_TOP,
-                    "↓",
-                    egui::FontId::proportional(9.0),
-                    color.gamma_multiply(0.85),
-                );
             } else {
                 painter.add(Shape::line(
                     pts.clone(),
                     egui::Stroke::new(stroke_w, color.gamma_multiply(alpha)),
                 ));
+            }
+        }
+
+        if let Some(sel) = selected_idx {
+            if let Some((_, pts, inverted)) = layer_points.iter().find(|(i, _, _)| *i == sel) {
+                if pts.len() >= 2 {
+                    let color = layer_palette(sel);
+                    let mut fill = pts.clone();
+                    fill.push(Pos2::new(inner.max.x, mid_y));
+                    fill.push(Pos2::new(inner.min.x, mid_y));
+                    painter.add(Shape::convex_polygon(
+                        fill,
+                        color.gamma_multiply(0.22),
+                        egui::Stroke::NONE,
+                    ));
+                    if *inverted {
+                        let dash_stroke = egui::Stroke::new(2.6, color.gamma_multiply(0.95));
+                        for chunk in pts.windows(2).step_by(2) {
+                            if chunk.len() == 2 {
+                                painter.line_segment([chunk[0], chunk[1]], dash_stroke);
+                            }
+                        }
+                        painter.text(
+                            pts.first().copied().unwrap_or(inner.left_top()),
+                            egui::Align2::LEFT_TOP,
+                            "↓",
+                            egui::FontId::proportional(9.0),
+                            color.gamma_multiply(0.85),
+                        );
+                    } else {
+                        painter.add(Shape::line(
+                            pts.clone(),
+                            egui::Stroke::new(2.6, color.gamma_multiply(0.98)),
+                        ));
+                    }
+                }
             }
         }
 
@@ -447,10 +567,32 @@ impl WtView3dStack<'_> {
             egui::Stroke::new(1.0, tokens.text_muted.gamma_multiply(0.35)),
         );
 
+        if quant_active {
+            if let Some(sel) = selected_idx {
+                if let Some(layer) = self.layers.get(sel) {
+                    let frame_idx = frame_index(layer.wt_position, bank.num_frames);
+                    let display_scale = layer_quant_display_scale(layer);
+                    let editor = QuantHandleEditor {
+                        plot_rect: inner,
+                        wave_quant: self.wave_quant,
+                        bank,
+                        frame_idx,
+                        interp: self.quant_interp,
+                        display_scale,
+                    };
+                    let qh = editor.show(ui);
+                    if qh.frame_edited {
+                        frame_edited = true;
+                    }
+                }
+            }
+        }
+
         WtView3dStackResponse {
             layer_selected,
             wt_position_changed,
             global_wt_scrub,
+            frame_edited,
         }
     }
 }
@@ -526,6 +668,76 @@ mod tests {
             (avg - eq).abs() > 1e-4,
             "weighted avg ({avg}) should differ from equal avg ({eq})"
         );
+    }
+
+    /// Right-pane caption / primary curve must follow the selected layer type.
+    #[test]
+    fn selected_layer_edit_label_tracks_selection() {
+        let layers = vec![
+            WaveLayerUi {
+                source_type: "saw".into(),
+                level: 0.55,
+                enabled: true,
+                ..WaveLayerUi::default()
+            },
+            WaveLayerUi {
+                source_type: "sine".into(),
+                level: 0.30,
+                enabled: true,
+                ..WaveLayerUi::default()
+            },
+        ];
+        let a = selected_layer_edit_label(Some(0), &layers);
+        let b = selected_layer_edit_label(Some(1), &layers);
+        assert!(a.contains("saw"), "{a}");
+        assert!(b.contains("sine"), "{b}");
+        assert_ne!(a, b);
+    }
+
+    /// Selecting a different VA layer must change the primary edit waveform.
+    #[test]
+    fn primary_edit_curve_changes_with_selected_layer() {
+        let bank = WavetableBank::factory_saw_morph();
+        let plot = Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(200.0, 100.0));
+        let layers = vec![
+            WaveLayerUi {
+                source_type: "saw".into(),
+                level: 1.0,
+                enabled: true,
+                ..WaveLayerUi::default()
+            },
+            WaveLayerUi {
+                source_type: "sine".into(),
+                level: 1.0,
+                enabled: true,
+                ..WaveLayerUi::default()
+            },
+        ];
+        let saw = primary_layer_waveform_points(Some(0), &layers, &bank, plot, 0.0, 64);
+        let sine = primary_layer_waveform_points(Some(1), &layers, &bank, plot, 0.0, 64);
+        assert_eq!(saw.len(), sine.len());
+        let mut diff = 0.0f32;
+        for (a, b) in saw.iter().zip(sine.iter()) {
+            diff += (a.y - b.y).abs();
+        }
+        assert!(
+            diff > 20.0,
+            "saw vs sine primary curves should differ (diff={diff})"
+        );
+    }
+
+    /// Quant reshape on the right pane must use the selected layer's display scale.
+    #[test]
+    fn selected_layer_quant_display_scale_matches_level() {
+        let layer = WaveLayerUi {
+            source_type: "wavetable".into(),
+            level: 0.4,
+            enabled: true,
+            invert: true,
+            ..WaveLayerUi::default()
+        };
+        let scale = layer_quant_display_scale(&layer);
+        assert!((scale - (-0.4)).abs() < 1e-4, "scale={scale}");
     }
 
     #[test]

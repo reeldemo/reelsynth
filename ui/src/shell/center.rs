@@ -185,18 +185,24 @@ pub(super) fn draw_center(
                         let idx = state.active_osc_index();
                         let osc = &mut state.oscillators[idx];
                         let stack_mode = osc.stack_mode.clone();
+                        let wave_quant = osc.wave_quant;
                         let view_stack = WtView3dStack {
                             layers: &mut osc.wave_layers,
                             stack_mode: &stack_mode,
-                            bank: bank.as_deref(),
+                            bank: bank.as_deref_mut(),
                             wt_pos_offset: 0.0,
                             wt_position: &mut state.wt_position,
                             selected_layer: &mut state.selected_layer_idx,
                             view_mode: Some(&mut state.wt_view_3d_mode),
                             show_mode_toggle: false,
                             time: 0.0,
+                            wave_quant,
+                            quant_interp: state.wt_quant_interp,
                         };
                         let stack_resp = view_stack.show(ui);
+                        if stack_resp.frame_edited {
+                            actions.frame_edited = true;
+                        }
                         if stack_resp.layer_selected || stack_resp.wt_position_changed {
                             if stack_resp.global_wt_scrub {
                                 state.wt_morph_amount = morph_amount_for_position(

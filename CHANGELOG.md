@@ -10,7 +10,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **Held-note crackle** — widen VA/WT BLEP so saw/stack wrap cliffs are no longer near-vertical (was ~0.98 sample jump at A4); regressions cover Factory Lead mid/late sustain with FX. Bright saw overtones remain intentional; unintended wrap clicks are suppressed.
 - **Design Result curve** — stack Result drawn only on the left 2D pane (distinct fill); right pane is layers-only; individual layer curves drag on both panes (Y=level, X=phase/WT)
-- **Quant knobs** — dots snap to the selected layer curve (proximity hit + level/sign scale); quantized edit polyline drawn through knobs for intuitive shaping
+- **Quant knobs** — dots snap to the selected layer curve (proximity hit + level/sign scale) on **both** Design panes; quantized edit polyline drawn through knobs for intuitive shaping
+- **Right Layers pane** — follows selection (`Edit · Layer N · type`); selected curve gets fill + emphasis; dim siblings; Quant reshape when the selected layer is wavetable
 
 ### Changed
 

@@ -127,20 +127,20 @@ The position strip is **layer chips only** on Design — no 256-frame scrub.
 | Pane | Caption | Job |
 |------|---------|-----|
 | Left 2D | **Result · N layers** | Stack sum (**Result**) drawn distinctly with fill; individual layer curves under it — drag Y=level, X=phase/WT pos |
-| Right | **Layers · N · mode** | Layer curves only (no Result) for pick / per-layer drag |
+| Right | **Edit · Layer N · type** | Selected layer is primary (fill + thick); other layers dim — pick / per-layer drag; Quant knobs when WT |
 
 **Shape** menu (Saw / Square / Sine / Triangle) sets the **active layer `source_type`** — it does not overwrite an arbitrary WT frame index.
 
 ### Quant hand drag (2D waveform — wavetable layers only)
 
-When the **active layer** is **wavetable** and **Quant** > 0 and tool is **Select**:
+When the **active layer** is **wavetable** and **Quant** > 0 (left: tool **Select**; right: always when selected WT):
 
-- Vertical grid at each slot; **knob handles sit on the selected layer curve** (scaled by level / invert)
+- Vertical grid at each slot on **both** Design panes; **knob handles sit on the selected layer curve** (scaled by level / invert)
 - Grab only works near a dot (curve snap) — not empty slot columns
 - Drag locks that slot for the gesture; Y edits **amplitude**; quantized polyline (Hold / Linear / Spline) updates under the knobs
 - **Interp** dropdown: **Hold** (step), **Linear**, **Spline** (Catmull-Rom). Switching rebuilds the frame from knob heights.
 - Tooltip / status: **Drag dots on the selected curve to reshape**
-- With Quant off, left Result pane still allows dragging individual layer curves (Y=level, X=phase/WT)
+- With Quant off, both panes allow dragging individual layer curves (Y=level, X=phase/WT)
 
 **Morph A/B bar** is hidden on Design home (frame-bank morph remains in preset schema for compatibility). Save/reload preserves `wave_layers`, `invert`, and `stack_mode`.
 
