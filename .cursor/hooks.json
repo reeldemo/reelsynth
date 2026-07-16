@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": "node .cursor/hooks/require-clean-compile.js",
+        "matcher": "git\\s+push",
+        "failClosed": true
+      }
+    ]
+  }
+}

@@ -6,6 +6,7 @@ use reelsynth::sequence::{ClipRef, TransportState};
 use reelsynth::{Envelope, Macro, ModSlot, Patch, SequenceProject, SynthEngine, WavetableBank};
 use std::sync::{Arc, RwLock};
 
+#[allow(dead_code)] // many Set* variants are matched for DSP but constructed via SetPatch paths
 pub(crate) enum AudioCmd {
     Midi(MidiEvent),
     TransportPlay,

@@ -2,17 +2,17 @@
 
 use egui::{Color32, Pos2, Shape, Ui};
 use reelsynth::{
-    render_combined_osc_cycle, render_osc_cycle_at_index, Patch, WavetableBank,
+    render_combined_osc_cycle, render_osc_cycle_at_index, Patch,
 };
 use reelsynth_ui_theme::Tokens;
 
-use crate::audit_registry::{record_region, record_used, AuditId};
+use crate::audit_registry::{record_region, AuditId};
 use crate::layout::{CENTER_GAP, GRID_UNIT, SPACE_SM};
-use crate::oscillator_ui::{OscillatorUi, WaveLayerUi, MIN_OSCILLATORS};
+use crate::oscillator_ui::{OscillatorUi, MIN_OSCILLATORS};
 use crate::state::OscStripContext;
 use crate::widgets::{
     format_coarse, format_pan, format_unison, knob_value_label, labeled_select, Knob, KnobSize,
-    KnobStyle, panel, panel_audit,
+    KnobStyle, panel_audit,
 };
 use crate::wt::{sync_slot_from_position, wave_quant_from_index, wave_quant_index, effective_quant_count, WAVE_QUANT_LABELS};
 use crate::wt::waveform_points;

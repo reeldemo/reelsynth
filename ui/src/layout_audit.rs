@@ -4,7 +4,7 @@ use egui::Rect;
 
 use crate::center_layout::CenterRegions;
 use crate::layout::{
-    embed_fx_in_osc_column, embed_mod_in_rail, embed_piano_in_center,
+    embed_fx_in_osc_column, embed_mod_in_rail,
     ShellLayout, ShellLayoutOptions, SPACE_SM,
 };
 
@@ -62,10 +62,12 @@ pub fn center_views_used_rect_id() -> egui::Id {
     egui::Id::new("reelsynth.audit.center.views_used_rect")
 }
 
+#[allow(dead_code)] // reserved for center mod/fx strip audits
 pub fn center_mod_used_rect_id() -> egui::Id {
     egui::Id::new("reelsynth.audit.center.mod_used_rect")
 }
 
+#[allow(dead_code)]
 pub fn center_fx_used_rect_id() -> egui::Id {
     egui::Id::new("reelsynth.audit.center.fx_used_rect")
 }

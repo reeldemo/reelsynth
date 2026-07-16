@@ -4,7 +4,7 @@ use egui::{Pos2, Rect, Sense, Ui, Vec2};
 use reelsynth::{Clip, SequenceProject};
 use reelsynth_ui_theme::{ACCENT_UI, Tokens};
 
-use crate::audit_registry::{record_region, record_used, AuditId};
+use crate::audit_registry::{record_region, AuditId};
 use crate::layout::GRID_UNIT;
 use crate::region::region;
 

@@ -4,7 +4,7 @@ use egui::{Color32, FontId, Rect, Ui};
 use reelsynth::{EffectSlot, EffectType};
 use reelsynth_ui_theme::Tokens;
 
-use crate::audit_registry::{record_region, record_used, AuditId};
+use crate::audit_registry::{record_region, AuditId};
 use crate::layout::{
     UiScale, GRID_UNIT, RADIUS_SM, sidebar_fx_card_body_height, sidebar_fx_footer_height,
     sidebar_fx_slot_height, sidebar_panel_chrome_height,
@@ -12,7 +12,7 @@ use crate::layout::{
 use crate::region::region;
 use crate::widgets::{
     button_icon, button_toggle, card_stroke, collapsible_panel, menu_selectable, reel_combo,
-    select_value_text, sidebar_panel, sidebar_panel_audit,
+    select_value_text, sidebar_panel_audit,
 };
 
 const FX_FOOTER_HEIGHT: f32 = 18.0;
@@ -21,6 +21,7 @@ const FX_PARAM_ROW_HEIGHT: f32 = 18.0;
 
 const FX_SIDEBAR_TITLE_HEIGHT: f32 = 20.0;
 const FX_SIDEBAR_PARAM_ROW_HEIGHT: f32 = 22.0;
+#[allow(dead_code)] // reserved for sidebar FX footer chrome
 const FX_SIDEBAR_FOOTER_HEIGHT: f32 = 22.0;
 const FX_SIDEBAR_LABEL_SIZE: f32 = 10.0;
 const FX_SIDEBAR_DRAG_MIN_WIDTH: f32 = 72.0;
@@ -45,9 +46,9 @@ struct FxMetrics {
     controls_height: f32,
     column_height: f32,
     add_width: f32,
-    header_h: f32,
+    _header_h: f32,
     title_height: f32,
-    param_row_height: f32,
+    _param_row_height: f32,
     param_layout: FxParamLayout,
     scale: f32,
 }
@@ -70,9 +71,9 @@ impl FxMetrics {
             controls_height: controls_h,
             column_height: column_h,
             add_width: 40.0 * s,
-            header_h,
+            _header_h: header_h,
             title_height: FX_TITLE_HEIGHT * s,
-            param_row_height: FX_PARAM_ROW_HEIGHT * s,
+            _param_row_height: FX_PARAM_ROW_HEIGHT * s,
             param_layout: FxParamLayout::CompactRow,
             scale: s,
         }
@@ -88,9 +89,9 @@ impl FxMetrics {
             controls_height: footer_h,
             column_height: slot_h,
             add_width: slot_width,
-            header_h: 0.0,
+            _header_h: 0.0,
             title_height: FX_SIDEBAR_TITLE_HEIGHT * scale,
-            param_row_height: FX_SIDEBAR_PARAM_ROW_HEIGHT * scale,
+            _param_row_height: FX_SIDEBAR_PARAM_ROW_HEIGHT * scale,
             param_layout: FxParamLayout::SidebarStack,
             scale,
         }
@@ -522,7 +523,7 @@ fn fx_drag_f32(
         FX_PARAM_ROW_HEIGHT
     };
 
-    let mut draw = |ui: &mut Ui| {
+    let draw = |ui: &mut Ui| {
         ui.spacing_mut().item_spacing.y = 1.0;
         ui.label(
             egui::RichText::new(label)

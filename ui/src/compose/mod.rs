@@ -7,7 +7,7 @@ mod scene_grid;
 mod track_list;
 mod transport_bar;
 
-pub use command_history::{CommandHistory, ComposeCommand};
+pub use command_history::CommandHistory;
 pub use piano_roll::PianoRollTool;
 pub use transport_bar::TransportBarActions;
 

@@ -14,6 +14,7 @@ pub enum GraphicsBackend {
 }
 
 impl GraphicsBackend {
+    #[allow(dead_code)] // used by settings UI labels when exposed
     pub fn label(self) -> &'static str {
         match self {
             Self::Auto => "Auto",
@@ -57,6 +58,7 @@ pub enum KeyboardLayoutSetting {
 }
 
 impl KeyboardLayoutSetting {
+    #[allow(dead_code)] // used by settings UI labels when exposed
     pub fn label(self) -> &'static str {
         match self {
             Self::Auto => "Auto",

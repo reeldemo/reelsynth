@@ -345,6 +345,7 @@ pub(super) fn sync_osc_position_from_wt(state: &mut UiState) {
 }
 
 /// Legacy alias — sync wt_position from active osc slots.
+#[allow(dead_code)]
 pub(super) fn sync_wt_position_from_osc(state: &mut UiState) {
     sync_wt_from_osc(state, 256);
 }

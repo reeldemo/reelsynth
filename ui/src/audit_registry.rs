@@ -9,7 +9,7 @@ use crate::layout::ShellLayout;
 use crate::state::ShellMode;
 use crate::layout_audit::{
     assert_content_within, assert_min_utilization, assert_sidebar_width_parity,
-    overlap_area, within_bounds, HEADER_CLUSTER_MIN_GAP,
+    overlap_area,
 };
 
 const EPS: f32 = 0.5;
@@ -448,6 +448,7 @@ pub fn audit_id_rect(ctx: &Context, id: AuditId) -> Option<Rect> {
     })
 }
 
+#[allow(dead_code)] // audit helper for allocated-vs-used checks
 pub fn audit_id_allocated(ctx: &Context, id: AuditId) -> Option<Rect> {
     ctx.data(|d| {
         d.get_temp::<HashMap<AuditId, ElementAudit>>(registry_key())

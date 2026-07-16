@@ -167,6 +167,7 @@ pub(crate) fn selected_layer_edit_label(
 }
 
 /// Primary edit curve for the selected layer (right pane focus).
+#[cfg_attr(not(test), allow(dead_code))]
 pub(crate) fn primary_layer_waveform_points(
     selected: Option<usize>,
     layers: &[WaveLayerUi],

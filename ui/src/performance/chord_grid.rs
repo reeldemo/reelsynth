@@ -3,8 +3,9 @@
 use egui::{Rect, Sense, Ui, Vec2};
 use reelsynth_ui_theme::{ACCENT_UI, Tokens};
 
-use crate::audit_registry::{record_region, record_used, AuditId};
+use crate::audit_registry::{record_used, AuditId};
 use crate::performance::CHORD_DEGREE_LABELS;
+use crate::region::region;
 use crate::UiState;
 
 pub struct ChordGridActions {
@@ -29,7 +30,7 @@ pub fn draw_chord_grid(ui: &mut Ui, rect: Rect, state: &mut UiState) -> ChordGri
     let pad_w = ((rect.width() - 6.0 * 4.0) / 7.0).clamp(36.0, 72.0);
     let pad_h = (rect.height() - 8.0).clamp(28.0, 56.0);
 
-    ui.allocate_ui_at_rect(rect, |ui| {
+    region(ui, rect, |ui| {
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing = Vec2::new(4.0, 0.0);
             for (deg, label) in CHORD_DEGREE_LABELS.iter().enumerate() {

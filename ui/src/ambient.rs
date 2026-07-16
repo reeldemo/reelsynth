@@ -1,5 +1,7 @@
 //! Ambient panel helpers (animations removed — kept as static stubs for call sites).
 
+#![allow(dead_code)]
+
 use egui::{Color32, Painter, Pos2, Rect};
 
 /// No-op — animated backgrounds disabled.

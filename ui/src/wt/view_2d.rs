@@ -3,13 +3,13 @@ use reelsynth::patch::{Patch, WaveSlot};
 use reelsynth::WavetableBank;
 use reelsynth_ui_theme::{ACCENT_UI, Tokens};
 
-use crate::audit_registry::{record_region, record_used, AuditId};
+use crate::audit_registry::{record_region, AuditId};
 use crate::layout::{RADIUS_SM, WT_TOOLBAR_HEIGHT};
 use crate::oscillator_ui::WaveLayerUi;
 use crate::region::region;
 
 use super::curve_editor::CurveEditor;
-use super::mod_preview::{has_position_mod_routes, preview_mod_sources, preview_position_mod};
+use super::mod_preview::{preview_mod_sources, preview_position_mod};
 use super::quant_handles::{QuantHandleEditor, WtQuantInterp, quant_control_points, resample_frame_from_quant_points, slot_x};
 use super::shape_editor::ShapeEditor;
 use super::slots::{apply_slot_selection, effective_quant_count};

@@ -3,7 +3,7 @@
 use egui::{Rect, Ui};
 use reelsynth_ui_theme::{ACCENT_UI, Tokens};
 
-use crate::audit_registry::{record_region, record_used, AuditId};
+use crate::audit_registry::{record_region, AuditId};
 use crate::layout::{GRID_UNIT, SPACE_SM};
 use crate::region::region;
 use crate::widgets::button_tool;

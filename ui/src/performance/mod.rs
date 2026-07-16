@@ -4,9 +4,9 @@ mod arp_panel;
 mod chord_grid;
 mod header;
 
-pub use arp_panel::{draw_arp_panel, ArpPanelActions};
-pub use chord_grid::{draw_chord_grid, ChordGridActions};
-pub use header::{draw_performance_header, PerformanceHeaderActions};
+pub use arp_panel::draw_arp_panel;
+pub use chord_grid::draw_chord_grid;
+pub use header::draw_performance_header;
 
 use reelsynth::{
     ArpDirection, ArpInputMode, ArpRate, ArpSettings, ChordSet, ChordVoicing, PerformanceLayout,

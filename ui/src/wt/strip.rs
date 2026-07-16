@@ -3,7 +3,7 @@ use reelsynth::patch::{Oscillator, WaveSlot};
 use reelsynth::{resolve_wt_position, WavetableBank};
 use reelsynth_ui_theme::{ACCENT_UI, Tokens};
 
-use crate::audit_registry::{record_region, record_used, AuditId};
+use crate::audit_registry::{record_used, AuditId};
 use crate::layout::{RADIUS_SM, WT_STRIP_HEIGHT};
 use crate::oscillator_ui::WaveLayerUi;
 

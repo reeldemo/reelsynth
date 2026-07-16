@@ -2,7 +2,7 @@ use egui::{Rect, Ui};
 use reelsynth::Patch;
 
 use super::*;
-use super::header::{sync_morph_from_active_tab, sync_osc_from_wt, sync_wt_from_osc};
+use super::header::{sync_morph_from_active_tab, sync_osc_from_wt};
 use crate::audit_registry::{record_region, AuditId};
 use crate::center_layout::compute_center_regions;
 use crate::layout::{embed_piano_in_center, ShellLayoutOptions, UiScale};

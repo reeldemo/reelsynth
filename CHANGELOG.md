@@ -15,6 +15,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Cleared workspace `cargo check` warnings (`-D warnings` clean for reelsynth / reelsynth-ui / reelsynth-app); Cursor **beforeShellExecution** hook blocks `git push` until compile stays clean
 - **Settings** moved from floating modal window to a **Settings** dropdown in the top header navbar
 - Removed Design pane animations (ambient waves, phase playhead scrub, idle repaint loops)
 - README expanded with doc links and capability matrix
@@ -23,6 +24,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- `.cursor/hooks/` — `require-clean-compile.js` gates agent `git push` on `cargo check` with warnings denied
 - **Compose mode** — header toggle switches from Design (sound engineering) to a mini-DAW layout: transport bar, multi-track arrangement, piano roll editor, scene grid, 88-key keyboard strip
 - **Ableton-style clip editor** — thin clip strip + dominant piano roll; playable key column with QWERTY glyphs; unified live audition (keys / QWERTY / MIDI / pencil); transport ▶ voices scheduled notes; scenes collapsed by default
 - User documentation pack: GETTING_STARTED, UI, WORKFLOW, FREE_STACK, SDK, REELDEMO_INTEGRATION

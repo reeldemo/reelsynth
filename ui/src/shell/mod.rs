@@ -18,7 +18,7 @@ use crate::mod_matrix::{draw_mod_matrix, ModMatrixState};
 use crate::region::region;
 
 pub use crate::state::{
-    OscStripContext, OscStripPreviewState, ScopeStripContext, ShellActions, ShellAppSettings,
+    OscStripContext, ScopeStripContext, ShellActions, ShellAppSettings,
     ShellConfig, ShellMidiDevices, ShellMode, UiState, WtView3dMode,
 };
 
@@ -27,11 +27,10 @@ pub(super) use egui::{Color32, FontId};
 pub(super) use reelsynth::WavetableBank;
 pub(super) use reelsynth_ui_theme::heading_font;
 pub(super) use crate::layout::{
-    GRID_UNIT, SPACE_SM, WT_MORPH_HEIGHT, WT_STRIP_HEIGHT, WT_VIEW_MIN_HEIGHT,
+    GRID_UNIT, SPACE_SM, WT_VIEW_MIN_HEIGHT,
 };
-pub(super) use crate::osc_column::{draw_osc_column, OscColumnState};
 pub(super) use crate::scope_strip::{
-    draw_scope_strip, ScopeStripInput, ScopeStripState, SCOPE_STRIP_HEIGHT,
+    draw_scope_strip, ScopeStripInput, ScopeStripState,
 };
 pub(super) use crate::widgets::{
     adsr_graph, format_depth, format_env_time, format_lfo_rate, format_sustain, PianoKeyboard,

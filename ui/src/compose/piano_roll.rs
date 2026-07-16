@@ -52,7 +52,7 @@ enum HitRegion {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-enum NoteDrag {
+pub(crate) enum NoteDrag {
     Move {
         originals: Vec<(usize, f32, u8)>,
     },
@@ -277,11 +277,11 @@ fn paint_note_grid(
 
     let clip_start = compose.project.tracks[ti].clips[ci].start_beats;
     let clip_len = compose.project.tracks[ti].clips[ci].length_beats;
-    let pitch_top = visible_pitch_top(compose);
+    let _pitch_top = visible_pitch_top(compose);
     let visible_beats = (clip_len / compose.beat_zoom.max(0.25)).max(1.0);
     let max_scroll = (clip_len - visible_beats).max(0.0);
     compose.beat_scroll = compose.beat_scroll.clamp(0.0, max_scroll);
-    let beat_scroll = compose.beat_scroll;
+    let _beat_scroll = compose.beat_scroll;
     let beat_w = (rect.width() - KEY_COLUMN_W) / visible_beats;
     let grid_left = rect.min.x + KEY_COLUMN_W;
     let grid_rect = Rect::from_min_max(
@@ -698,7 +698,7 @@ fn paint_note_grid(
                         }
                         changed = true;
                     }
-                    NoteDrag::ResizeRight { note_idx, orig_start, orig_dur } => {
+                    NoteDrag::ResizeRight { note_idx, orig_start, orig_dur: _ } => {
                         let snapped = compose.snap_beats(beat);
                         let new_dur = (snapped - orig_start).max(step);
                         if let Some(note) = compose
@@ -955,7 +955,8 @@ fn paint_automation_lane(
     let rect = response.rect;
     painter.rect_filled(rect, 0.0, tokens.surface2);
 
-    ui.allocate_ui_at_rect(
+    region(
+        ui,
         Rect::from_min_max(rect.min, pos2(rect.min.x + 180.0, rect.min.y + 16.0)),
         |ui| {
             ui.horizontal(|ui| {
