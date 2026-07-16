@@ -135,14 +135,12 @@ The position strip is **layer chips only** on Design — no 256-frame scrub.
 
 When the **active layer** is **wavetable** and **Quant** > 0 and tool is **Select**:
 
-- Vertical grid at each slot; **knob handles** at waveform intersections (hover when quant > 64)
-- Drag snaps X to nearest slot on press; **locks slot** for entire gesture; fine Y edits **amplitude** (wave height) at that quant point
-- **Interp** dropdown in the 2D toolbar (right side): **Hold** (step/rectangular bands), **Linear** (segments between knobs), **Spline** (Catmull-Rom smooth curve). Switching mode rebuilds the frame from current knob heights.
-- Tooltip / status: **Drag knobs to reshape this frame**
-- **Shape** menu (Saw / Square / Sine / Triangle) sets the active layer type
-- **Curve** tool still edits slot→frame morph map when a wavetable layer is active; Select handles edit wave shape at quant points
-- **Pencil** hidden when quant > 0 — use Select + handles instead
-- The performance **piano/keyboard** fills the full-width band above the status footer; left/right sidebars stop above that band and never render into it
+- Vertical grid at each slot; **knob handles sit on the selected layer curve** (scaled by level / invert)
+- Grab only works near a dot (curve snap) — not empty slot columns
+- Drag locks that slot for the gesture; Y edits **amplitude**; quantized polyline (Hold / Linear / Spline) updates under the knobs
+- **Interp** dropdown: **Hold** (step), **Linear**, **Spline** (Catmull-Rom). Switching rebuilds the frame from knob heights.
+- Tooltip / status: **Drag dots on the selected curve to reshape**
+- With Quant off, left Result pane still allows dragging individual layer curves (Y=level, X=phase/WT)
 
 **Morph A/B bar** is hidden on Design home (frame-bank morph remains in preset schema for compatibility). Save/reload preserves `wave_layers`, `invert`, and `stack_mode`.
 

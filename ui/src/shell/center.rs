@@ -3,7 +3,6 @@ use reelsynth::Patch;
 
 use super::*;
 use super::header::{sync_morph_from_active_tab, sync_osc_from_wt, sync_wt_from_osc};
-use crate::ambient::paint_ambient_waves;
 use crate::audit_registry::{record_region, AuditId};
 use crate::center_layout::compute_center_regions;
 use crate::layout::{embed_piano_in_center, ShellLayoutOptions, UiScale};
@@ -122,10 +121,6 @@ pub(super) fn draw_center(
             let views_h = views_rect.height().max(WT_VIEW_MIN_HEIGHT * s * 0.5);
             region(ui, views_rect, |ui| {
             ui.painter().rect_filled(views_rect, 8.0, Tokens::default().bg);
-            state.wt_view_3d_mode = WtView3dMode::Stack;
-            if config.show_osc_column {
-                paint_ambient_waves(ui.painter(), views_rect, time);
-            }
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = GRID_UNIT;
                 let half_w = (ui.available_width() - GRID_UNIT) * 0.5;
@@ -153,8 +148,8 @@ pub(super) fn draw_center(
                             stack_mode: Some(&mut osc.stack_mode),
                             shape_control_points: state.shape_control_points,
                             analyze_dialog_open: Some(&mut state.analyze_dialog_open),
-                            animate: true,
-                            time: time as f32,
+                            animate: false,
+                            time: 0.0,
                         };
                         let view2d_resp = view.show(ui);
                         if view2d_resp.frame_edited {
@@ -199,7 +194,7 @@ pub(super) fn draw_center(
                             selected_layer: &mut state.selected_layer_idx,
                             view_mode: Some(&mut state.wt_view_3d_mode),
                             show_mode_toggle: false,
-                            time: time as f32,
+                            time: 0.0,
                         };
                         let stack_resp = view_stack.show(ui);
                         if stack_resp.layer_selected || stack_resp.wt_position_changed {
@@ -299,10 +294,6 @@ pub(super) fn draw_center(
         ui.ctx()
             .data_mut(|d| d.insert_temp(center_used_rect_id(), used));
         record_region(ui.ctx(), AuditId::CenterColumn, rect, used);
-
-        if config.show_osc_column || config.show_wt_editor {
-            ui.ctx().request_repaint();
-        }
     });
 }
 

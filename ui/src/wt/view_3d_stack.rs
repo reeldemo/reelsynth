@@ -437,17 +437,15 @@ impl WtView3dStack<'_> {
             }
         }
 
-        let phase_anim = (self.time * 0.5).fract();
+        let phase_anim = 0.0_f32;
         let play_x = egui::lerp(inner.min.x..=inner.max.x, phase_anim);
         painter.line_segment(
             [
                 Pos2::new(play_x, inner.min.y),
                 Pos2::new(play_x, inner.max.y),
             ],
-            egui::Stroke::new(1.0, tokens.text_muted.gamma_multiply(0.5)),
+            egui::Stroke::new(1.0, tokens.text_muted.gamma_multiply(0.35)),
         );
-
-        ui.ctx().request_repaint();
 
         WtView3dStackResponse {
             layer_selected,

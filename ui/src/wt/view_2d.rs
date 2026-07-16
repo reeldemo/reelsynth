@@ -232,7 +232,8 @@ impl WtView2d<'_> {
             placeholder_wave(inner, mid_y)
         };
 
-        if *self.tool == WtEditTool::Select && stack_overlay {
+        // Layer drag on Result pane when not reshaping quant knobs.
+        if *self.tool == WtEditTool::Select && stack_overlay && !quant_active {
             let sense = Sense::click_and_drag();
             let response = ui.allocate_rect(inner, sense);
             let drag_kind_id = ui.id().with("left_result_layer_drag");
@@ -644,12 +645,27 @@ impl WtView2d<'_> {
 
         if *self.tool == WtEditTool::Select && quant_active {
             if let Some(bank) = self.bank.as_mut() {
+                let display_scale = self
+                    .wave_layers
+                    .as_ref()
+                    .and_then(|layers| {
+                        let idx = self.selected_layer_idx.unwrap_or(0);
+                        layers.get(idx)
+                    })
+                    .map(|l| {
+                        let sign = if l.invert { -1.0 } else { 1.0 };
+                        let level = if l.enabled { l.level.max(0.0) } else { 0.0 };
+                        // Match stacked layer amplitude so dots sit on the selected curve.
+                        sign * level.max(0.05)
+                    })
+                    .unwrap_or(1.0);
                 let editor = QuantHandleEditor {
                     plot_rect: inner,
                     wave_quant: self.wave_quant,
                     bank,
                     frame_idx,
                     interp: *self.quant_interp,
+                    display_scale,
                 };
                 let qh = editor.show(ui);
                 if qh.frame_edited {
@@ -675,7 +691,7 @@ impl WtView2d<'_> {
                     .as_ref()
                     .map(|l| l.iter().filter(|x| x.enabled).count())
                     .unwrap_or(0);
-                format!("Result · {n} layers · drag curves (Y=level)")
+                format!("Result · {n} layers · Select+Quant: drag dots on selected curve")
             } else if active_layer_va {
                 format!("Edit · Layer {} · {layer_type}", layer_idx + 1)
             } else if pos_mod.abs() > 0.01 {
@@ -694,14 +710,6 @@ impl WtView2d<'_> {
 
         if analyze_requested {
             stack_changed = true;
-        }
-
-        if self.animate {
-            if let Some(patch) = self.patch {
-                if has_position_mod_routes(patch) {
-                    ui.ctx().request_repaint();
-                }
-            }
         }
 
         record_region(ui.ctx(), AuditId::CenterWt2d, rect, rect);

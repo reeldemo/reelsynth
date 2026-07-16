@@ -8,8 +8,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
-- **Held-note crackle** — widen VA/WT BLEP so saw/stack wrap cliffs are no longer near-vertical (was ~0.98 sample jump at A4); regressions cover Factory Lead mid/late sustain with FX
+- **Held-note crackle** — widen VA/WT BLEP so saw/stack wrap cliffs are no longer near-vertical (was ~0.98 sample jump at A4); regressions cover Factory Lead mid/late sustain with FX. Bright saw overtones remain intentional; unintended wrap clicks are suppressed.
 - **Design Result curve** — stack Result drawn only on the left 2D pane (distinct fill); right pane is layers-only; individual layer curves drag on both panes (Y=level, X=phase/WT)
+- **Quant knobs** — dots snap to the selected layer curve (proximity hit + level/sign scale); quantized edit polyline drawn through knobs for intuitive shaping
+
+### Changed
+
+- Removed Design pane animations (ambient waves, phase playhead scrub, idle repaint loops)
+- README expanded with doc links and capability matrix
+- **Design ↔ Compose** mode switch in header; Compose hides WT editor and osc column
+- On-screen piano upgraded to **88 keys (A0–C8)** with horizontal scroll and scale-fold dimming
 
 ### Added
 
@@ -21,12 +29,6 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `.cursor/skills/reelsynth-workflow/` — workflow skill for Cursor agents
 - `scripts/bundle-docs-images.sh` — zip screenshots for GitHub Release upload
 - Screenshot URLs via GitHub Release assets (not committed to repo)
-
-### Changed
-
-- README expanded with doc links and capability matrix
-- **Design ↔ Compose** mode switch in header; Compose hides WT editor and osc column
-- On-screen piano upgraded to **88 keys (A0–C8)** with horizontal scroll and scale-fold dimming
 
 ## [0.1.0] - 2026-07-12
 
