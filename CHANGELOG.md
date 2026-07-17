@@ -16,6 +16,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- **Quant knob hover** — clearer snap feedback across Result / Layers / Selected: enlarged brighter knobs with glow + slot guide, thickened active curve, grab/grabbing cursor, status `Slot N · amp ±x.xx`
 - **Design WT layout** — two panes replaced by three equal columns (Result / Layers / Selected); toolbar and per-layer quant moved to Selected column
 - Cleared workspace `cargo check` warnings (`-D warnings` clean for reelsynth / reelsynth-ui / reelsynth-app); Cursor **beforeShellExecution** hook blocks `git push` unless a fresh `.cursor/compile-clean.stamp` exists (refresh via `node .cursor/hooks/require-clean-compile.js`)
 - WT menu section renamed **Factory wavetables** (was “Factory banks”) to match layer-first Design

@@ -4,7 +4,7 @@
 //! amplitude at that control point (wave height), not the slot→frame morph map
 //! (that stays on the Curve tool).
 
-use egui::{CursorIcon, Pos2, Rect, Sense, Ui};
+use egui::{Color32, CursorIcon, Pos2, Rect, Sense, Ui};
 use reelsynth::WavetableBank;
 use reelsynth_ui_theme::{ACCENT_UI, Tokens};
 
@@ -12,6 +12,100 @@ use super::slots::effective_quant_count;
 
 const HANDLE_RADIUS: f32 = 6.0;
 const WAVE_AMP: f32 = 0.42;
+
+/// Visual knobs for idle / hover / drag — shared by Selected, Result, and Layers.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct QuantKnobVisual {
+    pub radius: f32,
+    pub stroke_width: f32,
+    /// Outer glow ring radius (None = no glow).
+    pub glow_radius: Option<f32>,
+    pub glow_alpha: f32,
+    /// When true, use a brighter accent fill instead of surface.
+    pub fill_brighter: bool,
+    /// Vertical guide at the snapped slot X.
+    pub show_slot_guide: bool,
+}
+
+/// Radius / stroke / glow for a quant knob given hover + drag state.
+pub fn quant_knob_visual(hovered: bool, dragged: bool) -> QuantKnobVisual {
+    if dragged {
+        QuantKnobVisual {
+            radius: HANDLE_RADIUS * 1.55,
+            stroke_width: 2.6,
+            glow_radius: Some(HANDLE_RADIUS * 2.55),
+            glow_alpha: 0.28,
+            fill_brighter: true,
+            show_slot_guide: true,
+        }
+    } else if hovered {
+        QuantKnobVisual {
+            radius: HANDLE_RADIUS * 1.45,
+            stroke_width: 2.35,
+            glow_radius: Some(HANDLE_RADIUS * 2.35),
+            glow_alpha: 0.22,
+            fill_brighter: true,
+            show_slot_guide: true,
+        }
+    } else {
+        QuantKnobVisual {
+            radius: HANDLE_RADIUS,
+            stroke_width: 1.0,
+            glow_radius: None,
+            glow_alpha: 0.0,
+            fill_brighter: false,
+            show_slot_guide: false,
+        }
+    }
+}
+
+/// `(stroke_width, color_gamma_mul)` for the editable quantized curve.
+pub fn quant_curve_stroke(active: bool) -> (f32, f32) {
+    if active {
+        (3.4, 1.0)
+    } else {
+        (2.0, 0.85)
+    }
+}
+
+/// Status / tooltip while hovering (or dragging) a snapped slot.
+pub fn quant_hover_status_label(slot: usize, sample: f32) -> String {
+    format!("Slot {} · amp {:+.2}", slot + 1, sample)
+}
+
+/// Paint one quant knob with shared hover/drag emphasis.
+pub fn paint_quant_knob(
+    painter: &egui::Painter,
+    center: Pos2,
+    visual: QuantKnobVisual,
+    fill: Color32,
+    stroke: Color32,
+    plot: Rect,
+) {
+    if let Some(glow_r) = visual.glow_radius {
+        painter.circle_stroke(
+            center,
+            glow_r,
+            egui::Stroke::new(2.0, stroke.gamma_multiply(visual.glow_alpha * 2.2)),
+        );
+        painter.circle_filled(center, glow_r, stroke.gamma_multiply(visual.glow_alpha));
+    }
+    if visual.show_slot_guide {
+        painter.line_segment(
+            [
+                Pos2::new(center.x, plot.min.y),
+                Pos2::new(center.x, plot.max.y),
+            ],
+            egui::Stroke::new(1.25, stroke.gamma_multiply(0.55)),
+        );
+    }
+    painter.circle_filled(center, visual.radius, fill);
+    painter.circle_stroke(
+        center,
+        visual.radius,
+        egui::Stroke::new(visual.stroke_width, stroke),
+    );
+}
 
 /// How quant knob amplitudes are written into the 2048-sample frame.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -185,6 +279,8 @@ impl QuantHandleEditor<'_> {
         };
 
         let painter = ui.painter_at(self.plot_rect);
+        let curve_active = hovered_slot.is_some() || dragged_slot.is_some();
+        let (curve_w, curve_mul) = quant_curve_stroke(curve_active);
 
         // Editable quantized curve through knobs (distinct from Result / other layers).
         let poly = quantized_curve_polyline(&points, self.plot_rect, scale);
@@ -202,7 +298,7 @@ impl QuantHandleEditor<'_> {
                     }
                     painter.add(egui::Shape::line(
                         step_pts,
-                        egui::Stroke::new(2.0, accent_ui.gamma_multiply(0.85)),
+                        egui::Stroke::new(curve_w, accent_ui.gamma_multiply(curve_mul)),
                     ));
                 }
                 WtQuantInterp::Linear | WtQuantInterp::Cubic => {
@@ -218,7 +314,10 @@ impl QuantHandleEditor<'_> {
                     }
                     painter.add(egui::Shape::line(
                         dense_pts,
-                        egui::Stroke::new(2.2, accent_ui.gamma_multiply(0.9)),
+                        egui::Stroke::new(
+                            curve_w + 0.2,
+                            accent_ui.gamma_multiply(curve_mul.max(0.9)),
+                        ),
                     ));
                 }
             }
@@ -237,31 +336,30 @@ impl QuantHandleEditor<'_> {
             let sample = points.get(i).copied().unwrap_or(0.0);
             let y = knob_y_on_curve(sample, scale, self.plot_rect);
             let center = Pos2::new(x, y);
-            let active = dragged_slot == Some(i) || hovered_slot == Some(i);
-            let radius = if active {
-                HANDLE_RADIUS * 1.25
-            } else {
-                HANDLE_RADIUS
-            };
-            let fill = if active {
-                accent_ui.gamma_multiply(0.35)
+            let hovered = hovered_slot == Some(i);
+            let dragged = dragged_slot == Some(i);
+            let visual = quant_knob_visual(hovered, dragged);
+            let fill = if visual.fill_brighter {
+                accent_ui.gamma_multiply(if dragged { 0.55 } else { 0.42 })
             } else {
                 tokens.surface2
             };
-            painter.circle_filled(center, radius, fill);
-            painter.circle_stroke(
+            paint_quant_knob(
+                &painter,
                 center,
-                radius,
-                egui::Stroke::new(if active { 2.0 } else { 1.0 }, accent_ui),
+                visual,
+                fill,
+                accent_ui,
+                self.plot_rect,
             );
 
-            if active {
+            if visual.show_slot_guide {
                 let band_w = self.plot_rect.width() / slot_count as f32;
                 let band = Rect::from_center_size(
                     Pos2::new(x, self.plot_rect.center().y),
                     egui::vec2(band_w, self.plot_rect.height()),
                 );
-                painter.rect_filled(band, 0.0, tokens.accent.gamma_multiply(0.12));
+                painter.rect_filled(band, 0.0, tokens.accent.gamma_multiply(0.14));
             }
         }
 
@@ -277,12 +375,16 @@ impl QuantHandleEditor<'_> {
                 ui.ctx().set_cursor_icon(cursor);
             }
             if over_handle {
-                response
-                    .clone()
-                    .on_hover_text("Drag dots on the selected curve to reshape");
+                let focus_slot = dragged_slot.or(hovered_slot);
+                let hover_text = if let Some(slot) = focus_slot {
+                    let amp = points.get(slot).copied().unwrap_or(0.0);
+                    quant_hover_status_label(slot, amp)
+                } else {
+                    "Drag dots on the selected curve to reshape".into()
+                };
+                response.clone().on_hover_text(&hover_text);
                 if status_label.is_none() {
-                    status_label =
-                        Some("Drag dots on the selected curve to reshape".into());
+                    status_label = Some(hover_text);
                 }
             }
         }
@@ -687,5 +789,41 @@ mod tests {
         let y = frame_to_y(frame, plot);
         let back = y_to_frame(y, plot);
         assert!((back - frame).abs() < 2.0, "roundtrip {frame} -> {back}");
+    }
+
+    /// Idle knobs stay compact; hover/drag grow + glow so the snapped slot is obvious.
+    #[test]
+    fn quant_knob_visual_enlarges_and_glows_on_hover() {
+        let idle = quant_knob_visual(false, false);
+        let hover = quant_knob_visual(true, false);
+        let drag = quant_knob_visual(true, true);
+        assert!(hover.radius > idle.radius * 1.3, "hover must enlarge clearly");
+        assert!(drag.radius >= hover.radius, "drag at least as large as hover");
+        assert!(hover.glow_radius.is_some(), "hover needs outer glow ring");
+        assert!(drag.glow_radius.is_some(), "drag needs outer glow ring");
+        assert!(
+            hover.stroke_width > idle.stroke_width,
+            "hover stroke thicker"
+        );
+        assert!(hover.fill_brighter, "hover fill brighter than idle");
+        assert!(hover.show_slot_guide, "hover shows vertical slot guide");
+        assert!(!idle.show_slot_guide);
+    }
+
+    /// Curve stroke widens while a knob on that curve is hovered/dragged.
+    #[test]
+    fn quant_curve_stroke_thickens_when_active() {
+        let (idle_w, _) = quant_curve_stroke(false);
+        let (active_w, _) = quant_curve_stroke(true);
+        assert!(active_w > idle_w + 0.5, "active curve must read thicker");
+    }
+
+    #[test]
+    fn quant_hover_status_names_slot_and_amp() {
+        let label = quant_hover_status_label(3, -0.42);
+        assert!(
+            label.contains("Slot 4") && label.contains("-0.42"),
+            "got {label}"
+        );
     }
 }

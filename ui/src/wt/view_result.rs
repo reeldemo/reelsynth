@@ -9,7 +9,8 @@ use crate::layout::RADIUS_SM;
 use crate::oscillator_ui::WaveLayerUi;
 
 use super::quant_handles::{
-    knob_y_on_curve, nearest_quant_handle, resample_frame_from_quant_points,
+    knob_y_on_curve, nearest_quant_handle, paint_quant_knob, quant_curve_stroke,
+    quant_hover_status_label, quant_knob_visual, resample_frame_from_quant_points,
     sample_from_knob_y, slot_x, WtQuantInterp,
 };
 use super::residual::{
@@ -217,9 +218,34 @@ impl WtViewResult<'_> {
                     tokens.accent.gamma_multiply(0.28),
                     egui::Stroke::NONE,
                 ));
+                let result_knob_hot = quant_active
+                    && ui.ctx().pointer_latest_pos().is_some_and(|pos| {
+                        if !inner.contains(pos) {
+                            return false;
+                        }
+                        let pts = composite_quant_points(
+                            self.wave_layers,
+                            bank_ro,
+                            &stack_mode,
+                            effective_quant_count(self.wave_quant),
+                        );
+                        nearest_quant_handle(pos, inner, &pts, 1.0, 14.0).is_some()
+                    });
+                let (stroke_w, stroke_mul) = quant_curve_stroke(result_knob_hot);
                 painter.add(Shape::line(
                     result_pts.clone(),
-                    egui::Stroke::new(2.6, accent_ui),
+                    egui::Stroke::new(
+                        if result_knob_hot {
+                            stroke_w + 0.4
+                        } else {
+                            2.6
+                        },
+                        accent_ui.gamma_multiply(if result_knob_hot {
+                            stroke_mul
+                        } else {
+                            1.0
+                        }),
+                    ),
                 ));
                 if let Some(peak) = peak_point(&result_pts) {
                     painter.circle_filled(peak, 4.0, tokens.accent);
@@ -304,12 +330,17 @@ impl WtViewResult<'_> {
                         }
                         frame_edited = true;
                         status_hint = Some(format!(
-                            "Result slot {} → {:+.2}",
-                            slot + 1,
-                            sample
+                            "Result {} · {}",
+                            quant_hover_status_label(slot, sample),
+                            self.quant_interp.label()
                         ));
                     }
-                } else if response.hovered() || pointer.is_some() {
+                } else if pointer.is_some() {
+                    let amp = desired.get(slot).copied().unwrap_or(0.0);
+                    status_hint = Some(format!(
+                        "Result · {}",
+                        quant_hover_status_label(slot, amp)
+                    ));
                     ui.ctx().set_cursor_icon(if response.dragged() {
                         CursorIcon::Grabbing
                     } else {
@@ -328,8 +359,11 @@ impl WtViewResult<'_> {
                 )
             };
             for i in 0..slot_count {
+                let hovered = locked.is_none() && active_slot == Some(i);
+                let dragged = locked == Some(i);
                 let show = self.wave_quant <= 64
-                    || locked == Some(i)
+                    || hovered
+                    || dragged
                     || i == 0
                     || i + 1 == slot_count;
                 if !show {
@@ -339,21 +373,13 @@ impl WtViewResult<'_> {
                 let sample = desired.get(i).copied().unwrap_or(0.0);
                 let y = knob_y_on_curve(sample, 1.0, inner);
                 let center = Pos2::new(x, y);
-                let active = locked == Some(i);
-                painter.circle_filled(
-                    center,
-                    if active { 7.5 } else { 6.0 },
-                    if active {
-                        accent_ui.gamma_multiply(0.35)
-                    } else {
-                        tokens.surface2
-                    },
-                );
-                painter.circle_stroke(
-                    center,
-                    if active { 7.5 } else { 6.0 },
-                    egui::Stroke::new(if active { 2.0 } else { 1.0 }, accent_ui),
-                );
+                let visual = quant_knob_visual(hovered, dragged);
+                let fill = if visual.fill_brighter {
+                    accent_ui.gamma_multiply(if dragged { 0.55 } else { 0.42 })
+                } else {
+                    tokens.surface2
+                };
+                paint_quant_knob(&painter, center, visual, fill, accent_ui, inner);
             }
         }
 

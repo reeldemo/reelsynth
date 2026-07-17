@@ -188,6 +188,9 @@ pub(super) fn draw_center(
                         if stack_resp.frame_edited {
                             actions.frame_edited = true;
                         }
+                        if let Some(hint) = stack_resp.status_hint.as_deref() {
+                            state.status = hint.to_string();
+                        }
                         if stack_resp.layer_selected || stack_resp.wt_position_changed {
                             sync_osc_from_wt(state, num_frames);
                             sync_morph_from_active_tab(state);

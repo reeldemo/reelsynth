@@ -27,9 +27,10 @@ pub use view_selected::{WtSelectedLayerView, WtSelectedLayerResponse};
 pub use morph::{morph_amount_for_position, morph_position, WtMorph, WtMorphResponse};
 pub use quant_handles::{
     apply_quant_slot_amplitude, frame_to_y, knob_y_on_curve, nearest_quant_handle, nearest_slot,
-    quant_control_points, quantized_curve_polyline, resample_frame_from_quant_points,
+    paint_quant_knob, quant_control_points, quant_curve_stroke, quant_hover_status_label,
+    quant_knob_visual, quantized_curve_polyline, resample_frame_from_quant_points,
     sample_at_quant_phase, sample_from_knob_y, sample_to_y, snap_x_to_slot, slot_x, y_to_frame,
-    y_to_sample, QuantHandleEditor, QuantHandleResponse, WtQuantInterp,
+    y_to_sample, QuantHandleEditor, QuantHandleResponse, QuantKnobVisual, WtQuantInterp,
 };
 pub use slots::{
     apply_slot_selection, effective_quant_count, frame_to_slot_coord, position_from_osc_ui,

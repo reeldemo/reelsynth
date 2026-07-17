@@ -13,8 +13,9 @@ use crate::region::region;
 use crate::state::WtView3dMode;
 
 use super::quant_handles::{
-    apply_quant_slot_amplitude, knob_y_on_curve, nearest_quant_handle, quant_control_points,
-    sample_from_knob_y, slot_x, WtQuantInterp,
+    apply_quant_slot_amplitude, knob_y_on_curve, nearest_quant_handle, paint_quant_knob,
+    quant_control_points, quant_hover_status_label, quant_knob_visual, sample_from_knob_y,
+    slot_x, WtQuantInterp,
 };
 use super::residual::layer_curve_label;
 use super::slots::effective_quant_count;
@@ -227,6 +228,7 @@ pub struct WtView3dStackResponse {
     pub wt_position_changed: bool,
     pub global_wt_scrub: bool,
     pub frame_edited: bool,
+    pub status_hint: Option<String>,
 }
 
 pub struct WtView3dStack<'a> {
@@ -256,6 +258,7 @@ impl WtView3dStack<'_> {
         let mut wt_position_changed = false;
         let global_wt_scrub = false;
         let mut frame_edited = false;
+        let mut status_hint: Option<String> = None;
 
         let (rect, _) = ui.allocate_exact_size(
             Vec2::new(ui.available_width(), view_h),
@@ -268,6 +271,7 @@ impl WtView3dStack<'_> {
                 wt_position_changed,
                 global_wt_scrub,
                 frame_edited,
+                status_hint,
             };
         }
 
@@ -293,6 +297,7 @@ impl WtView3dStack<'_> {
                     wt_position_changed,
                     global_wt_scrub,
                     frame_edited,
+                    status_hint,
                 };
             }
         };
@@ -523,10 +528,21 @@ impl WtView3dStack<'_> {
                                 self.quant_interp,
                             );
                             frame_edited = true;
+                            status_hint = Some(format!(
+                                "L{} · {}",
+                                layer_i + 1,
+                                quant_hover_status_label(slot, sample)
+                            ));
                         }
                     }
-                }
-                if q_response.hovered() || q_response.dragged() {
+                } else if pointer.is_some() {
+                    let points = quant_control_points(bank.frame(edit_frame_idx), slot_count);
+                    let amp = points.get(slot).copied().unwrap_or(0.0);
+                    status_hint = Some(format!(
+                        "L{} · {}",
+                        layer_i + 1,
+                        quant_hover_status_label(slot, amp)
+                    ));
                     ui.ctx().set_cursor_icon(if q_response.dragged() {
                         CursorIcon::Grabbing
                     } else {
@@ -609,8 +625,53 @@ impl WtView3dStack<'_> {
             }
             let color = layer_palette(orig_idx);
             let is_sel = selected_idx == Some(orig_idx);
-            let alpha = if is_sel { 0.75 } else { 0.45 };
-            let stroke_w = if is_sel { 2.0 } else { 1.4 };
+            let quant_hot = quant_active && {
+                let locked_layer: Option<usize> = ui.ctx().data(|d| d.get_temp(drag_layer_id));
+                let hover_layer = locked_layer.or_else(|| {
+                    ui.ctx().pointer_latest_pos().and_then(|pos| {
+                        if !inner.contains(pos) {
+                            return None;
+                        }
+                        let slot_count = effective_quant_count(self.wave_quant);
+                        let mut best = None;
+                        let mut best_d = 14.0_f32;
+                        for &layer_i in &wt_layer_indices {
+                            if let Some(layer) = self.layers.get(layer_i) {
+                                let scale = layer_quant_display_scale(layer);
+                                let points =
+                                    quant_control_points(bank.frame(edit_frame_idx), slot_count);
+                                if let Some(slot) =
+                                    nearest_quant_handle(pos, inner, &points, scale, 14.0)
+                                {
+                                    let x = slot_x(slot, slot_count, inner);
+                                    let y = knob_y_on_curve(points[slot], scale, inner);
+                                    let dist = pos.distance(Pos2::new(x, y));
+                                    if dist < best_d {
+                                        best_d = dist;
+                                        best = Some(layer_i);
+                                    }
+                                }
+                            }
+                        }
+                        best
+                    })
+                });
+                hover_layer == Some(orig_idx)
+            };
+            let alpha = if quant_hot {
+                0.95
+            } else if is_sel {
+                0.75
+            } else {
+                0.45
+            };
+            let stroke_w = if quant_hot {
+                3.2
+            } else if is_sel {
+                2.0
+            } else {
+                1.4
+            };
             if inverted {
                 let dash_stroke = egui::Stroke::new(stroke_w, color.gamma_multiply(alpha));
                 for chunk in pts.windows(2).step_by(2) {
@@ -640,15 +701,45 @@ impl WtView3dStack<'_> {
             let slot_count = effective_quant_count(self.wave_quant);
             let locked_slot: Option<usize> = ui.ctx().data(|d| d.get_temp(drag_slot_id));
             let locked_layer: Option<usize> = ui.ctx().data(|d| d.get_temp(drag_layer_id));
-            let accent = Tokens::default().accent;
+            let pointer = ui
+                .ctx()
+                .pointer_latest_pos()
+                .filter(|p| inner.contains(*p));
+            let mut hover: Option<(usize, usize)> = None;
+            if locked_layer.is_none() {
+                let mut nearest_dist = 14.0_f32;
+                for &layer_i in &wt_layer_indices {
+                    if let Some(layer) = self.layers.get(layer_i) {
+                        let scale = layer_quant_display_scale(layer);
+                        let points = quant_control_points(bank.frame(edit_frame_idx), slot_count);
+                        if let Some(pos) = pointer {
+                            if let Some(slot) =
+                                nearest_quant_handle(pos, inner, &points, scale, 14.0)
+                            {
+                                let x = slot_x(slot, slot_count, inner);
+                                let y = knob_y_on_curve(points[slot], scale, inner);
+                                let dist = pos.distance(Pos2::new(x, y));
+                                if dist < nearest_dist {
+                                    nearest_dist = dist;
+                                    hover = Some((layer_i, slot));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             for &layer_i in &wt_layer_indices {
                 if let Some(layer) = self.layers.get(layer_i) {
                     let scale = layer_quant_display_scale(layer);
                     let points = quant_control_points(bank.frame(edit_frame_idx), slot_count);
                     let color = layer_palette(layer_i);
                     for i in 0..slot_count {
+                        let dragged =
+                            locked_layer == Some(layer_i) && locked_slot == Some(i);
+                        let hovered = hover == Some((layer_i, i));
                         let show = self.wave_quant <= 64
-                            || locked_layer == Some(layer_i) && locked_slot == Some(i)
+                            || hovered
+                            || dragged
                             || i == 0
                             || i + 1 == slot_count;
                         if !show {
@@ -658,22 +749,13 @@ impl WtView3dStack<'_> {
                         let sample = points.get(i).copied().unwrap_or(0.0);
                         let y = knob_y_on_curve(sample, scale, inner);
                         let center = Pos2::new(x, y);
-                        let active =
-                            locked_layer == Some(layer_i) && locked_slot == Some(i);
-                        painter.circle_filled(
-                            center,
-                            if active { 7.0 } else { 5.0 },
-                            if active {
-                                color.gamma_multiply(0.5)
-                            } else {
-                                accent.gamma_multiply(0.2)
-                            },
-                        );
-                        painter.circle_stroke(
-                            center,
-                            if active { 7.0 } else { 5.0 },
-                            egui::Stroke::new(if active { 1.5 } else { 1.0 }, color),
-                        );
+                        let visual = quant_knob_visual(hovered, dragged);
+                        let fill = if visual.fill_brighter {
+                            color.gamma_multiply(if dragged { 0.65 } else { 0.5 })
+                        } else {
+                            color.gamma_multiply(0.22)
+                        };
+                        paint_quant_knob(&painter, center, visual, fill, color, inner);
                     }
                 }
             }
@@ -684,6 +766,7 @@ impl WtView3dStack<'_> {
             wt_position_changed,
             global_wt_scrub,
             frame_edited,
+            status_hint,
         }
     }
 }

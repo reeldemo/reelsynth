@@ -145,7 +145,9 @@ The position strip is **layer chips only** on Design — no 256-frame scrub.
 When the **active layer** is **wavetable** and **Quant** > 0:
 
 - Vertical grid at each slot; knob handles sit on the editable curve
-- Grab only works near a dot (curve snap)
+- Grab only works near a dot (curve snap); cursor is **grab** / **grabbing**
+- Hover snaps to the nearest knob: enlarged + brighter fill/stroke, outer glow ring, vertical slot guide, and status/tooltip `Slot N · amp ±x.xx`
+- The curve under that knob (Result residual / Layers WT / Selected) thickens and brightens while hovering
 - Drag locks that slot; Y edits **amplitude**; quantized polyline (Hold / Linear / Spline) updates under the knobs
 - **Interp** dropdown on Selected column: **Hold**, **Linear**, **Spline**
 - VA layers: level/phase drag only (no frame quant)
