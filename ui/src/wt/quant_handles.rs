@@ -1,8 +1,8 @@
 //! Quant-snapped waveform knob handles for slot-based sample editing.
 //!
 //! Knobs sit on the drawn waveform at each quant X. Vertical drag edits
-//! amplitude at that control point (wave height), not the slot→frame morph map
-//! (that stays on the Curve tool).
+//! amplitude at that control point (wave height). The Select tool owns
+//! knobs; Shape owns control-point templates.
 
 use egui::{Color32, CursorIcon, Pos2, Rect, Sense, Ui};
 use reelsynth::WavetableBank;
@@ -11,6 +11,7 @@ use reelsynth_ui_theme::{ACCENT_UI, Tokens};
 use crate::quant_interp::segment_mode;
 
 use super::slots::effective_quant_count;
+use super::view_zoom::WtCurveViewTransform;
 
 const HANDLE_RADIUS: f32 = 6.0;
 const WAVE_AMP: f32 = 0.42;
@@ -123,6 +124,8 @@ pub struct QuantHandleEditor<'a> {
     pub selected_slot: &'a mut Option<usize>,
     /// Selected-layer display scale (level x sign). Knobs sit on that curve.
     pub display_scale: f32,
+    /// Shared Design curve zoom / pan (identity = no zoom).
+    pub view: WtCurveViewTransform,
 }
 
 
@@ -147,6 +150,8 @@ impl QuantHandleEditor<'_> {
             self.display_scale
         };
         const HIT_PX: f32 = 14.0;
+        let hit_r = self.view.hit_radius(HIT_PX);
+        let view = self.view;
 
         if self.wave_quant == 0 || self.frame_idx >= self.bank.num_frames {
             return QuantHandleResponse {
@@ -178,15 +183,17 @@ impl QuantHandleEditor<'_> {
         let points = quant_control_points(self.bank.frame(self.frame_idx), slot_count);
 
         if let Some(pos) = pointer {
-            if nearest_quant_handle(pos, self.plot_rect, &points, scale, HIT_PX).is_some() {
+            let plot_pos = view.unmap_pos(pos, self.plot_rect);
+            if nearest_quant_handle(plot_pos, self.plot_rect, &points, scale, hit_r).is_some() {
                 over_handle = true;
             }
         }
 
         if response.drag_started() {
             if let Some(pos) = pointer {
+                let plot_pos = view.unmap_pos(pos, self.plot_rect);
                 if let Some(slot) =
-                    nearest_quant_handle(pos, self.plot_rect, &points, scale, HIT_PX)
+                    nearest_quant_handle(plot_pos, self.plot_rect, &points, scale, hit_r)
                 {
                     ui.ctx().data_mut(|d| d.insert_temp(drag_slot_id, slot));
                     dragged_slot = Some(slot);
@@ -197,8 +204,9 @@ impl QuantHandleEditor<'_> {
         }
         if response.clicked() {
             if let Some(pos) = pointer {
+                let plot_pos = view.unmap_pos(pos, self.plot_rect);
                 if let Some(slot) =
-                    nearest_quant_handle(pos, self.plot_rect, &points, scale, HIT_PX)
+                    nearest_quant_handle(plot_pos, self.plot_rect, &points, scale, hit_r)
                 {
                     *self.selected_slot = Some(slot);
                 }
@@ -212,8 +220,9 @@ impl QuantHandleEditor<'_> {
 
         if let Some(pos) = pointer {
             if locked_slot.is_none() && !response.dragged() {
+                let plot_pos = view.unmap_pos(pos, self.plot_rect);
                 hovered_slot =
-                    nearest_quant_handle(pos, self.plot_rect, &points, scale, HIT_PX);
+                    nearest_quant_handle(plot_pos, self.plot_rect, &points, scale, hit_r);
                 if hovered_slot.is_some() {
                     over_handle = true;
                 }
@@ -224,7 +233,8 @@ impl QuantHandleEditor<'_> {
             over_handle = true;
             if response.dragged() {
                 if let Some(pos) = pointer {
-                    let sample = sample_from_knob_y(pos.y, scale, self.plot_rect);
+                    let plot_pos = view.unmap_pos(pos, self.plot_rect);
+                    let sample = sample_from_knob_y(plot_pos.y, scale, self.plot_rect);
                     let prev = points.get(slot).copied().unwrap_or(0.0);
                     if (prev - sample).abs() > 1e-4 {
                         apply_quant_slot_amplitude(
@@ -278,7 +288,7 @@ impl QuantHandleEditor<'_> {
                 );
                 let x = egui::lerp(self.plot_rect.min.x..=self.plot_rect.max.x, phase);
                 let y = knob_y_on_curve(s, scale, self.plot_rect);
-                dense_pts.push(Pos2::new(x, y));
+                dense_pts.push(view.map_pos(Pos2::new(x, y), self.plot_rect));
             }
             if dense_pts.len() >= 2 {
                 let focus = self.selected_slot.filter(|s| *s + 1 < slot_count);
@@ -306,7 +316,7 @@ impl QuantHandleEditor<'_> {
             let x = slot_x(i, slot_count, self.plot_rect);
             let sample = points.get(i).copied().unwrap_or(0.0);
             let y = knob_y_on_curve(sample, scale, self.plot_rect);
-            let center = Pos2::new(x, y);
+            let center = view.map_pos(Pos2::new(x, y), self.plot_rect);
             let hovered = hovered_slot == Some(i);
             let dragged = dragged_slot == Some(i);
             let visual = quant_knob_visual(hovered, dragged);
@@ -370,7 +380,72 @@ impl QuantHandleEditor<'_> {
     }
 }
 
+/// How aggressively to close the wavetable wrap seam after Quant rebuilds.
+///
+/// Periodic cycles need `frame[0] ≈ frame[last]`. A hard overwrite of the last
+/// sample made the last Quant knob appear stuck; adaptive modes fade only as
+/// much as the discontinuity requires.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum QuantSeamMode {
+    /// No wrap fade — may crackle on discontinuous ends.
+    Off,
+    /// Fixed-width ease toward `frame[0]` (legacy Soft).
+    Soft,
+    /// Fade length scales with seam size; skips work when already closed.
+    #[default]
+    Adaptive,
+}
+
+impl QuantSeamMode {
+    pub const LABELS: [&'static str; 3] = ["Seam·Off", "Seam·Soft", "Seam·Adapt"];
+
+    pub fn label(self) -> &'static str {
+        Self::LABELS[self.index()]
+    }
+
+    pub fn tooltip(self) -> &'static str {
+        match self {
+            Self::Off => "No wrap fade — max edit freedom, may click at cycle wrap",
+            Self::Soft => "Fixed fade into frame[0] (stronger crackle reduction)",
+            Self::Adaptive => "Fade only as much as the wrap discontinuity needs",
+        }
+    }
+
+    pub fn index(self) -> usize {
+        match self {
+            Self::Off => 0,
+            Self::Soft => 1,
+            Self::Adaptive => 2,
+        }
+    }
+
+    pub fn from_index(idx: usize) -> Self {
+        match idx {
+            0 => Self::Off,
+            1 => Self::Soft,
+            _ => Self::Adaptive,
+        }
+    }
+}
+
+thread_local! {
+    static QUANT_SEAM_MODE: std::cell::Cell<QuantSeamMode> =
+        std::cell::Cell::new(QuantSeamMode::Adaptive);
+}
+
+/// Set seam mode for Quant rebuilds on this UI thread (call once per Design frame).
+pub fn set_quant_seam_mode(mode: QuantSeamMode) {
+    QUANT_SEAM_MODE.with(|c| c.set(mode));
+}
+
+fn current_quant_seam_mode() -> QuantSeamMode {
+    QUANT_SEAM_MODE.with(|c| c.get())
+}
+
 /// Update one quant knob, then rebuild using per-segment interpolation.
+///
+/// First and last knobs are **linked** (periodic wrap): editing either writes
+/// both control points so the last knob stays draggable and the cycle closes.
 pub fn apply_quant_slot_amplitude(
     frame: &mut [f32],
     slot: usize,
@@ -383,8 +458,18 @@ pub fn apply_quant_slot_amplitude(
         return;
     }
     let mut points = quant_control_points(frame, slot_count);
+    let sample = sample.clamp(-1.0, 1.0);
     if slot < points.len() {
-        points[slot] = sample.clamp(-1.0, 1.0);
+        points[slot] = sample;
+    }
+    // Periodic cycle: phase 0 and phase 1 are the same wrap point (unless Seam·Off).
+    if current_quant_seam_mode() != QuantSeamMode::Off
+        && points.len() >= 2
+        && (slot == 0 || slot + 1 == points.len())
+    {
+        points[0] = sample;
+        let last = points.len() - 1;
+        points[last] = sample;
     }
     resample_frame_from_quant_points(frame, &points, segments, curve_default);
 }
@@ -439,19 +524,42 @@ pub fn resample_frame_from_quant_points(
     periodize_quant_frame(frame);
 }
 
-/// Soft-close `frame[last] → frame[0]` after quant resampling (matches factory tables).
+/// Soft-close wrap after Quant resampling. Mode is [`current_quant_seam_mode`].
 pub fn periodize_quant_frame(frame: &mut [f32]) {
+    periodize_quant_frame_with_mode(frame, current_quant_seam_mode());
+}
+
+/// Apply wrap-seam reduction with an explicit mode (tests / CLI).
+pub fn periodize_quant_frame_with_mode(frame: &mut [f32], mode: QuantSeamMode) {
     let n = frame.len();
     if n < 8 {
         return;
     }
-    // Wider fade than factory tables — Hold knobs often leave ±1 endpoints.
-    let fade = (n / 16).max(16).min(128);
+    let seam = (frame[n - 1] - frame[0]).abs();
+    let fade = match mode {
+        QuantSeamMode::Off => {
+            // Still pin exact seam sample so BLEP has a defined discontinuity width of 1.
+            // Do not fade the body — preserves last-knob amplitude in the approach.
+            return;
+        }
+        QuantSeamMode::Soft => (n / 16).max(16).min(128),
+        QuantSeamMode::Adaptive => {
+            if seam < 0.02 {
+                // Already closed enough — tiny 2-sample ease only.
+                2
+            } else {
+                // Scale fade with discontinuity; cap so mid-cycle shape stays intact.
+                let t = (seam / 2.0).clamp(0.0, 1.0);
+                let min_f = 4;
+                let max_f = (n / 12).max(24).min(96);
+                (min_f as f32 + t * (max_f - min_f) as f32).round() as usize
+            }
+        }
+    };
+    let fade = fade.min(n / 2).max(1);
     let start = frame[0];
     for i in 0..fade {
         let w = (i as f32 + 1.0) / (fade as f32 + 1.0);
-        // Ease-in crossfade each sample toward frame[0] (works when only the
-        // last sample differs from the body — common after Hold + pin endpoints).
         let w = w * w;
         let idx = n - fade + i;
         frame[idx] = frame[idx] * (1.0 - w) + start * w;
@@ -642,7 +750,11 @@ pub fn slot_x(slot: usize, slot_count: usize, plot: Rect) -> f32 {
         return plot.center().x;
     }
     let t = slot as f32 / (slot_count - 1) as f32;
-    egui::lerp(plot.min.x..=plot.max.x, t)
+    // Inset so first/last knobs are not flush with the clip edge (easier to grab).
+    let inset = 3.0_f32.min(plot.width() * 0.02);
+    let left = plot.min.x + inset;
+    let right = plot.max.x - inset;
+    egui::lerp(left..=right, t)
 }
 
 /// Map sample amplitude (−1..1) to plot Y (matches [`super::waveform::waveform_points`]).
@@ -911,6 +1023,43 @@ mod tests {
         );
     }
     #[test]
+    fn last_quant_knob_stays_editable_with_adaptive_seam() {
+        set_quant_seam_mode(QuantSeamMode::Adaptive);
+        let mut frame = vec![0.0_f32; 256];
+        let n = 8usize;
+        let init: Vec<f32> = (0..n).map(|i| -0.5 + i as f32 / (n - 1) as f32).collect();
+        resample_frame_from_quant_points_uniform(&mut frame, &init, WtQuantInterp::Linear);
+        apply_quant_slot_amplitude_uniform(
+            &mut frame,
+            n - 1,
+            n,
+            0.75,
+            WtQuantInterp::Linear,
+        );
+        let points = quant_control_points(&frame, n);
+        assert!(
+            (points[n - 1] - 0.75).abs() < 0.08,
+            "last knob must retain edited value, got {}",
+            points[n - 1]
+        );
+        assert!(
+            (points[0] - 0.75).abs() < 0.08,
+            "first knob linked to last under Adaptive, got {}",
+            points[0]
+        );
+    }
+
+    #[test]
+    fn adaptive_seam_uses_short_fade_when_already_closed() {
+        let mut frame = vec![0.5_f32; 256];
+        frame[200] = 0.4;
+        periodize_quant_frame_with_mode(&mut frame, QuantSeamMode::Adaptive);
+        // Ends already match — Adaptive should not demolish the body.
+        assert!((frame[200] - 0.4).abs() < 0.15, "body preserved");
+        assert!((frame[frame.len() - 1] - frame[0]).abs() < 1e-3);
+    }
+
+    #[test]
     fn linear_hits_endpoints() {
         let mut frame = vec![0.0_f32; 128];
         let points = vec![-0.5_f32, 0.8];
@@ -947,9 +1096,16 @@ mod tests {
         let mut frame = vec![0.0_f32; 128];
         let points = vec![0.2_f32, 0.9];
         resample_frame_from_quant_points_uniform(&mut frame, &points, WtQuantInterp::Exponential);
-        for w in frame.windows(2) {
-            assert!(w[1] + 1e-4 >= w[0]);
+        // Wrap seam is periodized (last → first), so the tail is not monotonic.
+        // Body of the rising expo curve must still climb.
+        let body_end = frame.len().saturating_sub(frame.len() / 8).max(2);
+        for w in frame[..body_end].windows(2) {
+            assert!(w[1] + 1e-4 >= w[0], "expo body must be non-decreasing");
         }
+        assert!(
+            (frame[frame.len() - 1] - frame[0]).abs() < 1e-3,
+            "quant resample must close wrap seam"
+        );
     }
 
     #[test]

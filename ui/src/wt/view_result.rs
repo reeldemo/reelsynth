@@ -24,6 +24,7 @@ use super::view_3d_stack::{
 use super::waveform::{
     hovered_layer_from_pointer, peak_point, quant_knobs_for_selection, selection_from_curve_click,
 };
+use super::view_zoom::{consume_plot_scroll, WtCurveViewTransform};
 
 pub struct WtViewResultResponse {
     pub frame_edited: bool,
@@ -41,6 +42,7 @@ pub struct WtViewResult<'a> {
     pub wavetable_id: Option<String>,
     #[allow(dead_code)]
     pub active_osc: usize,
+    pub curve_view: &'a mut WtCurveViewTransform,
 }
 
 impl WtViewResult<'_> {
@@ -65,6 +67,9 @@ impl WtViewResult<'_> {
         let plot_rect = rect;
         let inner = plot_rect.shrink2(egui::vec2(8.0, 20.0));
         let mid_y = inner.center().y;
+        let _ = consume_plot_scroll(ui, inner, self.curve_view);
+        let curve_view = *self.curve_view;
+        let hit_r = curve_view.hit_radius(HOVER_DISTANCE_PX);
         let stack_mode = self.stack_mode.clone();
         let layers_empty = self.wave_layers.is_empty();
         let quant_active = self.wave_quant > 0 && !layers_empty;
@@ -98,7 +103,14 @@ impl WtViewResult<'_> {
                 );
                 if let Some(pos) = ui.ctx().pointer_latest_pos() {
                     if inner.contains(pos)
-                        && nearest_quant_handle(pos, inner, &points, 1.0, 14.0).is_some()
+                        && nearest_quant_handle(
+                            curve_view.unmap_pos(pos, inner),
+                            inner,
+                            &points,
+                            1.0,
+                            hit_r,
+                        )
+                        .is_some()
                     {
                         quant_grab = true;
                     }
@@ -114,7 +126,14 @@ impl WtViewResult<'_> {
                     let points = quant_control_points(bank.frame(frame_i), slot_count);
                     if let Some(pos) = ui.ctx().pointer_latest_pos() {
                         if inner.contains(pos)
-                            && nearest_quant_handle(pos, inner, &points, scale, 14.0).is_some()
+                            && nearest_quant_handle(
+                                curve_view.unmap_pos(pos, inner),
+                                inner,
+                                &points,
+                                scale,
+                                hit_r,
+                            )
+                            .is_some()
                         {
                             quant_grab = true;
                         }
@@ -135,7 +154,10 @@ impl WtViewResult<'_> {
                 .map(|(i, l)| {
                     (
                         i,
-                        layer_waveform_points(l, bank_ro, inner, 0.0, WAVE_SAMPLES),
+                        curve_view.map_points(
+                            &layer_waveform_points(l, bank_ro, inner, 0.0, WAVE_SAMPLES),
+                            inner,
+                        ),
                     )
                 })
                 .collect();
@@ -208,7 +230,8 @@ impl WtViewResult<'_> {
             }
         }
 
-        let painter = ui.painter_at(rect);
+        let mut painter = ui.painter_at(rect);
+        painter.set_clip_rect(inner.expand(1.0));
         painter.rect_filled(rect, RADIUS_SM, tokens.bg);
         painter.rect_stroke(rect, RADIUS_SM, egui::Stroke::new(1.0, tokens.border));
         paint_grid(&painter, inner, tokens.border);
@@ -235,7 +258,10 @@ impl WtViewResult<'_> {
                 .map(|(i, l)| {
                     (
                         i,
-                        layer_waveform_points(l, bank_ro, inner, 0.0, WAVE_SAMPLES),
+                        curve_view.map_points(
+                            &layer_waveform_points(l, bank_ro, inner, 0.0, WAVE_SAMPLES),
+                            inner,
+                        ),
                     )
                 })
                 .collect();
@@ -302,8 +328,17 @@ impl WtViewResult<'_> {
                 ));
             }
 
-            let result_pts =
-                composite_waveform_points(self.wave_layers, bank_ro, &stack_mode, inner, 0.0, WAVE_SAMPLES);
+            let result_pts = curve_view.map_points(
+                &composite_waveform_points(
+                    self.wave_layers,
+                    bank_ro,
+                    &stack_mode,
+                    inner,
+                    0.0,
+                    WAVE_SAMPLES,
+                ),
+                inner,
+            );
             if result_pts.len() >= 2 {
                 let mut fill = result_pts.clone();
                 fill.push(Pos2::new(inner.max.x, mid_y));
@@ -324,7 +359,14 @@ impl WtViewResult<'_> {
                             &stack_mode,
                             effective_quant_count(self.wave_quant),
                         );
-                        nearest_quant_handle(pos, inner, &pts, 1.0, 14.0).is_some()
+                        nearest_quant_handle(
+                            curve_view.unmap_pos(pos, inner),
+                            inner,
+                            &pts,
+                            1.0,
+                            hit_r,
+                        )
+                        .is_some()
                     });
                 let (stroke_w, stroke_mul) = quant_curve_stroke(result_knob_hot);
                 painter.add(Shape::line(
@@ -387,21 +429,27 @@ impl WtViewResult<'_> {
                             super::waveform::frame_index(layer.wt_position, bank.num_frames);
                         let points = quant_control_points(bank.frame(frame_i), slot_count);
                         pointer.and_then(|pos| {
-                            nearest_quant_handle(pos, inner, &points, scale, 14.0).map(|slot| {
-                                let x = slot_x(slot, slot_count, inner);
-                                let y = knob_y_on_curve(points[slot], scale, inner);
-                                (layer_i, slot, pos.distance(Pos2::new(x, y)))
-                            })
+                            let plot_pos = curve_view.unmap_pos(pos, inner);
+                            nearest_quant_handle(plot_pos, inner, &points, scale, hit_r).map(
+                                |slot| {
+                                    let x = slot_x(slot, slot_count, inner);
+                                    let y = knob_y_on_curve(points[slot], scale, inner);
+                                    let center = curve_view.map_pos(Pos2::new(x, y), inner);
+                                    (layer_i, slot, pos.distance(center))
+                                },
+                            )
                         })
                     })
                 } else {
                     None
                 };
             let result_knob: Option<(usize, f32)> = pointer.and_then(|pos| {
-                nearest_quant_handle(pos, inner, &desired, 1.0, 14.0).map(|slot| {
+                let plot_pos = curve_view.unmap_pos(pos, inner);
+                nearest_quant_handle(plot_pos, inner, &desired, 1.0, hit_r).map(|slot| {
                     let x = slot_x(slot, slot_count, inner);
                     let y = knob_y_on_curve(desired[slot], 1.0, inner);
-                    (slot, pos.distance(Pos2::new(x, y)))
+                    let center = curve_view.map_pos(Pos2::new(x, y), inner);
+                    (slot, pos.distance(center))
                 })
             });
 
@@ -435,7 +483,10 @@ impl WtViewResult<'_> {
                         .map(|(i, l)| {
                             (
                                 i,
-                                layer_waveform_points(l, bank_ro, inner, 0.0, WAVE_SAMPLES),
+                                curve_view.map_points(
+                                    &layer_waveform_points(l, bank_ro, inner, 0.0, WAVE_SAMPLES),
+                                    inner,
+                                ),
                             )
                         })
                         .collect();
@@ -461,7 +512,10 @@ impl WtViewResult<'_> {
                         .map(|(i, l)| {
                             (
                                 i,
-                                layer_waveform_points(l, bank_ro, inner, 0.0, WAVE_SAMPLES),
+                                curve_view.map_points(
+                                    &layer_waveform_points(l, bank_ro, inner, 0.0, WAVE_SAMPLES),
+                                    inner,
+                                ),
                             )
                         })
                         .collect();
@@ -491,7 +545,8 @@ impl WtViewResult<'_> {
                 if response.dragged() {
                     if let Some(pos) = pointer {
                         if kind == 0 {
-                            let sample = sample_from_knob_y(pos.y, 1.0, inner);
+                            let plot_pos = curve_view.unmap_pos(pos, inner);
+                            let sample = sample_from_knob_y(plot_pos.y, 1.0, inner);
                             desired[slot] = sample;
 
                             let (residual_idx, mode_changed) = ensure_residual_layer(
@@ -551,7 +606,8 @@ impl WtViewResult<'_> {
                                 let segs = layer.quant_segment_interps.clone();
                                 let curve_default = layer.quant_interp;
                                 let scale = layer_quant_display_scale(layer);
-                                let sample = sample_from_knob_y(pos.y, scale, inner);
+                                let plot_pos = curve_view.unmap_pos(pos, inner);
+                                let sample = sample_from_knob_y(plot_pos.y, scale, inner);
                                 let wt_pos = layer.wt_position;
                                 if let Some(bank) = self.bank.as_mut() {
                                     let frame_i =
@@ -635,7 +691,7 @@ impl WtViewResult<'_> {
                 let x = slot_x(i, slot_count, inner);
                 let sample = desired.get(i).copied().unwrap_or(0.0);
                 let y = knob_y_on_curve(sample, 1.0, inner);
-                let center = Pos2::new(x, y);
+                let center = curve_view.map_pos(Pos2::new(x, y), inner);
                 let visual = quant_knob_visual(hovered, dragged);
                 let fill = if visual.fill_brighter {
                     accent_ui.gamma_multiply(if dragged { 0.55 } else { 0.42 })
@@ -659,7 +715,13 @@ impl WtViewResult<'_> {
                         .filter(|p| inner.contains(*p));
                     let hover_slot = if locked_kind != Some(1) {
                         pointer.and_then(|pos| {
-                            nearest_quant_handle(pos, inner, &points, scale, 14.0)
+                            nearest_quant_handle(
+                                curve_view.unmap_pos(pos, inner),
+                                inner,
+                                &points,
+                                scale,
+                                hit_r,
+                            )
                         })
                     } else {
                         None
@@ -679,7 +741,7 @@ impl WtViewResult<'_> {
                         let x = slot_x(i, slot_count, inner);
                         let sample = points.get(i).copied().unwrap_or(0.0);
                         let y = knob_y_on_curve(sample, scale, inner);
-                        let center = Pos2::new(x, y);
+                        let center = curve_view.map_pos(Pos2::new(x, y), inner);
                         let visual = quant_knob_visual(hovered, dragged);
                         let fill = if visual.fill_brighter {
                             color.gamma_multiply(if dragged { 0.65 } else { 0.5 })

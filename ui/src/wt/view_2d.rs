@@ -22,6 +22,7 @@ use super::view_3d_stack::{
     WAVE_SAMPLES,
 };
 use super::waveform::{frame_index, hit_test_waveform, nearest_waveform_distance, peak_point, waveform_points};
+use super::view_zoom::WtCurveViewTransform;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum SelectDragKind {
@@ -163,6 +164,7 @@ impl WtView2d<'_> {
                     self.tool,
                     if quant_active { self.wave_quant } else { 0 },
                     self.quant_interp,
+                    None,
                     None,
                     None,
                 )
@@ -678,6 +680,7 @@ impl WtView2d<'_> {
                     curve_default: *self.quant_interp,
                     selected_slot: &mut selected_slot,
                     display_scale,
+                    view: WtCurveViewTransform::default(),
                 };
                 let qh = editor.show(ui);
                 if qh.frame_edited {
@@ -767,6 +770,52 @@ pub fn apply_frame_shape_template(frame: &mut [f32], kind: FrameShapeTemplate) {
             FrameShapeTemplate::Tri => 1.0 - 4.0 * (p - 0.5).abs(),
         };
     }
+}
+
+/// Map VA `source_type` to a bakeable shape template.
+pub fn va_source_to_shape_template(source_type: &str) -> Option<FrameShapeTemplate> {
+    match source_type.to_ascii_lowercase().as_str() {
+        "saw" => Some(FrameShapeTemplate::Saw),
+        "square" | "pulse" => Some(FrameShapeTemplate::Square),
+        "sine" => Some(FrameShapeTemplate::Sine),
+        "triangle" | "tri" => Some(FrameShapeTemplate::Tri),
+        _ => None,
+    }
+}
+
+/// Pick a bank frame not already used by other wavetable layers (prefer high indices).
+pub fn allocate_unused_wt_frame(
+    num_frames: usize,
+    occupied: &[usize],
+) -> usize {
+    if num_frames == 0 {
+        return 0;
+    }
+    (0..num_frames)
+        .rev()
+        .find(|i| !occupied.contains(i))
+        .unwrap_or(num_frames.saturating_sub(1))
+}
+
+/// Bake a VA layer into an unused bank frame and convert it to wavetable so Quant
+/// knobs can edit it. Returns `true` when a conversion happened.
+pub fn promote_va_layer_for_quant(
+    layer: &mut WaveLayerUi,
+    bank: &mut reelsynth::WavetableBank,
+    occupied_frames: &[usize],
+) -> bool {
+    if layer.is_wavetable() || !layer.enabled || layer.level <= 0.0 {
+        return false;
+    }
+    let frame_idx = allocate_unused_wt_frame(bank.num_frames, occupied_frames);
+    let kind = va_source_to_shape_template(&layer.source_type)
+        .unwrap_or(FrameShapeTemplate::Sine);
+                apply_frame_shape_template(bank.frame_mut(frame_idx), kind);
+    // Soft-close wrap so default ends are not a raw cliff (saw −1…+1).
+    crate::wt::periodize_quant_frame(bank.frame_mut(frame_idx));
+    layer.source_type = "wavetable".into();
+    layer.wt_position = frame_idx as f32;
+    true
 }
 
 fn apply_slot_selection_from_parts(
@@ -876,5 +925,30 @@ mod tests {
         assert!((position_from_plot_x(inner, inner.min.x, 256) - 0.0).abs() < 1e-4);
         assert!((position_from_plot_x(inner, inner.max.x, 256) - 255.0).abs() < 1e-4);
         assert!((position_from_plot_x(inner, inner.center().x, 256) - 127.5).abs() < 1.0);
+    }
+
+    #[test]
+    fn allocate_unused_wt_frame_prefers_free_high_index() {
+        assert_eq!(allocate_unused_wt_frame(8, &[7, 6]), 5);
+        assert_eq!(allocate_unused_wt_frame(4, &[0, 1, 2, 3]), 3);
+        assert_eq!(allocate_unused_wt_frame(0, &[]), 0);
+    }
+
+    #[test]
+    fn promote_va_layer_for_quant_bakes_and_converts() {
+        let mut bank = WavetableBank::new(8, 64);
+        let mut layer = WaveLayerUi {
+            source_type: "saw".into(),
+            level: 0.5,
+            enabled: true,
+            ..WaveLayerUi::default()
+        };
+        assert!(promote_va_layer_for_quant(&mut layer, &mut bank, &[7]));
+        assert!(layer.is_wavetable());
+        assert!((layer.wt_position - 6.0).abs() < f32::EPSILON);
+        let frame = bank.frame(6);
+        assert!(frame.iter().any(|s| s.abs() > 0.1));
+        // Already WT — second call is a no-op.
+        assert!(!promote_va_layer_for_quant(&mut layer, &mut bank, &[]));
     }
 }

@@ -9,6 +9,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 
 - **Header status / MIDI** — MIDI device combo shows **No MIDI** instead of raw `None` when disconnected; Quant interp patch value `none` maps to **Hold** and toolbar segment combo shows mode labels (`1→2·Linear`)
+- **Design Quant knobs on VA layers** — selecting L1/L2 (saw/sine/…) with Quant > 0 bakes that VA into an unused bank frame and promotes it to wavetable so middle Layers and right Selected panes show draggable Quant knobs (not only existing WT/residual layers)
+- **Last Quant knob + wrap ends** — first/last knobs are linked for periodic wrap (Seam ≠ Off); Adaptive seam fade scales with discontinuity so the last knob stays editable and default ends are not a raw cliff; Selected toolbar **Seam·Off / Soft / Adapt**
+- **Selected toolbar** — removed Curve morph tool from the strip; two-row layout (`WT_TOOLBAR_HEIGHT` 52) so Select / Shape / interp / seam no longer overlap the plot
+- **Agent API + MCP** — headless `AgentSession` (`reelsynth_ui::AgentSession`) for Design Quant automation; stdio MCP server crate `reelsynth-mcp` (`reelsynth_get_state`, `select_layer`, `set_quant`, `set_seam_mode`, `promote_selected`, `set_quant_slot`, …)
+- **Design curve zoom** — mouse wheel zooms Result / Layers / Selected curve previews (pointer-anchored); Shift+wheel or horizontal scroll pans when zoomed; zoom out to 1× resets pan
 - **Design Selected column hover** — right Selected pane now previews the displayed layer curve (thicker/brighter stroke, hand cursor, status `Hover · Ln · type`); Quant knob hover still wins when the pointer is on a knob
 - **Design Quant knobs (Layers)** — multi-curve Layers pane no longer traps selection on the last WT/residual (often L3): hovering/clicking L1 or L2 prefers that curve over overlapping Quant knobs; knobs follow `selected_layer_idx` for any editable layer
 - **Design Quant knobs (Selected)** — right Selected column paints Quant knobs on the plot painter after the wave (and keeps the toolbar above the fill) so editable WT/residual layers always show draggable knobs when Quant > 0

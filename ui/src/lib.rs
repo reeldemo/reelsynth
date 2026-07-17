@@ -1,4 +1,5 @@
 mod ambient;
+mod agent_api;
 mod audit_registry;
 mod center_layout;
 mod compose;
@@ -19,6 +20,7 @@ mod state_sync;
 pub mod widgets;
 pub mod wt;
 
+pub use agent_api::{AgentLayerSnap, AgentSession, AgentSnapshot};
 pub use region::region;
 pub use fx_rack::{
     default_effect_slots, draw_effect_rack, draw_effect_rack_sidebar, effect_slots_from_bypass,
@@ -78,7 +80,7 @@ pub use state::{
 };
 pub use wt::{
     composite_stack_sample, factory_bank, factory_label, set_gpu_renderer_active, FactoryBankEntry,
-    FACTORY_BANKS,
+    QuantSeamMode, FACTORY_BANKS,
 };
 
 pub use state_sync::{

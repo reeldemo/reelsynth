@@ -23,6 +23,7 @@ use super::waveform::{
     frame_index, hovered_layer_from_pointer, layers_pointer_prefers_curve_select, peak_point,
     quant_knobs_for_selection, selection_from_curve_click,
 };
+use super::view_zoom::{consume_plot_scroll, WtCurveViewTransform};
 
 pub(crate) const HOVER_DISTANCE_PX: f32 = 14.0;
 pub(crate) const WAVE_AMP: f32 = 0.42;
@@ -249,6 +250,8 @@ pub struct WtView3dStack<'a> {
     pub time: f32,
     /// Osc quant count — enables snap knobs on the **selected** wavetable layer.
     pub wave_quant: u8,
+    /// Shared Design curve zoom / pan (mouse wheel).
+    pub curve_view: &'a mut WtCurveViewTransform,
 }
 
 impl WtView3dStack<'_> {
@@ -280,6 +283,10 @@ impl WtView3dStack<'_> {
         let inner = rect.shrink2(egui::vec2(8.0, 20.0));
         let mid_y = inner.center().y;
 
+        let _ = consume_plot_scroll(ui, inner, self.curve_view);
+        let curve_view = *self.curve_view;
+        let hit_r = curve_view.hit_radius(HOVER_DISTANCE_PX);
+
         record_region(ui.ctx(), AuditId::CenterWt3dStack, rect, rect);
 
         let bank = match self.bank {
@@ -290,8 +297,8 @@ impl WtView3dStack<'_> {
                 painter.text(
                     rect.center(),
                     egui::Align2::CENTER_CENTER,
-                    "Layers · no bank",
-                    egui::FontId::proportional(11.0),
+                    "No bank",
+                    egui::FontId::proportional(12.0),
                     tokens.text_muted,
                 );
                 return WtView3dStackResponse {
@@ -303,6 +310,26 @@ impl WtView3dStack<'_> {
                 };
             }
         };
+
+        // VA → WT bake so Quant knobs work on every selected audible curve.
+        if self.wave_quant > 0 {
+            if let Some(idx) = *self.selected_layer {
+                let occupied: Vec<usize> = self
+                    .layers
+                    .iter()
+                    .enumerate()
+                    .filter(|(i, l)| *i != idx && l.is_wavetable())
+                    .map(|(_, l)| frame_index(l.wt_position, bank.num_frames))
+                    .collect();
+                if let Some(layer) = self.layers.get_mut(idx) {
+                    if super::waveform::layer_quant_editable(layer) && layer.is_va() {
+                        if crate::wt::promote_va_layer_for_quant(layer, bank, &occupied) {
+                            frame_edited = true;
+                        }
+                    }
+                }
+            }
+        }
 
         let active_indices: Vec<usize> = self
             .layers
@@ -328,6 +355,11 @@ impl WtView3dStack<'_> {
                 )
             })
             .collect();
+        // Screen-space polylines after zoom/pan (hover + paint share these).
+        let screen_points: Vec<(usize, Vec<Pos2>, bool)> = layer_points
+            .iter()
+            .map(|(idx, pts, inv)| (*idx, curve_view.map_points(pts, inner), *inv))
+            .collect();
 
         let selected_idx = *self.selected_layer;
         // Quant knobs only on the selected WT/residual curve — siblings stay stroke-only.
@@ -347,9 +379,10 @@ impl WtView3dStack<'_> {
             .ctx()
             .pointer_latest_pos()
             .filter(|p| inner.contains(*p));
+        let pointer_plot = pointer_in_plot.map(|pos| curve_view.unmap_pos(pos, inner));
         let hovered_curve = pointer_in_plot.and_then(|pos| {
             hovered_layer_from_pointer(
-                layer_points
+                screen_points
                     .iter()
                     .map(|(idx, pts, _)| (*idx, pts.as_slice())),
                 pos,
@@ -358,13 +391,13 @@ impl WtView3dStack<'_> {
         });
         // Knob proximity wins for interaction; curve preview only when not on a knob.
         let over_quant_knob = quant_active
-            && pointer_in_plot.is_some_and(|pos| {
+            && pointer_plot.is_some_and(|pos| {
                 quant_layer_idx.is_some_and(|layer_i| {
                     self.layers.get(layer_i).is_some_and(|layer| {
                         let slot_count = effective_quant_count(self.wave_quant);
                         let scale = layer_quant_display_scale(layer);
                         let points = quant_control_points(bank.frame(edit_frame_idx), slot_count);
-                        nearest_quant_handle(pos, inner, &points, scale, 14.0).is_some()
+                        nearest_quant_handle(pos, inner, &points, scale, hit_r).is_some()
                     })
                 })
             });
@@ -394,7 +427,7 @@ impl WtView3dStack<'_> {
             if response.clicked() || response.drag_started() {
                 if let Some(pos) = response.interact_pointer_pos() {
                     let hovered = hovered_layer_from_pointer(
-                        layer_points
+                        screen_points
                             .iter()
                             .map(|(i, pts, _)| (*i, pts.as_slice())),
                         pos,
@@ -471,10 +504,11 @@ impl WtView3dStack<'_> {
                 .filter(|p| inner.contains(*p));
 
             let nearest_slot = pointer.and_then(|pos| {
+                let plot_pos = curve_view.unmap_pos(pos, inner);
                 self.layers.get(layer_i).and_then(|layer| {
                     let scale = layer_quant_display_scale(layer);
                     let points = quant_control_points(bank.frame(edit_frame_idx), slot_count);
-                    nearest_quant_handle(pos, inner, &points, scale, 14.0)
+                    nearest_quant_handle(plot_pos, inner, &points, scale, hit_r)
                 })
             });
             let over_knob = nearest_slot.is_some() || quant_locked;
@@ -482,7 +516,7 @@ impl WtView3dStack<'_> {
             if q_response.clicked() || q_response.drag_started() {
                 let hovered = pointer.and_then(|pos| {
                     hovered_layer_from_pointer(
-                        layer_points
+                        screen_points
                             .iter()
                             .map(|(i, pts, _)| (*i, pts.as_slice())),
                         pos,
@@ -572,7 +606,8 @@ impl WtView3dStack<'_> {
                             let segs = layer.quant_segment_interps.clone();
                             let curve_default = layer.quant_interp;
                             let scale = layer_quant_display_scale(layer);
-                            let sample = sample_from_knob_y(pos.y, scale, inner);
+                            let plot_pos = curve_view.unmap_pos(pos, inner);
+                            let sample = sample_from_knob_y(plot_pos.y, scale, inner);
                             apply_quant_slot_amplitude(
                                 bank.frame_mut(edit_frame_idx),
                                 slot,
@@ -618,7 +653,8 @@ impl WtView3dStack<'_> {
             }
         }
 
-        let painter = ui.painter_at(rect);
+        let mut painter = ui.painter_at(rect);
+        painter.set_clip_rect(inner.expand(1.0));
         painter.rect_filled(rect, RADIUS_SM, tokens.bg);
         painter.rect_stroke(rect, RADIUS_SM, egui::Stroke::new(1.0, tokens.border));
 
@@ -631,7 +667,9 @@ impl WtView3dStack<'_> {
         if quant_active {
             let quant = effective_quant_count(self.wave_quant);
             for i in 0..quant {
-                let x = slot_x(i, quant, inner);
+                let x = curve_view
+                    .map_pos(Pos2::new(slot_x(i, quant, inner), mid_y), inner)
+                    .x;
                 painter.line_segment(
                     [Pos2::new(x, inner.min.y), Pos2::new(x, inner.max.y)],
                     egui::Stroke::new(0.5, tokens.border.gamma_multiply(0.5)),
@@ -640,10 +678,18 @@ impl WtView3dStack<'_> {
         }
 
         let label = if quant_active {
-            format!(
-                "Layers · Osc {} · Quant · drag WT dots",
-                self.active_osc + 1
-            )
+            if curve_view.zoom > 1.01 {
+                format!(
+                    "Layers · Osc {} · Quant · zoom {:.1}× · wheel zoom · Shift+wheel pan",
+                    self.active_osc + 1,
+                    curve_view.zoom
+                )
+            } else {
+                format!(
+                    "Layers · Osc {} · Quant · drag WT dots · wheel zoom",
+                    self.active_osc + 1
+                )
+            }
         } else {
             format!(
                 "Layers · Osc {} · {}/{} · drag level / phase",
@@ -707,7 +753,7 @@ impl WtView3dStack<'_> {
         let curve_hover_active = curve_preview.is_some();
 
         for &paint_i in &paint_order {
-            let (orig_idx, pts, inverted) = &layer_points[paint_i];
+            let (orig_idx, pts, inverted) = &screen_points[paint_i];
             let orig_idx = *orig_idx;
             let inverted = *inverted;
             if pts.len() < 2 {
@@ -792,7 +838,8 @@ impl WtView3dStack<'_> {
                     let points = quant_control_points(bank.frame(edit_frame_idx), slot_count);
                     let hover_slot = if locked_layer.is_none() {
                         pointer.and_then(|pos| {
-                            nearest_quant_handle(pos, inner, &points, scale, 14.0)
+                            let plot_pos = curve_view.unmap_pos(pos, inner);
+                            nearest_quant_handle(plot_pos, inner, &points, scale, hit_r)
                         })
                     } else {
                         None
@@ -813,7 +860,7 @@ impl WtView3dStack<'_> {
                         let x = slot_x(i, slot_count, inner);
                         let sample = points.get(i).copied().unwrap_or(0.0);
                         let y = knob_y_on_curve(sample, scale, inner);
-                        let center = Pos2::new(x, y);
+                        let center = curve_view.map_pos(Pos2::new(x, y), inner);
                         let visual = quant_knob_visual(hovered, dragged);
                         let fill = if visual.fill_brighter {
                             color.gamma_multiply(if dragged { 0.65 } else { 0.5 })

@@ -3096,6 +3096,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "reelsynth-mcp"
+version = "0.1.0"
+dependencies = [
+ "reelsynth-ui",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "reelsynth-plugin"
 version = "0.1.0"
 dependencies = [
@@ -3116,6 +3125,7 @@ dependencies = [
  "reelsynth",
  "reelsynth-ui-theme",
  "serde",
+ "serde_json",
 ]
 
 [[package]]

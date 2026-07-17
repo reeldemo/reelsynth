@@ -89,9 +89,12 @@ pub fn selection_from_curve_click(
     }
 }
 
-/// Layers that may show / edit Quant knobs: wavetable or residual, enabled, audible.
+/// Layers that may show / edit Quant knobs: any enabled audible curve when Quant > 0.
+///
+/// VA layers (saw/sine/…) are promoted to wavetable on first Quant paint so knobs
+/// can reshape a real frame; see [`crate::wt::promote_va_layer_for_quant`].
 pub fn layer_quant_editable(layer: &crate::oscillator_ui::WaveLayerUi) -> bool {
-    layer.is_wavetable() && layer.enabled && layer.level > 0.0
+    layer.enabled && layer.level > 0.0
 }
 
 /// Whether Design panes should expose Quant knobs for `selected` at `wave_quant`.
@@ -248,7 +251,7 @@ mod tests {
     }
 
     #[test]
-    fn quant_knobs_only_for_editable_wt_or_residual() {
+    fn quant_knobs_for_any_audible_layer_including_va() {
         use crate::oscillator_ui::WaveLayerUi;
 
         let saw = WaveLayerUi {
@@ -266,17 +269,17 @@ mod tests {
             ..WaveLayerUi::default()
         };
         let muted_wt = wt_layer(0.0);
-        assert!(!layer_quant_editable(&saw));
+        assert!(layer_quant_editable(&saw));
         assert!(layer_quant_editable(&wt));
         assert!(layer_quant_editable(&residual));
         assert!(!layer_quant_editable(&muted_wt));
 
         let layers = vec![saw, wt, residual];
-        assert_eq!(quant_knobs_for_selection(Some(0), &layers, 16), None);
+        assert_eq!(quant_knobs_for_selection(Some(0), &layers, 16), Some(0));
         assert_eq!(quant_knobs_for_selection(Some(1), &layers, 16), Some(1));
         assert_eq!(quant_knobs_for_selection(Some(2), &layers, 16), Some(2));
         assert_eq!(quant_knobs_for_selection(Some(1), &layers, 0), None);
-        assert!(!selected_pane_shows_quant_knobs(Some(0), &layers, 16));
+        assert!(selected_pane_shows_quant_knobs(Some(0), &layers, 16));
         assert!(selected_pane_shows_quant_knobs(Some(1), &layers, 16));
         assert!(selected_pane_shows_quant_knobs(Some(2), &layers, 16));
     }

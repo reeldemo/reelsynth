@@ -14,6 +14,7 @@ mod toolbar;
 mod view_2d;
 mod view_3d;
 mod view_3d_stack;
+mod view_zoom;
 mod waveform;
 
 pub use banks::{factory_bank, factory_label, FactoryBankEntry, FACTORY_BANKS};
@@ -27,11 +28,12 @@ pub use view_selected::{WtSelectedLayerView, WtSelectedLayerResponse};
 pub use morph::{morph_amount_for_position, morph_position, WtMorph, WtMorphResponse};
 pub use quant_handles::{
     apply_quant_slot_amplitude, frame_to_y, knob_y_on_curve, nearest_quant_handle, nearest_slot,
-    paint_quant_knob, periodize_quant_frame, quant_control_points, quant_curve_stroke,
-    quant_hover_status_label, quant_knob_visual, quantized_curve_polyline,
+    paint_quant_knob, periodize_quant_frame, periodize_quant_frame_with_mode, quant_control_points,
+    quant_curve_stroke, quant_hover_status_label, quant_knob_visual, quantized_curve_polyline,
     resample_frame_from_quant_points, resample_frame_from_quant_points_uniform,
-    sample_at_quant_phase, sample_from_knob_y, sample_to_y, snap_x_to_slot, slot_x, y_to_frame,
-    y_to_sample, QuantHandleEditor, QuantHandleResponse, QuantKnobVisual,
+    sample_at_quant_phase, sample_from_knob_y, sample_to_y, set_quant_seam_mode, snap_x_to_slot,
+    slot_x, y_to_frame, y_to_sample, QuantHandleEditor, QuantHandleResponse, QuantKnobVisual,
+    QuantSeamMode,
 };
 pub use crate::quant_interp::WtQuantInterp;
 pub use slots::{
@@ -41,9 +43,13 @@ pub use slots::{
 };
 pub use strip::{StripMode, WtStrip, WtStripResponse};
 pub use toolbar::{FrameShapeTemplate, WtEditTool, WtToolbar, WtToolbarResponse};
-pub use view_2d::{apply_frame_shape_template, shape_template_source_type, WtView2d, WtView2dResponse};
+pub use view_2d::{
+    allocate_unused_wt_frame, apply_frame_shape_template, promote_va_layer_for_quant,
+    shape_template_source_type, va_source_to_shape_template, WtView2d, WtView2dResponse,
+};
 pub use view_3d::{WtView3d, WtView3dResponse};
 pub use view_3d_stack::{composite_stack_sample, WtView3dStack, WtView3dStackResponse};
+pub use view_zoom::{consume_plot_scroll, WtCurveViewTransform};
 pub use waveform::{
     frame_index, layer_quant_editable, layers_pointer_prefers_curve_select,
     quant_knobs_for_selection, selected_pane_shows_quant_knobs, waveform_points,

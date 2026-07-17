@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "reelsynth": {
+      "command": "cargo",
+      "args": ["run", "-q", "-p", "reelsynth-mcp", "--bin", "reelsynth-mcp"],
+      "cwd": "${workspaceFolder}"
+    }
+  }
+}

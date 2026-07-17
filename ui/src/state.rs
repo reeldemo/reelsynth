@@ -7,7 +7,9 @@ use crate::fx_rack::{effect_slots_from_patch, EffectSlotUi};
 use crate::mod_matrix::{default_mod_slots, ModSlotUi};
 use crate::oscillator_ui::{OscillatorUi, MIN_OSCILLATORS};
 use crate::scope_strip::ScopeStripState;
-use crate::wt::{morph_amount_for_position, position_from_osc_ui, WtEditTool};
+use crate::wt::{
+    morph_amount_for_position, position_from_osc_ui, QuantSeamMode, WtCurveViewTransform, WtEditTool,
+};
 use crate::quant_interp::WtQuantInterp;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -145,10 +147,14 @@ pub struct UiState {
     pub wt_bank_name: String,
     pub wt_edit_tool: WtEditTool,
     pub wt_quant_interp: WtQuantInterp,
+    /// Wrap-seam reduction after Quant rebuilds (Off / Soft / Adaptive).
+    pub wt_quant_seam: QuantSeamMode,
     /// Selected Quant knob on the active layer (for per-segment interp UI).
     pub selected_quant_slot: Option<usize>,
     pub wt_view_3d_mode: WtView3dMode,
     pub selected_layer_idx: Option<usize>,
+    /// Shared zoom/pan for Design WT curve previews (Result / Layers / Selected).
+    pub wt_curve_view: WtCurveViewTransform,
     pub analyze_dialog_open: bool,
     pub analyze_harmonics: usize,
     pub analyze_min_mag: f32,
@@ -265,9 +271,11 @@ impl Default for UiState {
             wt_bank_name: "Saw Morph".into(),
             wt_edit_tool: WtEditTool::Select,
             wt_quant_interp: WtQuantInterp::default(),
+            wt_quant_seam: QuantSeamMode::Adaptive,
             selected_quant_slot: None,
             wt_view_3d_mode: WtView3dMode::Stack,
             selected_layer_idx: Some(0),
+            wt_curve_view: WtCurveViewTransform::default(),
             analyze_dialog_open: false,
             analyze_harmonics: 16,
             analyze_min_mag: 0.01,

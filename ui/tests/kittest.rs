@@ -798,9 +798,9 @@ fn design_wt_strip_morph() {
 }
 
 #[test]
-fn design_wt_tool_curve() {
+fn design_wt_tool_select() {
     let mut scenario = ShellAuditScenario::default();
-    scenario.state.wt_edit_tool = reelsynth_ui::wt::WtEditTool::Curve;
+    scenario.state.wt_edit_tool = reelsynth_ui::wt::WtEditTool::Select;
     scenario.state.oscillators[0].wave_quant = 64;
     let run = run_shell_audit(scenario);
     assert_full_ui_audit(&run, &default_audit_options());

@@ -11,6 +11,7 @@ ReelSynth is an MIT-licensed wavetable synthesizer. This folder is the documenta
 | **Using free tools only** — DAWs, Vital, no paid stack | [FREE_STACK.md](FREE_STACK.md) |
 | **Using Reeldemo Studio** — agent compose → Ableton handoff | [REELDEMO_INTEGRATION.md](REELDEMO_INTEGRATION.md) |
 | **Integrating in code** — Python, Rust, CLI, C FFI | [SDK.md](SDK.md) |
+| **Automating the UI** — AgentSession + MCP tools | [AGENT_API.md](AGENT_API.md) |
 | **Learning the UI** — regions, shortcuts, MIDI | [UI.md](UI.md) |
 
 ## Reference

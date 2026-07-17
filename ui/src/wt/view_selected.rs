@@ -25,6 +25,8 @@ use super::view_3d_stack::{
     WAVE_SAMPLES,
 };
 use super::waveform::{frame_index, selected_curve_hovered, selected_pane_shows_quant_knobs};
+use super::view_zoom::{consume_plot_scroll, WtCurveViewTransform};
+use super::QuantSeamMode;
 
 pub struct WtSelectedLayerResponse {
     pub frame_edited: bool,
@@ -46,6 +48,8 @@ pub struct WtSelectedLayerView<'a> {
     pub selected_layer_idx: &'a mut Option<usize>,
     pub shape_control_points: usize,
     pub analyze_dialog_open: Option<&'a mut bool>,
+    pub curve_view: &'a mut WtCurveViewTransform,
+    pub quant_seam: &'a mut QuantSeamMode,
 }
 
 impl WtSelectedLayerView<'_> {
@@ -73,9 +77,33 @@ impl WtSelectedLayerView<'_> {
         let plot_rect = Rect::from_min_max(egui::pos2(rect.min.x, plot_top), rect.max);
         let inner = plot_rect.shrink2(egui::vec2(8.0, 12.0));
         let mid_y = inner.center().y;
+        let _ = consume_plot_scroll(ui, inner, self.curve_view);
+        let curve_view = *self.curve_view;
+        let hit_r = curve_view.hit_radius(HOVER_DISTANCE_PX);
 
         let layer_idx = self.selected_layer_idx.unwrap_or(0);
         let slot_count = effective_quant_count(self.wave_quant);
+
+        // Promote VA → WT before gate so Selected pane shows knobs on L1/L2/….
+        if self.wave_quant > 0 {
+            if let Some(bank) = self.bank.as_deref_mut() {
+                let occupied: Vec<usize> = self
+                    .wave_layers
+                    .iter()
+                    .enumerate()
+                    .filter(|(i, l)| *i != layer_idx && l.is_wavetable())
+                    .map(|(_, l)| frame_index(l.wt_position, bank.num_frames))
+                    .collect();
+                if let Some(layer) = self.wave_layers.get_mut(layer_idx) {
+                    if super::waveform::layer_quant_editable(layer) && layer.is_va() {
+                        if crate::wt::promote_va_layer_for_quant(layer, bank, &occupied) {
+                            frame_edited = true;
+                        }
+                    }
+                }
+            }
+        }
+
         if let Some(layer) = self.wave_layers.get_mut(layer_idx) {
             layer.ensure_segment_interps(slot_count);
             *self.quant_interp = layer.quant_interp;
@@ -152,7 +180,7 @@ impl WtSelectedLayerView<'_> {
                         layer_waveform_points(layer, bank_ro, inner, 0.0, WAVE_SAMPLES)
                     };
                     if pts.len() >= 2 {
-                        Some(pts)
+                        Some(curve_view.map_points(&pts, inner))
                     } else {
                         None
                     }
@@ -172,7 +200,13 @@ impl WtSelectedLayerView<'_> {
                         let slot_count = effective_quant_count(self.wave_quant);
                         let scale = layer_quant_display_scale(layer);
                         let points = quant_control_points(bank.frame(frame_idx), slot_count);
-                        nearest_quant_handle(pos, inner, &points, scale, 14.0)
+                        nearest_quant_handle(
+                            curve_view.unmap_pos(pos, inner),
+                            inner,
+                            &points,
+                            scale,
+                            hit_r,
+                        )
                     })
                 })
             })
@@ -188,7 +222,8 @@ impl WtSelectedLayerView<'_> {
         });
 
         // Paint plot first (bg → wave → knobs) so knobs cannot be covered by a late fill.
-        let painter = ui.painter_at(rect);
+        let mut painter = ui.painter_at(rect);
+        painter.set_clip_rect(inner.expand(1.0));
         painter.rect_filled(rect, RADIUS_SM, tokens.bg);
         painter.rect_stroke(rect, RADIUS_SM, egui::Stroke::new(1.0, tokens.border));
         paint_grid(&painter, inner, tokens.border);
@@ -236,7 +271,15 @@ impl WtSelectedLayerView<'_> {
                 let color = layer_palette(layer_idx);
                 let pointer = pointer_in_plot;
                 let hover_slot = hover_slot_pre.or_else(|| {
-                    pointer.and_then(|pos| nearest_quant_handle(pos, inner, &points, scale, 14.0))
+                    pointer.and_then(|pos| {
+                        nearest_quant_handle(
+                            curve_view.unmap_pos(pos, inner),
+                            inner,
+                            &points,
+                            scale,
+                            hit_r,
+                        )
+                    })
                 });
                 for i in 0..slot_count {
                     let show = self.wave_quant <= 64
@@ -249,7 +292,7 @@ impl WtSelectedLayerView<'_> {
                     let x = slot_x(i, slot_count, inner);
                     let sample = points.get(i).copied().unwrap_or(0.0);
                     let y = knob_y_on_curve(sample, scale, inner);
-                    let center = Pos2::new(x, y);
+                    let center = curve_view.map_pos(Pos2::new(x, y), inner);
                     let visual = quant_knob_visual(hover_slot == Some(i), false);
                     let fill = if visual.fill_brighter {
                         color.gamma_multiply(0.5)
@@ -338,6 +381,7 @@ impl WtSelectedLayerView<'_> {
                         curve_default,
                         selected_slot: self.selected_quant_slot,
                         display_scale,
+                        view: curve_view,
                     };
                     let qh = editor.show(ui);
                     if qh.frame_edited {
@@ -380,6 +424,7 @@ impl WtSelectedLayerView<'_> {
                 } else {
                     None
                 },
+                Some(self.quant_seam),
             )
         });
         record_region(
@@ -393,6 +438,7 @@ impl WtSelectedLayerView<'_> {
             assign_shape,
             interp_changed,
             segment_interp_changed,
+            seam_changed: _,
             ..
         } = toolbar_resp;
 
@@ -507,7 +553,7 @@ mod tests {
     use crate::oscillator_ui::WaveLayerUi;
 
     #[test]
-    fn selected_pane_shows_knobs_for_wt_not_va() {
+    fn selected_pane_shows_knobs_for_any_audible_layer() {
         let layers = vec![
             WaveLayerUi {
                 source_type: "saw".into(),
@@ -529,7 +575,7 @@ mod tests {
                 ..WaveLayerUi::default()
             },
         ];
-        assert!(!selected_pane_shows_quant_knobs(Some(0), &layers, 16));
+        assert!(selected_pane_shows_quant_knobs(Some(0), &layers, 16));
         assert!(selected_pane_shows_quant_knobs(Some(1), &layers, 16));
         assert!(selected_pane_shows_quant_knobs(Some(2), &layers, 16));
         assert!(!selected_pane_shows_quant_knobs(Some(1), &layers, 0));

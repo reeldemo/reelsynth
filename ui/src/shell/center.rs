@@ -119,6 +119,7 @@ pub(super) fn draw_center(
 
         if config.show_wt_editor && views_rect.is_positive() {
             let views_h = views_rect.height().max(WT_VIEW_MIN_HEIGHT * s * 0.5);
+            crate::wt::set_quant_seam_mode(state.wt_quant_seam);
             region(ui, views_rect, |ui| {
             ui.set_width(views_rect.width());
             ui.painter().rect_filled(views_rect, 8.0, Tokens::default().bg);
@@ -145,6 +146,7 @@ pub(super) fn draw_center(
                             wave_quant,
                             wavetable_id: Some(bank_name.clone()),
                             active_osc: idx,
+                            curve_view: &mut state.wt_curve_view,
                         };
                         let resp = view.show(ui);
                         if resp.frame_edited {
@@ -181,6 +183,7 @@ pub(super) fn draw_center(
                             active_osc: idx,
                             time: 0.0,
                             wave_quant,
+                            curve_view: &mut state.wt_curve_view,
                         };
                         let stack_resp = view_stack.show(ui);
                         if stack_resp.frame_edited {
@@ -217,6 +220,8 @@ pub(super) fn draw_center(
                             selected_layer_idx: &mut state.selected_layer_idx,
                             shape_control_points: state.shape_control_points,
                             analyze_dialog_open: Some(&mut state.analyze_dialog_open),
+                            curve_view: &mut state.wt_curve_view,
+                            quant_seam: &mut state.wt_quant_seam,
                         };
                         let sel_resp = view_sel.show(ui);
                         if sel_resp.frame_edited {
