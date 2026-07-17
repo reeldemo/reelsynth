@@ -6,7 +6,7 @@ The standalone app (`reelsynth-app`) uses a fixed **1280×880** layout (see `ui/
 
 | # | Region | Purpose |
 |---|--------|---------|
-| 1 | Header | Open/Save preset, **Design / Compose** toggle, WT menu, MIDI device, Piano toggle, status |
+| 1 | Header | Open/Save preset, **Design / Compose** toggle, WT menu, Audio + MIDI devices, Piano toggle, status |
 | 2 | Oscillator column (left rail) | Per-osc level, pan, detune, unison, FM — **Design mode only** |
 | 3 | Center column | Filter, ADSR, LFO, mod matrix, FX rack — **Design mode only** |
 | 4 | WT editor | Position strip, 2D waveform, 3D surface, morph A/B — **Design mode only** |
@@ -58,7 +58,8 @@ A default empty clip is auto-selected on the active track so you can draw immedi
 | **Key / Scale / Layout** | Performance input: root key, scale mode, piano vs scale-fold vs chord row |
 | **Arp** (footer) | Toggle arpeggiator; input mode, style, rate, octaves, gate, latch |
 | **MIDI** combo | Select hardware MIDI input device |
-| **Settings** | Header **Settings** dropdown (not a modal): graphics backend, GPU waveforms, auto MIDI, keyboard layout |
+| **Audio** combo | Select CPAL output device (speakers, headphones, DI / interface) |
+| **Settings** | Header **Settings** dropdown (not a modal): graphics backend, GPU waveforms, auto MIDI, auto audio output, keyboard layout |
 | **Status** | Audio/MIDI state, save confirmations, errors |
 
 ---
@@ -71,6 +72,7 @@ A default empty clip is auto-selected on the active track so you can draw immedi
 | AZERTY / QWERTZ | Same semitone positions on locale play row (Settings → Keyboard layout) |
 | Click piano keys | Same as computer keys when piano visible |
 | MIDI controller | Full keyboard range; **auto-connect** when a keyboard-like port appears |
+| Audio output | Header **Audio** combo; **auto-select** when a new output device appears (DI / interface) |
 
 In **Compose** mode, QWERTY, MIDI, left piano-roll keys, and pencil/select audition share one note on/off path (performance Key/Scale/Layout still apply). Recording to an armed clip also monitors.
 
@@ -130,7 +132,7 @@ The position strip is **layer chips only** on Design — no 256-frame scrub.
 |--------|---------|-----|
 | **1 Result** | **Result · N · {stack_mode}** | Stack sum with fill; dim sibling layer strokes. Hover near a layer curve previews it (thicker stroke + hand cursor); click selects. Drag Y=level, X=phase/WT. **Result Quant** (when Quant > 0) reshapes the total curve via a one-shot **Residual** wavetable layer |
 | **2 Layers** | **Layers · Osc N** | Every enabled layer labelled (`L1 · saw`, …). Hover nearest curve within ~14 px previews selection (`Hover · L2 · saw`); click selects; per-WT **Quant** knobs at the edit frame (nearest-knob hit across WT curves; knob hover wins over curve preview) |
-| **3 Selected** | **Edit · Layer N · {type}** | Single selected layer (fill + thick). Toolbar: **Select / Interp / Shape**; full **QuantHandleEditor** for wavetable layers; Pencil / Curve / Shape tools |
+| **3 Selected** | **Edit · Layer N · {type}** | Single selected layer (fill + thick). Toolbar: **Select / Shape / Interp (All + per-segment)**; full **QuantHandleEditor** for wavetable layers; Pencil / Curve / Shape tools |
 
 **Residual layer** — first Result Quant drag appends one wavetable layer (`residual: true`, shown as **Residual** in the strip). Stack mode switches to **add** if needed. Further Result edits update the same layer; math: `residual[i] = (desired[i] − others[i]) / (sign × level)`.
 
@@ -150,11 +152,14 @@ When the **active layer** is **wavetable** and **Quant** > 0:
 - Grab only works near a dot (curve snap); cursor is **grab** / **grabbing**
 - Hover snaps to the nearest knob: enlarged + brighter fill/stroke, outer glow ring, vertical slot guide, and status/tooltip `Slot N · amp ±x.xx`
 - The curve under that knob (Result residual / Layers WT / Selected) thickens and brightens while hovering
-- Drag locks that slot; Y edits **amplitude**; quantized polyline (Hold / Linear / Spline) updates under the knobs
-- **Interp** dropdown on Selected column: **Hold**, **Linear**, **Spline**
+- Drag locks that slot; Y edits **amplitude**; quantized polyline updates under the knobs using **per-segment** interp
+- Edge knobs (slot 0 and last) are **always** shown and editable, including sparse Quant (>64)
+- **Interp (All·…)** on Selected toolbar: curve-wide default — applies the same mode to **all segments** of that layer
+- Click a Quant knob to select it; **slot→slot+1** dropdown edits that segment only (last knob shows `end · no next`)
+- Modes: **Hold**, **Linear**, **Spline** (Catmull-Rom), **Poly** (cubic Lagrange), **Expo** (exponential ease), **MA** (linear + short box filter)
 - VA layers: level/phase drag only (no frame quant)
 
-**Morph A/B bar** is hidden on Design home (frame-bank morph remains in preset schema for compatibility). Save/reload preserves `wave_layers`, `invert`, and `stack_mode`.
+**Morph A/B bar** is hidden on Design home (frame-bank morph remains in preset schema for compatibility). Save/reload preserves `wave_layers`, `invert`, `stack_mode`, `quant_interp`, and `quant_segment_interps`.
 
 ### Effects (osc column sidebar)
 
@@ -262,7 +267,7 @@ Signal-chain strip at top of center column (~68 px, horizontally scrollable when
 | **FX** | Post-FX tap (distinct when delay/chorus active) |
 | **Result** | Spectrum of all oscillators after Filter/FX (tooltip explains mix); slightly wider when ≥2 oscs; amber border + **Stack clipping** when Add-mode layers exceed ±1 |
 
-Settings (header dropdown): **Graphics** backend Auto/WGPU/Glow, GPU waveforms toggle; **Input** auto MIDI + keyboard layout override.
+Settings (header dropdown): **Graphics** backend Auto/WGPU/Glow, GPU waveforms toggle; **Input** auto MIDI, auto-select new audio output, keyboard layout override.
 
 ---
 

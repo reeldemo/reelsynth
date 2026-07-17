@@ -18,7 +18,7 @@ use crate::mod_matrix::{draw_mod_matrix, ModMatrixState};
 use crate::region::region;
 
 pub use crate::state::{
-    OscStripContext, ScopeStripContext, ShellActions, ShellAppSettings,
+    OscStripContext, ScopeStripContext, ShellActions, ShellAppSettings, ShellAudioDevices,
     ShellConfig, ShellMidiDevices, ShellMode, UiState, WtView3dMode,
 };
 
@@ -47,6 +47,7 @@ pub fn draw_shell(
     bank: Option<&mut WavetableBank>,
     preview_patch: &Patch,
     midi: &ShellMidiDevices<'_>,
+    audio: &ShellAudioDevices<'_>,
     config: &ShellConfig,
     scope: Option<ScopeStripContext<'_>>,
     osc_preview: Option<OscStripContext<'_>>,
@@ -120,7 +121,7 @@ pub fn draw_shell(
         border,
     );
 
-    draw_header(ui, layout.header, state, midi, &mut actions, app_settings);
+    draw_header(ui, layout.header, state, midi, audio, &mut actions, app_settings);
 
     if compose_mode {
         draw_compose_shell(ui, layout.main, state, &mut actions, layout.scale);

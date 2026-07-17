@@ -14,7 +14,7 @@ use reelsynth_ui::{
     audit_center, audit_header_clusters, audit_osc_sidebar_stacks, audit_panel_utilization,
     audit_shell, audit_theme_tokens, audit_id_rect, compute_center_regions, count_base_audit_variants,
     default_effect_slots, draw_shell, embed_piano_in_center, osc_type_index, record_region,
-    record_used, AuditId, REGISTRY_VARIANT_COUNT, ShellLayout, ShellLayoutOptions, ShellMidiDevices,
+    record_used, AuditId, REGISTRY_VARIANT_COUNT, ShellAudioDevices, ShellLayout, ShellLayoutOptions, ShellMidiDevices,
     ShellMode, WtView3dMode,
     center_morph_used_rect_id, center_scope_used_rect_id,
     center_strip_used_rect_id, center_used_rect_id, center_views_used_rect_id, footer_used_rect_id,
@@ -104,6 +104,10 @@ fn compact_mode_collapses_sections() {
         names: &["None".to_string()],
         selected: 0,
     };
+    let audio = ShellAudioDevices {
+        names: &["Speakers".to_string()],
+        selected: 0,
+    };
     let preview = Patch::default_mono();
     let mut harness = Harness::builder()
         .with_size([1280.0, 720.0])
@@ -124,6 +128,7 @@ fn compact_mode_collapses_sections() {
                         None,
                         &preview,
                         &midi,
+                        &audio,
                         &config,
                         None,
                         None,
@@ -177,6 +182,10 @@ fn full_shell_min_window_no_layout_overlap() {
         names: &["None".to_string()],
         selected: 0,
     };
+    let audio = ShellAudioDevices {
+        names: &["Speakers".to_string()],
+        selected: 0,
+    };
     let preview = Patch::default_mono();
     let mut harness = Harness::builder()
         .with_size([APP_MIN_WIDTH, APP_HEIGHT_FULL])
@@ -197,6 +206,7 @@ fn full_shell_min_window_no_layout_overlap() {
                         None,
                         &preview,
                         &midi,
+                        &audio,
                         &config,
                         None,
                         None,
@@ -244,6 +254,10 @@ fn rail_widgets_within_rail_bounds_min_window() {
         names: &["None".to_string()],
         selected: 0,
     };
+    let audio = ShellAudioDevices {
+        names: &["Speakers".to_string()],
+        selected: 0,
+    };
     let preview = Patch::default_mono();
 
     let mut harness = Harness::builder()
@@ -264,6 +278,7 @@ fn rail_widgets_within_rail_bounds_min_window() {
                         None,
                         &preview,
                         &midi,
+                        &audio,
                         &config,
                         None,
                         None,
@@ -347,6 +362,10 @@ fn interface_used_rects_within_allocated_min_window() {
         names: &["None".to_string()],
         selected: 0,
     };
+    let audio = ShellAudioDevices {
+        names: &["Speakers".to_string()],
+        selected: 0,
+    };
     let preview = Patch::default_mono();
 
     let mut harness = Harness::builder()
@@ -367,6 +386,7 @@ fn interface_used_rects_within_allocated_min_window() {
                         None,
                         &preview,
                         &midi,
+                        &audio,
                         &config,
                         None,
                         None,
@@ -494,6 +514,10 @@ fn panel_whitespace_utilization_at_1280x880() {
         names: &["None".to_string()],
         selected: 0,
     };
+    let audio = ShellAudioDevices {
+        names: &["Speakers".to_string()],
+        selected: 0,
+    };
     let preview = Patch::default_mono();
 
     let mut harness = Harness::builder()
@@ -514,6 +538,7 @@ fn panel_whitespace_utilization_at_1280x880() {
                         None,
                         &preview,
                         &midi,
+                        &audio,
                         &config,
                         None,
                         None,
@@ -607,6 +632,10 @@ fn run_header_cluster_audit(test: ShellHarnessTest) {
         names: &["None".to_string(), "Virtual MIDI".to_string()],
         selected: 0,
     };
+    let audio = ShellAudioDevices {
+        names: &["Speakers".to_string()],
+        selected: 0,
+    };
     let preview = Patch::default_mono();
 
     let mut harness = Harness::builder()
@@ -627,6 +656,7 @@ fn run_header_cluster_audit(test: ShellHarnessTest) {
                         None,
                         &preview,
                         &midi,
+                        &audio,
                         &config,
                         None,
                         None,

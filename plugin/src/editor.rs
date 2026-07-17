@@ -3,7 +3,7 @@
 use eframe::egui;
 use reelsynth::Patch;
 use reelsynth_ui::{
-    draw_shell, APP_HEIGHT_FULL, ShellMidiDevices, ShellConfig, UiState,
+    draw_shell, APP_HEIGHT_FULL, ShellAudioDevices, ShellMidiDevices, ShellConfig, UiState,
 };
 
 /// Configuration for the plugin editor surface.
@@ -33,6 +33,7 @@ pub struct PluginEditorApp {
     pub state: UiState,
     pub config: PluginEditorConfig,
     midi_names: Vec<String>,
+    audio_names: Vec<String>,
 }
 
 impl PluginEditorApp {
@@ -44,6 +45,7 @@ impl PluginEditorApp {
             },
             config,
             midi_names: vec!["None".into()],
+            audio_names: vec!["Speakers".into()],
         }
     }
 
@@ -79,6 +81,10 @@ impl eframe::App for PluginEditorApp {
                     names: &self.midi_names,
                     selected: 0,
                 };
+                let audio = ShellAudioDevices {
+                    names: &self.audio_names,
+                    selected: 0,
+                };
                 let shell = ShellConfig {
                     show_wt_editor: self.config.show_wt_editor,
                     show_osc_column: self.config.show_osc_column,
@@ -93,6 +99,7 @@ impl eframe::App for PluginEditorApp {
                     None,
                     &preview,
                     &midi,
+                    &audio,
                     &shell,
                     None,
                     None,

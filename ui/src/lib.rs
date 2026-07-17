@@ -72,8 +72,7 @@ pub use reelsynth::QuantizeDivision;
 pub use shell::draw_shell;
 pub use state::{
     OscStripContext, OscStripPreviewState, ScopeStripContext, ShellActions, ShellAppSettings,
-    ShellConfig,
-    ShellMidiDevices, ShellMode, UiState, WtView3dMode,
+    ShellAudioDevices, ShellConfig, ShellMidiDevices, ShellMode, UiState, WtView3dMode,
 };
 pub use wt::{
     composite_stack_sample, factory_bank, factory_label, set_gpu_renderer_active, FactoryBankEntry,

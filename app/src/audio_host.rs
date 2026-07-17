@@ -14,6 +14,7 @@ pub struct AudioHandle {
     transport: Arc<RwLock<TransportState>>,
     sequence: Arc<RwLock<SequenceProject>>,
     scope: ScopeMonitor,
+    device_name: String,
 }
 
 impl AudioHandle {
@@ -35,6 +36,10 @@ impl AudioHandle {
 
     pub fn scope(&self) -> ScopeMonitor {
         self.scope.clone()
+    }
+
+    pub fn device_name(&self) -> &str {
+        &self.device_name
     }
 }
 
@@ -110,13 +115,42 @@ where
         .map_err(|e| e.to_string())
 }
 
-pub fn start_audio(sample_rate: u32) -> Result<AudioHandle, String> {
-    let bank = WavetableBank::factory_saw_morph();
-    let patch = Patch::factory_lead();
+/// Resolve an output device by preferred name, falling back to the host default.
+fn resolve_output_device(
+    host: &cpal::Host,
+    preferred: Option<&str>,
+) -> Result<(cpal::Device, String), String> {
+    if let Some(want) = preferred {
+        if let Ok(devices) = host.output_devices() {
+            for device in devices {
+                if let Ok(name) = device.name() {
+                    if name == want {
+                        return Ok((device, name));
+                    }
+                }
+            }
+        }
+    }
+    let device = host
+        .default_output_device()
+        .ok_or_else(|| "no audio output device".to_string())?;
+    let name = device
+        .name()
+        .unwrap_or_else(|_| "Default".to_string());
+    Ok((device, name))
+}
+
+pub fn start_audio_on_device(
+    sample_rate: u32,
+    preferred_device: Option<&str>,
+    bank: Option<WavetableBank>,
+    patch: Option<Patch>,
+) -> Result<AudioHandle, String> {
+    let bank = bank.unwrap_or_else(WavetableBank::factory_saw_morph);
+    let patch = patch.unwrap_or_else(Patch::factory_lead);
     let bank_shared = Arc::new(RwLock::new(bank.clone()));
     let transport_shared = Arc::new(RwLock::new(TransportState::new(patch.sequence.bpm)));
     let sequence_shared = Arc::new(RwLock::new(patch.sequence.clone()));
-    let mut engine = SynthEngine::new(bank, patch, sample_rate);
 
     let (tx, rx) = crossbeam_channel::unbounded::<AudioCmd>();
     let bank_for_audio = Arc::clone(&bank_shared);
@@ -124,16 +158,13 @@ pub fn start_audio(sample_rate: u32) -> Result<AudioHandle, String> {
     let sequence_for_audio = Arc::clone(&sequence_shared);
 
     let host = cpal::default_host();
-    let device = host
-        .default_output_device()
-        .ok_or_else(|| "no audio output device".to_string())?;
+    let (device, device_name) = resolve_output_device(&host, preferred_device)?;
     let config = device
         .default_output_config()
         .map_err(|e| e.to_string())?;
     let sr = config.sample_rate().0;
-    if sr != sample_rate {
-        engine = SynthEngine::new(WavetableBank::factory_saw_morph(), Patch::factory_lead(), sr);
-    }
+    let engine_sr = if sr != 0 { sr } else { sample_rate };
+    let engine = SynthEngine::new(bank, patch, engine_sr);
     let scope_monitor = engine.scope_monitor().clone();
     let stereo = config.channels() >= 2;
     let sample_format = config.sample_format();
@@ -201,5 +232,6 @@ pub fn start_audio(sample_rate: u32) -> Result<AudioHandle, String> {
         transport: transport_shared,
         sequence: sequence_shared,
         scope: scope_monitor,
+        device_name,
     })
 }

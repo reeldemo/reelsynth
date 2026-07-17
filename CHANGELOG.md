@@ -33,6 +33,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Per-segment Quant interp** — each layer stores a curve default (`quant_interp`) plus `quant_segment_interps` (`len = knobs−1`); Selected toolbar **All·…** fills every segment; clicking a knob edits that knob→next segment (last knob has no outgoing segment). Modes: Hold, Linear, Spline, Poly, Expo, MA
+- **Selectable audio output** — header **Audio** combo lists CPAL output devices; selection persists in app settings
+- **Auto-select new audio output** — when a device appears (DI / interface hot-plug), switch to it with a status message (Settings toggle; default on). Only newly appeared devices trigger a switch — no thrash on every default-device poll
 - **Three-column Design WT** — Result · Layers · Selected panes with per-column Quant roles; **Residual** wavetable layer created on first Result quant edit
 - `.cursor/hooks/` — `require-clean-compile.js` runs `cargo check` (`-D warnings`) and writes a stamp; `verify-compile-stamp.js` gates agent `git push` on that stamp (hook host cannot spawn cargo)
 - **Compose mode** — header toggle switches from Design (sound engineering) to a mini-DAW layout: transport bar, multi-track arrangement, piano roll editor, scene grid, 88-key keyboard strip

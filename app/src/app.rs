@@ -2,7 +2,8 @@
 
 use crate::app_settings::{AppSettings, GraphicsBackend, KeyboardLayoutSetting};
 use crate::audio_commands::AudioCmd;
-use crate::audio_host::AudioHandle;
+use crate::audio_devices::{prefer_fresh_device, AudioOutputDevices};
+use crate::audio_host::{start_audio_on_device, AudioHandle};
 use crate::keyboard_layout::{detect_layout, keyboard_note, qwer_index, ComputerLayout};
 use crate::midi_host::{MidiDevices, MidiInputHandle};
 use crossbeam_channel::{Receiver, Sender};
@@ -17,7 +18,7 @@ use reelsynth_ui::{
     apply_loaded_bank_to_design, compose_to_patch_sequence, draw_shell, effect_slots_to_patch,
     factory_bank, factory_label, mod_slots_to_patch, patch_from_state, sync_state_from_patch,
     OscStripContext, OscStripPreviewState, ScopeStripContext, ScopeStripState, ShellAppSettings,
-    ShellConfig, ShellMidiDevices, ShellMode, UiState,
+    ShellAudioDevices, ShellConfig, ShellMidiDevices, ShellMode, UiState,
 };
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -60,6 +61,8 @@ pub struct ReelSynthApp {
     current_patch: Patch,
     preset_path: Option<PathBuf>,
     wt_path: Option<PathBuf>,
+    audio_devices: AudioOutputDevices,
+    audio_selected: usize,
     midi_devices: MidiDevices,
     midi_selected: usize,
     midi_handle: MidiInputHandle,
@@ -75,6 +78,7 @@ pub struct ReelSynthApp {
     app_settings: AppSettings,
     keyboard_layout: ComputerLayout,
     last_midi_poll_secs: f64,
+    last_audio_poll_secs: f64,
 }
 
 #[derive(Clone, Debug)]
@@ -87,6 +91,7 @@ struct PendingRecordNote {
 impl ReelSynthApp {
     pub fn new(
         audio: Option<Arc<AudioHandle>>,
+        audio_devices: AudioOutputDevices,
         midi_devices: MidiDevices,
         midi_event_tx: Sender<MidiEvent>,
         midi_event_rx: Receiver<MidiEvent>,
@@ -98,9 +103,14 @@ impl ReelSynthApp {
             KeyboardLayoutSetting::Azerty => ComputerLayout::Azerty,
             KeyboardLayoutSetting::Qwertz => ComputerLayout::Qwertz,
         };
-        let status = if audio.is_some() {
+        let audio_selected = audio
+            .as_ref()
+            .and_then(|a| audio_devices.index_of_name(a.device_name()))
+            .unwrap_or(0);
+        let status = if let Some(a) = audio.as_ref() {
             format!(
-                "Audio OK — keys: {} · click or MIDI",
+                "Audio: {} — keys: {} · click or MIDI",
+                a.device_name(),
                 keyboard_layout.label()
             )
         } else {
@@ -120,13 +130,15 @@ impl ReelSynthApp {
             let seq = compose_to_patch_sequence(&state.compose);
             a.send(AudioCmd::SetSequence(seq));
         }
-        Self {
+        let mut app = Self {
             audio,
             ui_bank: WavetableBank::factory_saw_morph(),
             state,
             current_patch,
             preset_path: None,
             wt_path: None,
+            audio_devices,
+            audio_selected,
             midi_devices,
             midi_selected: 0,
             midi_handle,
@@ -142,7 +154,15 @@ impl ReelSynthApp {
             app_settings,
             keyboard_layout,
             last_midi_poll_secs: 0.0,
+            last_audio_poll_secs: 0.0,
+        };
+        if let Some(name) = app.audio.as_ref().map(|a| a.device_name().to_string()) {
+            if app.app_settings.audio_output_device.as_deref() != Some(name.as_str()) {
+                app.app_settings.audio_output_device = Some(name);
+                app.app_settings.save();
+            }
         }
+        app
     }
 
     fn effective_keyboard_layout(&self) -> ComputerLayout {
@@ -188,11 +208,123 @@ impl ReelSynthApp {
         }
     }
 
+    fn poll_audio_devices(&mut self, now_secs: f64) {
+        if now_secs - self.last_audio_poll_secs < 2.0 {
+            return;
+        }
+        self.last_audio_poll_secs = now_secs;
+        let previous = self.audio_devices.names.clone();
+        let changed = self.audio_devices.refresh();
+        if !changed {
+            return;
+        }
+
+        let current_name = self
+            .audio
+            .as_ref()
+            .map(|a| a.device_name().to_string())
+            .or_else(|| self.app_settings.audio_output_device.clone());
+
+        // Preferred / active device disappeared — fall back gracefully.
+        if let Some(ref name) = current_name {
+            if self.audio_devices.index_of_name(name).is_none() {
+                if self.audio_devices.names.is_empty() {
+                    self.audio = None;
+                    self.audio_selected = 0;
+                    self.state.status = "No audio output — UI only".into();
+                    return;
+                }
+                let fallback = AudioOutputDevices::default_name()
+                    .and_then(|n| {
+                        if self.audio_devices.index_of_name(&n).is_some() {
+                            Some(n)
+                        } else {
+                            None
+                        }
+                    })
+                    .or_else(|| self.audio_devices.names.first().cloned());
+                if let Some(fb) = fallback {
+                    self.select_audio_output(
+                        Some(fb.as_str()),
+                        format!("Audio device removed — using {fb}"),
+                    );
+                } else {
+                    self.audio = None;
+                    self.state.status = "No audio output — UI only".into();
+                }
+                return;
+            }
+        }
+
+        if !self.app_settings.auto_audio_output {
+            // Keep selected index in sync with refreshed list.
+            if let Some(ref name) = current_name {
+                if let Some(idx) = self.audio_devices.index_of_name(name) {
+                    self.audio_selected = idx;
+                }
+            }
+            return;
+        }
+
+        // Only auto-switch when a *new* device appears (not on every default change).
+        if let Some(fresh) = prefer_fresh_device(&previous, &self.audio_devices.names) {
+            if current_name.as_deref() != Some(fresh.as_str()) {
+                self.select_audio_output(
+                    Some(fresh.as_str()),
+                    format!("Audio: {fresh} (connected)"),
+                );
+            }
+        } else if let Some(ref name) = current_name {
+            if let Some(idx) = self.audio_devices.index_of_name(name) {
+                self.audio_selected = idx;
+            }
+        }
+    }
+
+    /// Restart the CPAL stream on `preferred` (or host default when `None`).
+    fn select_audio_output(&mut self, preferred: Option<&str>, status: String) {
+        let bank = self
+            .audio
+            .as_ref()
+            .and_then(|a| a.bank().read().ok().map(|b| b.clone()))
+            .unwrap_or_else(|| self.ui_bank.clone());
+        let patch = patch_from_state(&self.state, &self.current_patch);
+
+        // Drop the old stream before opening a new one (exclusive device access).
+        self.audio = None;
+
+        match start_audio_on_device(44100, preferred, Some(bank.clone()), Some(patch.clone())) {
+            Ok(handle) => {
+                let name = handle.device_name().to_string();
+                self.audio_selected = self
+                    .audio_devices
+                    .index_of_name(&name)
+                    .unwrap_or(0);
+                self.app_settings.audio_output_device = Some(name.clone());
+                self.app_settings.save();
+                self.scope = handle.scope();
+                let handle = Arc::new(handle);
+                let seq = compose_to_patch_sequence(&self.state.compose);
+                handle.send(AudioCmd::SetSequence(seq));
+                handle.send(AudioCmd::SetPatch(patch.clone()));
+                handle.send(AudioCmd::UpdateBank(bank));
+                self.audio = Some(handle);
+                self.current_patch = patch;
+                self.state.status = status;
+            }
+            Err(e) => {
+                self.audio_selected = 0;
+                self.state.status = format!("Audio failed: {e}");
+            }
+        }
+    }
+
     fn shell_app_settings(&self) -> ShellAppSettings {
         ShellAppSettings {
             graphics_backend_idx: self.app_settings.graphics_backend.index(),
             gpu_waveforms: self.app_settings.gpu_waveforms,
             auto_midi_keyboard: self.app_settings.auto_midi_keyboard,
+            auto_audio_output: self.app_settings.auto_audio_output,
             keyboard_layout_idx: self.app_settings.keyboard_layout.index(),
             pending_backend_restart: self.app_settings.pending_backend_restart,
             detected_keyboard_label: self.effective_keyboard_layout().label().to_string(),
@@ -208,6 +340,7 @@ impl ReelSynthApp {
             GraphicsBackend::from_index(shell.graphics_backend_idx);
         self.app_settings.gpu_waveforms = shell.gpu_waveforms;
         self.app_settings.auto_midi_keyboard = shell.auto_midi_keyboard;
+        self.app_settings.auto_audio_output = shell.auto_audio_output;
         self.app_settings.keyboard_layout =
             KeyboardLayoutSetting::from_index(shell.keyboard_layout_idx);
         self.app_settings.pending_backend_restart = shell.pending_backend_restart;
@@ -1161,6 +1294,7 @@ impl eframe::App for ReelSynthApp {
 
         let now_secs = ctx.input(|i| i.time);
         self.poll_midi_autoconnect(now_secs);
+        self.poll_audio_devices(now_secs);
 
         self.poll_compose_transport();
         if self.pending_record_sync && !self.state.compose.transport.recording {
@@ -1180,6 +1314,10 @@ impl eframe::App for ReelSynthApp {
                 let midi = ShellMidiDevices {
                     names: &self.midi_devices.names,
                     selected: self.midi_selected,
+                };
+                let audio_out = ShellAudioDevices {
+                    names: &self.audio_devices.names,
+                    selected: self.audio_selected,
                 };
                 let config = ShellConfig {
                     show_wt_editor: true,
@@ -1226,6 +1364,7 @@ impl eframe::App for ReelSynthApp {
                             Some(&mut *bank),
                             &preview_patch,
                             &midi,
+                            &audio_out,
                             &config,
                             Some(scope_ctx),
                             Some(osc_ctx),
@@ -1253,6 +1392,7 @@ impl eframe::App for ReelSynthApp {
                             None,
                             &preview_patch,
                             &midi,
+                            &audio_out,
                             &config,
                             Some(scope_ctx),
                             Some(osc_ctx),
@@ -1282,6 +1422,7 @@ impl eframe::App for ReelSynthApp {
                         Some(&mut self.ui_bank),
                         &preview_patch,
                         &midi,
+                        &audio_out,
                         &config,
                         Some(scope_ctx),
                         Some(osc_ctx),
@@ -1339,6 +1480,18 @@ impl eframe::App for ReelSynthApp {
                 if let Some(idx) = actions.midi_device_selected {
                     if idx != self.midi_selected {
                         self.connect_midi(idx);
+                    }
+                }
+                if let Some(idx) = actions.audio_device_selected {
+                    if let Some(name) = self.audio_devices.names.get(idx).cloned() {
+                        if self.audio.as_ref().map(|a| a.device_name()) != Some(name.as_str()) {
+                            self.select_audio_output(
+                                Some(name.as_str()),
+                                format!("Audio: {name}"),
+                            );
+                        } else {
+                            self.audio_selected = idx;
+                        }
                     }
                 }
                 self.handle_compose_actions(&actions, was_recording);

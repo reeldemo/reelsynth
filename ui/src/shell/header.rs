@@ -25,6 +25,7 @@ pub(super) fn draw_header(
     rect: Rect,
     state: &mut UiState,
     midi: &ShellMidiDevices<'_>,
+    audio: &ShellAudioDevices<'_>,
     actions: &mut ShellActions,
     mut app_settings: Option<&mut ShellAppSettings>,
 ) {
@@ -177,6 +178,15 @@ pub(super) fn draw_header(
                                 {
                                     settings.dirty = true;
                                 }
+                                if ui
+                                    .checkbox(
+                                        &mut settings.auto_audio_output,
+                                        "Auto-select new audio output",
+                                    )
+                                    .changed()
+                                {
+                                    settings.dirty = true;
+                                }
                                 let layout_label = settings.layout_label();
                                 reel_combo(
                                     ui,
@@ -274,6 +284,38 @@ pub(super) fn draw_header(
                             ui.ctx(),
                             AuditId::HeaderMidiCombo,
                             midi_before,
+                            ui.min_rect(),
+                        );
+
+                        let audio_label = audio
+                            .names
+                            .get(audio.selected)
+                            .map(String::as_str)
+                            .unwrap_or("Audio");
+                        let audio_before = ui.min_rect();
+                        reel_combo(
+                            ui,
+                            "s1_audio_device",
+                            select_value_text(audio_label),
+                            148.0,
+                            |ui| {
+                                if audio.names.is_empty() {
+                                    let _ = menu_selectable(ui, true, "No output devices");
+                                } else {
+                                    for (idx, name) in audio.names.iter().enumerate() {
+                                        if menu_selectable(ui, audio.selected == idx, name)
+                                            .clicked()
+                                        {
+                                            actions.audio_device_selected = Some(idx);
+                                        }
+                                    }
+                                }
+                            },
+                        );
+                        record_region(
+                            ui.ctx(),
+                            AuditId::HeaderAudioCombo,
+                            audio_before,
                             ui.min_rect(),
                         );
 

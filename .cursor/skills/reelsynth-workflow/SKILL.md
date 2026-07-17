@@ -16,7 +16,7 @@ Help users design sounds in ReelSynth and hand off to a DAW — without overprom
 | Question type | Doc |
 |---------------|-----|
 | Install, first note, save preset | [docs/GETTING_STARTED.md](../../docs/GETTING_STARTED.md) |
-| UI regions, MIDI dropdown, piano | [docs/UI.md](../../docs/UI.md) |
+| UI regions, MIDI/Audio dropdowns, piano | [docs/UI.md](../../docs/UI.md) |
 | Melody + sound in DAW | [docs/WORKFLOW.md](../../docs/WORKFLOW.md) |
 | Free DAWs and Vital | [docs/FREE_STACK.md](../../docs/FREE_STACK.md) |
 | Python, CLI, Rust API | [docs/SDK.md](../../docs/SDK.md) |
@@ -46,6 +46,7 @@ cargo run -p reelsynth-app --bin reelsynth-app
 ### 2. Connect input
 
 - MIDI controller → header **MIDI** dropdown
+- Audio output → header **Audio** dropdown (auto-selects newly connected DI / interface when enabled in Settings)
 - Or QWERTY `Z–M` / on-screen **Piano**
 
 ### 3. Design sound

@@ -7,7 +7,7 @@ use reelsynth_ui::{
     audit_all_elements, audit_center, audit_compose_panels, audit_header_clusters,
     audit_osc_sidebar_stacks, audit_panel_utilization, audit_rail_panels, audit_shell,
     compute_center_regions, draw_shell, embed_piano_in_center, record_region, AuditId,
-    ShellAppSettings, ShellConfig, ShellLayout, ShellLayoutOptions, ShellMidiDevices, ShellMode,
+    ShellAppSettings, ShellAudioDevices, ShellConfig, ShellLayout, ShellLayoutOptions, ShellMidiDevices, ShellMode,
     UiState, APP_HEIGHT_FULL, APP_MIN_WIDTH, SPACE_SM,
 };
 
@@ -110,6 +110,11 @@ pub fn run_shell_audit(scenario: ShellAuditScenario) -> ShellAuditRun {
                     names: &scenario.midi_names,
                     selected: scenario.midi_selected,
                 };
+                let audio_names = vec!["Speakers".to_string()];
+                let audio = ShellAudioDevices {
+                    names: &audio_names,
+                    selected: 0,
+                };
                 egui::CentralPanel::default().show(ctx, |ui| {
                     let screen = ui.max_rect();
                     let _actions = draw_shell(
@@ -119,6 +124,7 @@ pub fn run_shell_audit(scenario: ShellAuditScenario) -> ShellAuditRun {
                         None,
                         &preview,
                         &midi,
+                        &audio,
                         &config,
                         None,
                         None,

@@ -38,6 +38,7 @@ pub struct ShellAppSettings {
     pub graphics_backend_idx: usize,
     pub gpu_waveforms: bool,
     pub auto_midi_keyboard: bool,
+    pub auto_audio_output: bool,
     pub keyboard_layout_idx: usize,
     pub pending_backend_restart: bool,
     /// Display-only label for detected computer keyboard layout.
@@ -52,6 +53,7 @@ impl Default for ShellAppSettings {
             graphics_backend_idx: 0,
             gpu_waveforms: true,
             auto_midi_keyboard: true,
+            auto_audio_output: true,
             keyboard_layout_idx: 0,
             pending_backend_restart: false,
             detected_keyboard_label: "QWERTY".into(),
@@ -94,6 +96,7 @@ pub struct ShellActions {
     pub import_serum_fxp: bool,
     pub frame_edited: bool,
     pub midi_device_selected: Option<usize>,
+    pub audio_device_selected: Option<usize>,
     pub chord_degree_on: Option<usize>,
     pub chord_degree_off: Option<usize>,
     /// Compose transport — wired to sequencer engine when backend lands.
@@ -111,6 +114,11 @@ pub struct ShellActions {
 }
 
 pub struct ShellMidiDevices<'a> {
+    pub names: &'a [String],
+    pub selected: usize,
+}
+
+pub struct ShellAudioDevices<'a> {
     pub names: &'a [String],
     pub selected: usize,
 }
@@ -136,6 +144,8 @@ pub struct UiState {
     pub wt_bank_name: String,
     pub wt_edit_tool: WtEditTool,
     pub wt_quant_interp: WtQuantInterp,
+    /// Selected Quant knob on the active layer (for per-segment interp UI).
+    pub selected_quant_slot: Option<usize>,
     pub wt_view_3d_mode: WtView3dMode,
     pub selected_layer_idx: Option<usize>,
     pub analyze_dialog_open: bool,
@@ -254,6 +264,7 @@ impl Default for UiState {
             wt_bank_name: "Saw Morph".into(),
             wt_edit_tool: WtEditTool::Select,
             wt_quant_interp: WtQuantInterp::default(),
+            selected_quant_slot: None,
             wt_view_3d_mode: WtView3dMode::Stack,
             selected_layer_idx: Some(0),
             analyze_dialog_open: false,
