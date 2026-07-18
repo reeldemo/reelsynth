@@ -375,16 +375,31 @@ def log_line(log_path: Path, msg: str) -> None:
         f.write(line + "\n")
 
 
+def append_history(history_path: Path, row: dict[str, Any]) -> None:
+    """Append one JSONL record (dense learning-curve point)."""
+    with history_path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(row, separators=(",", ":")) + "\n")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--iters", type=int, default=270_000)
     ap.add_argument("--ckpt-every", type=int, default=500)
+    ap.add_argument(
+        "--history-every",
+        type=int,
+        default=1,
+        help="Append one JSONL history row every N iters (default 1 = every iter).",
+    )
     ap.add_argument("--batch", type=int, default=48)
     ap.add_argument("--fit-steps", type=int, default=20)
     ap.add_argument("--device", type=str, default="cuda")
     ap.add_argument("--run-id", type=str, default="")
     ap.add_argument("--max-hours", type=float, default=24.0)
     args = ap.parse_args()
+    if args.history_every < 1:
+        print("ERROR: --history-every must be >= 1", file=sys.stderr)
+        return 2
 
     if args.device.startswith("cuda") and not torch.cuda.is_available():
         print("ERROR: CUDA requested but torch.cuda.is_available() is False", file=sys.stderr)
@@ -408,12 +423,21 @@ def main() -> int:
     if device.type == "cuda":
         torch.cuda.manual_seed_all(0x0A172730)
 
+    history_path = run_dir / "history.jsonl"
+    # Fresh history file for this run_id (run_id is unique per launch).
+    if not history_path.exists():
+        history_path.write_text("", encoding="utf-8")
+
     baseline = dual_cosine_baseline(device)
+    # ETA / sizing note for launch log (paper-facing target may exceed wall clock).
+    now_local = datetime.now().astimezone()
     log_line(
         log_path,
         f"START run_id={run_id} device={device} gpu={gpu_name} "
         f"torch={torch.__version__} cuda_available={torch.cuda.is_available()} "
-        f"dual_cosine_baseline={baseline:.4f} target_iters={args.iters}",
+        f"dual_cosine_baseline={baseline:.4f} target_iters={args.iters} "
+        f"max_hours={args.max_hours} history_every={args.history_every} "
+        f"history_path={history_path} local_start={now_local.isoformat(timespec='seconds')}",
     )
     (run_dir / "run_meta.json").write_text(
         json.dumps(
@@ -424,6 +448,10 @@ def main() -> int:
                 "torch": torch.__version__,
                 "cuda_available": torch.cuda.is_available(),
                 "dual_cosine_baseline": baseline,
+                "target_iters": args.iters,
+                "max_hours": args.max_hours,
+                "history_every": args.history_every,
+                "history_path": str(history_path),
                 "pid": os.getpid(),
                 "started_at": utc_now(),
             },
@@ -490,9 +518,31 @@ def main() -> int:
         # REINFORCE with residual reward vs baseline
         advantage = residual - baseline
         loss_pi = -(logprob * advantage)
+        loss_val = float(loss_pi.detach().item())
         policy_opt.zero_grad(set_to_none=True)
         loss_pi.backward()
         policy_opt.step()
+
+        if it == 1 or (it % args.history_every == 0):
+            tag = f"iter_{it:06d}"
+            champ_now = residual if residual > champion_r else (champion_r if champion_r >= 0 else residual)
+            append_history(
+                history_path,
+                {
+                    "iter": it,
+                    "t_sec": round(time.time() - t0, 6),
+                    "residual": residual,
+                    "champ": champ_now,
+                    "branch": branch,
+                    "branch_best_rl": branch_best["rl"],
+                    "branch_best_nas": branch_best["nas"],
+                    "branch_best_combo": branch_best["combo"],
+                    "loss": loss_val,
+                    "arch_id": tag,
+                    "tag": tag,
+                    "converged": converged,
+                },
+            )
 
         if residual > champion_r:
             champion_r = residual

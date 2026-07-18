@@ -19,7 +19,8 @@ $IntervalSec = 30 * 60
 $MaxHours = 24
 $StartedAt = Get-Date
 $JobScript = Join-Path $RepoRoot "scripts\overnight_gpu_rl_arch.py"
-$JobArgs = @($JobScript, "--iters", "270000", "--device", "cuda", "--max-hours", "24")
+# Keep aligned with dense 1M overnight; only used if watchdog must restart a dead job.
+$JobArgs = @($JobScript, "--iters", "1000000", "--device", "cuda", "--max-hours", "20", "--history-every", "1")
 
 function Write-Heartbeat([string]$Message) {
     $ts = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
