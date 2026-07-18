@@ -16,6 +16,7 @@ pub use voice_rt::RtVoice;
 pub use crate::scope::ScopeMonitor;
 
 use crate::fx::FxChain;
+use crate::overtone::OvertoneFilterChain;
 use crate::modulation::apply_mods_to_patch;
 use crate::patch::Patch;
 use crate::sequence::{SequencerRuntime, TransportState};
@@ -33,6 +34,9 @@ pub struct SynthEngine {
     pool: VoicePool,
     params: EngineParams,
     fx: FxChain,
+    overtone: OvertoneFilterChain,
+    /// Cached frame index used for overtone harshness (osc 0).
+    overtone_harsh_frame: Option<usize>,
     sample_rate: u32,
     global_time: f32,
     scope: ScopeMonitor,
@@ -61,6 +65,7 @@ impl SynthEngine {
         let params = EngineParams::new(&patch, sample_rate as f32);
         let pool = VoicePool::new(&patch);
         let fx = FxChain::new(sample_rate);
+        let overtone = OvertoneFilterChain::new(sample_rate);
         let banks = BankSet::from_primary(bank, &patch);
         let bpm = patch.sequence.bpm;
         let mut sequencer = SequencerRuntime::new(bpm);
@@ -73,6 +78,8 @@ impl SynthEngine {
             pool,
             params,
             fx,
+            overtone,
+            overtone_harsh_frame: None,
             sample_rate,
             global_time: 0.0,
             scope: ScopeMonitor::new(),
@@ -127,12 +134,14 @@ impl SynthEngine {
         self.params.sync_from_patch(&patch);
         self.pool.reset_patch(&patch);
         self.fx.set_effects(patch.effects.clone());
+        self.overtone_harsh_frame = None;
         self.patch = patch;
     }
 
     /// Replace the primary wavetable bank without resetting voices or FX.
     pub fn update_bank(&mut self, bank: WavetableBank) {
         self.banks.replace_primary(bank, &self.patch);
+        self.overtone_harsh_frame = None;
     }
 
     pub fn bank(&self) -> &WavetableBank {
@@ -338,9 +347,44 @@ impl SynthEngine {
         self.fx.set_effects(effects);
     }
 
+    /// Session-only overtone / anti-crackle chain (not persisted in `.reelpreset`).
+    pub fn set_overtone_slots(&mut self, slots: Vec<crate::overtone::OvertoneFilterSlot>) {
+        self.overtone.set_slots(slots);
+        self.overtone_harsh_frame = None;
+    }
+
+    pub fn overtone_slots(&self) -> &[crate::overtone::OvertoneFilterSlot] {
+        self.overtone.slots()
+    }
+
     /// Legacy API — maps fixed chorus/delay/reverb bypass flags.
     pub fn set_fx_bypass(&mut self, bypass: crate::fx::FxBypass) {
         self.set_effects(crate::fx::effects_from_bypass(&bypass));
+    }
+
+    /// Recompute curve harshness from osc 0's active WT frame when the frame index changes.
+    fn refresh_overtone_harshness(&mut self) {
+        if self.overtone.slots().is_empty() {
+            return;
+        }
+        let bank = self.banks.primary();
+        if bank.num_frames == 0 || bank.frame_size == 0 {
+            self.overtone.set_curve_harshness(0.0);
+            return;
+        }
+        let pos = self
+            .patch
+            .oscillators
+            .first()
+            .map(|o| o.position)
+            .unwrap_or(0.0);
+        let idx = pos.round().clamp(0.0, (bank.num_frames - 1) as f32) as usize;
+        if self.overtone_harsh_frame == Some(idx) {
+            return;
+        }
+        let harsh = crate::overtone::curve_harshness(bank.frame(idx));
+        self.overtone.set_curve_harshness(harsh);
+        self.overtone_harsh_frame = Some(idx);
     }
 
     pub fn note_on(&mut self, channel: u8, note: u8, velocity: f32) {
@@ -454,6 +498,7 @@ impl SynthEngine {
             .begin_buffer(&self.patch.sequence, frames, sr);
 
         self.scratch_patch.clone_from(&self.patch);
+        self.refresh_overtone_harshness();
 
         for (frame, sample) in out.iter_mut().enumerate() {
             self.dispatch_seq_events(frame);
@@ -499,7 +544,10 @@ impl SynthEngine {
             acc_osc *= headroom;
             let gain = self.params.master_gain.current();
             let filt_mono = (acc_l + acc_r) * 0.5 * gain;
-            let mono = self.fx.process_sample((acc_l + acc_r) * 0.5 * gain);
+            let suppressed = self
+                .overtone
+                .process_sample((acc_l + acc_r) * 0.5 * gain);
+            let mono = self.fx.process_sample(suppressed);
             let fx_mono = mono;
             *sample = sanitize_sample(mono);
             self.scope.write_frame(acc_osc * gain, filt_mono, fx_mono, mono, voices_active > 0);
@@ -517,6 +565,7 @@ impl SynthEngine {
             .begin_buffer(&self.patch.sequence, frames, sr);
 
         self.scratch_patch.clone_from(&self.patch);
+        self.refresh_overtone_harshness();
 
         for frame in 0..frames {
             self.dispatch_seq_events(frame);
@@ -562,7 +611,8 @@ impl SynthEngine {
             acc_osc *= headroom;
             let gain = self.params.master_gain.current();
             let filt_mono = (acc_l + acc_r) * 0.5 * gain;
-            let [l, r] = self.fx.process_stereo(acc_l * gain, acc_r * gain);
+            let [sl, sr_] = self.overtone.process_stereo(acc_l * gain, acc_r * gain);
+            let [l, r] = self.fx.process_stereo(sl, sr_);
             let fx_mono = (l + r) * 0.5;
             let out_mono = fx_mono;
             out[frame * 2] = sanitize_sample(l);

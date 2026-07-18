@@ -6,6 +6,7 @@ mod compose;
 mod contrast_audit;
 mod region;
 mod fx_rack;
+mod overtone_rack;
 mod layout;
 mod layout_audit;
 mod mod_matrix;
@@ -26,6 +27,9 @@ pub use fx_rack::{
     default_effect_slots, draw_effect_rack, draw_effect_rack_sidebar, effect_slots_from_bypass,
     effect_slots_from_patch, effect_slots_to_bypass, effect_slots_to_patch, EffectRackState,
     EffectSlotUi,
+};
+pub use overtone_rack::{
+    draw_overtone_chain_menu, overtone_slots_to_engine, OvertoneFilterSlotUi, OvertoneRackResult,
 };
 pub use audit_registry::{
     audit_all_elements, audit_compose_panels, audit_id_rect, audit_no_horizontal_overflow,

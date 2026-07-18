@@ -4,6 +4,7 @@ pub mod patch;
 pub mod osc;
 pub mod fm;
 pub mod fx;
+pub mod overtone;
 pub mod voice;
 pub mod scope;
 pub mod import;
@@ -25,6 +26,9 @@ pub use performance::{
 };
 pub use wavetable::WavetableBank;
 pub use fx::{default_effects, effects_from_bypass, EffectSlot, EffectType, FxBypass, FxChain};
+pub use overtone::{
+    curve_harshness, OvertoneFilterChain, OvertoneFilterSlot, OvertoneFilterType,
+};
 pub use patch::{Envelope, Macro, ModSlot, Oscillator, Patch, WaveLayer, WaveSlot};
 pub use wt_quant::{generate_even_wave_slots, resolve_wt_position, resolved_wave_slots};
 pub use voice::{render_note, render_note_single_bank};

@@ -173,6 +173,20 @@ When the osc column is visible, the **Effects** panel sits below the oscillator 
 
 Slot height is sized for two readable param rows (~98 px at scale 1.0). The panel shows ~2¼ slots before scrolling; extra slots scroll inside the panel. The horizontal main FX rack (performance layout without osc column) keeps the compact single-row param layout unchanged.
 
+### Overtone (header menu)
+
+Header **Overtone** opens a master-bus anti-crackle chain (runs **after** voices sum + master gain, **before** the musical Effects rack). Same interaction pattern as Effects:
+
+| Control | Behavior |
+|---------|----------|
+| **+ Add filter** | Append Lowpass at 100% strength |
+| Type combo | **Lowpass** \| **Harmonic** \| **Slew** (stackable; order matters) |
+| ◀ / ▶ / ✕ | Reorder / remove (empty chain = Off / identity) |
+| Strength | Per-slot 0–100%; effective amount also scales with WT frame harshness |
+| On/Off | Per-slot bypass |
+
+Separate from **Quant Seam** (WT toolbar; edits the frame wrap). Session-only for v1 (not saved in `.reelpreset`).
+
 ---
 
 ## Center column

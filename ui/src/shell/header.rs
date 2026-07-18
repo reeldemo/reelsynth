@@ -121,6 +121,19 @@ pub(super) fn draw_header(
                     });
                     record_used(ui.ctx(), AuditId::HeaderWtMenu, wt_menu.response.rect);
 
+                    let overtone_menu = ui.menu_button(header_menu_label("Overtone"), |ui| {
+                        styled_menu_body(ui, |ui| {
+                            let result = crate::overtone_rack::draw_overtone_chain_menu(
+                                ui,
+                                &mut state.overtone_slots,
+                            );
+                            if result.changed {
+                                actions.params_changed = true;
+                            }
+                        });
+                    });
+                    let _ = overtone_menu;
+
                     if let Some(settings) = app_settings.as_deref_mut() {
                         let settings_menu = ui.menu_button(header_menu_label("Settings"), |ui| {
                             styled_menu_body(ui, |ui| {

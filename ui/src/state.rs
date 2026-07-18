@@ -4,6 +4,7 @@ use reelsynth::{Patch, ScopeLiveTaps, WavetableBank};
 
 use crate::compose::ComposeUi;
 use crate::fx_rack::{effect_slots_from_patch, EffectSlotUi};
+use crate::overtone_rack::OvertoneFilterSlotUi;
 use crate::mod_matrix::{default_mod_slots, ModSlotUi};
 use crate::oscillator_ui::{OscillatorUi, MIN_OSCILLATORS};
 use crate::scope_strip::ScopeStripState;
@@ -196,6 +197,8 @@ pub struct UiState {
     pub fx_rack_open: bool,
     pub mod_routes: Vec<ModSlotUi>,
     pub fx_slots: Vec<EffectSlotUi>,
+    /// Session-only master anti-crackle chain (empty = Off). Not in `.reelpreset`.
+    pub overtone_slots: Vec<OvertoneFilterSlotUi>,
     pub mod_route_total: usize,
     pub keys_down: HashSet<u8>,
     pub piano_visible: bool,
@@ -317,6 +320,7 @@ impl Default for UiState {
             fx_rack_open: true,
             mod_routes: default_mod_slots(),
             fx_slots: effect_slots_from_patch(&lead.effects),
+            overtone_slots: Vec::new(),
             mod_route_total: 24,
             keys_down: HashSet::new(),
             piano_visible: true,

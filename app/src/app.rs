@@ -16,9 +16,10 @@ use reelsynth::{
 };
 use reelsynth_ui::{
     apply_loaded_bank_to_design, compose_to_patch_sequence, draw_shell, effect_slots_to_patch,
-    factory_bank, factory_label, mod_slots_to_patch, patch_from_state, sync_state_from_patch,
-    OscStripContext, OscStripPreviewState, ScopeStripContext, ScopeStripState, ShellAppSettings,
-    ShellAudioDevices, ShellConfig, ShellMidiDevices, ShellMode, UiState,
+    factory_bank, factory_label, mod_slots_to_patch, overtone_slots_to_engine, patch_from_state,
+    sync_state_from_patch, OscStripContext, OscStripPreviewState, ScopeStripContext,
+    ScopeStripState, ShellAppSettings, ShellAudioDevices, ShellConfig, ShellMidiDevices, ShellMode,
+    UiState,
 };
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -773,6 +774,9 @@ impl ReelSynthApp {
         let patch = patch_from_state(&self.state, &self.current_patch);
         if let Some(a) = &self.audio {
             a.send(AudioCmd::SetPatch(patch.clone()));
+            a.send(AudioCmd::SetOvertoneSlots(overtone_slots_to_engine(
+                &self.state.overtone_slots,
+            )));
         }
         self.current_patch = patch;
     }
