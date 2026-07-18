@@ -1,33 +1,70 @@
 {
-  "iter": 250,
-  "champion_residual": 0.975337415933609,
+  "iter": 650,
+  "champion_residual": 0.9776936173439026,
   "champion_arch": {
-    "depth": 1,
-    "width": 2,
-    "act": "relu",
+    "depth": 6,
+    "width": 32,
+    "act": "tanh",
     "ops": [
-      "pin",
-      "polish"
+      "polish",
+      "edge_pin"
     ],
-    "wet": 0.626607597531427,
+    "wet": 0.2855939618938601,
     "fir": [
-      0.18757833840600036,
-      0.15553447655866537,
-      0.18983862754468517
+      0.15287658285148925,
+      0.22340274558854817,
+      0.08767256082535747,
+      0.25459892670339807,
+      0.11843959780908282
     ],
-    "cell_kind": "mlp"
+    "cell_kind": "bottleneck",
+    "soft_logits": [
+      0.9697758396430685,
+      0.17952467142933493,
+      -0.3152707847257916,
+      -0.1041143099608064,
+      0.13023007656159524,
+      -0.5638416790158547,
+      0.754078848733393,
+      0.600195046868661,
+      -0.6912888443246565,
+      0.6718548571033923,
+      -0.8139926024486671,
+      0.3661384995292327,
+      0.10325447943551869,
+      0.34929449170036087
+    ]
   },
-  "baseline_dual_cosine": 0.8203155994415283,
+  "champion_hp": {
+    "lr": 0.0043098861786252515,
+    "fit_steps": 36,
+    "batch": 64,
+    "entropy_coef": 0.0523234464995807,
+    "ppo_clip": 0.2
+  },
+  "baseline_dual_cosine": 0.8306445479393005,
   "branch_best": {
-    "rl": 0.975337415933609,
-    "nas": 0.9719288945198059,
-    "combo": 0.9750893414020538
+    "ppo": 0.9776936173439026,
+    "nas": 0.9764054119586945,
+    "pbt": 0.9774400293827057,
+    "combo": 0.9769420027732849
   },
-  "elapsed_sec": 24.76523756980896,
+  "iters_since_improve": 230,
+  "pop_diversity": 0.40386002886002886,
+  "entropy": 2.2913666367530823,
+  "algorithms": [
+    "PPO",
+    "PBT",
+    "discrete_NAS",
+    "soft_mix_cell"
+  ],
+  "elapsed_sec": 102.15631437301636,
   "gpu": "NVIDIA GeForce RTX 3090",
-  "pid": 5068,
-  "log_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\overnight_gpu_rl_arch_gpu-rl-arch-20260718T101140Z.log",
-  "run_dir": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260718T101140Z",
-  "unfitted_dir": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260718T101140Z\\unfitted",
-  "fitted_dir": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260718T101140Z\\fitted"
+  "pid": 24900,
+  "seed": 1590173980,
+  "history_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260718T141723Z\\history.jsonl",
+  "log_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\overnight_gpu_rl_arch_gpu-rl-arch-20260718T141723Z.log",
+  "run_dir": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260718T141723Z",
+  "unfitted_dir": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260718T141723Z\\unfitted",
+  "fitted_dir": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260718T141723Z\\fitted"
 }

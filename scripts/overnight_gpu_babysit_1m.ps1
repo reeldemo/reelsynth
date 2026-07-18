@@ -21,7 +21,8 @@ $HeartbeatSec = 1800
 $TargetIters = 1000000
 $Deadline = (Get-Date).AddHours(168)
 $script:LastRestart = [datetime]::MinValue
-$script:LastArgs = @($Script, "--iters", "1000000", "--device", "cuda", "--max-hours", "168", "--history-every", "1")
+# PPO+PBT+expanded NAS; new seed escapes prior REINFORCE plateau (~0.9779 @ seed 0x0A172730)
+$script:LastArgs = @($Script, "--iters", "1000000", "--device", "cuda", "--max-hours", "168", "--history-every", "1", "--seed", "1590173980", "--pop-size", "12")
 $script:KnownLauncher = 0
 $script:KnownWorker = 0
 

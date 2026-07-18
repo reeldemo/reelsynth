@@ -21,7 +21,8 @@ $StartedAt = Get-Date
 $JobScript = Join-Path $RepoRoot "scripts\overnight_gpu_rl_arch.py"
 # Keep aligned with dense 1M overnight; only used if watchdog must restart a dead job.
 # No early wall-clock abort on the job itself — 168h covers ~23h@12it/s with margin.
-$JobArgs = @($JobScript, "--iters", "1000000", "--device", "cuda", "--max-hours", "168", "--history-every", "1")
+# PPO+PBT+expanded NAS; seed matches babysit (escape prior plateau)
+$JobArgs = @($JobScript, "--iters", "1000000", "--device", "cuda", "--max-hours", "168", "--history-every", "1", "--seed", "1590173980", "--pop-size", "12")
 
 function Write-Heartbeat([string]$Message) {
     $ts = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
