@@ -8,6 +8,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **Compose black keys** — shared footer piano no longer force-enables scale-fold in Compose; fold follows **Scale** layout only (same path as Design), so C#/D#/F#/G#/A# play again under default Piano + Major
 - **Header status / MIDI** — MIDI device combo shows **No MIDI** instead of raw `None` when disconnected; Quant interp patch value `none` maps to **Hold** and toolbar segment combo shows mode labels (`1→2·Linear`)
 - **Design Quant knobs on VA layers** — selecting L1/L2 (saw/sine/…) with Quant > 0 bakes that VA into an unused bank frame and promotes it to wavetable so middle Layers and right Selected panes show draggable Quant knobs (not only existing WT/residual layers)
 - **Last Quant knob + wrap ends** — first/last knobs are linked for periodic wrap (Seam ≠ Off); Adaptive seam fade scales with discontinuity so the last knob stays editable and default ends are not a raw cliff; Selected toolbar **Seam·Off / Soft / Adapt**

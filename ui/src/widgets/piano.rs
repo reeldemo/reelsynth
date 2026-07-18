@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use egui::{Color32, Pos2, Rect, Response, ScrollArea, Sense, Ui, Vec2};
-use reelsynth::{note_in_scale, Scale};
+use reelsynth::{note_in_scale, PerformanceLayout, Scale};
 use reelsynth_ui_theme::{ACCENT_UI, Tokens};
 
 use crate::layout::{
@@ -12,6 +12,13 @@ use crate::layout::{
 pub struct PianoResponse {
     pub note_on: Option<u8>,
     pub note_off: Option<u8>,
+}
+
+/// Whether the shared on-screen piano should scale-fold (dim + block out-of-scale keys).
+///
+/// Design and Compose both use this — fold follows **Scale** layout only, never shell mode.
+pub fn piano_scale_fold_enabled(layout: PerformanceLayout) -> bool {
+    matches!(layout, PerformanceLayout::Scale)
 }
 
 pub struct PianoKeyboard<'a> {
@@ -347,4 +354,94 @@ fn hit_test(
 
     let col = ((pos.x - rect.min.x) / key_w).floor() as usize;
     white_notes.get(col).copied()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashSet;
+
+    /// MIDI black-key pitches in one octave (C# … A#).
+    const BLACK_KEYS: [u8; 5] = [49, 51, 54, 56, 58]; // C#3 D#3 F#3 G#3 A#3
+    const WHITE_C: u8 = 48; // C3
+    const WHITE_D: u8 = 50; // D3
+
+    #[test]
+    fn scale_fold_follows_layout_not_shell_mode() {
+        assert!(
+            !piano_scale_fold_enabled(PerformanceLayout::Piano),
+            "Piano layout (Design + Compose default) must keep chromatic black keys"
+        );
+        assert!(piano_scale_fold_enabled(PerformanceLayout::Scale));
+        assert!(!piano_scale_fold_enabled(PerformanceLayout::Chords));
+    }
+
+    #[test]
+    fn piano_layout_playable_matches_design_and_compose() {
+        let keys = HashSet::new();
+        // Shared path: both modes call with_scale_fold(..., piano_scale_fold_enabled(Piano)).
+        let fold = piano_scale_fold_enabled(PerformanceLayout::Piano);
+        let piano = PianoKeyboard::new(&keys).with_scale_fold(0, Scale::Major, fold);
+
+        for &n in &BLACK_KEYS {
+            assert!(
+                piano.key_playable(n),
+                "black key {n} must be playable on shared Piano layout (Compose ≡ Design)"
+            );
+        }
+        assert!(piano.key_playable(WHITE_C));
+        assert!(piano.key_playable(WHITE_D));
+    }
+
+    #[test]
+    fn scale_layout_blocks_out_of_scale_black_keys() {
+        let keys = HashSet::new();
+        let fold = piano_scale_fold_enabled(PerformanceLayout::Scale);
+        let piano = PianoKeyboard::new(&keys).with_scale_fold(0, Scale::Major, fold);
+
+        for &n in &BLACK_KEYS {
+            assert!(
+                !piano.key_playable(n),
+                "C major + Scale fold should block black key {n}"
+            );
+        }
+        assert!(piano.key_playable(WHITE_C));
+        assert!(piano.key_playable(60)); // C4
+    }
+
+    #[test]
+    fn hit_test_returns_black_keys_same_as_white() {
+        let start = 48u8;
+        let end = 59u8;
+        let white = white_key_notes(start, end);
+        let black = black_key_notes(start, end);
+        let rect = Rect::from_min_size(Pos2::new(0.0, 0.0), Vec2::new(280.0, 100.0));
+        let key_w = rect.width() / white.len() as f32;
+        let key_h = rect.height();
+        let black_h = key_h * PIANO_BLACK_HEIGHT_RATIO;
+        let black_w = key_w * PIANO_BLACK_WIDTH_RATIO;
+
+        // White key hit (first column = C).
+        let white_hit = hit_test(
+            Pos2::new(key_w * 0.5, rect.min.y + key_h * 0.8),
+            rect,
+            key_w,
+            key_h,
+            &white,
+            &black,
+        );
+        assert_eq!(white_hit, Some(WHITE_C));
+
+        // Each black key center must resolve to that black pitch (same path as white).
+        for &(note, slot) in &black {
+            let slot_min_x = rect.min.x + slot as f32 * key_w;
+            let slot_max_x = slot_min_x + key_w;
+            let key_right = slot_max_x + key_w * 0.29;
+            let key_left = key_right - black_w;
+            let cx = (key_left + key_right) * 0.5;
+            let cy = rect.min.y + black_h * 0.5;
+            let hit = hit_test(Pos2::new(cx, cy), rect, key_w, key_h, &white, &black);
+            assert_eq!(hit, Some(note), "black key hit should return MIDI {note}");
+        }
+    }
 }

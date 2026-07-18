@@ -23,5 +23,5 @@ pub use panel::{
     card_stroke, collapsible_panel, panel, panel_audit, panel_disabled, sidebar_panel,
     sidebar_panel_audit,
 };
-pub use piano::{PianoKeyboard, PianoResponse};
+pub use piano::{piano_scale_fold_enabled, PianoKeyboard, PianoResponse};
 pub use tabs::tab_bar;

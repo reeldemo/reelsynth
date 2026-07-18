@@ -251,7 +251,7 @@ Implementation plan: [docs/superpowers/plans/2026-07-15-wt-stack-editor.md](supe
 
 - **88 keys** — MIDI 21–108 (A0–C8) with horizontal scroll
 - Toggle via header **Piano** button
-- **Scale fold** — out-of-scale keys dimmed per performance settings (Compose mode and Scale layout)
+- **Scale fold** — out-of-scale keys dimmed when performance layout is **Scale** (same rule in Design and Compose; default **Piano** layout stays chromatic so black keys play)
 - Height: 128 px; white keys 28 px wide (scroll when window is narrow)
 
 ---
