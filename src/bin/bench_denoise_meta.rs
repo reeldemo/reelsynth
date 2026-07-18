@@ -1,31 +1,63 @@
-//! Meta-learning + hyperparameter search for DenoiseOpt.
+//! Meta-learning + hyperparameter / lit-combo search for DenoiseOpt.
 //!
 //! Primary objective: prolonged residual score ∈ [0,1] (1 = best).
 //!
 //! ```bash
-//! # Full 1500-trial paper run (slow)
-//! cargo run -p reelsynth --release --bin bench_denoise_meta
+//! # Lit-combo 500-iter release timing (fit-until-convergence each trial)
+//! cargo run -p reelsynth --release --bin bench_denoise_meta -- 500
+//! # or: set DENOISE_META_TRIALS=500 / DENOISE_META_MODE=lit_combo
 //!
-//! # Short sanity (e.g. 40 trials, smaller val)
-//! cargo run -p reelsynth --release --bin bench_denoise_meta -- 40
+//! # Full 1500-trial legacy prior search
+//! cargo run -p reelsynth --release --bin bench_denoise_meta -- 1500
+//! # (omit args → 1500 legacy)
+//!
+//! # Short sanity (e.g. 8 lit-combo trials)
+//! cargo run -p reelsynth --release --bin bench_denoise_meta -- 8
 //! ```
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
+    let env_trials = std::env::var("DENOISE_META_TRIALS")
+        .ok()
+        .and_then(|s| s.parse::<usize>().ok());
     let n_trials = args
         .get(1)
         .and_then(|s| s.parse::<usize>().ok())
+        .or(env_trials)
         .unwrap_or(1500);
-    let (val_fast, val_final) = if n_trials < 1500 {
-        // Fast sanity: small validation budgets
+
+    let mode_env = std::env::var("DENOISE_META_MODE")
+        .unwrap_or_default()
+        .to_lowercase();
+    // Default: lit_combo for ≤500 (incl. sanity), legacy prior search for 1500+.
+    let lit_combo = mode_env == "lit_combo"
+        || mode_env == "combo"
+        || (mode_env == "auto" && n_trials <= 500)
+        || (mode_env.is_empty() && n_trials <= 500);
+
+    let (val_fast, val_final) = if lit_combo {
+        if n_trials >= 500 {
+            (80usize, 400usize)
+        } else {
+            (24usize, 48usize)
+        }
+    } else if n_trials < 1500 {
         (40usize, 80usize)
     } else {
         (400usize, 2000usize)
     };
+
     eprintln!(
-        "Running {n_trials} DenoiseOpt meta trials (residual objective, val_fast={val_fast}, val_final={val_final})…"
+        "Running {n_trials} DenoiseOpt meta trials mode={} (residual objective, val_fast={val_fast}, val_final={val_final})…",
+        if lit_combo { "lit_combo" } else { "legacy" }
     );
-    let report = reelsynth::denoise_meta::run_meta_learning_search_n(n_trials, val_fast, val_final);
+
+    let report = if lit_combo {
+        reelsynth::denoise_meta::run_lit_combo_meta_n(n_trials, val_fast, val_final)
+    } else {
+        reelsynth::denoise_meta::run_meta_learning_search_n(n_trials, val_fast, val_final)
+    };
+
     eprintln!(
         "champion: {}",
         serde_json::to_string_pretty(&report["champion"]).unwrap()
@@ -34,6 +66,13 @@ fn main() {
         "benchmark_matrix_5: {}",
         serde_json::to_string_pretty(&report["benchmark_matrix_5"]).unwrap()
     );
+    if let Some(baselines) = report.get("bake_baselines") {
+        eprintln!(
+            "bake_baselines (first 3): {}",
+            serde_json::to_string_pretty(&baselines.as_array().map(|a| &a[..a.len().min(3)]))
+                .unwrap_or_else(|_| "{}".into())
+        );
+    }
     eprintln!(
         "production_frozen residual={:.4} quality={:.4}",
         report["production_frozen"]["residual"]
@@ -43,10 +82,36 @@ fn main() {
             .as_f64()
             .unwrap_or(0.0)
     );
+
+    let iter_sec = report
+        .get("iterations_elapsed_sec")
+        .and_then(|v| v.as_f64())
+        .or_else(|| report.get("seconds").and_then(|v| v.as_f64()))
+        .unwrap_or(0.0);
+    let iter_ms = report
+        .get("iterations_elapsed_ms")
+        .and_then(|v| v.as_u64())
+        .unwrap_or((iter_sec * 1000.0) as u64);
+    let total_sec = report
+        .get("total_elapsed_sec")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(iter_sec);
+
     eprintln!(
-        "n_trials={} seconds={:.1} artifact={}",
+        "n_trials={} iterations_sec={:.3} total_sec={:.3} artifact={}",
         report["n_trials"],
-        report["seconds"].as_f64().unwrap_or(0.0),
+        iter_sec,
+        total_sec,
         report["artifact_path"].as_str().unwrap_or("?")
     );
+
+    if lit_combo && n_trials == 500 {
+        println!("500_ITER_WALL_TIME_SEC={:.6}", iter_sec);
+        println!("500_ITER_WALL_TIME_MS={}", iter_ms);
+    } else if lit_combo {
+        println!(
+            "{}_ITER_WALL_TIME_SEC={:.6}",
+            n_trials, iter_sec
+        );
+    }
 }

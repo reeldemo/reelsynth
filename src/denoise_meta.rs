@@ -1,18 +1,26 @@
-//! Meta-learning + literature-informed hyperparameter search (1500 trials).
+//! Meta-learning + literature-informed hyperparameter / algorithm search.
 //!
-//! Outer loop: random / PBT-style search over (λ, fade, polish, pin, θ noise)
-//! informed by AutoML / Bayesian HPO / population-based training practice.
+//! ## Two entry points
+//! - [`run_meta_learning_search_n`] — legacy 1500-trial θ/λ search (prior buckets).
+//! - [`run_lit_combo_meta_n`] — lit-family catalog + combinatorial hybrids; each
+//!   trial **fits until convergence** (see [`CONV_EPS`] / [`CONV_PATIENCE`]).
 //!
-//! **Bi-level / nested loss opt:** for each trial, an inner coordinate descent
-//! minimizes unsupervised \(L=(1-\mathcal{D})+\lambda(1-\mathcal{S})\) on a small
-//! fit batch (θ and optionally a local λ refine). The outer loop ranks by
-//! prolonged residual score — not by frozen-θ mutation alone.
+//! ## Literature-derived algorithm families (short citation names)
+//! | Family | Inspiration | Role here |
+//! |--------|-------------|-----------|
+//! | `baseline_bake` | DualCosine / Classic / Soft / Ensemble* (`artifact_reduce`) | Fixed bake baselines |
+//! | `bayes_local` | Bayesian / local HPO (Snoek/BOHB-style densify) | Sample near good λ |
+//! | `pbt_exploit` | PBT (Jaderberg et al.) | Exploit elite + mutate |
+//! | `irace_racing` | irace / racing (López-Ibáñez) | Progressive discard |
+//! | `moead_shape` | MOEA/D (Zhang & Li) | Weighted residual↔shape |
+//! | `evo_explore` | Evolutionary wide search | Broad θ mutation |
+//! | `n2n_unsup` | Noise2Noise (Lehtinen et al.) | Label-free loss fit |
+//! | `bilevel_nested` | Nested / bi-level opt | Inner L, outer residual |
 //!
-//! **Primary meta objective:** prolonged residual score ∈ [0, 1] (1 = best):
-//! ideal multi-period reference (same seed, no open-wrap) vs tiled engine cycle
-//! after DenoiseOpt. D/S wrap-energy proxies remain as report auxiliaries.
+//! Combinatorial hybrids sample pairs/triples of operator components
+//! (e.g. `race+pbt`, `evo+loss_opt`, `mo_shape+residual_primary`).
 //!
-//! Emits top-4 champions vs naive baseline matrix for the paper.
+//! **Primary meta objective:** prolonged residual score ∈ [0, 1] (1 = best).
 
 use crate::artifact_reduce::{periodize_with_algo, PeriodizeAlgo};
 use crate::denoise_opt::{
@@ -33,6 +41,74 @@ const PROLONG: usize = RESIDUAL_PROLONG_PERIODS;
 const INNER_FIT_COUNT: usize = 48;
 const INNER_FIT_START: u64 = 40_000;
 
+/// Relative improvement threshold for inner convergence.
+/// Stop when `|L_prev - L_cur| / max(|L_prev|, 1e-6) < CONV_EPS` for
+/// [`CONV_PATIENCE`] consecutive coordinate sweeps (or residual analog).
+pub const CONV_EPS: f32 = 1e-4;
+/// Consecutive plateau sweeps required before declaring convergence.
+pub const CONV_PATIENCE: usize = 3;
+/// Hard cap on inner coordinate sweeps (early-stop still applies).
+pub const CONV_MAX_SWEEPS: usize = 16;
+/// Step schedule for coordinate descent (coarse → fine).
+const CONV_STEPS: [f32; 3] = [0.12, 0.06, 0.03];
+
+/// Lit-informed operator atoms that may be combined into hybrid algorithms.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+enum OpAtom {
+    BayesLocal,
+    PbtExploit,
+    IraceRacing,
+    MoeadShape,
+    EvoExplore,
+    N2nUnsup,
+    BilevelNested,
+    ResidualPrimary,
+    BakeDualCosine,
+    BakeClassic,
+    BakeSoft,
+    BakeEnsembleV3,
+    BakeCrossfade,
+}
+
+impl OpAtom {
+    fn label(self) -> &'static str {
+        match self {
+            OpAtom::BayesLocal => "bayes_local",
+            OpAtom::PbtExploit => "pbt_exploit",
+            OpAtom::IraceRacing => "irace_racing",
+            OpAtom::MoeadShape => "moead_shape",
+            OpAtom::EvoExplore => "evo_explore",
+            OpAtom::N2nUnsup => "n2n_unsup",
+            OpAtom::BilevelNested => "bilevel_nested",
+            OpAtom::ResidualPrimary => "residual_primary",
+            OpAtom::BakeDualCosine => "bake_dual_cosine",
+            OpAtom::BakeClassic => "bake_classic",
+            OpAtom::BakeSoft => "bake_soft",
+            OpAtom::BakeEnsembleV3 => "bake_ensemble_v3",
+            OpAtom::BakeCrossfade => "bake_crossfade",
+        }
+    }
+
+    const SEARCH: &'static [OpAtom] = &[
+        OpAtom::BayesLocal,
+        OpAtom::PbtExploit,
+        OpAtom::IraceRacing,
+        OpAtom::MoeadShape,
+        OpAtom::EvoExplore,
+        OpAtom::N2nUnsup,
+        OpAtom::BilevelNested,
+        OpAtom::ResidualPrimary,
+    ];
+
+    const BAKE: &'static [OpAtom] = &[
+        OpAtom::BakeDualCosine,
+        OpAtom::BakeClassic,
+        OpAtom::BakeSoft,
+        OpAtom::BakeEnsembleV3,
+        OpAtom::BakeCrossfade,
+    ];
+}
+
 #[derive(Debug, Clone)]
 struct TrialHp {
     name: String,
@@ -48,6 +124,33 @@ struct TrialHp {
     refine_lambda: bool,
     algo_seed: u64,
     prior: &'static str,
+}
+
+/// Hybrid / combo trial configuration for lit-combo meta.
+#[derive(Debug, Clone)]
+struct ComboTrial {
+    name: String,
+    family: String,
+    ops: Vec<&'static str>,
+    lambda_shape: f32,
+    residual_primary: bool,
+    use_racing: bool,
+    use_pbt: bool,
+    use_mo_weight: f32,
+    bake: Option<PeriodizeAlgo>,
+    seam: SeamStyle,
+    theta_polish: bool,
+    refine_lambda: bool,
+    algo_seed: u64,
+}
+
+#[derive(Debug, Clone)]
+struct FitResult {
+    theta: [f32; N_THETA],
+    lambda: f32,
+    fit_loss: f32,
+    conv_steps: usize,
+    converged: bool,
 }
 
 /// Auxiliary D/S wrap-energy proxy (kept for reports; not meta ranking).
@@ -87,6 +190,28 @@ fn meta_rank(residual: f32, shape: f32) -> f32 {
     }
 }
 
+fn apply_pipeline(
+    frame: &mut [f32],
+    theta: &[f32; N_THETA],
+    bake: Option<PeriodizeAlgo>,
+    seam: SeamStyle,
+    theta_polish: bool,
+) {
+    if let Some(algo) = bake {
+        periodize_with_algo(frame, 0.0, seam, algo);
+        if theta_polish {
+            let mut polished = frame.to_vec();
+            apply_denoise_theta(&mut polished, 0.0, theta);
+            let wet = theta[6].clamp(0.0, 1.0);
+            for (a, b) in frame.iter_mut().zip(polished.iter()) {
+                *a = *a * (1.0 - wet) + *b * wet;
+            }
+        }
+    } else {
+        apply_denoise_theta(frame, 0.0, theta);
+    }
+}
+
 fn mean_unsupervised_loss(
     theta: &[f32; N_THETA],
     start_seed: u64,
@@ -94,22 +219,266 @@ fn mean_unsupervised_loss(
     n: usize,
     lambda: f32,
 ) -> f32 {
+    mean_unsupervised_loss_pipe(theta, start_seed, count, n, lambda, None, SeamStyle::Adaptive, false)
+}
+
+fn mean_unsupervised_loss_pipe(
+    theta: &[f32; N_THETA],
+    start_seed: u64,
+    count: usize,
+    n: usize,
+    lambda: f32,
+    bake: Option<PeriodizeAlgo>,
+    seam: SeamStyle,
+    theta_polish: bool,
+) -> f32 {
     let mut sum = 0.0f32;
     for k in 0..count {
         let seed = start_seed + k as u64;
         let (_, raw) = generate_sound(seed, n);
         let mut out = raw.clone();
-        apply_denoise_theta(&mut out, 0.0, theta);
+        apply_pipeline(&mut out, theta, bake, seam, theta_polish);
         let (l, _, _, _) = score_with_lambda(&raw, &out, lambda);
         sum += l;
     }
     sum / count.max(1) as f32
 }
 
-/// Inner coordinate descent on unsupervised loss (nested bi-level step).
+fn mean_residual_fit(
+    theta: &[f32; N_THETA],
+    start_seed: u64,
+    count: usize,
+    n: usize,
+    bake: Option<PeriodizeAlgo>,
+    seam: SeamStyle,
+    theta_polish: bool,
+) -> f32 {
+    let mut sum = 0.0f32;
+    for k in 0..count {
+        let seed = start_seed + k as u64;
+        let (_, ideal) = generate_sound_ideal(seed, n);
+        let (_, raw) = generate_sound(seed, n);
+        let mut out = raw;
+        apply_pipeline(&mut out, theta, bake, seam, theta_polish);
+        sum += residual_for_cycle(&ideal, &out);
+    }
+    sum / count.max(1) as f32
+}
+
+fn mean_mo_objective(
+    theta: &[f32; N_THETA],
+    start_seed: u64,
+    count: usize,
+    n: usize,
+    lambda: f32,
+    mo_w: f32,
+    bake: Option<PeriodizeAlgo>,
+    seam: SeamStyle,
+    theta_polish: bool,
+) -> f32 {
+    // Minimize: (1-w)*(1-residual) + w*L_unsup  (MOEA/D scalarization)
+    let r = mean_residual_fit(theta, start_seed, count, n, bake, seam, theta_polish);
+    let l = mean_unsupervised_loss_pipe(
+        theta, start_seed, count, n, lambda, bake, seam, theta_polish,
+    );
+    (1.0 - mo_w) * (1.0 - r) + mo_w * l
+}
+
+/// One coordinate-descent sweep; returns new loss/objective (lower better unless residual_primary).
+fn coord_sweep(
+    theta: &mut [f32; N_THETA],
+    lambda: f32,
+    n: usize,
+    step: f32,
+    residual_primary: bool,
+    mo_w: f32,
+    bake: Option<PeriodizeAlgo>,
+    seam: SeamStyle,
+    theta_polish: bool,
+    maximize: bool,
+) -> f32 {
+    let eval = |th: &[f32; N_THETA]| -> f32 {
+        if residual_primary {
+            mean_residual_fit(th, INNER_FIT_START, INNER_FIT_COUNT, n, bake, seam, theta_polish)
+        } else if mo_w > 0.0 {
+            mean_mo_objective(
+                th, INNER_FIT_START, INNER_FIT_COUNT, n, lambda, mo_w, bake, seam, theta_polish,
+            )
+        } else {
+            mean_unsupervised_loss_pipe(
+                th, INNER_FIT_START, INNER_FIT_COUNT, n, lambda, bake, seam, theta_polish,
+            )
+        }
+    };
+    let mut cur = eval(theta);
+    for i in 0..N_THETA {
+        if i == 7 {
+            continue;
+        }
+        let base = theta[i];
+        let mut local_best = cur;
+        let mut local_val = base;
+        for &delta in &[-step, step] {
+            theta[i] = (base + delta).clamp(0.0, 1.0);
+            let v = eval(theta);
+            let better = if maximize {
+                v > local_best + 1e-7
+            } else {
+                v + 1e-7 < local_best
+            };
+            if better {
+                local_best = v;
+                local_val = theta[i];
+            }
+        }
+        theta[i] = local_val;
+        cur = local_best;
+    }
+    cur
+}
+
+fn refine_lambda_1d(
+    theta: &[f32; N_THETA],
+    mut lambda: f32,
+    n: usize,
+    bake: Option<PeriodizeAlgo>,
+    seam: SeamStyle,
+    theta_polish: bool,
+) -> (f32, f32) {
+    let mut best_lam = lambda;
+    let mut best_l = mean_unsupervised_loss_pipe(
+        theta, INNER_FIT_START, INNER_FIT_COUNT, n, lambda, bake, seam, theta_polish,
+    );
+    let base_lam = lambda;
+    for &delta in &[-0.18f32, -0.08, 0.08, 0.18] {
+        let cand = (base_lam + delta).clamp(0.25, 2.8);
+        let l = mean_unsupervised_loss_pipe(
+            theta, INNER_FIT_START, INNER_FIT_COUNT, n, cand, bake, seam, theta_polish,
+        );
+        if l + 1e-7 < best_l {
+            best_l = l;
+            best_lam = cand;
+        }
+    }
+    lambda = best_lam;
+    (lambda, best_l)
+}
+
+/// Fit θ (and optionally λ) until relative plateau for [`CONV_PATIENCE`] sweeps
+/// or [`CONV_MAX_SWEEPS`] reached.
 ///
-/// Minimizes \(L=(1-\mathcal{D})+\lambda(1-\mathcal{S})\) on `INNER_FIT_COUNT`
-/// seeds. Optional 1-D λ refine after θ sweeps (joint nested).
+/// Convergence criterion (documented for paper / JSON):
+/// - Track objective `J` (unsupervised L, MO scalarization, or residual score).
+/// - After each full coordinate sweep, compute
+///   `rel = |J_prev - J_cur| / max(|J_prev|, 1e-6)`.
+/// - If `rel < CONV_EPS` (1e-4) for `CONV_PATIENCE` (3) consecutive sweeps → converged.
+/// - Else continue until `CONV_MAX_SWEEPS` (16). Residual-primary **maximizes** J;
+///   loss / MO modes **minimize** J.
+fn fit_until_convergence(
+    mut theta: [f32; N_THETA],
+    mut lambda: f32,
+    n: usize,
+    residual_primary: bool,
+    mo_w: f32,
+    bake: Option<PeriodizeAlgo>,
+    seam: SeamStyle,
+    theta_polish: bool,
+    refine_lambda: bool,
+) -> FitResult {
+    let maximize = residual_primary;
+    let mut prev = if residual_primary {
+        mean_residual_fit(
+            &theta, INNER_FIT_START, INNER_FIT_COUNT, n, bake, seam, theta_polish,
+        )
+    } else if mo_w > 0.0 {
+        mean_mo_objective(
+            &theta, INNER_FIT_START, INNER_FIT_COUNT, n, lambda, mo_w, bake, seam, theta_polish,
+        )
+    } else {
+        mean_unsupervised_loss_pipe(
+            &theta, INNER_FIT_START, INNER_FIT_COUNT, n, lambda, bake, seam, theta_polish,
+        )
+    };
+
+    let mut plateau = 0usize;
+    let mut steps = 0usize;
+    let mut converged = false;
+    let mut step_idx = 0usize;
+
+    while steps < CONV_MAX_SWEEPS {
+        let step = CONV_STEPS[step_idx.min(CONV_STEPS.len() - 1)];
+        let cur = coord_sweep(
+            &mut theta,
+            lambda,
+            n,
+            step,
+            residual_primary,
+            mo_w,
+            bake,
+            seam,
+            theta_polish,
+            maximize,
+        );
+        steps += 1;
+        let denom = prev.abs().max(1e-6);
+        let rel = (prev - cur).abs() / denom;
+        if rel < CONV_EPS {
+            plateau += 1;
+            if plateau >= CONV_PATIENCE {
+                converged = true;
+                break;
+            }
+        } else {
+            plateau = 0;
+            // Advance coarseness only when making progress.
+            if step_idx + 1 < CONV_STEPS.len() && steps % 3 == 0 {
+                step_idx += 1;
+            }
+        }
+        prev = cur;
+    }
+
+    if refine_lambda && !residual_primary {
+        let (lam2, _) = refine_lambda_1d(&theta, lambda, n, bake, seam, theta_polish);
+        lambda = lam2;
+        // One fine re-sweep at refined λ.
+        let _ = coord_sweep(
+            &mut theta,
+            lambda,
+            n,
+            0.04,
+            false,
+            mo_w,
+            bake,
+            seam,
+            theta_polish,
+            false,
+        );
+        steps += 1;
+    }
+
+    theta[7] = 0.0;
+    let fit_loss = if residual_primary {
+        // Store 1-residual as "loss-like" for logging.
+        1.0 - mean_residual_fit(
+            &theta, INNER_FIT_START, INNER_FIT_COUNT, n, bake, seam, theta_polish,
+        )
+    } else {
+        mean_unsupervised_loss_pipe(
+            &theta, INNER_FIT_START, INNER_FIT_COUNT, n, lambda, bake, seam, theta_polish,
+        )
+    };
+
+    FitResult {
+        theta,
+        lambda,
+        fit_loss,
+        conv_steps: steps,
+        converged,
+    }
+}
+
+/// Inner coordinate descent on unsupervised loss (nested bi-level step) — legacy fixed sweeps.
 fn inner_loss_optimize(
     mut theta: [f32; N_THETA],
     mut lambda: f32,
@@ -167,7 +536,6 @@ fn inner_loss_optimize(
         }
         lambda = best_lam;
         cur_l = best_l;
-        // One cheap re-sweep at refined λ.
         let step = 0.05f32;
         for i in 0..N_THETA {
             if i == 7 {
@@ -205,6 +573,28 @@ fn eval_theta_fast(
     n: usize,
     lambda: f32,
 ) -> (f32, f32, f32, f32, f32) {
+    eval_pipeline_fast(
+        theta,
+        start_seed,
+        count,
+        n,
+        lambda,
+        None,
+        SeamStyle::Adaptive,
+        false,
+    )
+}
+
+fn eval_pipeline_fast(
+    theta: &[f32; N_THETA],
+    start_seed: u64,
+    count: usize,
+    n: usize,
+    lambda: f32,
+    bake: Option<PeriodizeAlgo>,
+    seam: SeamStyle,
+    theta_polish: bool,
+) -> (f32, f32, f32, f32, f32) {
     let mut sum_l = 0.0f32;
     let mut sum_d = 0.0f32;
     let mut sum_s = 0.0f32;
@@ -214,7 +604,7 @@ fn eval_theta_fast(
         let (_, ideal) = generate_sound_ideal(seed, n);
         let (_, raw) = generate_sound(seed, n);
         let mut out = raw.clone();
-        apply_denoise_theta(&mut out, 0.0, theta);
+        apply_pipeline(&mut out, theta, bake, seam, theta_polish);
         let (l, d, s, _) = score_with_lambda(&raw, &out, lambda);
         sum_l += l;
         sum_d += d;
@@ -240,6 +630,13 @@ impl Rng {
     fn range(&mut self, lo: f32, hi: f32) -> f32 {
         lo + (hi - lo) * self.f01()
     }
+    fn usize(&mut self, n: usize) -> usize {
+        if n == 0 {
+            0
+        } else {
+            (self.next() as usize) % n
+        }
+    }
 }
 
 /// Literature-informed prior families (HPO / PBT / multi-objective / bi-level).
@@ -247,19 +644,12 @@ fn sample_trial(rng: &mut Rng, idx: usize) -> (TrialHp, [f32; N_THETA]) {
     let bucket = idx % 7;
     let (prior, lam_lo, lam_hi, fade_lo, fade_hi, pol_lo, pol_hi, sweeps, refine_lam) =
         match bucket {
-            // Bayesian-HPO style: denser around previously good λ≈0.85
             0 => ("bayes_local", 0.55, 1.25, 0.9, 1.35, 0.7, 1.05, 1usize, true),
-            // PBT exploit: mutate near champion + nested loss opt
             1 => ("pbt_exploit", 0.7, 1.0, 1.05, 1.35, 0.85, 1.05, 2, true),
-            // Multi-objective / shape-first (higher λ)
             2 => ("mo_shape", 1.2, 2.2, 0.65, 1.0, 0.4, 0.75, 1, false),
-            // Aggressive denoise (low λ, long fade)
             3 => ("aggressive", 0.35, 0.75, 1.15, 1.5, 0.9, 1.1, 1, false),
-            // Evolutionary wide explore — mutate-only control (no inner loss opt)
             4 => ("evo_explore", 0.3, 2.5, 0.5, 1.6, 0.3, 1.1, 0, false),
-            // Algorithm-config racing: mid band
             5 => ("racing_mid", 0.8, 1.4, 0.85, 1.2, 0.6, 0.95, 1, true),
-            // Explicit bi-level: deeper θ fit + joint λ refine
             _ => ("bilevel_loss", 0.5, 1.6, 0.75, 1.35, 0.55, 1.05, 2, true),
         };
     let hp = TrialHp {
@@ -275,13 +665,11 @@ fn sample_trial(rng: &mut Rng, idx: usize) -> (TrialHp, [f32; N_THETA]) {
         algo_seed: 10_000 + idx as u64,
         prior,
     };
-    // Base θ: frozen + small Gaussian-ish noise (PBT mutation)
     let mut theta = FROZEN_THETA;
     for t in theta.iter_mut() {
         let noise = (rng.f01() - 0.5) * 0.22;
         *t = (*t + noise).clamp(0.0, 1.0);
     }
-    // Apply hyper biases
     theta[0] = (theta[0] * hp.detrend_bias).clamp(0.0, 1.0);
     theta[1] = (theta[1] * hp.fade_scale_bias).clamp(0.0, 1.0);
     theta[3] = hp.ease_bias.clamp(0.0, 1.0);
@@ -292,7 +680,217 @@ fn sample_trial(rng: &mut Rng, idx: usize) -> (TrialHp, [f32; N_THETA]) {
     (hp, theta)
 }
 
+fn bake_from_atom(a: OpAtom) -> (Option<PeriodizeAlgo>, SeamStyle, bool) {
+    match a {
+        OpAtom::BakeDualCosine => (Some(PeriodizeAlgo::DualCosine), SeamStyle::Adaptive, true),
+        OpAtom::BakeClassic => (Some(PeriodizeAlgo::Classic), SeamStyle::Adaptive, true),
+        OpAtom::BakeSoft => (Some(PeriodizeAlgo::DualCosine), SeamStyle::Soft, true),
+        OpAtom::BakeEnsembleV3 => (Some(PeriodizeAlgo::EnsembleV3), SeamStyle::Adaptive, true),
+        OpAtom::BakeCrossfade => (Some(PeriodizeAlgo::Crossfade), SeamStyle::Adaptive, true),
+        _ => (None, SeamStyle::Adaptive, false),
+    }
+}
+
+/// Sample a combinatorial hybrid: 1–3 operator atoms (search ± bake).
+fn sample_combo(rng: &mut Rng, idx: usize) -> (ComboTrial, [f32; N_THETA]) {
+    let n_ops = 1 + rng.usize(3); // 1, 2, or 3
+    let mut ops: Vec<OpAtom> = Vec::with_capacity(n_ops);
+    // Always include at least one search atom.
+    ops.push(OpAtom::SEARCH[rng.usize(OpAtom::SEARCH.len())]);
+    while ops.len() < n_ops {
+        let use_bake = rng.f01() < 0.35;
+        let cand = if use_bake {
+            OpAtom::BAKE[rng.usize(OpAtom::BAKE.len())]
+        } else {
+            OpAtom::SEARCH[rng.usize(OpAtom::SEARCH.len())]
+        };
+        if !ops.contains(&cand) {
+            ops.push(cand);
+        } else if ops.len() == 1 {
+            // Force progress on collision.
+            ops.push(OpAtom::SEARCH[(idx + ops.len()) % OpAtom::SEARCH.len()]);
+            break;
+        }
+    }
+
+    let mut residual_primary = false;
+    let mut use_racing = false;
+    let mut use_pbt = false;
+    let mut use_mo_weight = 0.0f32;
+    let mut refine_lambda = false;
+    let mut bake = None;
+    let mut seam = SeamStyle::Adaptive;
+    let mut theta_polish = false;
+    let mut lam_lo = 0.4f32;
+    let mut lam_hi = 1.8f32;
+    let mut noise_scale = 0.22f32;
+
+    for &a in &ops {
+        match a {
+            OpAtom::BayesLocal => {
+                lam_lo = 0.55;
+                lam_hi = 1.25;
+                noise_scale = 0.12;
+                refine_lambda = true;
+            }
+            OpAtom::PbtExploit => {
+                use_pbt = true;
+                noise_scale = 0.10;
+                refine_lambda = true;
+            }
+            OpAtom::IraceRacing => {
+                use_racing = true;
+            }
+            OpAtom::MoeadShape => {
+                use_mo_weight = rng.range(0.25, 0.65);
+                lam_lo = 1.0;
+                lam_hi = 2.2;
+            }
+            OpAtom::EvoExplore => {
+                noise_scale = 0.35;
+                lam_lo = 0.3;
+                lam_hi = 2.5;
+            }
+            OpAtom::N2nUnsup => {
+                refine_lambda = true;
+                noise_scale = (noise_scale + 0.15).min(0.4);
+            }
+            OpAtom::BilevelNested => {
+                refine_lambda = true;
+            }
+            OpAtom::ResidualPrimary => {
+                residual_primary = true;
+            }
+            OpAtom::BakeDualCosine
+            | OpAtom::BakeClassic
+            | OpAtom::BakeSoft
+            | OpAtom::BakeEnsembleV3
+            | OpAtom::BakeCrossfade => {
+                let (b, s, polish) = bake_from_atom(a);
+                bake = b;
+                seam = s;
+                theta_polish = polish;
+            }
+        }
+    }
+
+    let labels: Vec<&'static str> = ops.iter().map(|o| o.label()).collect();
+    let family = labels.join("+");
+    let hp_lam = rng.range(lam_lo, lam_hi);
+
+    let mut theta = FROZEN_THETA;
+    for t in theta.iter_mut() {
+        let noise = (rng.f01() - 0.5) * noise_scale;
+        *t = (*t + noise).clamp(0.0, 1.0);
+    }
+    theta[7] = 0.0;
+
+    let trial = ComboTrial {
+        name: format!("combo_{idx}_{family}"),
+        family,
+        ops: labels,
+        lambda_shape: hp_lam,
+        residual_primary,
+        use_racing,
+        use_pbt,
+        use_mo_weight,
+        bake,
+        seam,
+        theta_polish,
+        refine_lambda,
+        algo_seed: 20_000 + idx as u64,
+    };
+    (trial, theta)
+}
+
+/// irace-style: race a small population on growing budgets; keep winners.
+fn race_init_population(
+    rng: &mut Rng,
+    base: [f32; N_THETA],
+    n_cand: usize,
+) -> Vec<[f32; N_THETA]> {
+    let mut pop = Vec::with_capacity(n_cand);
+    pop.push(base);
+    for _ in 1..n_cand {
+        let mut t = base;
+        for x in t.iter_mut() {
+            *x = (*x + (rng.f01() - 0.5) * 0.18).clamp(0.0, 1.0);
+        }
+        t[7] = 0.0;
+        pop.push(t);
+    }
+    pop
+}
+
+fn race_select(
+    pop: &mut Vec<[f32; N_THETA]>,
+    trial: &ComboTrial,
+    n: usize,
+    budgets: &[usize],
+) {
+    for &budget in budgets {
+        let mut scored: Vec<(f32, [f32; N_THETA])> = pop
+            .iter()
+            .map(|th| {
+                let score = if trial.residual_primary {
+                    mean_residual_fit(
+                        th,
+                        INNER_FIT_START,
+                        budget,
+                        n,
+                        trial.bake,
+                        trial.seam,
+                        trial.theta_polish,
+                    )
+                } else {
+                    -mean_unsupervised_loss_pipe(
+                        th,
+                        INNER_FIT_START,
+                        budget,
+                        n,
+                        trial.lambda_shape,
+                        trial.bake,
+                        trial.seam,
+                        trial.theta_polish,
+                    )
+                };
+                (score, *th)
+            })
+            .collect();
+        scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+        let keep = (scored.len() / 2).max(1);
+        *pop = scored.into_iter().take(keep).map(|(_, t)| t).collect();
+    }
+}
+
+/// PBT-style exploit: copy elite, mutate offspring.
+fn pbt_exploit_mutate(rng: &mut Rng, elite: [f32; N_THETA], n_offspring: usize) -> Vec<[f32; N_THETA]> {
+    let mut out = vec![elite];
+    for _ in 0..n_offspring {
+        let mut t = elite;
+        for x in t.iter_mut() {
+            if rng.f01() < 0.4 {
+                *x = (*x + (rng.f01() - 0.5) * 0.2).clamp(0.0, 1.0);
+            }
+        }
+        t[7] = 0.0;
+        out.push(t);
+    }
+    out
+}
+
 fn family_stress(theta: &[f32; N_THETA], lambda: f32, n: usize) -> Vec<serde_json::Value> {
+    family_stress_pipe(theta, lambda, n, None, SeamStyle::Adaptive, false)
+}
+
+fn family_stress_pipe(
+    theta: &[f32; N_THETA],
+    lambda: f32,
+    n: usize,
+    bake: Option<PeriodizeAlgo>,
+    seam: SeamStyle,
+    theta_polish: bool,
+) -> Vec<serde_json::Value> {
     let mut fam_q = Vec::new();
     for fam in [
         BenchFamily::ExtremeOverlay,
@@ -311,7 +909,7 @@ fn family_stress(theta: &[f32; N_THETA], lambda: f32, n: usize) -> Vec<serde_jso
                 let (_, ideal) = generate_sound_ideal(seed, n);
                 let (_, raw) = generate_sound(seed, n);
                 let mut out = raw.clone();
-                apply_denoise_theta(&mut out, 0.0, theta);
+                apply_pipeline(&mut out, theta, bake, seam, theta_polish);
                 let (_, d, s, _) = score_with_lambda(&raw, &out, lambda);
                 qd += d;
                 qs += s;
@@ -332,6 +930,396 @@ fn family_stress(theta: &[f32; N_THETA], lambda: f32, n: usize) -> Vec<serde_jso
     fam_q
 }
 
+fn eval_bake_baseline(
+    algo: PeriodizeAlgo,
+    seam: SeamStyle,
+    start_seed: u64,
+    count: usize,
+    n: usize,
+) -> (f32, f32, f32, f32) {
+    let mut sum_d = 0.0f32;
+    let mut sum_s = 0.0f32;
+    let mut sum_r = 0.0f32;
+    for k in 0..count {
+        let seed = start_seed + k as u64;
+        let (_, ideal) = generate_sound_ideal(seed, n);
+        let (_, raw) = generate_sound(seed, n);
+        let mut out = raw.clone();
+        periodize_with_algo(&mut out, 0.0, seam, algo);
+        let (_, d, s, _) = score_with_lambda(&raw, &out, 1.0);
+        sum_d += d;
+        sum_s += s;
+        sum_r += residual_for_cycle(&ideal, &out);
+    }
+    let c = count.max(1) as f32;
+    let d = sum_d / c;
+    let s = sum_s / c;
+    (d, s, 0.5 * (d + s), sum_r / c)
+}
+
+/// Literature + combinatorial hybrid meta search with fit-until-convergence.
+///
+/// Wall-clock for the outer `n_trials` loop is recorded separately from post-hoc
+/// refine / baseline matrix work.
+pub fn run_lit_combo_meta_n(
+    n_trials: usize,
+    val_fast: usize,
+    val_final: usize,
+) -> serde_json::Value {
+    let t_total = std::time::Instant::now();
+    let n = BENCH_N;
+    let mut rng = Rng(0x71C0_CB01); // lit-combo seed
+    let val_start = 55_000u64;
+    let n_trials = n_trials.max(1);
+    let val_fast = val_fast.max(1);
+    let val_final = val_final.max(1);
+
+    // (meta_rank, trial, fit, loss, d, s, q, residual)
+    let mut scored: Vec<(f32, ComboTrial, FitResult, f32, f32, f32, f32, f32)> =
+        Vec::with_capacity(n_trials);
+
+    let t_iters = std::time::Instant::now();
+    for i in 0..n_trials {
+        let (mut trial, theta0) = sample_combo(&mut rng, i);
+
+        // Optional racing / PBT to choose init before convergence fit.
+        let mut init = theta0;
+        if trial.use_racing {
+            let mut pop = race_init_population(&mut rng, init, 4);
+            race_select(&mut pop, &trial, n, &[8, 16, 32]);
+            init = pop[0];
+        }
+        if trial.use_pbt {
+            let pop = pbt_exploit_mutate(&mut rng, init, 3);
+            // Score residual-primary or -loss; keep best.
+            let mut best_s = f32::NEG_INFINITY;
+            let mut best_t = init;
+            for th in &pop {
+                let s = if trial.residual_primary {
+                    mean_residual_fit(
+                        th,
+                        INNER_FIT_START,
+                        24,
+                        n,
+                        trial.bake,
+                        trial.seam,
+                        trial.theta_polish,
+                    )
+                } else {
+                    -mean_unsupervised_loss_pipe(
+                        th,
+                        INNER_FIT_START,
+                        24,
+                        n,
+                        trial.lambda_shape,
+                        trial.bake,
+                        trial.seam,
+                        trial.theta_polish,
+                    )
+                };
+                if s > best_s {
+                    best_s = s;
+                    best_t = *th;
+                }
+            }
+            init = best_t;
+        }
+
+        let fit = fit_until_convergence(
+            init,
+            trial.lambda_shape,
+            n,
+            trial.residual_primary,
+            trial.use_mo_weight,
+            trial.bake,
+            trial.seam,
+            trial.theta_polish,
+            trial.refine_lambda,
+        );
+        trial.lambda_shape = fit.lambda;
+
+        let (loss, d, s, q, residual) = eval_pipeline_fast(
+            &fit.theta,
+            val_start,
+            val_fast,
+            n,
+            trial.lambda_shape,
+            trial.bake,
+            trial.seam,
+            trial.theta_polish,
+        );
+        let meta = meta_rank(residual, s);
+        scored.push((meta, trial, fit, loss, d, s, q, residual));
+
+        if i % 50 == 0 || (n_trials <= 40 && i % 5 == 0) {
+            eprintln!(
+                "lit-combo progress {i}/{n_trials} best_residual_rank={:.4} last_conv_steps={}",
+                scored.iter().map(|t| t.0).fold(0.0f32, f32::max),
+                scored.last().map(|t| t.2.conv_steps).unwrap_or(0)
+            );
+        }
+    }
+    let iterations_elapsed = t_iters.elapsed();
+    let iterations_elapsed_ms = iterations_elapsed.as_millis() as u64;
+    let iterations_elapsed_sec = iterations_elapsed.as_secs_f64();
+
+    scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+
+    // Refine top 12
+    let top_refine = scored.len().min(12);
+    let mut refined = Vec::new();
+    for (meta, trial, fit, _, _, _, _, _) in scored.iter().take(top_refine) {
+        let (loss, d, s, q, residual) = eval_pipeline_fast(
+            &fit.theta,
+            70_000,
+            val_final,
+            n,
+            trial.lambda_shape,
+            trial.bake,
+            trial.seam,
+            trial.theta_polish,
+        );
+        let meta2 = meta_rank(residual, s);
+        let fam = family_stress_pipe(
+            &fit.theta,
+            trial.lambda_shape,
+            n,
+            trial.bake,
+            trial.seam,
+            trial.theta_polish,
+        );
+        refined.push(json!({
+            "name": trial.name,
+            "family": trial.family,
+            "ops": trial.ops,
+            "meta_score_fast": meta,
+            "meta_score": meta2,
+            "residual": residual,
+            "convergence": {
+                "steps": fit.conv_steps,
+                "converged": fit.converged,
+                "fit_loss": fit.fit_loss,
+                "criterion": format!(
+                    "rel_improve < {CONV_EPS} for {CONV_PATIENCE} consecutive sweeps; max {CONV_MAX_SWEEPS}"
+                ),
+            },
+            "hyper": {
+                "lambda_shape": trial.lambda_shape,
+                "residual_primary": trial.residual_primary,
+                "use_racing": trial.use_racing,
+                "use_pbt": trial.use_pbt,
+                "mo_weight": trial.use_mo_weight,
+                "bake": trial.bake.map(|a| a.label()),
+                "seam": match trial.seam {
+                    SeamStyle::Soft => "soft",
+                    SeamStyle::Adaptive => "adaptive",
+                    SeamStyle::Raw => "raw",
+                },
+                "theta_polish": trial.theta_polish,
+                "refine_lambda": trial.refine_lambda,
+                "algo_seed": trial.algo_seed,
+            },
+            "theta": fit.theta.as_slice(),
+            "val": {
+                "loss": loss,
+                "denoise": d,
+                "shape": s,
+                "quality": q,
+                "residual": residual,
+            },
+            "family_stress": fam,
+        }));
+    }
+    refined.sort_by(|a, b| {
+        b["meta_score"]
+            .as_f64()
+            .unwrap_or(0.0)
+            .partial_cmp(&a["meta_score"].as_f64().unwrap_or(0.0))
+            .unwrap()
+    });
+
+    let top4: Vec<_> = refined.iter().take(4).cloned().collect();
+
+    // Bake baselines from artifact_reduce (+ Soft seam variant).
+    let mut bake_baselines = Vec::new();
+    for &algo in PeriodizeAlgo::ALL {
+        let (d, s, q, r) = eval_bake_baseline(algo, SeamStyle::Adaptive, 60_000, val_final, n);
+        bake_baselines.push(json!({
+            "algo": algo.label(),
+            "kind": "bake_baseline",
+            "seam": "adaptive",
+            "denoise": d,
+            "shape": s,
+            "quality": q,
+            "residual": r,
+        }));
+    }
+    let (d, s, q, r) =
+        eval_bake_baseline(PeriodizeAlgo::DualCosine, SeamStyle::Soft, 60_000, val_final, n);
+    bake_baselines.push(json!({
+        "algo": "dual_cosine_soft",
+        "kind": "bake_baseline",
+        "seam": "soft",
+        "denoise": d,
+        "shape": s,
+        "quality": q,
+        "residual": r,
+    }));
+
+    let mut five = Vec::new();
+    let naive = bake_baselines
+        .iter()
+        .find(|b| b["algo"] == "dual_cosine")
+        .cloned()
+        .unwrap_or(json!({}));
+    five.push(json!({
+        "algo": "naive_dual_cosine",
+        "kind": "naive",
+        "denoise": naive["denoise"],
+        "shape": naive["shape"],
+        "quality": naive["quality"],
+        "residual": naive["residual"],
+        "rank": 0,
+    }));
+
+    for (i, t) in top4.iter().enumerate() {
+        five.push(json!({
+            "algo": format!("meta_top{}", i + 1),
+            "kind": "meta_combo",
+            "lambda": t["hyper"]["lambda_shape"],
+            "denoise": t["val"]["denoise"],
+            "shape": t["val"]["shape"],
+            "quality": t["val"]["quality"],
+            "residual": t["val"]["residual"],
+            "rank": i + 1,
+            "theta": t["theta"],
+            "family": t["family"],
+            "ops": t["ops"],
+            "trial_name": t["name"],
+            "convergence_steps": t["convergence"]["steps"],
+        }));
+    }
+
+    let mut fd = 0.0f32;
+    let mut fs = 0.0f32;
+    let mut fr = 0.0f32;
+    for k in 0..val_final {
+        let seed = 60_000 + k as u64;
+        let (_, ideal) = generate_sound_ideal(seed, n);
+        let (_, raw) = generate_sound(seed, n);
+        let mut out = raw.clone();
+        apply_denoise_opt(&mut out, 0.0);
+        let (_, d, s, _) = score_with_lambda(&raw, &out, 1.0);
+        fd += d;
+        fs += s;
+        fr += residual_for_cycle(&ideal, &out);
+    }
+    let c = val_final as f32;
+
+    let artifact = if n_trials >= 500 {
+        "brand/artifacts/denoise_opt_meta_lit_combo_500.json"
+    } else {
+        "brand/artifacts/denoise_opt_meta_lit_combo_sanity.json"
+    };
+
+    let mean_conv: f64 = if scored.is_empty() {
+        0.0
+    } else {
+        scored.iter().map(|t| t.2.conv_steps as f64).sum::<f64>() / scored.len() as f64
+    };
+    let pct_converged = if scored.is_empty() {
+        0.0
+    } else {
+        100.0 * scored.iter().filter(|t| t.2.converged).count() as f64 / scored.len() as f64
+    };
+
+    let total_elapsed = t_total.elapsed();
+    let report = json!({
+        "title": "DenoiseOpt lit-combo meta (fit-until-convergence + hybrid operators)",
+        "n_trials": n_trials,
+        "val_fast": val_fast,
+        "val_final": val_final,
+        "cycle_n": n,
+        "prolong_periods": PROLONG,
+        "inner_fit_count": INNER_FIT_COUNT,
+        "iterations_elapsed_ms": iterations_elapsed_ms,
+        "iterations_elapsed_sec": iterations_elapsed_sec,
+        "total_elapsed_ms": total_elapsed.as_millis() as u64,
+        "total_elapsed_sec": total_elapsed.as_secs_f64(),
+        "seconds": iterations_elapsed_sec,
+        "convergence": {
+            "eps": CONV_EPS,
+            "patience": CONV_PATIENCE,
+            "max_sweeps": CONV_MAX_SWEEPS,
+            "step_schedule": CONV_STEPS.as_slice(),
+            "criterion": "relative |J_prev-J_cur|/max(|J_prev|,1e-6) < eps for patience consecutive coordinate sweeps; else stop at max_sweeps. Residual-primary maximizes residual; else minimize unsupervised L (or MOEA/D scalarization).",
+            "mean_conv_steps": mean_conv,
+            "pct_converged": pct_converged,
+        },
+        "literature_families": [
+            "baseline_bake — DualCosine/Classic/Soft/Ensemble*/Crossfade (artifact_reduce seam race)",
+            "bayes_local — Bayesian/local HPO densify around good λ (Snoek/BOHB-style)",
+            "pbt_exploit — Population-Based Training exploit+mutate (Jaderberg)",
+            "irace_racing — racing / irace progressive discard (López-Ibáñez)",
+            "moead_shape — MOEA/D weighted residual↔shape (Zhang & Li)",
+            "evo_explore — evolutionary wide θ mutation",
+            "n2n_unsup — Noise2Noise-style unsupervised L fit (Lehtinen)",
+            "bilevel_nested — nested inner L / outer residual",
+            "residual_primary — converge by maximizing prolonged residual",
+            "hybrids — pairs/triples of the above (race+pbt, evo+loss_opt, mo+residual, bake+θ polish, …)",
+        ],
+        "meta_objective": "outer maximize residual_score (soft gate S>=0.97); inner fit-until-convergence on L or residual/MO; D/S auxiliaries",
+        "residual_formula": "score = clamp(1 - rms(engine_tiled - ideal_tiled) / max(rms(ideal_tiled), 1e-6), 0, 1)",
+        "champion": top4.first().cloned().unwrap_or(json!({})),
+        "top4": top4,
+        "benchmark_matrix_5": five,
+        "bake_baselines": bake_baselines,
+        "production_frozen": {
+            "denoise": fd / c,
+            "shape": fs / c,
+            "quality": 0.5 * (fd + fs) / c,
+            "residual": fr / c,
+        },
+        "pareto_top20_fast": scored.iter().take(20).map(|(meta, trial, fit, loss, d, s, q, residual)| json!({
+            "meta_score": meta,
+            "residual": residual,
+            "name": trial.name,
+            "family": trial.family,
+            "ops": trial.ops,
+            "lambda": trial.lambda_shape,
+            "conv_steps": fit.conv_steps,
+            "converged": fit.converged,
+            "val_fast": { "loss": loss, "denoise": d, "shape": s, "quality": q, "residual": residual },
+            "theta": fit.theta.as_slice(),
+        })).collect::<Vec<_>>(),
+        "per_algo_scores": scored.iter().map(|(meta, trial, fit, loss, d, s, q, residual)| json!({
+            "name": trial.name,
+            "family": trial.family,
+            "ops": trial.ops,
+            "meta_score": meta,
+            "residual": residual,
+            "denoise": d,
+            "shape": s,
+            "quality": q,
+            "loss": loss,
+            "conv_steps": fit.conv_steps,
+            "converged": fit.converged,
+            "fit_loss": fit.fit_loss,
+            "lambda": trial.lambda_shape,
+        })).collect::<Vec<_>>(),
+        "artifact_path": artifact,
+        "sessionId": "0ab8f9",
+        "runId": if n_trials >= 500 { "meta-lit-combo-500" } else { "meta-lit-combo-sanity" },
+        "build_notes": "release recommended; BENCH_N cycle length; INNER_FIT_COUNT seeds per inner eval; prolong=16",
+    });
+
+    let _ = std::fs::create_dir_all("brand/artifacts");
+    if let Ok(s) = serde_json::to_string_pretty(&report) {
+        let _ = std::fs::write(artifact, &s);
+    }
+    report
+}
+
 /// Configurable meta search (use `n_trials=40` for a fast sanity check).
 pub fn run_meta_learning_search_n(
     n_trials: usize,
@@ -346,7 +1334,6 @@ pub fn run_meta_learning_search_n(
     let val_fast = val_fast.max(1);
     let val_final = val_final.max(1);
 
-    // (meta_rank, hp, theta, loss, d, s, q, residual)
     let mut scored: Vec<(f32, TrialHp, [f32; N_THETA], f32, f32, f32, f32, f32)> =
         Vec::with_capacity(n_trials);
 
@@ -368,17 +1355,13 @@ pub fn run_meta_learning_search_n(
         if i % 250 == 0 || (n_trials <= 100 && i % 10 == 0) {
             eprintln!(
                 "meta progress {i}/{n_trials} best_residual_rank={:.4}",
-                scored
-                    .iter()
-                    .map(|t| t.0)
-                    .fold(0.0f32, f32::max)
+                scored.iter().map(|t| t.0).fold(0.0f32, f32::max)
             );
         }
     }
 
     scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
 
-    // Refine top 12 with larger validation
     let top_refine = scored.len().min(12);
     let mut refined = Vec::new();
     for (meta, hp, theta, _, _, _, _, _) in scored.iter().take(top_refine) {
@@ -577,35 +1560,6 @@ pub fn run_meta_learning_search_n(
     if let Ok(s) = serde_json::to_string_pretty(&report) {
         let _ = std::fs::write(artifact, &s);
     }
-    // #region agent log
-    if let Ok(mut f) = std::fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open("debug-0ab8f9.log")
-    {
-        use std::io::Write;
-        let _ = writeln!(
-            f,
-            "{}",
-            json!({
-                "sessionId": "0ab8f9",
-                "runId": report["runId"],
-                "message": "meta trials complete (residual objective)",
-                "data": {
-                    "n_trials": n_trials,
-                    "champion": report["champion"]["name"],
-                    "champion_residual": report["champion"]["val"]["residual"],
-                    "champion_meta": report["champion"]["meta_score"],
-                    "seconds": report["seconds"],
-                },
-                "timestamp": std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .map(|d| d.as_millis())
-                    .unwrap_or(0),
-            })
-        );
-    }
-    // #endregion
     report
 }
 
@@ -637,9 +1591,38 @@ mod tests {
     }
 
     #[test]
+    fn sample_combo_has_ops() {
+        let mut rng = Rng(99);
+        let (trial, theta) = sample_combo(&mut rng, 3);
+        assert!(!trial.ops.is_empty());
+        assert!(!trial.family.is_empty());
+        assert_eq!(theta[7], 0.0);
+    }
+
+    #[test]
+    fn fit_until_convergence_stops() {
+        let mut rng = Rng(7);
+        let (trial, theta0) = sample_combo(&mut rng, 1);
+        let fit = fit_until_convergence(
+            theta0,
+            trial.lambda_shape,
+            128,
+            false,
+            0.0,
+            None,
+            SeamStyle::Adaptive,
+            false,
+            true,
+        );
+        assert!(fit.conv_steps >= 1);
+        assert!(fit.conv_steps <= CONV_MAX_SWEEPS + 1); // +1 optional λ re-sweep
+        assert_eq!(fit.theta[7], 0.0);
+    }
+
+    #[test]
     fn inner_loss_opt_does_not_increase_fit_loss() {
         let mut rng = Rng(42);
-        let (hp, theta0) = sample_trial(&mut rng, 6); // bilevel_loss bucket
+        let (hp, theta0) = sample_trial(&mut rng, 6);
         let l0 = mean_unsupervised_loss(&theta0, INNER_FIT_START, INNER_FIT_COUNT, 128, hp.lambda_shape);
         let (theta1, lam1, l1) =
             inner_loss_optimize(theta0, hp.lambda_shape, 128, 1, true);
@@ -694,7 +1677,6 @@ mod tests {
                 "seed {seed} residual={s} out of [0,1]"
             );
         }
-        // Empty / mismatched edge
         assert_eq!(residual_score(&[], &[]), 0.0);
         let a = [1.0f32, -1.0];
         let b = tile_cycle(&a, 3);
@@ -705,7 +1687,6 @@ mod tests {
 
     #[test]
     fn ideal_matches_engine_when_no_wrap_applied() {
-        // Seeds without open-wrap must share identical baked cycles.
         let mut matched = 0u32;
         for seed in 0..200u64 {
             let (_, a) = generate_sound_ideal(seed, 64);
