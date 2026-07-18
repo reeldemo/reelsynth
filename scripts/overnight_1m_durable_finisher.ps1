@@ -1,5 +1,5 @@
 ﻿# overnight_1m_durable_finisher.ps1
-# Cursor-independent: polls until 1M (or DONE after 1M), then plots + Klaut paper v4 + commit/push.
+# Cursor-independent: polls until TARGET 250k (or DONE after target), then plots + Klaut paper v4 + commit/push.
 # Launch with Start-Process -WindowStyle Hidden so it survives Cursor exit.
 
 $ErrorActionPreference = "Continue"
@@ -13,7 +13,7 @@ $Latest = Join-Path $Art "overnight_gpu_rl_arch_latest.json"
 $DoneFlag = Join-Path $Art "overnight_gpu_DONE.flag"
 $FinishPy = Join-Path $Repo "scripts\finish_overnight_1m_to_paper.py"
 $VenvPy = Join-Path $Repo ".venv_gpu\Scripts\python.exe"
-$TargetIters = 1000000
+$TargetIters = 250000
 $PollSec = 120
 $MaxWaitHours = 240
 
@@ -68,15 +68,15 @@ function Test-OneMillionDone {
 function Ensure-JobIfDead {
   $alive, $jobs = Test-TrainingAlive
   if ($alive) { return }
-  Log "TRAINING_DEAD - restarting via start_overnight_gpu_detached.ps1 (1M max-hours 240 PPO+GA+depth+MoE)"
+  Log "TRAINING_DEAD - restarting via start_overnight_gpu_detached.ps1 (250k max-hours 240 PPO+GA+depth+MoE)"
   $launcher = Join-Path $Repo "scripts\start_overnight_gpu_detached.ps1"
   if (Test-Path $launcher) {
-    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $launcher -Iters 1000000 -MaxHours 240 -HistoryEvery 1 -Device cuda -Seed 1902771841 -AlgoTag "PPO+GA+PBT+NAS+depth+MoE"
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $launcher -Iters 250000 -MaxHours 240 -HistoryEvery 1 -Device cuda -Seed 1902771841 -AlgoTag "PPO+GA+PBT+NAS+depth+MoE"
   } else {
     if (-not (Test-Path $VenvPy)) { Log "NO_VENV"; return }
     $argList = @(
       (Join-Path $Repo "scripts\overnight_gpu_rl_arch.py"),
-      "--iters", "1000000", "--device", "cuda", "--max-hours", "240", "--history-every", "1", "--seed", "1902771841", "--pop-size", "12", "--algo-tag", "PPO+GA+PBT+NAS+depth+MoE"
+      "--iters", "250000", "--device", "cuda", "--max-hours", "240", "--history-every", "1", "--seed", "1902771841", "--pop-size", "12", "--algo-tag", "PPO+GA+PBT+NAS+depth+MoE"
     )
     Start-Process -FilePath $VenvPy -ArgumentList $argList -WorkingDirectory $Repo -WindowStyle Hidden
   }
@@ -133,7 +133,7 @@ function Invoke-FinishPipeline {
     git add paper/v4 paper/klaut_artifacts 2>$null
     $pending = git status --porcelain paper/v4 paper/klaut_artifacts
     if ($pending) {
-      git commit -m "docs(paper): ship DenoiseOpt v4 after 1M overnight RL/NAS run"
+      git commit -m "docs(paper): ship DenoiseOpt v4 after 250k overnight RL/NAS run"
       git push origin HEAD
       Log "meta pushed"
     } else { Log "meta nothing to commit" }
@@ -148,7 +148,7 @@ function Invoke-FinishPipeline {
     git add brand/artifacts/overnight_1m_pipeline_status.json 2>$null
     $st = git status --porcelain scripts/ brand/artifacts/figures brand/artifacts/overnight_gpu_final_summary.json brand/artifacts/overnight_1m_pipeline_status.json
     if ($st) {
-      git commit -m "chore: 1M overnight figures and durable finisher artifacts"
+      git commit -m "chore: 250k overnight figures and durable finisher artifacts"
       git push origin HEAD
       Log "reelsynth pushed"
     } else { Log "reelsynth nothing critical to commit" }
@@ -171,7 +171,7 @@ $started = Get-Date
 while ($true) {
   $elapsedH = ((Get-Date) - $started).TotalHours
   if ($elapsedH -ge $MaxWaitHours) {
-    Log ("SOFT_DEADLINE " + $MaxWaitHours + "h without 1M - exiting (no false DONE)")
+    Log ("SOFT_DEADLINE " + $MaxWaitHours + "h without target iters - exiting (no false DONE)")
     Write-State @{ phase = "soft_deadline"; elapsed_h = $elapsedH }
     exit 2
   }

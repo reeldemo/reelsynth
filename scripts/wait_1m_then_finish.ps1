@@ -1,5 +1,5 @@
 ﻿# wait_1m_then_finish.ps1
-# Cursor-independent: poll until 1M overnight GPU job completes, then run finish_overnight_1m_to_paper.py.
+# Cursor-independent: poll until TARGET (250k) overnight GPU job completes, then run finish_overnight_1m_to_paper.py.
 # Does NOT kill training. Poll interval 15-30 min (jittered).
 
 $ErrorActionPreference = "Continue"
@@ -14,8 +14,8 @@ $LogFile = Join-Path $Artifacts "wait_1m_finisher.log"
 $PidFile = Join-Path $Artifacts "wait_1m_finisher.pid"
 $Finisher = Join-Path $Repo "scripts\finish_overnight_1m_to_paper.py"
 $Py = Join-Path $Repo ".venv_gpu\Scripts\python.exe"
-$TargetIters = 1000000
-$HighIterFloor = 900000  # if training gone after this, treat as finished enough to attempt finisher
+$TargetIters = 250000
+$HighIterFloor = 225000  # if training gone after this, treat as finished enough to attempt finisher
 
 function UtcNow { (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ") }
 function Log([string]$Message) {

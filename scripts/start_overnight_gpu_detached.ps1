@@ -3,7 +3,7 @@
 # Uses Start-Process Hidden with file redirects — no pipe to calling shell.
 
 param(
-    [int]$Iters = 1000000,
+    [int]$Iters = 250000,
     [double]$MaxHours = 240,
     [int]$HistoryEvery = 1,
     [string]$Device = "cuda",
@@ -63,7 +63,7 @@ $estimate = @(
     "DETACHED_LAUNCH estimate_now=$($now.ToString('yyyy-MM-dd HH:mm:ss')) local",
     "deadline_sun_0800=$($deadline.ToString('yyyy-MM-dd HH:mm:ss')) hours_left≈$hoursLeft",
     "target_iters=$Iters max_hours=$MaxHours history_every=$HistoryEvery",
-    "assumed_rate=${rateAssumed}/s => full_1M_eta_h=$etaHoursAtRate",
+    "assumed_rate=${rateAssumed}/s => full_target_eta_h=$etaHoursAtRate",
     "note=if rate holds, wall clock may hit max-hours before completing all iters; paper target remains $Iters"
 ) -join " | "
 
