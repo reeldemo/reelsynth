@@ -7,6 +7,7 @@ pub mod fx;
 pub mod overtone;
 pub mod crackle_diag;
 pub mod crackle_eam;
+pub mod artifact_reduce;
 pub mod seam;
 pub mod signal_library;
 pub mod voice;

@@ -38,6 +38,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- **Quant seam periodize (eliminate)** — 12 bake algorithms competed on the harsh signal matrix; production path locks **dual cosine** (dual-end + raised-cosine), ~87% mean artifact drop vs untreated and ~34% vs classic quadratic fade. Crackle still scales strength (0=clean, 1=cliff). Share plot: `brand/artifacts/artifact_reduction.png`.
+
 - **Result overlay method** — `add` / `avg` / `avg_equal` combo in the Result pane caption (writes `stack_mode`, live audio)
 
 - **Compose clip strip** — collapsed by default (**Clips ▸**); piano roll is the primary surface with in-toolbar tool hints
