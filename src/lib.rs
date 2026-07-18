@@ -6,6 +6,8 @@ pub mod fm;
 pub mod fx;
 pub mod overtone;
 pub mod crackle_diag;
+pub mod seam;
+pub mod signal_library;
 pub mod voice;
 pub mod scope;
 pub mod import;
@@ -30,6 +32,7 @@ pub use fx::{default_effects, effects_from_bypass, EffectSlot, EffectType, FxByp
 pub use overtone::{
     curve_harshness, OvertoneFilterChain, OvertoneFilterSlot, OvertoneFilterType,
 };
+pub use seam::{periodize_cycle, seam_mode_to_crackle, CrackleVoice, SeamStyle};
 pub use patch::{
     filter_type_label, legacy_filter_slots, normalize_filter_type, Envelope, Filter, FilterSlot,
     FILTER_TYPES, Macro, ModSlot, Oscillator, Patch, WaveLayer, WaveSlot,

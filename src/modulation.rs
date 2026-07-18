@@ -71,6 +71,8 @@ pub fn apply_target_scale(target: &str, src: f32, amount: f32) -> f32 {
         raw * 4000.0
     } else if target == "filter_resonance" {
         raw * 0.5
+    } else if target == "crackle" {
+        raw // already ~-1..1 from amount; clamp applied in apply_mods
     } else {
         raw
     }
@@ -125,6 +127,8 @@ pub fn apply_mods_to_patch(patch: &mut crate::patch::Patch, mods: &HashMap<Strin
         } else if target == "filter_resonance" {
             patch.filter.resonance = (patch.filter.resonance + delta).clamp(0.0, 0.95);
             patch.sync_chain_slot0_from_legacy();
+        } else if target == "crackle" {
+            patch.crackle = (patch.crackle + delta).clamp(0.0, 1.0);
         } else if let Some(rest) = target.strip_prefix("osc") {
             if let Some((idx_str, param)) = rest.split_once('_') {
                 if let Ok(idx) = idx_str.parse::<usize>() {

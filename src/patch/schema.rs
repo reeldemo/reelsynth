@@ -515,6 +515,10 @@ pub struct Patch {
     /// Compose-mode arrangement (clips, scenes, transport defaults).
     #[serde(default)]
     pub sequence: SequenceProject,
+    /// Artistic wrap / edge crackle amount (0 = eliminate / clean, 1 = full cliff grit).
+    /// Modulatable via mod-matrix target `crackle`. Default 0 = professional clean.
+    #[serde(default)]
+    pub crackle: f32,
 }
 
 pub(crate) fn default_filter2() -> Filter {

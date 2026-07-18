@@ -1,6 +1,8 @@
 //! Automated crackle diagnostics — no manual Seam/Add/VA A–B needed.
 //!
-//! Run: `cargo test -p reelsynth --lib -- automated_crackle_debug_suite -- --nocapture`
+//! Run:
+//! - `cargo test -p reelsynth --lib -- automated_crackle_debug_suite -- --nocapture`
+//! - `cargo test -p reelsynth --lib -- signal_library -- --nocapture`
 
 use crate::osc::{sample_stack, sample_va, VaWaveform, WtWarpMode};
 use crate::overtone::{hf_harshness, wrap_harshness};
@@ -284,11 +286,18 @@ mod tests {
         // Quieter avg stack should not be wildly worse than factory lead.
         assert!(quiet_step.is_finite() && lead_step.is_finite());
 
+        // Extensive signal library matrix (singles + combinations).
+        let lib = signal_library::run_library_matrix(256);
+        assert!(lib["single_count"].as_u64().unwrap() >= 28);
+        assert!(lib["combo_count"].as_u64().unwrap() >= 80);
+        eprintln!(
+            "\n=== signal library top crackle risks ===\n{}\n",
+            serde_json::to_string_pretty(&lib["top_crackle_risks"]).unwrap()
+        );
+
         eprintln!(
             "\n=== automated crackle report ===\n{}\n",
             serde_json::to_string_pretty(&data).unwrap()
         );
-
-        let _ = StackMode::Add;
     }
 }

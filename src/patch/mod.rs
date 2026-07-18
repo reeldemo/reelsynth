@@ -117,6 +117,7 @@ impl Patch {
             unison_stereo_spread: default_unison_spread(),
             performance: PerformanceSettings::default(),
             sequence: SequenceProject::default_template(),
+            crackle: 0.0,
         }
     }
 
