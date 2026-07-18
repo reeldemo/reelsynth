@@ -1,4 +1,4 @@
-# overnight_gpu_babysit_1m.ps1
+﻿# overnight_gpu_babysit_1m.ps1
 # Cursor-independent babysit for dense 1M overnight GPU RL.
 # NEVER kills python. Treats .venv_gpu launcher + system-python worker as one job.
 # Completes ONLY when iter >= 1_000_000 (or explicit DONE after that). Soft wall = 168h.
@@ -21,8 +21,8 @@ $HeartbeatSec = 1800
 $TargetIters = 1000000
 $Deadline = (Get-Date).AddHours(168)
 $script:LastRestart = [datetime]::MinValue
-# PPO+PBT+expanded NAS; new seed escapes prior REINFORCE plateau (~0.9779 @ seed 0x0A172730)
-$script:LastArgs = @($Script, "--iters", "1000000", "--device", "cuda", "--max-hours", "168", "--history-every", "1", "--seed", "1590173980", "--pop-size", "12")
+# PPO+PBT+complex lit-arch NAS; seed 0xA0D10A7C (=1701668511)
+$script:LastArgs = @($Script, "--iters", "1000000", "--device", "cuda", "--max-hours", "168", "--history-every", "1", "--seed", "1701668511", "--pop-size", "12", "--algo-tag", "PPO+PBT+NAS+complex_arch")
 $script:KnownLauncher = 0
 $script:KnownWorker = 0
 

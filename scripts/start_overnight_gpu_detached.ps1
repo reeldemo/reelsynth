@@ -7,6 +7,9 @@ param(
     [double]$MaxHours = 168,
     [int]$HistoryEvery = 1,
     [string]$Device = "cuda",
+    [long]$Seed = 1701668511,
+    [int]$PopSize = 12,
+    [string]$AlgoTag = "PPO+PBT+NAS+complex_arch",
     [string]$RepoRoot = ""
 )
 
@@ -50,7 +53,10 @@ $argList = @(
     "--iters", "$Iters",
     "--device", $Device,
     "--max-hours", "$MaxHours",
-    "--history-every", "$HistoryEvery"
+    "--history-every", "$HistoryEvery",
+    "--seed", "$Seed",
+    "--pop-size", "$PopSize",
+    "--algo-tag", $AlgoTag
 )
 
 $estimate = @(

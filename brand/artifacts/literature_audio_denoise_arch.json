@@ -1,0 +1,3432 @@
+{
+  "title": "Audio / signal denoising architectures for DenoiseOpt NAS cells",
+  "n": 167,
+  "n_used": 121,
+  "n_screened_relevant": 42,
+  "n_screened_out": 4,
+  "design_notes": {
+    "constraint": "N=256 cycle + SEAM_W=8 residual bake on RTX 3090; prefer meaningful arch complexity over max it/s",
+    "primary_metric": "residual_score = clamp(1 - residual_rms / max(ideal_rms, 1e-6), 0, 1); 1=best",
+    "baseline": "DualCosine seam blend",
+    "implement_as_searchable_blocks": {
+      "residual": "ResNet-style residual MLP/conv on seam or cycle (He et al. style)",
+      "dense": "DenseNet-lite feature concat within tiny width budget",
+      "unet": "Tiny 1D U-Net encoder-decoder with skip (Wave-U-Net / speech U-Net inspired)",
+      "conv1d": "Shallow 1D conv stack on cycle neighborhood of seam",
+      "dilated": "Dilated TCN-style 1D conv (Conv-TasNet / TCN inspired, tiny)",
+      "attn": "Lightweight multi-head self-attention on seam tokens (tiny dim)",
+      "dual_path": "Intra/inter chunk split on 1D cycle (DPRNN-lite)",
+      "gated": "Gated residual / soft blend of ops",
+      "soft_mix": "Softmax mixture over seam operators",
+      "noise_cond": "Noise-level conditioned residual (tiny diffusion/score step proxy)",
+      "mlp": "Baseline MLP seam cell"
+    },
+    "screened_heavy_for_overnight": {
+      "full_demucs_htdemucs": "multi-scale / multi-band / large STFT hybrids \u2014 too slow per trial",
+      "full_diffusion_sampling": "multi-step reverse SDE/ODE sampling \u2014 keep only 1 noise-cond residual step",
+      "full_gan_train": "SEGAN/MetricGAN discriminator training loops \u2014 optional tiny adv loss term only",
+      "large_transformers": "Whisper-scale / Conformer-large \u2014 dim/head capped for seam bake"
+    },
+    "outer_loop": "PPO + PBT population over arch graphs/strings; discrete NAS mutations",
+    "claim_hygiene": "algorithm names accurate (PPO, PBT, discrete NAS); no false SOTA claims"
+  },
+  "used": [
+    {
+      "query": "Wave-U-Net audio source separation",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "W2952218014",
+      "doi": "10.1109/taslp.2019.2915167",
+      "title": "Conv-TasNet: Surpassing Ideal Time\u2013Frequency Magnitude Masking for Speech Separation",
+      "year": 2019,
+      "authors": [
+        "Yi Luo",
+        "Nima Mesgarani"
+      ],
+      "venue": "IEEE/ACM Transactions on Audio Speech and Language Processing",
+      "citation_count": 2055,
+      "url": "https://openalex.org/W2952218014",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6570655/8716764/08707065.pdf"
+    },
+    {
+      "query": "Wave-U-Net audio source separation",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "W3096947210",
+      "doi": "10.1109/access.2021.3086020",
+      "title": "U-Net and Its Variants for Medical Image Segmentation: A Review of Theory and Applications",
+      "year": 2021,
+      "authors": [
+        "Nahian Siddique",
+        "Sidike Paheding",
+        "Colin Elkin",
+        "Vijay Devabhaktuni"
+      ],
+      "venue": "IEEE Access",
+      "citation_count": 1906,
+      "url": "https://openalex.org/W3096947210",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6287639/9312710/09446143.pdf"
+    },
+    {
+      "query": "Wave-U-Net audio source separation",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "W2931364255",
+      "doi": "10.1109/jstsp.2019.2908700",
+      "title": "Deep Learning for Audio Signal Processing",
+      "year": 2019,
+      "authors": [
+        "H.\u2010G. Purwins",
+        "Bo Li",
+        "Tuomas Virtanen",
+        "Jan Schl\u00fcter",
+        "Shuo-Yiin Chang",
+        "Tara N. Sainath"
+      ],
+      "venue": "IEEE Journal of Selected Topics in Signal Processing",
+      "citation_count": 839,
+      "url": "https://openalex.org/W2931364255",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/1905.00078"
+    },
+    {
+      "query": "Wave-U-Net audio source separation",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "W2774707525",
+      "doi": "10.5281/zenodo.1414933",
+      "title": "Singing Voice Separation With Deep U-Net Convolutional Networks.",
+      "year": 2017,
+      "authors": [
+        "Andreas Jansson",
+        "Eric J. Humphrey",
+        "Nicola Montecchio",
+        "Rachel Bittner",
+        "Aparna Kumar",
+        "Tillman Weyde"
+      ],
+      "venue": "City Research Online (City University London)",
+      "citation_count": 341,
+      "url": "https://openalex.org/W2774707525",
+      "source": "openalex",
+      "oa_url": "https://openaccess.city.ac.uk/id/eprint/19289/1/7bb8d1600fba70dd79408775cd0c37a4ff62.pdf"
+    },
+    {
+      "query": "Wave-U-Net audio source separation",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "W2972411915",
+      "doi": "10.21105/joss.01667",
+      "title": "Open-Unmix - A Reference Implementation for Music Source Separation",
+      "year": 2019,
+      "authors": [
+        "Fabian-Robert St\u00f6ter",
+        "Stefan Uhlich",
+        "Antoine Liutkus",
+        "Yuki Mitsufuji"
+      ],
+      "venue": "The Journal of Open Source Software",
+      "citation_count": 266,
+      "url": "https://openalex.org/W2972411915",
+      "source": "openalex",
+      "oa_url": "https://joss.theoj.org/papers/10.21105/joss.01667.pdf"
+    },
+    {
+      "query": "Wave-U-Net audio source separation",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "W2805288670",
+      "doi": "10.48550/arxiv.1806.03185",
+      "title": "Wave-U-Net: A Multi-Scale Neural Network for End-to-End Audio Source Separation",
+      "year": 2018,
+      "authors": [
+        "Daniel Stoller",
+        "Sebastian Ewert",
+        "Simon Dixon"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 75,
+      "url": "https://openalex.org/W2805288670",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/1806.03185"
+    },
+    {
+      "query": "Wave-U-Net audio source separation",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "W2902132730",
+      "doi": "10.48550/arxiv.1811.11307",
+      "title": "Improved Speech Enhancement with the Wave-U-Net",
+      "year": 2018,
+      "authors": [
+        "Craig Macartney",
+        "Tillman Weyde"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 56,
+      "url": "https://openalex.org/W2902132730",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/1811.11307"
+    },
+    {
+      "query": "Wave-U-Net audio source separation",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "W2991107219",
+      "doi": "10.48550/arxiv.1907.01277",
+      "title": "Conditioned-U-Net: Introducing a Control Mechanism in the U-Net for Multiple Source Separations",
+      "year": 2019,
+      "authors": [
+        "Gabriel Meseguer-Brocal",
+        "Geoffroy Peeters"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 38,
+      "url": "https://openalex.org/W2991107219",
+      "source": "openalex",
+      "oa_url": "https://doi.org/10.48550/arxiv.1907.01277"
+    },
+    {
+      "query": "Wave-U-Net audio source separation",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "10.1007/978-3-319-73031-8_1",
+      "doi": "10.1007/978-3-319-73031-8_1",
+      "title": "Single-Channel Audio Source Separation with NMF: Divergences, Constraints and Algorithms",
+      "year": 2018,
+      "authors": [
+        "C\u00e9dric F\u00e9votte",
+        "Emmanuel Vincent",
+        "Alexey Ozerov"
+      ],
+      "venue": "Signals and Communication Technology",
+      "citation_count": 32,
+      "url": "https://doi.org/10.1007/978-3-319-73031-8_1",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "Wave-U-Net audio source separation",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "W3015724290",
+      "doi": "10.1109/icassp40776.2020.9053934",
+      "title": "Time-Domain Audio Source Separation Based on Wave-U-Net Combined with Discrete Wavelet Transform",
+      "year": 2020,
+      "authors": [
+        "Tomohiko Nakamura",
+        "Hiroshi Saruwatari"
+      ],
+      "venue": "ICASSP 2020 - 2020 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)",
+      "citation_count": 23,
+      "url": "https://openalex.org/W3015724290",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "Demucs music source separation convolutional",
+      "role": "used",
+      "arch_family": "conv_stack",
+      "id": "W3037149862",
+      "doi": "10.21105/joss.02154",
+      "title": "Spleeter: a fast and efficient music source separation tool with pre-trained models",
+      "year": 2020,
+      "authors": [
+        "Romain Hennequin",
+        "Anis Khlif",
+        "F\u00e9lix Voituret",
+        "Manuel Moussallam"
+      ],
+      "venue": "The Journal of Open Source Software",
+      "citation_count": 295,
+      "url": "https://openalex.org/W3037149862",
+      "source": "openalex",
+      "oa_url": "https://joss.theoj.org/papers/10.21105/joss.02154.pdf"
+    },
+    {
+      "query": "Demucs music source separation convolutional",
+      "role": "used",
+      "arch_family": "conv_stack",
+      "id": "W4380136719",
+      "doi": "10.48550/arxiv.2306.05284",
+      "title": "Simple and Controllable Music Generation",
+      "year": 2023,
+      "authors": [
+        "Jade Copet",
+        "Felix Kreuk",
+        "Itai Gat",
+        "Tal Remez",
+        "David Kant",
+        "Gabriel Synnaeve",
+        "Yossi Adi",
+        "Alexandre D\u00e9fossez"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 66,
+      "url": "https://openalex.org/W4380136719",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2306.05284"
+    },
+    {
+      "query": "Demucs music source separation convolutional",
+      "role": "used",
+      "arch_family": "conv_stack",
+      "id": "W3199957557",
+      "doi": "10.3389/frsip.2021.808395",
+      "title": "Music Demixing Challenge 2021",
+      "year": 2022,
+      "authors": [
+        "Yuki Mitsufuji",
+        "Giorgio Fabbro",
+        "Stefan Uhlich",
+        "Fabian-Robert St\u00f6ter",
+        "Alexandre D\u00e9fossez",
+        "Minseok Kim",
+        "Woosung Choi",
+        "Chin-Yun Yu",
+        "Kin Wai Cheuk"
+      ],
+      "venue": "Frontiers in Signal Processing",
+      "citation_count": 59,
+      "url": "https://openalex.org/W3199957557",
+      "source": "openalex",
+      "oa_url": "https://www.frontiersin.org/articles/10.3389/frsip.2021.808395/pdf"
+    },
+    {
+      "query": "Demucs music source separation convolutional",
+      "role": "used",
+      "arch_family": "conv_stack",
+      "id": "W2971458685",
+      "doi": "10.48550/arxiv.1909.01174",
+      "title": "Demucs: Deep Extractor for Music Sources with extra unlabeled data remixed",
+      "year": 2019,
+      "authors": [
+        "Alexandre D\u00e9fossez",
+        "Nicolas Usunier",
+        "L\u00e9on Bottou",
+        "Francis R. Bach"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 58,
+      "url": "https://openalex.org/W2971458685",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/1909.01174"
+    },
+    {
+      "query": "Demucs music source separation convolutional",
+      "role": "used",
+      "arch_family": "conv_stack",
+      "id": "W4323064860",
+      "doi": "10.1109/taslp.2023.3252272",
+      "title": "Unsupervised Music Source Separation Using Differentiable Parametric Source Models",
+      "year": 2023,
+      "authors": [
+        "Kilian Schulze-Forster",
+        "Ga\u00ebl Richard",
+        "Liam Kelley",
+        "Clement S. J. Doire",
+        "Roland Badeau"
+      ],
+      "venue": "IEEE/ACM Transactions on Audio Speech and Language Processing",
+      "citation_count": 28,
+      "url": "https://openalex.org/W4323064860",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6570655/6633080/10058592.pdf"
+    },
+    {
+      "query": "Demucs music source separation convolutional",
+      "role": "used",
+      "arch_family": "conv_stack",
+      "id": "W4285108271",
+      "doi": "10.1109/lsp.2022.3187316",
+      "title": "Hierarchic Temporal Convolutional Network With Cross-Domain Encoder for Music Source Separation",
+      "year": 2022,
+      "authors": [
+        "Ying Hu",
+        "Yadong Chen",
+        "Wenzhong Yang",
+        "Liang He",
+        "Hao Huang"
+      ],
+      "venue": "IEEE Signal Processing Letters",
+      "citation_count": 27,
+      "url": "https://openalex.org/W4285108271",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "Demucs music source separation convolutional",
+      "role": "used",
+      "arch_family": "conv_stack",
+      "id": "W4226221107",
+      "doi": "10.48550/arxiv.2112.04685",
+      "title": "CWS-PResUNet: Music Source Separation with Channel-wise Subband Phase-aware ResUNet",
+      "year": 2021,
+      "authors": [
+        "Haohe Liu",
+        "Qiuqiang Kong",
+        "Jiafeng Liu"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 13,
+      "url": "https://openalex.org/W4226221107",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2112.04685"
+    },
+    {
+      "query": "Demucs music source separation convolutional",
+      "role": "used",
+      "arch_family": "conv_stack",
+      "id": "W4400368696",
+      "doi": "10.1007/s00170-024-14080-y",
+      "title": "Enhancing the accuracy of machinery fault diagnosis through fault source isolation of complex mixture of industrial sound signals",
+      "year": 2024,
+      "authors": [
+        "Ayantha Senanayaka",
+        "Philku Lee",
+        "Nayeon Lee",
+        "Charles Dickerson",
+        "Anton Netchaev",
+        "Sungkwang Mun"
+      ],
+      "venue": "The International Journal of Advanced Manufacturing Technology",
+      "citation_count": 12,
+      "url": "https://openalex.org/W4400368696",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "Demucs music source separation convolutional",
+      "role": "used",
+      "arch_family": "conv_stack",
+      "id": "W4388969129",
+      "doi": "10.1186/s13636-023-00316-4",
+      "title": "Predominant audio source separation in polyphonic music",
+      "year": 2023,
+      "authors": [
+        "Lekshmi\u00a0Chandrika Reghunath",
+        "Rajeev Rajan"
+      ],
+      "venue": "EURASIP Journal on Audio Speech and Music Processing",
+      "citation_count": 12,
+      "url": "https://openalex.org/W4388969129",
+      "source": "openalex",
+      "oa_url": "https://asmp-eurasipjournals.springeropen.com/counter/pdf/10.1186/s13636-023-00316-4"
+    },
+    {
+      "query": "Demucs music source separation convolutional",
+      "role": "used",
+      "arch_family": "conv_stack",
+      "id": "10.23919/eusipco.2017.8081520",
+      "doi": "10.23919/eusipco.2017.8081520",
+      "title": "Harmonic and percussive source separation using a convolutional auto encoder",
+      "year": 2017,
+      "authors": [
+        "Wootaek Lim",
+        "Taejin Lee"
+      ],
+      "venue": "2017 25th European Signal Processing Conference (EUSIPCO)",
+      "citation_count": 11,
+      "url": "https://doi.org/10.23919/eusipco.2017.8081520",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "Conv-TasNet time domain audio separation",
+      "role": "used",
+      "arch_family": "tcn_dilated",
+      "id": "10.1109/icassp.2018.8462116",
+      "doi": "10.1109/icassp.2018.8462116",
+      "title": "TaSNet: Time-Domain Audio Separation Network for Real-Time, Single-Channel Speech Separation",
+      "year": 2018,
+      "authors": [
+        "Yi Luo",
+        "Nima Mesgarani"
+      ],
+      "venue": "2018 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)",
+      "citation_count": 499,
+      "url": "https://doi.org/10.1109/icassp.2018.8462116",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "Conv-TasNet time domain audio separation",
+      "role": "used",
+      "arch_family": "tcn_dilated",
+      "id": "W3016361963",
+      "doi": "10.1109/taslp.2020.2987429",
+      "title": "SpEx: Multi-Scale Time Domain Speaker Extraction Network",
+      "year": 2020,
+      "authors": [
+        "Chenglin Xu",
+        "Wei Rao",
+        "Eng Siong Chng",
+        "Haizhou Li"
+      ],
+      "venue": "IEEE/ACM Transactions on Audio Speech and Language Processing",
+      "citation_count": 153,
+      "url": "https://openalex.org/W3016361963",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6570655/8938144/09067003.pdf"
+    },
+    {
+      "query": "Conv-TasNet time domain audio separation",
+      "role": "used",
+      "arch_family": "tcn_dilated",
+      "id": "W2981976899",
+      "doi": "10.1109/icassp40776.2020.9053602",
+      "title": "A Multi-Phase Gammatone Filterbank for Speech Separation Via Tasnet",
+      "year": 2020,
+      "authors": [
+        "David Ditter",
+        "Timo Gerkmann"
+      ],
+      "venue": null,
+      "citation_count": 62,
+      "url": "https://openalex.org/W2981976899",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/1910.11615"
+    },
+    {
+      "query": "Conv-TasNet time domain audio separation",
+      "role": "used",
+      "arch_family": "tcn_dilated",
+      "id": "10.1109/icassp40776.2020.9053575",
+      "doi": "10.1109/icassp40776.2020.9053575",
+      "title": "Beam-TasNet: Time-domain Audio Separation Network Meets Frequency-domain Beamformer",
+      "year": 2020,
+      "authors": [
+        "Tsubasa Ochiai",
+        "Marc Delcroix",
+        "Rintaro Ikeshita",
+        "Keisuke Kinoshita",
+        "Tomohiro Nakatani",
+        "Shoko Araki"
+      ],
+      "venue": "ICASSP 2020 - 2020 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)",
+      "citation_count": 60,
+      "url": "https://doi.org/10.1109/icassp40776.2020.9053575",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "Conv-TasNet time domain audio separation",
+      "role": "used",
+      "arch_family": "tcn_dilated",
+      "id": "10.21437/interspeech.2018-2290",
+      "doi": "10.21437/interspeech.2018-2290",
+      "title": "Real-time Single-channel Dereverberation and Separation with Time-domain Audio Separation Network",
+      "year": 2018,
+      "authors": [
+        "Yi Luo",
+        "Nima Mesgarani"
+      ],
+      "venue": "Interspeech 2018",
+      "citation_count": 55,
+      "url": "https://doi.org/10.21437/interspeech.2018-2290",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "Conv-TasNet time domain audio separation",
+      "role": "used",
+      "arch_family": "tcn_dilated",
+      "id": "W2995166068",
+      "doi": "10.1109/icassp40776.2020.9053461",
+      "title": "End-to-End Training of Time Domain Audio Separation and Recognition",
+      "year": 2020,
+      "authors": [
+        "Thilo von Neumann",
+        "Keisuke Kinoshita",
+        "Lukas Drude",
+        "Christoph Boeddeker",
+        "Marc Delcroix",
+        "Tomohiro Nakatani",
+        "Reinhold Haeb\u2010Umbach"
+      ],
+      "venue": null,
+      "citation_count": 42,
+      "url": "https://openalex.org/W2995166068",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/1912.08462"
+    },
+    {
+      "query": "Conv-TasNet time domain audio separation",
+      "role": "used",
+      "arch_family": "tcn_dilated",
+      "id": "W3015654783",
+      "doi": "10.1109/icassp40776.2020.9053846",
+      "title": "Performance Study of a Convolutional Time-Domain Audio Separation Network for Real-Time Speech Denoising",
+      "year": 2020,
+      "authors": [
+        "Samuel Sonning",
+        "Christian Sch\u00fcldt",
+        "Hakan Erdo\u011fan",
+        "Scott Wisdom"
+      ],
+      "venue": null,
+      "citation_count": 26,
+      "url": "https://openalex.org/W3015654783",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "Conv-TasNet time domain audio separation",
+      "role": "used",
+      "arch_family": "tcn_dilated",
+      "id": "W4297841846",
+      "doi": "10.21437/interspeech.2022-230",
+      "title": "Beam-Guided TasNet: An Iterative Speech Separation Framework with Multi-Channel Output",
+      "year": 2022,
+      "authors": [
+        "Hangting Chen",
+        "Yi Yang",
+        "Dang Feng",
+        "Pengyuan Zhang"
+      ],
+      "venue": "Interspeech 2022",
+      "citation_count": 22,
+      "url": "https://openalex.org/W4297841846",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "dual-path RNN DPRNN speech separation",
+      "role": "used",
+      "arch_family": "dual_path",
+      "id": "W3015199127",
+      "doi": "10.1109/icassp40776.2020.9054266",
+      "title": "Dual-Path RNN: Efficient Long Sequence Modeling for Time-Domain Single-Channel Speech Separation",
+      "year": 2020,
+      "authors": [
+        "Yi Luo",
+        "Zhuo Chen",
+        "Takuya Yoshioka"
+      ],
+      "venue": "ICASSP 2020 - 2020 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)",
+      "citation_count": 775,
+      "url": "https://openalex.org/W3015199127",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "dual-path RNN DPRNN speech separation",
+      "role": "used",
+      "arch_family": "dual_path",
+      "id": "W3197627016",
+      "doi": "10.21437/interspeech.2021-296",
+      "title": "DPCRN: Dual-Path Convolution Recurrent Network for Single Channel Speech Enhancement",
+      "year": 2021,
+      "authors": [
+        "Xiaohuai Le",
+        "Hongsheng Chen",
+        "Kai Chen",
+        "Jing L\u00fc"
+      ],
+      "venue": null,
+      "citation_count": 84,
+      "url": "https://openalex.org/W3197627016",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "dual-path RNN DPRNN speech separation",
+      "role": "used",
+      "arch_family": "dual_path",
+      "id": "W2980986990",
+      "doi": "10.48550/arxiv.1910.06379",
+      "title": "Dual-path RNN: efficient long sequence modeling for time-domain single-channel speech separation",
+      "year": 2019,
+      "authors": [
+        "Yi Luo",
+        "Zhuo Chen",
+        "Takuya Yoshioka"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 50,
+      "url": "https://openalex.org/W2980986990",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/1910.06379"
+    },
+    {
+      "query": "dual-path RNN DPRNN speech separation",
+      "role": "used",
+      "arch_family": "dual_path",
+      "id": "W4408354310",
+      "doi": "10.1109/icassp49660.2025.10888514",
+      "title": "Dual-path Mamba: Short and Long-term Bidirectional Selective Structured State Space Models for Speech Separation",
+      "year": 2025,
+      "authors": [
+        "Xilin Jiang",
+        "Cong Han",
+        "Nima Mesgarani"
+      ],
+      "venue": null,
+      "citation_count": 43,
+      "url": "https://openalex.org/W4408354310",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "dual-path RNN DPRNN speech separation",
+      "role": "used",
+      "arch_family": "dual_path",
+      "id": "W3045904949",
+      "doi": "10.48550/arxiv.2007.13975",
+      "title": "Dual-Path Transformer Network: Direct Context-Aware Modeling for End-to-End Monaural Speech Separation",
+      "year": 2020,
+      "authors": [
+        "Jingjing Chen",
+        "Qirong Mao",
+        "Dong Liu"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 36,
+      "url": "https://openalex.org/W3045904949",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2007.13975"
+    },
+    {
+      "query": "dual-path RNN DPRNN speech separation",
+      "role": "used",
+      "arch_family": "dual_path",
+      "id": "W3146854175",
+      "doi": "10.1109/slt48900.2021.9383464",
+      "title": "Effective Low-Cost Time-Domain Audio Separation Using Globally Attentive Locally Recurrent Networks",
+      "year": 2021,
+      "authors": [
+        "Max W. Y. Lam",
+        "Jun Wang",
+        "Dan Su",
+        "Dong Yu"
+      ],
+      "venue": null,
+      "citation_count": 27,
+      "url": "https://openalex.org/W3146854175",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "dual-path RNN DPRNN speech separation",
+      "role": "used",
+      "arch_family": "dual_path",
+      "id": "10.21437/interspeech.2022-700",
+      "doi": "10.21437/interspeech.2022-700",
+      "title": "QDPN - Quasi-dual-path Network for single-channel Speech Separation",
+      "year": 2022,
+      "authors": [
+        "Joel Rixen",
+        "Matthias Renz"
+      ],
+      "venue": "Interspeech 2022",
+      "citation_count": 24,
+      "url": "https://doi.org/10.21437/interspeech.2022-700",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "dual-path RNN DPRNN speech separation",
+      "role": "used",
+      "arch_family": "dual_path",
+      "id": "W3133834828",
+      "doi": "10.1109/slt48900.2021.9383514",
+      "title": "Dual-Path RNN for Long Recording Speech Separation",
+      "year": 2021,
+      "authors": [
+        "Chenda Li",
+        "Yi Luo",
+        "Cong Han",
+        "Jinyu Li",
+        "Takuya Yoshioka",
+        "Tianyan Zhou",
+        "Marc Delcroix",
+        "Keisuke Kinoshita",
+        "Christoph Boeddeker",
+        "Yanmin Qian",
+        "Shinji Watanabe",
+        "Zhuo Chen"
+      ],
+      "venue": "2021 IEEE Spoken Language Technology Workshop (SLT)",
+      "citation_count": 23,
+      "url": "https://openalex.org/W3133834828",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "dual-path RNN DPRNN speech separation",
+      "role": "used",
+      "arch_family": "dual_path",
+      "id": "10.1109/icassp39728.2021.9414205",
+      "doi": "10.1109/icassp39728.2021.9414205",
+      "title": "Multi-Decoder Dprnn: Source Separation for Variable Number of Speakers",
+      "year": 2021,
+      "authors": [
+        "Junzhe Zhu",
+        "Raymond A. Yeh",
+        "Mark Hasegawa-Johnson"
+      ],
+      "venue": "ICASSP 2021 - 2021 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)",
+      "citation_count": 13,
+      "url": "https://doi.org/10.1109/icassp39728.2021.9414205",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "dual-path RNN DPRNN speech separation",
+      "role": "used",
+      "arch_family": "dual_path",
+      "id": "W4393300076",
+      "doi": "10.48550/arxiv.2403.18257",
+      "title": "Dual-path Mamba: Short and Long-term Bidirectional Selective Structured State Space Models for Speech Separation",
+      "year": 2024,
+      "authors": [
+        "Xilin Jiang",
+        "Cong Han",
+        "Nima Mesgarani"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 11,
+      "url": "https://openalex.org/W4393300076",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2403.18257"
+    },
+    {
+      "query": "transformer speech enhancement attention",
+      "role": "used",
+      "arch_family": "attn",
+      "id": "W4382203079",
+      "doi": "10.1609/aaai.v37i9.26317",
+      "title": "Are Transformers Effective for Time Series Forecasting?",
+      "year": 2023,
+      "authors": [
+        "Ailing Zeng",
+        "Muxi Chen",
+        "Lei Zhang",
+        "Qiang Xu"
+      ],
+      "venue": "Proceedings of the AAAI Conference on Artificial Intelligence",
+      "citation_count": 2717,
+      "url": "https://openalex.org/W4382203079",
+      "source": "openalex",
+      "oa_url": "https://ojs.aaai.org/index.php/AAAI/article/download/26317/26089"
+    },
+    {
+      "query": "transformer speech enhancement attention",
+      "role": "used",
+      "arch_family": "attn",
+      "id": "W4376226279",
+      "doi": "10.1109/tpami.2023.3275156",
+      "title": "Multimodal Learning With Transformers: A Survey",
+      "year": 2023,
+      "authors": [
+        "Peng Xu",
+        "Xiatian Zhu",
+        "David A. Clifton"
+      ],
+      "venue": "IEEE Transactions on Pattern Analysis and Machine Intelligence",
+      "citation_count": 892,
+      "url": "https://openalex.org/W4376226279",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/34/4359286/10123038.pdf"
+    },
+    {
+      "query": "transformer speech enhancement attention",
+      "role": "used",
+      "arch_family": "attn",
+      "id": "W3128592650",
+      "doi": "10.3390/rs13030516",
+      "title": "Vision Transformers for Remote Sensing Image Classification",
+      "year": 2021,
+      "authors": [
+        "Yakoub Bazi",
+        "Laila Bashmal",
+        "Mohamad Mahmoud Al Rahhal",
+        "Reham Al-Dayil",
+        "Naif Al Ajlan"
+      ],
+      "venue": "Remote Sensing",
+      "citation_count": 613,
+      "url": "https://openalex.org/W3128592650",
+      "source": "openalex",
+      "oa_url": "https://www.mdpi.com/2072-4292/13/3/516/pdf?version=1612423035"
+    },
+    {
+      "query": "transformer speech enhancement attention",
+      "role": "used",
+      "arch_family": "attn",
+      "id": "W3016129867",
+      "doi": "10.1109/icassp40776.2020.9053591",
+      "title": "T-GSA: Transformer with Gaussian-Weighted Self-Attention for Speech Enhancement",
+      "year": 2020,
+      "authors": [
+        "Jaeyoung Kim",
+        "Mostafa El\u2010Khamy",
+        "Jungwon Lee"
+      ],
+      "venue": "ICASSP 2020 - 2020 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)",
+      "citation_count": 189,
+      "url": "https://openalex.org/W3016129867",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "transformer speech enhancement attention",
+      "role": "used",
+      "arch_family": "attn",
+      "id": "W3206809722",
+      "doi": "10.1109/icassp43922.2022.9746273",
+      "title": "Dual-Branch Attention-In-Attention Transformer for Single-Channel Speech Enhancement",
+      "year": 2022,
+      "authors": [
+        "Guochen Yu",
+        "Andong Li",
+        "Chengshi Zheng",
+        "Yinuo Guo",
+        "Yutian Wang",
+        "Hui Wang"
+      ],
+      "venue": "ICASSP 2022 - 2022 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)",
+      "citation_count": 104,
+      "url": "https://openalex.org/W3206809722",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "transformer speech enhancement attention",
+      "role": "used",
+      "arch_family": "attn",
+      "id": "chemrxiv:10.26434/chemrxiv.8214422.v1",
+      "doi": "10.26434/chemrxiv.8214422.v1",
+      "title": "Path-Augmented Graph Transformer Network",
+      "year": 2019,
+      "authors": [
+        "Benson Chen",
+        "Regina Barzilay",
+        "Tommi S Jaakkola"
+      ],
+      "venue": "chemRxiv",
+      "citation_count": 52,
+      "url": "https://doi.org/10.26434/chemrxiv.8214422.v1",
+      "source": "chemrxiv",
+      "oa_url": null
+    },
+    {
+      "query": "transformer speech enhancement attention",
+      "role": "used",
+      "arch_family": "attn",
+      "id": "W4221145205",
+      "doi": "10.1109/taslp.2022.3195112",
+      "title": "DBT-Net: Dual-Branch Federative Magnitude and Phase Estimation With Attention-in-Attention Transformer for Monaural Speech Enhancement",
+      "year": 2022,
+      "authors": [
+        "Guochen Yu",
+        "Andong Li",
+        "Hui Wang",
+        "Yutian Wang",
+        "Yuxuan Ke",
+        "Chengshi Zheng"
+      ],
+      "venue": "IEEE/ACM Transactions on Audio Speech and Language Processing",
+      "citation_count": 50,
+      "url": "https://openalex.org/W4221145205",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "transformer speech enhancement attention",
+      "role": "used",
+      "arch_family": "attn",
+      "id": "10.1109/taslp.2023.3265839",
+      "doi": "10.1109/taslp.2023.3265839",
+      "title": "U-Shaped Transformer With Frequency-Band Aware Attention for Speech Enhancement",
+      "year": 2023,
+      "authors": [
+        "Yi Li",
+        "Yang Sun",
+        "Wenwu Wang",
+        "Syed Mohsen Naqvi"
+      ],
+      "venue": "IEEE/ACM Transactions on Audio, Speech, and Language Processing",
+      "citation_count": 39,
+      "url": "https://doi.org/10.1109/taslp.2023.3265839",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "transformer speech enhancement attention",
+      "role": "used",
+      "arch_family": "attn",
+      "id": "W4391486999",
+      "doi": "10.1016/j.dsp.2024.104408",
+      "title": "Time domain speech enhancement with CNN and time-attention transformer",
+      "year": 2024,
+      "authors": [
+        "Nasir Saleem",
+        "Teddy Surya Gunawan",
+        "Sami Dhahbi",
+        "Sami Bourouis"
+      ],
+      "venue": "Digital Signal Processing",
+      "citation_count": 38,
+      "url": "https://openalex.org/W4391486999",
+      "source": "openalex",
+      "oa_url": "https://www.sciencedirect.com/science/article/pii/S1051200424000332"
+    },
+    {
+      "query": "transformer speech enhancement attention",
+      "role": "used",
+      "arch_family": "attn",
+      "id": "W4382725773",
+      "doi": "10.1109/access.2023.3290908",
+      "title": "NSE-CATNet: Deep Neural Speech Enhancement Using Convolutional Attention Transformer Network",
+      "year": 2023,
+      "authors": [
+        "Nasir Saleem",
+        "Teddy Surya Gunawan",
+        "Mira Kartiwi",
+        "Bambang Setia Nugroho",
+        "Inung Wijayanto"
+      ],
+      "venue": "IEEE Access",
+      "citation_count": 28,
+      "url": "https://openalex.org/W4382725773",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6287639/6514899/10168245.pdf"
+    },
+    {
+      "query": "U-Net speech enhancement spectrogram",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "W2912581782",
+      "doi": "10.1109/access.2019.2896880",
+      "title": "Speech Recognition Using Deep Neural Networks: A Systematic Review",
+      "year": 2019,
+      "authors": [
+        "Ali Bou Nassif",
+        "Ismail Shahin",
+        "Imtinan Attili",
+        "Mohammad Azzeh",
+        "Khaled Shaalan"
+      ],
+      "venue": "IEEE Access",
+      "citation_count": 1153,
+      "url": "https://openalex.org/W2912581782",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6287639/8600701/08632885.pdf"
+    },
+    {
+      "query": "U-Net speech enhancement spectrogram",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "W2961638199",
+      "doi": "10.1109/access.2019.2928017",
+      "title": "ECG Arrhythmia Classification Using STFT-Based Spectrogram and Convolutional Neural Network",
+      "year": 2019,
+      "authors": [
+        "Jingshan Huang",
+        "Binqiang Chen",
+        "Bin Yao",
+        "Wangpeng He"
+      ],
+      "venue": "IEEE Access",
+      "citation_count": 582,
+      "url": "https://openalex.org/W2961638199",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6287639/8600701/08759878.pdf"
+    },
+    {
+      "query": "U-Net speech enhancement spectrogram",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "W3022013598",
+      "doi": "10.1109/access.2020.2990405",
+      "title": "Clustering-Based Speech Emotion Recognition by Incorporating Learned Features and Deep BiLSTM",
+      "year": 2020,
+      "authors": [
+        "Mustaqeem Mustaqeem",
+        "Muhammad Sajjad",
+        "Soonil Kwon"
+      ],
+      "venue": "IEEE Access",
+      "citation_count": 400,
+      "url": "https://openalex.org/W3022013598",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6287639/8948470/09078789.pdf"
+    },
+    {
+      "query": "U-Net speech enhancement spectrogram",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "W2997700007",
+      "doi": "10.3390/s20010183",
+      "title": "A CNN-Assisted Enhanced Audio Signal Processing for Speech Emotion Recognition",
+      "year": 2019,
+      "authors": [
+        "Mustaqeem Mustaqeem",
+        "Soonil Kwon"
+      ],
+      "venue": "Sensors",
+      "citation_count": 392,
+      "url": "https://openalex.org/W2997700007",
+      "source": "openalex",
+      "oa_url": "https://www.mdpi.com/1424-8220/20/1/183/pdf?version=1577527402"
+    },
+    {
+      "query": "U-Net speech enhancement spectrogram",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "W2970737019",
+      "doi": "10.1109/access.2019.2938007",
+      "title": "Speech Emotion Recognition From 3D Log-Mel Spectrograms With Deep Learning Network",
+      "year": 2019,
+      "authors": [
+        "Hao Meng",
+        "Tianhao Yan",
+        "Fei Yuan",
+        "Hongwei Wei"
+      ],
+      "venue": "IEEE Access",
+      "citation_count": 349,
+      "url": "https://openalex.org/W2970737019",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6287639/8600701/08817913.pdf"
+    },
+    {
+      "query": "U-Net speech enhancement spectrogram",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "W2746457594",
+      "doi": "10.21437/interspeech.2017-1620",
+      "title": "Conditional Generative Adversarial Networks for Speech Enhancement and Noise-Robust Speaker Verification",
+      "year": 2017,
+      "authors": [
+        "Daniel Michelsanti",
+        "Zheng\u2010Hua Tan"
+      ],
+      "venue": null,
+      "citation_count": 253,
+      "url": "https://openalex.org/W2746457594",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/1709.01703"
+    },
+    {
+      "query": "U-Net speech enhancement spectrogram",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "W2906042495",
+      "doi": "10.48550/arxiv.1903.03107",
+      "title": "Phase-aware Speech Enhancement with Deep Complex U-Net",
+      "year": 2019,
+      "authors": [
+        "Hyeong-Seok Choi",
+        "Jang-Hyun Kim",
+        "Jaesung Huh",
+        "Adrian Kim",
+        "Jung-Woo Ha",
+        "Kyogu Lee"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 79,
+      "url": "https://openalex.org/W2906042495",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/1903.03107"
+    },
+    {
+      "query": "U-Net speech enhancement spectrogram",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "W3015526955",
+      "doi": "10.1109/icassp40776.2020.9053188",
+      "title": "Masking and Inpainting: A Two-Stage Speech Enhancement Approach for Low SNR and Non-Stationary Noise",
+      "year": 2020,
+      "authors": [
+        "Xiang Hao",
+        "Xiangdong Su",
+        "Shixue Wen",
+        "Zhiyu Wang",
+        "Yi-Qian Pan",
+        "Feilong Bao",
+        "Wei Chen"
+      ],
+      "venue": null,
+      "citation_count": 50,
+      "url": "https://openalex.org/W3015526955",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "dilated convolutional residual network audio denoising",
+      "role": "used",
+      "arch_family": "tcn_dilated",
+      "id": "W3035060554",
+      "doi": "10.48550/arxiv.2006.07733",
+      "title": "Bootstrap your own latent: A new approach to self-supervised Learning",
+      "year": 2020,
+      "authors": [
+        "Jean-Bastien Grill",
+        "Florian Strub",
+        "Florent Altch\u00e9",
+        "Corentin Tallec",
+        "Pierre H. Richemond",
+        "Elena Buchatskaya",
+        "Carl Doersch",
+        "Bernardo \u00c1vila Pires",
+        "Zhaohan Daniel Guo",
+        "Mohammad Gheshlaghi Azar",
+        "Bilal Piot",
+        "Koray Kavukcuoglu",
+        "R\u00e9mi Munos",
+        "Michal Valko"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 3449,
+      "url": "https://openalex.org/W3035060554",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2006.07733"
+    },
+    {
+      "query": "dilated convolutional residual network audio denoising",
+      "role": "used",
+      "arch_family": "tcn_dilated",
+      "id": "W2598457882",
+      "doi": "10.1111/mice.12263",
+      "title": "Deep Learning\u2010Based Crack Damage Detection Using Convolutional Neural Networks",
+      "year": 2017,
+      "authors": [
+        "Young\u2010Jin Cha",
+        "Wooram Choi",
+        "Oral B\u00fcy\u00fck\u00f6zt\u00fcrk"
+      ],
+      "venue": "Computer-Aided Civil and Infrastructure Engineering",
+      "citation_count": 3166,
+      "url": "https://openalex.org/W2598457882",
+      "source": "openalex",
+      "oa_url": "https://onlinelibrary.wiley.com/doi/pdfdirect/10.1111/mice.12263"
+    },
+    {
+      "query": "dilated convolutional residual network audio denoising",
+      "role": "used",
+      "arch_family": "tcn_dilated",
+      "id": "W4295122555",
+      "doi": "10.3390/app12188972",
+      "title": "Deep Residual Learning for Image Recognition: A Survey",
+      "year": 2022,
+      "authors": [
+        "Muhammad Shafiq",
+        "Zhaoquan Gu"
+      ],
+      "venue": "Applied Sciences",
+      "citation_count": 951,
+      "url": "https://openalex.org/W4295122555",
+      "source": "openalex",
+      "oa_url": "https://www.mdpi.com/2076-3417/12/18/8972/pdf?version=1662547655"
+    },
+    {
+      "query": "dilated convolutional residual network audio denoising",
+      "role": "used",
+      "arch_family": "tcn_dilated",
+      "id": "W2200374509",
+      "doi": "10.48550/arxiv.1512.07108",
+      "title": "Recent Advances in Convolutional Neural Networks",
+      "year": 2015,
+      "authors": [
+        "Jiuxiang Gu",
+        "Zhenhua Wang",
+        "Jason Kuen",
+        "Lianyang Ma",
+        "Amir Shahroudy",
+        "Bing Shuai",
+        "Ting Liu",
+        "Xingxing Wang",
+        "Li Wang",
+        "Gang Wang",
+        "Jianfei Cai",
+        "Tsuhan Chen"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 328,
+      "url": "https://openalex.org/W2200374509",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/1512.07108"
+    },
+    {
+      "query": "dilated convolutional residual network audio denoising",
+      "role": "used",
+      "arch_family": "tcn_dilated",
+      "id": "W3040231701",
+      "doi": "10.1109/access.2020.3006097",
+      "title": "Artificial Intelligence Image Recognition Method Based on Convolutional Neural Network Algorithm",
+      "year": 2020,
+      "authors": [
+        "Youhui Tian"
+      ],
+      "venue": "IEEE Access",
+      "citation_count": 246,
+      "url": "https://openalex.org/W3040231701",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6287639/8948470/09129654.pdf"
+    },
+    {
+      "query": "dilated convolutional residual network audio denoising",
+      "role": "used",
+      "arch_family": "tcn_dilated",
+      "id": "W3012075351",
+      "doi": "10.1109/access.2020.2981261",
+      "title": "State of Health Monitoring and Remaining Useful Life Prediction of Lithium-Ion Batteries Based on Temporal Convolutional Network",
+      "year": 2020,
+      "authors": [
+        "Danhua Zhou",
+        "Zhanying Li",
+        "Jiali Zhu",
+        "Haichuan Zhang",
+        "Lin Hou"
+      ],
+      "venue": "IEEE Access",
+      "citation_count": 235,
+      "url": "https://openalex.org/W3012075351",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6287639/8948470/09037249.pdf"
+    },
+    {
+      "query": "dilated convolutional residual network audio denoising",
+      "role": "used",
+      "arch_family": "tcn_dilated",
+      "id": "W2943439651",
+      "doi": "10.3390/app9091823",
+      "title": "A Deep Learning Method for Bearing Fault Diagnosis through Stacked Residual Dilated Convolutions",
+      "year": 2019,
+      "authors": [
+        "Zilong Zhuang",
+        "Huichun Lv",
+        "Jie Xu",
+        "Zizhao Huang",
+        "Qin Wei"
+      ],
+      "venue": "Applied Sciences",
+      "citation_count": 87,
+      "url": "https://openalex.org/W2943439651",
+      "source": "openalex",
+      "oa_url": "https://www.mdpi.com/2076-3417/9/9/1823/pdf?version=1556707972"
+    },
+    {
+      "query": "dense convolutional network audio noise reduction",
+      "role": "used",
+      "arch_family": "dense",
+      "id": "W3140854437",
+      "doi": "10.1186/s40537-021-00444-8",
+      "title": "Review of deep learning: concepts, CNN architectures, challenges, applications, future directions",
+      "year": 2021,
+      "authors": [
+        "Laith Alzubaidi",
+        "Jinglan Zhang",
+        "Amjad J. Humaidi",
+        "Ayad Q. Al-Dujaili",
+        "Ye Duan",
+        "Omran Al-Shamma",
+        "Jos\u00e9 Santamar\u00eda",
+        "Mohammed A. Fadhel",
+        "Muthana Al\u2010Amidie",
+        "Laith Farhan"
+      ],
+      "venue": "Journal Of Big Data",
+      "citation_count": 7659,
+      "url": "https://openalex.org/W3140854437",
+      "source": "openalex",
+      "oa_url": "https://journalofbigdata.springeropen.com/counter/pdf/10.1186/s40537-021-00444-8"
+    },
+    {
+      "query": "dense convolutional network audio noise reduction",
+      "role": "used",
+      "arch_family": "dense",
+      "id": "W2415243320",
+      "doi": "10.1609/aaai.v30i1.10179",
+      "title": "Deep Neural Networks for Learning Graph Representations",
+      "year": 2016,
+      "authors": [
+        "Shaosheng Cao",
+        "Wei Lu",
+        "Qiongkai Xu"
+      ],
+      "venue": "Proceedings of the AAAI Conference on Artificial Intelligence",
+      "citation_count": 1066,
+      "url": "https://openalex.org/W2415243320",
+      "source": "openalex",
+      "oa_url": "https://doi.org/10.1609/aaai.v30i1.10179"
+    },
+    {
+      "query": "dense convolutional network audio noise reduction",
+      "role": "used",
+      "arch_family": "dense",
+      "id": "W3137147200",
+      "doi": "10.1201/9781003162810-13",
+      "title": "A Survey of Quantization Methods for Efficient Neural Network Inference",
+      "year": 2022,
+      "authors": [
+        "Amir Gholami",
+        "Sehoon Kim",
+        "Zhen Dong",
+        "Zhewei Yao",
+        "Michael W. Mahoney",
+        "Kurt Keutzer"
+      ],
+      "venue": null,
+      "citation_count": 1062,
+      "url": "https://openalex.org/W3137147200",
+      "source": "openalex",
+      "oa_url": "https://api.taylorfrancis.com/content/chapters/edit/download?identifierName=doi&identifierValue=10.1201/9781003162810-13&type=chapterpdf"
+    },
+    {
+      "query": "dense convolutional network audio noise reduction",
+      "role": "used",
+      "arch_family": "dense",
+      "id": "W4206095984",
+      "doi": "10.1007/s40747-021-00637-x",
+      "title": "Feature dimensionality reduction: a review",
+      "year": 2022,
+      "authors": [
+        "Weikuan Jia",
+        "Meili Sun",
+        "Jian Lian",
+        "Sujuan Hou"
+      ],
+      "venue": "Complex & Intelligent Systems",
+      "citation_count": 754,
+      "url": "https://openalex.org/W4206095984",
+      "source": "openalex",
+      "oa_url": "https://link.springer.com/content/pdf/10.1007/s40747-021-00637-x.pdf"
+    },
+    {
+      "query": "dense convolutional network audio noise reduction",
+      "role": "used",
+      "arch_family": "tcn_dilated",
+      "id": "W2963131120",
+      "doi": "10.3390/rs11050523",
+      "title": "Temporal Convolutional Neural Network for the Classification of Satellite Image Time Series",
+      "year": 2019,
+      "authors": [
+        "Charlotte Pelletier"
+      ],
+      "venue": "MDPI (MDPI AG)",
+      "citation_count": 611,
+      "url": "https://openalex.org/W2963131120",
+      "source": "openalex",
+      "oa_url": "https://dx.doi.org/10.3390/rs11050523"
+    },
+    {
+      "query": "dense convolutional network audio noise reduction",
+      "role": "used",
+      "arch_family": "dense",
+      "id": "W4385342469",
+      "doi": "10.3390/computers12080151",
+      "title": "Convolutional Neural Networks: A Survey",
+      "year": 2023,
+      "authors": [
+        "Moez Krichen"
+      ],
+      "venue": "Computers",
+      "citation_count": 568,
+      "url": "https://openalex.org/W4385342469",
+      "source": "openalex",
+      "oa_url": "https://www.mdpi.com/2073-431X/12/8/151/pdf?version=1690537713"
+    },
+    {
+      "query": "dense convolutional network audio noise reduction",
+      "role": "used",
+      "arch_family": "dense",
+      "id": "W4322627364",
+      "doi": "10.1155/2023/8342104",
+      "title": "Deep Learning with Graph Convolutional Networks: An Overview and Latest Applications in Computational Intelligence",
+      "year": 2023,
+      "authors": [
+        "Uzair Aslam Bhatti",
+        "Hao Tang",
+        "Guilu Wu",
+        "Shah Marjan",
+        "Aamir Hussain"
+      ],
+      "venue": "International Journal of Intelligent Systems",
+      "citation_count": 426,
+      "url": "https://openalex.org/W4322627364",
+      "source": "openalex",
+      "oa_url": "https://downloads.hindawi.com/journals/ijis/2023/8342104.pdf"
+    },
+    {
+      "query": "dense convolutional network audio noise reduction",
+      "role": "used",
+      "arch_family": "dense",
+      "id": "W3015173390",
+      "doi": "10.1109/access.2020.2985617",
+      "title": "Deep Convolutional and LSTM Recurrent Neural Networks for Rolling Bearing Fault Diagnosis Under Strong Noises and Variable Loads",
+      "year": 2020,
+      "authors": [
+        "Meiying Qiao",
+        "Shuhao Yan",
+        "Xia-xia Tang",
+        "Chengkuan Xu"
+      ],
+      "venue": "IEEE Access",
+      "citation_count": 216,
+      "url": "https://openalex.org/W3015173390",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6287639/8948470/09056473.pdf"
+    },
+    {
+      "query": "dense convolutional network audio noise reduction",
+      "role": "used",
+      "arch_family": "dense",
+      "id": "W2913246999",
+      "doi": "10.1109/access.2019.2895688",
+      "title": "Multilevel Weighted Feature Fusion Using Convolutional Neural Networks for EEG Motor Imagery Classification",
+      "year": 2019,
+      "authors": [
+        "Syed Umar Amin",
+        "Mansour Alsulaiman",
+        "Ghulam Muhammad",
+        "Mohamed A. Bencherif",
+        "M. Shamim Hossain"
+      ],
+      "venue": "IEEE Access",
+      "citation_count": 208,
+      "url": "https://openalex.org/W2913246999",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6287639/8600701/08629079.pdf"
+    },
+    {
+      "query": "CRN convolutional recurrent speech enhancement",
+      "role": "used",
+      "arch_family": "dual_path",
+      "id": "W3096408984",
+      "doi": "10.21437/interspeech.2020-2537",
+      "title": "DCCRN: Deep Complex Convolution Recurrent Network for Phase-Aware Speech Enhancement",
+      "year": 2020,
+      "authors": [
+        "Yanxin Hu",
+        "Yun Liu",
+        "Shubo Lv",
+        "Mengtao Xing",
+        "Shimin Zhang",
+        "Yihui Fu",
+        "Jian Wu",
+        "Bihong Zhang",
+        "Lei Xie"
+      ],
+      "venue": null,
+      "citation_count": 697,
+      "url": "https://openalex.org/W3096408984",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "CRN convolutional recurrent speech enhancement",
+      "role": "used",
+      "arch_family": "dual_path",
+      "id": "10.21437/interspeech.2018-1405",
+      "doi": "10.21437/interspeech.2018-1405",
+      "title": "A Convolutional Recurrent Neural Network for Real-Time Speech Enhancement",
+      "year": 2018,
+      "authors": [
+        "Ke Tan",
+        "DeLiang Wang"
+      ],
+      "venue": "Interspeech 2018",
+      "citation_count": 372,
+      "url": "https://doi.org/10.21437/interspeech.2018-1405",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "CRN convolutional recurrent speech enhancement",
+      "role": "used",
+      "arch_family": "dual_path",
+      "id": "W2940275453",
+      "doi": "10.1109/icassp.2019.8682834",
+      "title": "Complex Spectral Mapping with a Convolutional Recurrent Network for Monaural Speech Enhancement",
+      "year": 2019,
+      "authors": [
+        "Ke Tan",
+        "DeLiang Wang"
+      ],
+      "venue": "ICASSP 2019 - 2019 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)",
+      "citation_count": 172,
+      "url": "https://openalex.org/W2940275453",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "CRN convolutional recurrent speech enhancement",
+      "role": "used",
+      "arch_family": "dual_path",
+      "id": "10.1109/icassp.2018.8462155",
+      "doi": "10.1109/icassp.2018.8462155",
+      "title": "Convolutional-Recurrent Neural Networks for Speech Enhancement",
+      "year": 2018,
+      "authors": [
+        "Han Zhao",
+        "Shuayb Zarar",
+        "Ivan Tashev",
+        "Chin-Hui Lee"
+      ],
+      "venue": "2018 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)",
+      "citation_count": 118,
+      "url": "https://doi.org/10.1109/icassp.2018.8462155",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "CRN convolutional recurrent speech enhancement",
+      "role": "used",
+      "arch_family": "dual_path",
+      "id": "W4224917453",
+      "doi": "10.1109/icassp43922.2022.9747578",
+      "title": "FRCRN: Boosting Feature Representation Using Frequency Recurrence for Monaural Speech Enhancement",
+      "year": 2022,
+      "authors": [
+        "Shengkui Zhao",
+        "Bin Ma",
+        "Karn N. Watcharasupat",
+        "Woon\u2010Seng Gan"
+      ],
+      "venue": "ICASSP 2022 - 2022 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)",
+      "citation_count": 99,
+      "url": "https://openalex.org/W4224917453",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "CRN convolutional recurrent speech enhancement",
+      "role": "used",
+      "arch_family": "dual_path",
+      "id": "W3016056257",
+      "doi": "10.1109/lsp.2020.3040693",
+      "title": "WaveCRN: An Efficient Convolutional Recurrent Neural Network for End-to-End Speech Enhancement",
+      "year": 2020,
+      "authors": [
+        "Tsun-An Hsieh",
+        "Hsin-Min Wang",
+        "Xugang Lu",
+        "Yu Tsao"
+      ],
+      "venue": "IEEE Signal Processing Letters",
+      "citation_count": 77,
+      "url": "https://openalex.org/W3016056257",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/97/4358004/09272838.pdf"
+    },
+    {
+      "query": "CRN convolutional recurrent speech enhancement",
+      "role": "used",
+      "arch_family": "dual_path",
+      "id": "W2937525188",
+      "doi": "10.1109/icassp.2019.8683385",
+      "title": "Real-time Speech Enhancement Using an Efficient Convolutional Recurrent Network for Dual-microphone Mobile Phones in Close-talk Scenarios",
+      "year": 2019,
+      "authors": [
+        "Ke Tan",
+        "Xueliang Zhang",
+        "DeLiang Wang"
+      ],
+      "venue": null,
+      "citation_count": 64,
+      "url": "https://openalex.org/W2937525188",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "CRN convolutional recurrent speech enhancement",
+      "role": "used",
+      "arch_family": "dual_path",
+      "id": "W3046669506",
+      "doi": "10.48550/arxiv.2008.00264",
+      "title": "DCCRN: Deep Complex Convolution Recurrent Network for Phase-Aware Speech Enhancement",
+      "year": 2020,
+      "authors": [
+        "Yanxin Hu",
+        "Yun Liu",
+        "Shubo Lv",
+        "Mengtao Xing",
+        "Shimin Zhang",
+        "Yihui Fu",
+        "Jian Wu",
+        "Bihong Zhang",
+        "Lei Xie"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 62,
+      "url": "https://openalex.org/W3046669506",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2008.00264"
+    },
+    {
+      "query": "CRN convolutional recurrent speech enhancement",
+      "role": "used",
+      "arch_family": "dual_path",
+      "id": "W3015844538",
+      "doi": "10.1109/icassp40776.2020.9054230",
+      "title": "Fully Convolutional Recurrent Networks for Speech Enhancement",
+      "year": 2020,
+      "authors": [
+        "Maximilian Strake",
+        "Bruno Defraene",
+        "Kristoff Fluyt",
+        "Wouter Tirry",
+        "Tim Fingscheidt"
+      ],
+      "venue": null,
+      "citation_count": 51,
+      "url": "https://openalex.org/W3015844538",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "metricGAN speech enhancement adversarial",
+      "role": "used",
+      "arch_family": "noise_cond",
+      "id": "10.1109/icassp43922.2022.9747180",
+      "doi": "10.1109/icassp43922.2022.9747180",
+      "title": "MetricGAN-U: Unsupervised Speech Enhancement/ Dereverberation Based Only on Noisy/ Reverberated Speech",
+      "year": 2022,
+      "authors": [
+        "Szu-Wei Fu",
+        "Cheng Yu",
+        "Kuo-Hsuan Hung",
+        "Mirco Ravanelli",
+        "Yu Tsao"
+      ],
+      "venue": "ICASSP 2022 - 2022 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)",
+      "citation_count": 36,
+      "url": "https://doi.org/10.1109/icassp43922.2022.9747180",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "metricGAN speech enhancement adversarial",
+      "role": "used",
+      "arch_family": "attn",
+      "id": "W3011475824",
+      "doi": "10.1109/access.2020.2979554",
+      "title": "Real-Time Speech Enhancement Algorithm Based on Attention LSTM",
+      "year": 2020,
+      "authors": [
+        "Ruiyu Liang",
+        "Fanliu Kong",
+        "Yue Xie",
+        "Guichen Tang",
+        "Jiaming Cheng"
+      ],
+      "venue": "IEEE Access",
+      "citation_count": 36,
+      "url": "https://openalex.org/W3011475824",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6287639/8948470/09028122.pdf"
+    },
+    {
+      "query": "Noise2Noise unsupervised denoising audio",
+      "role": "used",
+      "arch_family": "noise_cond",
+      "id": "W3044960932",
+      "doi": "10.1007/s10462-021-10039-7",
+      "title": "Artificial intelligence in the creative industries: a review",
+      "year": 2021,
+      "authors": [
+        "Nantheera Anantrasirichai",
+        "David Bull"
+      ],
+      "venue": "Artificial Intelligence Review",
+      "citation_count": 676,
+      "url": "https://openalex.org/W3044960932",
+      "source": "openalex",
+      "oa_url": "https://link.springer.com/content/pdf/10.1007/s10462-021-10039-7.pdf"
+    },
+    {
+      "query": "Noise2Noise unsupervised denoising audio",
+      "role": "used",
+      "arch_family": "noise_cond",
+      "id": "W4392092925",
+      "doi": "10.1016/j.oceaneng.2024.117252",
+      "title": "A survey on machine learning in ship radiated noise",
+      "year": 2024,
+      "authors": [
+        "Hilde I. Hummel",
+        "Rob van der Mei",
+        "Sandjai Bhulai"
+      ],
+      "venue": "Ocean Engineering",
+      "citation_count": 56,
+      "url": "https://openalex.org/W4392092925",
+      "source": "openalex",
+      "oa_url": "https://doi.org/10.1016/j.oceaneng.2024.117252"
+    },
+    {
+      "query": "Noise2Noise unsupervised denoising audio",
+      "role": "used",
+      "arch_family": "noise_cond",
+      "id": "06f16a20ef6fc091fcf197f1127188ecf7453b32",
+      "doi": "10.1109/ICASSP49357.2023.10096813",
+      "title": "Unsupervised Anomaly Detection and Localization of Machine Audio: A Gan-Based Approach",
+      "year": 2023,
+      "authors": [
+        "Anbai Jiang",
+        "Weiqiang Zhang",
+        "Yufeng Deng",
+        "Pingyi Fan",
+        "Jia Liu"
+      ],
+      "venue": "IEEE International Conference on Acoustics, Speech, and Signal Processing",
+      "citation_count": 44,
+      "url": "https://www.semanticscholar.org/paper/06f16a20ef6fc091fcf197f1127188ecf7453b32",
+      "source": "semantic_scholar",
+      "oa_url": "https://arxiv.org/pdf/2303.17949"
+    },
+    {
+      "query": "Noise2Noise unsupervised denoising audio",
+      "role": "used",
+      "arch_family": "noise_cond",
+      "id": "10.21437/interspeech.2021-1130",
+      "doi": "10.21437/interspeech.2021-1130",
+      "title": "Speech Denoising Without Clean Training Data: A Noise2Noise Approach",
+      "year": 2021,
+      "authors": [
+        "Madhav Mahesh Kashyap",
+        "Anuj Tambwekar",
+        "Krishnamoorthy Manohara",
+        "S. Natarajan"
+      ],
+      "venue": "Interspeech 2021",
+      "citation_count": 38,
+      "url": "https://doi.org/10.21437/interspeech.2021-1130",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "Noise2Noise unsupervised denoising audio",
+      "role": "used",
+      "arch_family": "noise_cond",
+      "id": "10.1109/cvprw53098.2021.00089",
+      "doi": "10.1109/cvprw53098.2021.00089",
+      "title": "Improved Noise2Noise Denoising with Limited Data",
+      "year": 2021,
+      "authors": [
+        "Adria Font Calvarons"
+      ],
+      "venue": "2021 IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops (CVPRW)",
+      "citation_count": 33,
+      "url": "https://doi.org/10.1109/cvprw53098.2021.00089",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "Noise2Noise unsupervised denoising audio",
+      "role": "used",
+      "arch_family": "noise_cond",
+      "id": "38241607",
+      "doi": "10.1002/adma.202308912",
+      "title": "Expanding the Horizons of Machine Learning in Nanomaterials to Chiral Nanostructures.",
+      "year": 2024,
+      "authors": [
+        "Kuznetsova V",
+        "Coogan \u00c1",
+        "Botov D",
+        "Gromova Y",
+        "Ushakova EV",
+        "Gun'ko YK."
+      ],
+      "venue": null,
+      "citation_count": 23,
+      "url": "https://europepmc.org/article/MED/38241607",
+      "source": "europe_pmc",
+      "oa_url": null
+    },
+    {
+      "query": "Noise2Noise unsupervised denoising audio",
+      "role": "used",
+      "arch_family": "noise_cond",
+      "id": "W4360602229",
+      "doi": "10.1016/j.specom.2023.03.009",
+      "title": "Self-supervised speech denoising using only noisy audio signals",
+      "year": 2023,
+      "authors": [
+        "Jiasong Wu",
+        "Qingchun Li",
+        "Guanyu Yang",
+        "Lei Li",
+        "Lotfi Senhadji",
+        "Huazhong Shu"
+      ],
+      "venue": "Speech Communication",
+      "citation_count": 20,
+      "url": "https://openalex.org/W4360602229",
+      "source": "openalex",
+      "oa_url": "https://hal.science/hal-04064230/document"
+    },
+    {
+      "query": "wavetable periodic signal restoration denoising",
+      "role": "used",
+      "arch_family": "noise_cond",
+      "id": "chemrxiv:10.26434/chemrxiv-2025-wcm8l",
+      "doi": "10.26434/chemrxiv-2025-wcm8l",
+      "title": "Efficient denoising of mass spectrometry images by PCA-assisted self-supervised deep learning",
+      "year": 2025,
+      "authors": [
+        "Claire Seydoux",
+        "Matthew Bryan",
+        "Jean-Paul Barnes",
+        "Pierre-Henri Jouneau"
+      ],
+      "venue": "chemRxiv",
+      "citation_count": 2,
+      "url": "https://doi.org/10.26434/chemrxiv-2025-wcm8l",
+      "source": "chemrxiv",
+      "oa_url": null
+    },
+    {
+      "query": "self-supervised audio denoising deep learning",
+      "role": "used",
+      "arch_family": "noise_cond",
+      "id": "W2794284562",
+      "doi": "10.1155/2018/7068349",
+      "title": "Deep Learning for Computer Vision: A Brief Review",
+      "year": 2018,
+      "authors": [
+        "Athanasios Voulodimos",
+        "Nikolaos Doulamis",
+        "Anastasios Doulamis",
+        "Eftychios Protopapadakis"
+      ],
+      "venue": "Computational Intelligence and Neuroscience",
+      "citation_count": 3326,
+      "url": "https://openalex.org/W2794284562",
+      "source": "openalex",
+      "oa_url": "http://downloads.hindawi.com/journals/cin/2018/7068349.pdf"
+    },
+    {
+      "query": "self-supervised audio denoising deep learning",
+      "role": "used",
+      "arch_family": "noise_cond",
+      "id": "W2984353870",
+      "doi": "10.1007/s10994-019-05855-6",
+      "title": "A survey on semi-supervised learning",
+      "year": 2019,
+      "authors": [
+        "Jesper E. van Engelen",
+        "Holger H. Hoos"
+      ],
+      "venue": "Machine Learning",
+      "citation_count": 2586,
+      "url": "https://openalex.org/W2984353870",
+      "source": "openalex",
+      "oa_url": "https://link.springer.com/content/pdf/10.1007/s10994-019-05855-6.pdf"
+    },
+    {
+      "query": "self-supervised audio denoising deep learning",
+      "role": "used",
+      "arch_family": "noise_cond",
+      "id": "W3194730353",
+      "doi": "10.1007/s42979-021-00815-1",
+      "title": "Deep Learning: A Comprehensive Overview on Techniques, Taxonomy, Applications and Research Directions",
+      "year": 2021,
+      "authors": [
+        "Iqbal H. Sarker"
+      ],
+      "venue": "SN Computer Science",
+      "citation_count": 2466,
+      "url": "https://openalex.org/W3194730353",
+      "source": "openalex",
+      "oa_url": "https://link.springer.com/content/pdf/10.1007/s42979-021-00815-1.pdf"
+    },
+    {
+      "query": "self-supervised audio denoising deep learning",
+      "role": "used",
+      "arch_family": "noise_cond",
+      "id": "W3176923149",
+      "doi": "10.1186/s40537-021-00492-0",
+      "title": "Text Data Augmentation for Deep Learning",
+      "year": 2021,
+      "authors": [
+        "Connor Shorten",
+        "Taghi M. Khoshgoftaar",
+        "Borko Furht"
+      ],
+      "venue": "Journal Of Big Data",
+      "citation_count": 1684,
+      "url": "https://openalex.org/W3176923149",
+      "source": "openalex",
+      "oa_url": "https://journalofbigdata.springeropen.com/track/pdf/10.1186/s40537-021-00492-0"
+    },
+    {
+      "query": "self-supervised audio denoising deep learning",
+      "role": "used",
+      "arch_family": "noise_cond",
+      "id": "W2502949459",
+      "doi": "10.15252/msb.20156651",
+      "title": "Deep learning for computational biology",
+      "year": 2016,
+      "authors": [
+        "Christof Angermueller",
+        "Tanel P\u00e4rnamaa",
+        "Leopold Parts",
+        "Oliver Stegle"
+      ],
+      "venue": "Molecular Systems Biology",
+      "citation_count": 1548,
+      "url": "https://openalex.org/W2502949459",
+      "source": "openalex",
+      "oa_url": "https://onlinelibrary.wiley.com/doi/pdfdirect/10.15252/msb.20156651"
+    },
+    {
+      "query": "self-supervised audio denoising deep learning",
+      "role": "used",
+      "arch_family": "noise_cond",
+      "id": "W3114632476",
+      "doi": "10.3390/technologies9010002",
+      "title": "A Survey on Contrastive Self-Supervised Learning",
+      "year": 2020,
+      "authors": [
+        "Ashish Jaiswal"
+      ],
+      "venue": "MDPI (MDPI AG)",
+      "citation_count": 1546,
+      "url": "https://openalex.org/W3114632476",
+      "source": "openalex",
+      "oa_url": "https://dx.doi.org/10.3390/technologies9010002"
+    },
+    {
+      "query": "self-supervised audio denoising deep learning",
+      "role": "used",
+      "arch_family": "noise_cond",
+      "id": "W3207924272",
+      "doi": "10.1109/msp.2021.3134634",
+      "title": "Self-Supervised Representation Learning: Introduction, advances, and challenges",
+      "year": 2022,
+      "authors": [
+        "Linus Ericsson",
+        "Henry Gouk",
+        "Chen Change Loy",
+        "Timothy M. Hospedales"
+      ],
+      "venue": "IEEE Signal Processing Magazine",
+      "citation_count": 411,
+      "url": "https://openalex.org/W3207924272",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2110.09327"
+    },
+    {
+      "query": "self-supervised audio denoising deep learning",
+      "role": "used",
+      "arch_family": "noise_cond",
+      "id": "W4281492411",
+      "doi": "10.1109/jstsp.2022.3207050",
+      "title": "Self-Supervised Speech Representation Learning: A Review",
+      "year": 2022,
+      "authors": [
+        "Abdelrahman Mohamed",
+        "Hung-yi Lee",
+        "Lasse Borgholt",
+        "Jakob D. Havtorn",
+        "Joakim Edin",
+        "Christian Igel",
+        "Katrin Kirchhoff",
+        "Shang-Wen Li",
+        "Karen Livescu",
+        "Lars Maal\u00f8e",
+        "Tara N. Sainath",
+        "Shinji Watanabe"
+      ],
+      "venue": "IEEE Journal of Selected Topics in Signal Processing",
+      "citation_count": 354,
+      "url": "https://openalex.org/W4281492411",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2205.10643"
+    },
+    {
+      "query": "lightweight neural network real-time speech enhancement",
+      "role": "used",
+      "arch_family": "mlp",
+      "id": "W3168997536",
+      "doi": "10.1109/tnnls.2021.3084827",
+      "title": "A Survey of Convolutional Neural Networks: Analysis, Applications, and Prospects",
+      "year": 2021,
+      "authors": [
+        "Zewen Li",
+        "Fan Liu",
+        "Wenjie Yang",
+        "Shouheng Peng",
+        "Jun Zhou"
+      ],
+      "venue": "IEEE Transactions on Neural Networks and Learning Systems",
+      "citation_count": 4911,
+      "url": "https://openalex.org/W3168997536",
+      "source": "openalex",
+      "oa_url": "http://hdl.handle.net/10072/405164"
+    },
+    {
+      "query": "lightweight neural network real-time speech enhancement",
+      "role": "used",
+      "arch_family": "mlp",
+      "id": "W2270470215",
+      "doi": "10.3390/s16010115",
+      "title": "Deep Convolutional and LSTM Recurrent Neural Networks for Multimodal Wearable Activity Recognition",
+      "year": 2016,
+      "authors": [
+        "Francisco Ord\u00f3\u00f1ez",
+        "Daniel Roggen"
+      ],
+      "venue": "Sensors",
+      "citation_count": 2669,
+      "url": "https://openalex.org/W2270470215",
+      "source": "openalex",
+      "oa_url": "https://www.mdpi.com/1424-8220/16/1/115/pdf?version=1453111475"
+    },
+    {
+      "query": "lightweight neural network real-time speech enhancement",
+      "role": "used",
+      "arch_family": "mlp",
+      "id": "W4393115925",
+      "doi": "10.1007/s10462-024-10721-6",
+      "title": "A review of convolutional neural networks in computer vision",
+      "year": 2024,
+      "authors": [
+        "Xia Zhao",
+        "Limin Wang",
+        "Yufei Zhang",
+        "Xuming Han",
+        "Muhammet Deveci",
+        "Milan Parmar"
+      ],
+      "venue": "Artificial Intelligence Review",
+      "citation_count": 974,
+      "url": "https://openalex.org/W4393115925",
+      "source": "openalex",
+      "oa_url": "https://link.springer.com/content/pdf/10.1007/s10462-024-10721-6.pdf"
+    },
+    {
+      "query": "lightweight neural network real-time speech enhancement",
+      "role": "used",
+      "arch_family": "mlp",
+      "id": "W4206569030",
+      "doi": "10.1145/3510413",
+      "title": "Avoiding Overfitting: A Survey on Regularization Methods for Convolutional Neural Networks",
+      "year": 2022,
+      "authors": [
+        "Claudio Filipi Gon\u00e7alves dos Santos",
+        "Jo\u00e3o Paulo Papa"
+      ],
+      "venue": "ACM Computing Surveys",
+      "citation_count": 391,
+      "url": "https://openalex.org/W4206569030",
+      "source": "openalex",
+      "oa_url": "https://dl.acm.org/doi/pdf/10.1145/3510413"
+    },
+    {
+      "query": "lightweight neural network real-time speech enhancement",
+      "role": "used",
+      "arch_family": "mlp",
+      "id": "W3010250471",
+      "doi": "10.1109/tcyb.2020.2970104",
+      "title": "MADNet: A Fast and Lightweight Network for Single-Image Super Resolution",
+      "year": 2020,
+      "authors": [
+        "Rushi Lan",
+        "Long Sun",
+        "Zhenbing Liu",
+        "Huimin Lu",
+        "Cheng Pang",
+        "Xiaonan Luo"
+      ],
+      "venue": "IEEE Transactions on Cybernetics",
+      "citation_count": 328,
+      "url": "https://openalex.org/W3010250471",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6221036/9355833/09023942.pdf"
+    },
+    {
+      "query": "lightweight neural network real-time speech enhancement",
+      "role": "used",
+      "arch_family": "tcn_dilated",
+      "id": "10.1109/icassp.2019.8683634",
+      "doi": "10.1109/icassp.2019.8683634",
+      "title": "TCNN: Temporal Convolutional Neural Network for Real-time Speech Enhancement in the Time Domain",
+      "year": 2019,
+      "authors": [
+        "Ashutosh Pandey",
+        "DeLiang Wang"
+      ],
+      "venue": "ICASSP 2019 - 2019 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)",
+      "citation_count": 309,
+      "url": "https://doi.org/10.1109/icassp.2019.8683634",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "temporal convolutional network TCN audio separation",
+      "role": "used",
+      "arch_family": "tcn_dilated",
+      "id": "W4366091323",
+      "doi": "10.1007/s10462-023-10466-8",
+      "title": "Deep learning modelling techniques: current progress, applications, advantages, and challenges",
+      "year": 2023,
+      "authors": [
+        "Shams Forruque Ahmed",
+        "Md. Sakib Bin Alam",
+        "Maruf Hassan",
+        "Mahtabin Rodela Rozbu",
+        "Taoseef Ishtiak",
+        "Nazifa Rafa",
+        "M. Mofijur",
+        "A. B. M. Shawkat Ali",
+        "Amir H. Gandomi"
+      ],
+      "venue": "Artificial Intelligence Review",
+      "citation_count": 990,
+      "url": "https://openalex.org/W4366091323",
+      "source": "openalex",
+      "oa_url": "https://link.springer.com/content/pdf/10.1007/s10462-023-10466-8.pdf"
+    },
+    {
+      "query": "temporal convolutional network TCN audio separation",
+      "role": "used",
+      "arch_family": "tcn_dilated",
+      "id": "10.1109/cvpr.2019.00369",
+      "doi": "10.1109/cvpr.2019.00369",
+      "title": "MS-TCN: Multi-Stage Temporal Convolutional Network for Action Segmentation",
+      "year": 2019,
+      "authors": [
+        "Yazan Abu Farha",
+        "J\u00fcrgen Gall"
+      ],
+      "venue": "2019 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)",
+      "citation_count": 597,
+      "url": "https://doi.org/10.1109/cvpr.2019.00369",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "temporal convolutional network TCN audio separation",
+      "role": "used",
+      "arch_family": "tcn_dilated",
+      "id": "W4293762926",
+      "doi": "10.1145/3559540",
+      "title": "Generative Adversarial Networks in Time Series: A Systematic Literature Review",
+      "year": 2022,
+      "authors": [
+        "Eoin Brophy",
+        "Zhengwei Wang",
+        "Qi She",
+        "Tom\u00e1s Ward"
+      ],
+      "venue": "ACM Computing Surveys",
+      "citation_count": 308,
+      "url": "https://openalex.org/W4293762926",
+      "source": "openalex",
+      "oa_url": "https://dl.acm.org/doi/pdf/10.1145/3559540"
+    },
+    {
+      "query": "temporal convolutional network TCN audio separation",
+      "role": "used",
+      "arch_family": "tcn_dilated",
+      "id": "W4379927854",
+      "doi": "10.1109/tpami.2023.3284080",
+      "title": "C2F-TCN: A Framework for Semi- and Fully-Supervised Temporal Action Segmentation",
+      "year": 2023,
+      "authors": [
+        "Dipika Singhania",
+        "Rahul Rahaman",
+        "Angela Yao"
+      ],
+      "venue": "IEEE Transactions on Pattern Analysis and Machine Intelligence",
+      "citation_count": 50,
+      "url": "https://openalex.org/W4379927854",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/34/4359286/10147035.pdf"
+    },
+    {
+      "query": "temporal convolutional network TCN audio separation",
+      "role": "used",
+      "arch_family": "tcn_dilated",
+      "id": "W3139480780",
+      "doi": "10.3390/s21062051",
+      "title": "Comparison between Recurrent Networks and Temporal Convolutional Networks Approaches for Skeleton-Based Action Recognition",
+      "year": 2021,
+      "authors": [
+        "Mihai Nan",
+        "Mihai Tr\u0103\u015fc\u0103u",
+        "Adina Magda Florea",
+        "Cezar C\u0103t\u0103lin Iacob"
+      ],
+      "venue": "Sensors",
+      "citation_count": 39,
+      "url": "https://openalex.org/W3139480780",
+      "source": "openalex",
+      "oa_url": "https://www.mdpi.com/1424-8220/21/6/2051/pdf?version=1616032831"
+    },
+    {
+      "query": "temporal convolutional network TCN audio separation",
+      "role": "used",
+      "arch_family": "tcn_dilated",
+      "id": "W4283794752",
+      "doi": "10.1609/aaai.v36i10.21372",
+      "title": "SFSRNet: Super-resolution for Single-Channel Audio Source Separation",
+      "year": 2022,
+      "authors": [
+        "Joel Rixen",
+        "Matthias Renz"
+      ],
+      "venue": "Proceedings of the AAAI Conference on Artificial Intelligence",
+      "citation_count": 29,
+      "url": "https://openalex.org/W4283794752",
+      "source": "openalex",
+      "oa_url": "https://doi.org/10.1609/aaai.v36i10.21372"
+    },
+    {
+      "query": "gated residual network audio denoising",
+      "role": "used",
+      "arch_family": "residual",
+      "id": "W2963993350",
+      "doi": "10.1155/2018/7316954",
+      "title": "Deep Residual Bidir-LSTM for Human Activity Recognition Using Wearable Sensors",
+      "year": 2018,
+      "authors": [
+        "Yu Zhao",
+        "Rennong Yang",
+        "Guillaume Chevalier",
+        "Ximeng Xu",
+        "Zhenxing Zhang"
+      ],
+      "venue": "Mathematical Problems in Engineering",
+      "citation_count": 347,
+      "url": "https://openalex.org/W2963993350",
+      "source": "openalex",
+      "oa_url": "https://downloads.hindawi.com/journals/mpe/2018/7316954.pdf"
+    },
+    {
+      "query": "gated residual network audio denoising",
+      "role": "used",
+      "arch_family": "residual",
+      "id": "W4313984387",
+      "doi": "10.3389/fdata.2022.1001063",
+      "title": "Audio deepfakes: A survey",
+      "year": 2023,
+      "authors": [
+        "Zahra Khanjani",
+        "Gabrielle Watson",
+        "Vandana P. Janeja"
+      ],
+      "venue": "Frontiers in Big Data",
+      "citation_count": 104,
+      "url": "https://openalex.org/W4313984387",
+      "source": "openalex",
+      "oa_url": "https://www.frontiersin.org/articles/10.3389/fdata.2022.1001063/pdf"
+    },
+    {
+      "query": "attention U-Net speech enhancement",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "W2998678989",
+      "doi": "10.1109/waspaa.2019.8937186",
+      "title": "Attention Wave-U-Net for Speech Enhancement",
+      "year": 2019,
+      "authors": [
+        "Ritwik Giri",
+        "Umut Isik",
+        "Arvindh Krishnaswamy"
+      ],
+      "venue": "2019 IEEE Workshop on Applications of Signal Processing to Audio and Acoustics (WASPAA)",
+      "citation_count": 116,
+      "url": "https://openalex.org/W2998678989",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "attention U-Net speech enhancement",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "W3003441391",
+      "doi": "10.1109/icassp40776.2020.9053989",
+      "title": "Channel-Attention Dense U-Net for Multichannel Speech Enhancement",
+      "year": 2020,
+      "authors": [
+        "Bahareh Tolooshams",
+        "Ritwik Giri",
+        "Andrew H. Song",
+        "Umut Isik",
+        "Arvindh Krishnaswamy"
+      ],
+      "venue": "ICASSP 2020 - 2020 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)",
+      "citation_count": 81,
+      "url": "https://openalex.org/W3003441391",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2001.11542"
+    },
+    {
+      "query": "attention U-Net speech enhancement",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "W3212231398",
+      "doi": "10.1109/lsp.2021.3128374",
+      "title": "A Nested U-Net With Self-Attention and Dense Connectivity for Monaural Speech Enhancement",
+      "year": 2021,
+      "authors": [
+        "Xiaoxiao Xiang",
+        "Xiaojuan Zhang",
+        "Haozhe Chen"
+      ],
+      "venue": "IEEE Signal Processing Letters",
+      "citation_count": 65,
+      "url": "https://openalex.org/W3212231398",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "attention U-Net speech enhancement",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "709fe6f12c40722d66b09b371a90b8a6acd263f1",
+      "doi": "10.1109/ICASSP40776.2020.9053288",
+      "title": "Characterizing Speech Adversarial Examples Using Self-Attention U-Net Enhancement",
+      "year": 2020,
+      "authors": [
+        "Chao-Han Huck Yang",
+        "Jun Qi",
+        "Pin-Yu Chen",
+        "Xiaoli Ma",
+        "Chin-Hui Lee"
+      ],
+      "venue": "IEEE International Conference on Acoustics, Speech, and Signal Processing",
+      "citation_count": 62,
+      "url": "https://www.semanticscholar.org/paper/709fe6f12c40722d66b09b371a90b8a6acd263f1",
+      "source": "semantic_scholar",
+      "oa_url": "https://arxiv.org/pdf/2003.13917"
+    },
+    {
+      "query": "attention U-Net speech enhancement",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "2316b7a12ca4b6020c24d47a26b83ddd556e95a9",
+      "doi": "10.1142/s0219467825500676",
+      "title": "Stacked U-Net with Time-Frequency Attention and Deep Connection Net for Single Channel Speech Enhancement",
+      "year": 2024,
+      "authors": [
+        "Veeraswamy Parisae",
+        "S. Bhavanam"
+      ],
+      "venue": "International Journal of Image and Graphics",
+      "citation_count": 17,
+      "url": "https://www.semanticscholar.org/paper/2316b7a12ca4b6020c24d47a26b83ddd556e95a9",
+      "source": "semantic_scholar",
+      "oa_url": ""
+    },
+    {
+      "query": "attention U-Net speech enhancement",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "W4378977193",
+      "doi": "10.1109/aisp57993.2023.10134933",
+      "title": "An attention based densely connected U-NET with convolutional GRU for speech enhancement",
+      "year": 2023,
+      "authors": [
+        "Chaitanya Jannu",
+        "Sunny Dayal Vanambathina"
+      ],
+      "venue": "2023 3rd International conference on Artificial Intelligence and Signal Processing (AISP)",
+      "citation_count": 17,
+      "url": "https://openalex.org/W4378977193",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "attention U-Net speech enhancement",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "b0d1d7b7f3cc4a3050747dd377bc5ffbbaa701fe",
+      "doi": "10.1186/s13636-024-00331-z",
+      "title": "Sub-convolutional U-Net with transformer attention network for end-to-end single-channel speech enhancement",
+      "year": 2024,
+      "authors": [
+        "Sivaramakrishna Yechuri",
+        "Sunnydayal Vanambathina"
+      ],
+      "venue": "EURASIP Journal on Audio, Speech, and Music Processing",
+      "citation_count": 14,
+      "url": "https://www.semanticscholar.org/paper/b0d1d7b7f3cc4a3050747dd377bc5ffbbaa701fe",
+      "source": "semantic_scholar",
+      "oa_url": "https://asmp-eurasipjournals.springeropen.com/counter/pdf/10.1186/s13636-024-00331-z"
+    },
+    {
+      "query": "attention U-Net speech enhancement",
+      "role": "used",
+      "arch_family": "unet",
+      "id": "W4319662288",
+      "doi": "10.1007/s00034-023-02300-x",
+      "title": "A Nested U-Net with Efficient Channel Attention and D3Net for Speech Enhancement",
+      "year": 2023,
+      "authors": [
+        "Sivaramakrishna Yechuri",
+        "Sunnydayal Vanambathina"
+      ],
+      "venue": "Circuits Systems and Signal Processing",
+      "citation_count": 14,
+      "url": "https://openalex.org/W4319662288",
+      "source": "openalex",
+      "oa_url": null
+    }
+  ],
+  "screened_relevant": [
+    {
+      "query": "Conv-TasNet time domain audio separation",
+      "role": "screened_relevant",
+      "arch_family": "tcn_dilated",
+      "id": "W4297009256",
+      "doi": "10.1007/s00034-022-02178-1",
+      "title": "Cycle GAN-Based Audio Source Separation Using Time\u2013Frequency Masking",
+      "year": 2022,
+      "authors": [
+        "Sujo Joseph",
+        "Rajeev Rajan"
+      ],
+      "venue": "Circuits Systems and Signal Processing",
+      "citation_count": 13,
+      "url": "https://openalex.org/W4297009256",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "SEGAN speech enhancement generative adversarial",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W2600556233",
+      "doi": "10.21437/interspeech.2017-1428",
+      "title": "SEGAN: Speech Enhancement Generative Adversarial Network",
+      "year": 2017,
+      "authors": [
+        "Santiago Pascual",
+        "Antonio Bonafonte",
+        "Joan Serr\u00e0"
+      ],
+      "venue": "Interspeech 2017",
+      "citation_count": 838,
+      "url": "https://openalex.org/W2600556233",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/1703.09452"
+    },
+    {
+      "query": "SEGAN speech enhancement generative adversarial",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W2998161426",
+      "doi": "10.1609/aaai.v34i05.6489",
+      "title": "PHASEN: A Phase-and-Harmonics-Aware Speech Enhancement Network",
+      "year": 2020,
+      "authors": [
+        "Dacheng Yin",
+        "Chong Luo",
+        "Zhiwei Xiong",
+        "Wenjun Zeng"
+      ],
+      "venue": "Proceedings of the AAAI Conference on Artificial Intelligence",
+      "citation_count": 327,
+      "url": "https://openalex.org/W2998161426",
+      "source": "openalex",
+      "oa_url": "https://ojs.aaai.org/index.php/AAAI/article/download/6489/6345"
+    },
+    {
+      "query": "SEGAN speech enhancement generative adversarial",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W3002944878",
+      "doi": "10.48550/arxiv.2001.06937",
+      "title": "A Review on Generative Adversarial Networks: Algorithms, Theory, and Applications",
+      "year": 2020,
+      "authors": [
+        "Jie Gui",
+        "Zhenan Sun",
+        "Yonggang Wen",
+        "Dacheng Tao",
+        "Jieping Ye"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 261,
+      "url": "https://openalex.org/W3002944878",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2001.06937"
+    },
+    {
+      "query": "SEGAN speech enhancement generative adversarial",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W3128484727",
+      "doi": "10.1186/s40537-021-00414-0",
+      "title": "A survey on generative adversarial networks for imbalance problems in computer vision tasks",
+      "year": 2021,
+      "authors": [
+        "Vignesh Sampath",
+        "I\u00f1aki Maurtua",
+        "Juan Jos\u00e9 Aguilar Mart\u00edn",
+        "Aitor Gutierrez"
+      ],
+      "venue": "Journal Of Big Data",
+      "citation_count": 248,
+      "url": "https://openalex.org/W3128484727",
+      "source": "openalex",
+      "oa_url": "https://journalofbigdata.springeropen.com/track/pdf/10.1186/s40537-021-00414-0"
+    },
+    {
+      "query": "SEGAN speech enhancement generative adversarial",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "chemrxiv:10.26434/chemrxiv.5309668.v3",
+      "doi": "10.26434/chemrxiv.5309668.v3",
+      "title": "Optimizing distributions over molecular space. An Objective-Reinforced Generative Adversarial Network for Inverse-design Chemistry (ORGANIC)",
+      "year": 2017,
+      "authors": [
+        "Benjamin Sanchez-Lengeling",
+        "Carlos Outeiral",
+        "Gabriel L. Guimaraes",
+        "Alan Aspuru-Guzik"
+      ],
+      "venue": "chemRxiv",
+      "citation_count": 216,
+      "url": "https://doi.org/10.26434/chemrxiv.5309668.v3",
+      "source": "chemrxiv",
+      "oa_url": null
+    },
+    {
+      "query": "SEGAN speech enhancement generative adversarial",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W3011628670",
+      "doi": "10.1109/access.2020.2982224",
+      "title": "A State-of-the-Art Review on Image Synthesis With Generative Adversarial Networks",
+      "year": 2020,
+      "authors": [
+        "Lei Wang",
+        "Wei Chen",
+        "Wen\u2010Jia Yang",
+        "Fangming Bi",
+        "F. Richard Yu"
+      ],
+      "venue": "IEEE Access",
+      "citation_count": 199,
+      "url": "https://openalex.org/W3011628670",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6287639/8948470/09043519.pdf"
+    },
+    {
+      "query": "SEGAN speech enhancement generative adversarial",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W2904843110",
+      "doi": "10.1109/access.2018.2886814",
+      "title": "Recent Advances of Generative Adversarial Networks in Computer Vision",
+      "year": 2018,
+      "authors": [
+        "Yangjie Cao",
+        "Lili Jia",
+        "Yong-Xia Chen",
+        "Nan Lin",
+        "Cong Yang",
+        "Bo Zhang",
+        "Zhi Liu",
+        "Xuexiang Li",
+        "Honghua Dai"
+      ],
+      "venue": "IEEE Access",
+      "citation_count": 194,
+      "url": "https://openalex.org/W2904843110",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6287639/8600701/08576508.pdf"
+    },
+    {
+      "query": "SEGAN speech enhancement generative adversarial",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "10.1109/icassp.2018.8462581",
+      "doi": "10.1109/icassp.2018.8462581",
+      "title": "Exploring Speech Enhancement with Generative Adversarial Networks for Robust Speech Recognition",
+      "year": 2018,
+      "authors": [
+        "Chris Donahue",
+        "Bo Li",
+        "Rohit Prabhavalkar"
+      ],
+      "venue": "2018 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)",
+      "citation_count": 143,
+      "url": "https://doi.org/10.1109/icassp.2018.8462581",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "SEGAN speech enhancement generative adversarial",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "10.21437/interspeech.2017-1620",
+      "doi": "10.21437/interspeech.2017-1620",
+      "title": "Conditional Generative Adversarial Networks for Speech Enhancement and Noise-Robust Speaker Verification",
+      "year": 2017,
+      "authors": [
+        "Daniel Michelsanti",
+        "Zheng-Hua Tan"
+      ],
+      "venue": "Interspeech 2017",
+      "citation_count": 136,
+      "url": "https://doi.org/10.21437/interspeech.2017-1620",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "diffusion model audio denoising speech enhancement",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W3155072588",
+      "doi": "10.1109/tpami.2022.3204461",
+      "title": "Image Super-Resolution Via Iterative Refinement",
+      "year": 2022,
+      "authors": [
+        "Chitwan Saharia",
+        "Jonathan Ho",
+        "William Chan",
+        "Tim Salimans",
+        "David J. Fleet",
+        "Mohammad Norouzi"
+      ],
+      "venue": "IEEE Transactions on Pattern Analysis and Machine Intelligence",
+      "citation_count": 1650,
+      "url": "https://openalex.org/W3155072588",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/34/4359286/09887996.pdf"
+    },
+    {
+      "query": "diffusion model audio denoising speech enhancement",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W3212516020",
+      "doi": "10.1145/3528233.3530757",
+      "title": "Palette: Image-to-Image Diffusion Models",
+      "year": 2022,
+      "authors": [
+        "Chitwan Saharia",
+        "William Chan",
+        "Huiwen Chang",
+        "Chris Lee",
+        "Jonathan Ho",
+        "Tim Salimans",
+        "David J. Fleet",
+        "Mohammad Norouzi"
+      ],
+      "venue": null,
+      "citation_count": 1522,
+      "url": "https://openalex.org/W3212516020",
+      "source": "openalex",
+      "oa_url": "https://dl.acm.org/doi/pdf/10.1145/3528233.3530757"
+    },
+    {
+      "query": "diffusion model audio denoising speech enhancement",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W4389326242",
+      "doi": "10.48550/arxiv.2312.00752",
+      "title": "Mamba: Linear-Time Sequence Modeling with Selective State Spaces",
+      "year": 2023,
+      "authors": [
+        "Albert Gu",
+        "Tri Dao"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 1021,
+      "url": "https://openalex.org/W4389326242",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2312.00752"
+    },
+    {
+      "query": "diffusion model audio denoising speech enhancement",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W3204937802",
+      "doi": "10.1109/tpami.2021.3116668",
+      "title": "Deep Generative Modelling: A Comparative Review of VAEs, GANs, Normalizing Flows, Energy-Based and Autoregressive Models",
+      "year": 2021,
+      "authors": [
+        "Leach, Adam"
+      ],
+      "venue": "Durham Research Online (Durham University)",
+      "citation_count": 631,
+      "url": "https://openalex.org/W3204937802",
+      "source": "openalex",
+      "oa_url": "https://durham-repository.worktribe.com/output/1232078"
+    },
+    {
+      "query": "diffusion model audio denoising speech enhancement",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W4377010269",
+      "doi": "10.1145/3592458",
+      "title": "Listen, Denoise, Action! Audio-Driven Motion Synthesis with Diffusion Models",
+      "year": 2023,
+      "authors": [
+        "Simon Alexanderson",
+        "Rajmund Nagy",
+        "Jonas Beskow",
+        "Gustav Eje Henter"
+      ],
+      "venue": "ACM Transactions on Graphics",
+      "citation_count": 173,
+      "url": "https://openalex.org/W4377010269",
+      "source": "openalex",
+      "oa_url": "https://dl.acm.org/doi/pdf/10.1145/3592458"
+    },
+    {
+      "query": "diffusion model audio denoising speech enhancement",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W4388185854",
+      "doi": "10.1038/s44222-023-00114-9",
+      "title": "Diffusion models in bioinformatics and computational biology",
+      "year": 2023,
+      "authors": [
+        "Zhiye Guo",
+        "Jian Liu",
+        "Yanli Wang",
+        "Mengrui Chen",
+        "Duolin Wang",
+        "Dong Xu",
+        "Jianlin Cheng"
+      ],
+      "venue": "Nature Reviews Bioengineering",
+      "citation_count": 130,
+      "url": "https://openalex.org/W4388185854",
+      "source": "openalex",
+      "oa_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10994218/pdf/nihms-1980877.pdf"
+    },
+    {
+      "query": "diffusion model audio denoising speech enhancement",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W4390100390",
+      "doi": "10.1145/3589132.3625614",
+      "title": "DiffSTG: Probabilistic Spatio-Temporal Graph Forecasting with Denoising Diffusion Models",
+      "year": 2023,
+      "authors": [
+        "Haomin Wen",
+        "Youfang Lin",
+        "Yutong Xia",
+        "Huaiyu Wan",
+        "Qingsong Wen",
+        "Roger Zimmermann",
+        "Yuxuan Liang"
+      ],
+      "venue": null,
+      "citation_count": 98,
+      "url": "https://openalex.org/W4390100390",
+      "source": "openalex",
+      "oa_url": "https://dl.acm.org/doi/pdf/10.1145/3589132.3625614"
+    },
+    {
+      "query": "diffusion model audio denoising speech enhancement",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W4318718996",
+      "doi": "10.48550/arxiv.2301.12661",
+      "title": "Make-An-Audio: Text-To-Audio Generation with Prompt-Enhanced Diffusion Models",
+      "year": 2023,
+      "authors": [
+        "Rongjie Huang",
+        "Jiawei Huang",
+        "Dongchao Yang",
+        "Yi Ren",
+        "Luping Liu",
+        "Mingze Li",
+        "Zhenhui Ye",
+        "Jinglin Liu",
+        "Xiang Yin",
+        "Zhou Zhao"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 47,
+      "url": "https://openalex.org/W4318718996",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2301.12661"
+    },
+    {
+      "query": "diffusion model audio denoising speech enhancement",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W4360890968",
+      "doi": "10.48550/arxiv.2303.13336",
+      "title": "A Survey on Audio Diffusion Models: Text To Speech Synthesis and Enhancement in Generative AI",
+      "year": 2023,
+      "authors": [
+        "Chenshuang Zhang",
+        "Chaoning Zhang",
+        "Sheng Zheng",
+        "Mengchun Zhang",
+        "Maryam Qamar",
+        "Sung\u2010Ho Bae",
+        "In So Kweon"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 40,
+      "url": "https://openalex.org/W4360890968",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2303.13336"
+    },
+    {
+      "query": "diffusion model audio denoising speech enhancement",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W4372268522",
+      "doi": "10.1109/icassp49357.2023.10095258",
+      "title": "Analysing Diffusion-based Generative Approaches Versus Discriminative Approaches for Speech Restoration",
+      "year": 2023,
+      "authors": [
+        "Jean-Marie Lemercier",
+        "Julius Richter",
+        "Simon Welker",
+        "Timo Gerkmann"
+      ],
+      "venue": null,
+      "citation_count": 32,
+      "url": "https://openalex.org/W4372268522",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "metricGAN speech enhancement adversarial",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "10.21437/interspeech.2021-599",
+      "doi": "10.21437/interspeech.2021-599",
+      "title": "MetricGAN+: An Improved Version of MetricGAN for Speech Enhancement",
+      "year": 2021,
+      "authors": [
+        "Szu-Wei Fu",
+        "Cheng Yu",
+        "Tsun-An Hsieh",
+        "Peter Plantinga",
+        "Mirco Ravanelli",
+        "Xugang Lu",
+        "Yu Tsao"
+      ],
+      "venue": "Interspeech 2021",
+      "citation_count": 192,
+      "url": "https://doi.org/10.21437/interspeech.2021-599",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "metricGAN speech enhancement adversarial",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W2943895317",
+      "doi": "10.48550/arxiv.1905.04874",
+      "title": "MetricGAN: Generative Adversarial Networks based Black-box Metric Scores Optimization for Speech Enhancement",
+      "year": 2019,
+      "authors": [
+        "Szu\u2010Wei Fu",
+        "Chien-Feng Liao",
+        "Yu Tsao",
+        "Shou-De Lin"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 117,
+      "url": "https://openalex.org/W2943895317",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/1905.04874"
+    },
+    {
+      "query": "metricGAN speech enhancement adversarial",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W4292969786",
+      "doi": "10.1109/jstsp.2022.3200911",
+      "title": "RemixIT: Continual self-training of speech enhancement models via bootstrapped remixing",
+      "year": 2022,
+      "authors": [
+        "Efthymios Tzinis",
+        "Yossi Adi",
+        "Vamsi Krishna Ithapu",
+        "Buye Xu",
+        "Paris Smaragdis",
+        "Anurag Kumar"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 49,
+      "url": "https://openalex.org/W4292969786",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2202.08862"
+    },
+    {
+      "query": "metricGAN speech enhancement adversarial",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W4387938956",
+      "doi": "10.1007/s10462-023-10612-2",
+      "title": "Deep neural network techniques for monaural speech enhancement and separation: state of the art analysis",
+      "year": 2023,
+      "authors": [
+        "Peter Juma Ochieng"
+      ],
+      "venue": "Artificial Intelligence Review",
+      "citation_count": 46,
+      "url": "https://openalex.org/W4387938956",
+      "source": "openalex",
+      "oa_url": "https://link.springer.com/content/pdf/10.1007/s10462-023-10612-2.pdf"
+    },
+    {
+      "query": "metricGAN speech enhancement adversarial",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W3036367741",
+      "doi": "10.21437/interspeech.2020-2409",
+      "title": "Real Time Speech Enhancement in the Waveform Domain",
+      "year": 2020,
+      "authors": [
+        "Alexandre D\u00e9fossez",
+        "Gabriel Synnaeve",
+        "Yossi Adi"
+      ],
+      "venue": null,
+      "citation_count": 43,
+      "url": "https://openalex.org/W3036367741",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2006.12847"
+    },
+    {
+      "query": "metricGAN speech enhancement adversarial",
+      "role": "screened_relevant",
+      "arch_family": "residual",
+      "id": "W2998445964",
+      "doi": "10.1609/aaai.v34i05.6377",
+      "title": "Deep Residual-Dense Lattice Network for Speech Enhancement",
+      "year": 2020,
+      "authors": [
+        "Mohammad Nikzad",
+        "Aaron Nicolson",
+        "Yongsheng Gao",
+        "Jun Zhou",
+        "Kuldip K. Paliwal",
+        "Fanhua Shang"
+      ],
+      "venue": "Proceedings of the AAAI Conference on Artificial Intelligence",
+      "citation_count": 40,
+      "url": "https://openalex.org/W2998445964",
+      "source": "openalex",
+      "oa_url": "https://ojs.aaai.org/index.php/AAAI/article/download/6377/6233"
+    },
+    {
+      "query": "metricGAN speech enhancement adversarial",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "38091351",
+      "doi": "10.1371/journal.pbio.3002366",
+      "title": "Many but not all deep neural network audio models capture brain responses and exhibit correspondence between model stages and brain regions.",
+      "year": 2023,
+      "authors": [
+        "Tuckute G",
+        "Feather J",
+        "Boebinger D",
+        "McDermott JH."
+      ],
+      "venue": null,
+      "citation_count": 38,
+      "url": "https://europepmc.org/article/MED/38091351",
+      "source": "europe_pmc",
+      "oa_url": null
+    },
+    {
+      "query": "metricGAN speech enhancement adversarial",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W4389459413",
+      "doi": "10.1109/taslp.2023.3340603",
+      "title": "Selective Acoustic Feature Enhancement for Speech Emotion Recognition With Noisy Speech",
+      "year": 2023,
+      "authors": [
+        "Seong-Gyun Leem",
+        "Daniel Fulford",
+        "Jukka\u2010Pekka Onnela",
+        "David E. Gard",
+        "Carlos Busso"
+      ],
+      "venue": "IEEE/ACM Transactions on Audio Speech and Language Processing",
+      "citation_count": 31,
+      "url": "https://openalex.org/W4389459413",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6570655/6633080/10347397.pdf"
+    },
+    {
+      "query": "wavetable periodic signal restoration denoising",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "10.1016/j.sigpro.2020.107655",
+      "doi": "10.1016/j.sigpro.2020.107655",
+      "title": "From group sparse coding to rank minimization: A novel denoising model for low-level image restoration",
+      "year": 2020,
+      "authors": [
+        "Yunyi Li",
+        "Guan Gui",
+        "Xiefeng Cheng"
+      ],
+      "venue": "Signal Processing",
+      "citation_count": 29,
+      "url": "https://doi.org/10.1016/j.sigpro.2020.107655",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "wavetable periodic signal restoration denoising",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "10.1109/lsp.2023.3265174",
+      "doi": "10.1109/lsp.2023.3265174",
+      "title": "SLN-RED: Regularization by Simultaneous Local and Nonlocal Denoising for Image Restoration",
+      "year": 2023,
+      "authors": [
+        "Liangtian He",
+        "Qinghua Zhang",
+        "Xuesong Yang",
+        "Yilun Wang",
+        "Chao Wang"
+      ],
+      "venue": "IEEE Signal Processing Letters",
+      "citation_count": 9,
+      "url": "https://doi.org/10.1109/lsp.2023.3265174",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "wavetable periodic signal restoration denoising",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "10.23919/eusipco47968.2020.9287543",
+      "doi": "10.23919/eusipco47968.2020.9287543",
+      "title": "WaveNet based architectures for denoising periodic discontinuous signals and application to friction signals",
+      "year": 2021,
+      "authors": [
+        "Jules Rio",
+        "Fabien Momey",
+        "Christophe Ducottet",
+        "Olivier Alata"
+      ],
+      "venue": "2020 28th European Signal Processing Conference (EUSIPCO)",
+      "citation_count": 7,
+      "url": "https://doi.org/10.23919/eusipco47968.2020.9287543",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "wavetable periodic signal restoration denoising",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "10.1016/j.sigpro.2024.109883",
+      "doi": "10.1016/j.sigpro.2024.109883",
+      "title": "Quaternion-based deep image prior with regularization by denoising for color image restoration",
+      "year": 2025,
+      "authors": [
+        "Qinghua Zhang",
+        "Liangtian He",
+        "Shaobing Gao",
+        "Liang-Jian Deng",
+        "Jun Liu"
+      ],
+      "venue": "Signal Processing",
+      "citation_count": 5,
+      "url": "https://doi.org/10.1016/j.sigpro.2024.109883",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "wavetable periodic signal restoration denoising",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "10.1016/j.image.2023.117013",
+      "doi": "10.1016/j.image.2023.117013",
+      "title": "MR image restoration and segmentation via denoising deep adversarial network for blood vessels accurate diagnosis",
+      "year": 2023,
+      "authors": [
+        "Pandia Rajan Jeyaraj",
+        "Edward Rajan Samuel Nadar"
+      ],
+      "venue": "Signal Processing: Image Communication",
+      "citation_count": 5,
+      "url": "https://doi.org/10.1016/j.image.2023.117013",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "wavetable periodic signal restoration denoising",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "10.1109/icoei.2018.8553897",
+      "doi": "10.1109/icoei.2018.8553897",
+      "title": "Signal Denoising Using Ramanujan Periodic Transform",
+      "year": 2018,
+      "authors": [
+        "Alin Mariam Solomon",
+        "Deepa Abraham",
+        "Annie George",
+        "Manju Manuel"
+      ],
+      "venue": "2018 2nd International Conference on Trends in Electronics and Informatics (ICOEI)",
+      "citation_count": 5,
+      "url": "https://doi.org/10.1109/icoei.2018.8553897",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "wavetable periodic signal restoration denoising",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "10.1109/icassp39728.2021.9413689",
+      "doi": "10.1109/icassp39728.2021.9413689",
+      "title": "Periodic Signal Denoising: An Analysis-Synthesis Framework Based on Ramanujan Filter Banks and Dictionaries",
+      "year": 2021,
+      "authors": [
+        "Pranav Kulkarni",
+        "P. P. Vaidyanathan"
+      ],
+      "venue": "ICASSP 2021 - 2021 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)",
+      "citation_count": 3,
+      "url": "https://doi.org/10.1109/icassp39728.2021.9413689",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "wavetable periodic signal restoration denoising",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "10.1109/icassp48485.2024.10446692",
+      "doi": "10.1109/icassp48485.2024.10446692",
+      "title": "Iteratively Preconditioned Guidance of Denoising (Diffusion) Models For Image Restoration",
+      "year": 2024,
+      "authors": [
+        "Tom Tirer"
+      ],
+      "venue": "ICASSP 2024 - 2024 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)",
+      "citation_count": 2,
+      "url": "https://doi.org/10.1109/icassp48485.2024.10446692",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "wavetable periodic signal restoration denoising",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W4365514595",
+      "doi": "10.36253/music_tec-14417",
+      "title": "Sound models for synthesis: a structural viewpoint",
+      "year": 2023,
+      "authors": [
+        "Giovanni De Poli"
+      ],
+      "venue": "Musica/Tecnologia",
+      "citation_count": 1,
+      "url": "https://openalex.org/W4365514595",
+      "source": "openalex",
+      "oa_url": "https://oajournals.fupress.net/index.php/mt/article/download/14417/13287"
+    },
+    {
+      "query": "score-based generative model audio restoration",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W2921353139",
+      "doi": "10.1109/access.2019.2905015",
+      "title": "Recent Progress on Generative Adversarial Networks (GANs): A Survey",
+      "year": 2019,
+      "authors": [
+        "Zhaoqing Pan",
+        "Weijie Yu",
+        "Xiaokai Yi",
+        "Asifullah Khan",
+        "Feng Yuan",
+        "Yuhui Zheng"
+      ],
+      "venue": "IEEE Access",
+      "citation_count": 684,
+      "url": "https://openalex.org/W2921353139",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6287639/8600701/08667290.pdf"
+    },
+    {
+      "query": "score-based generative model audio restoration",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W4379054888",
+      "doi": "10.3389/feduc.2023.1183162",
+      "title": "Generative artificial intelligence empowers educational reform: current status, issues, and prospects",
+      "year": 2023,
+      "authors": [
+        "Hao Yu",
+        "Yunyun Guo"
+      ],
+      "venue": "Frontiers in Education",
+      "citation_count": 321,
+      "url": "https://openalex.org/W4379054888",
+      "source": "openalex",
+      "oa_url": "https://www.frontiersin.org/articles/10.3389/feduc.2023.1183162/pdf"
+    },
+    {
+      "query": "score-based generative model audio restoration",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W4390880765",
+      "doi": "10.3390/buildings14010220",
+      "title": "Opportunities and Challenges of Generative AI in Construction Industry: Focusing on Adoption of Text-Based Models",
+      "year": 2024,
+      "authors": [
+        "Prashnna Ghimire",
+        "Kyungki Kim",
+        "Manoj Acharya"
+      ],
+      "venue": "Buildings",
+      "citation_count": 129,
+      "url": "https://openalex.org/W4390880765",
+      "source": "openalex",
+      "oa_url": "https://www.mdpi.com/2075-5309/14/1/220/pdf?version=1705217602"
+    },
+    {
+      "query": "score-based generative model audio restoration",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W4384261732",
+      "doi": "10.1145/3600211.3604686",
+      "title": "The Ethical Implications of Generative Audio Models: A Systematic Literature Review",
+      "year": 2023,
+      "authors": [
+        "Julia Barnett"
+      ],
+      "venue": null,
+      "citation_count": 38,
+      "url": "https://openalex.org/W4384261732",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2307.05527"
+    },
+    {
+      "query": "score-based generative model audio restoration",
+      "role": "screened_relevant",
+      "arch_family": null,
+      "id": "W3169882120",
+      "doi": "10.3390/electronics10111349",
+      "title": "Stochastic Restoration of Heavily Compressed Musical Audio Using Generative Adversarial Networks",
+      "year": 2021,
+      "authors": [
+        "Stefan Lattner",
+        "Javier Nistal"
+      ],
+      "venue": "Electronics",
+      "citation_count": 30,
+      "url": "https://openalex.org/W3169882120",
+      "source": "openalex",
+      "oa_url": "https://www.mdpi.com/2079-9292/10/11/1349/pdf?version=1623043707"
+    }
+  ],
+  "screened_out": [
+    {
+      "query": "dilated convolutional residual network audio denoising",
+      "role": "screened_out",
+      "arch_family": null,
+      "id": "W3169761664",
+      "doi": "10.1109/cvpr46437.2021.00069",
+      "title": "Deep Convolutional Dictionary Learning for Image Denoising",
+      "year": 2021,
+      "authors": [
+        "Hongyi Zheng",
+        "Hongwei Yong",
+        "Lei Zhang"
+      ],
+      "venue": null,
+      "citation_count": 119,
+      "url": "https://openalex.org/W3169761664",
+      "source": "openalex",
+      "oa_url": "http://ira.lib.polyu.edu.hk/bitstream/10397/105454/1/Zheng_Deep_Convolutional_Dictionary.pdf"
+    },
+    {
+      "query": "Noise2Noise unsupervised denoising audio",
+      "role": "screened_out",
+      "arch_family": null,
+      "id": "10.1109/cvpr52729.2023.01347",
+      "doi": "10.1109/cvpr52729.2023.01347",
+      "title": "Zero-Shot Noise2Noise: Efficient Image Denoising without any Data",
+      "year": 2023,
+      "authors": [
+        "Youssef Mansour",
+        "Reinhard Heckel"
+      ],
+      "venue": "2023 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)",
+      "citation_count": 158,
+      "url": "https://doi.org/10.1109/cvpr52729.2023.01347",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "Noise2Noise unsupervised denoising audio",
+      "role": "screened_out",
+      "arch_family": null,
+      "id": "W4313423985",
+      "doi": "10.1038/s41598-022-26957-7",
+      "title": "Deep learning for terahertz image denoising in nondestructive historical document analysis",
+      "year": 2022,
+      "authors": [
+        "Balaka Dutta",
+        "Konstantin Root",
+        "Ingrid Ullmann",
+        "Fabian Wagner",
+        "Martin Mayr",
+        "Mathias Seuret",
+        "Mareike Thies",
+        "Daniel Stromer",
+        "Vincent Christlein",
+        "Jan Sch\u00fcr",
+        "Andreas Maier",
+        "Yixing Huang"
+      ],
+      "venue": "Scientific Reports",
+      "citation_count": 29,
+      "url": "https://openalex.org/W4313423985",
+      "source": "openalex",
+      "oa_url": "https://www.nature.com/articles/s41598-022-26957-7.pdf"
+    },
+    {
+      "query": "score-based generative model audio restoration",
+      "role": "screened_out",
+      "arch_family": null,
+      "id": "W2808109260",
+      "doi": "10.1109/tip.2019.2895768",
+      "title": "Generative Adversarial Networks and Perceptual Losses for Video Super-Resolution",
+      "year": 2019,
+      "authors": [
+        "Alice Lucas",
+        "Santiago Lopez-Tapia",
+        "Rafael Molina",
+        "Aggelos K. Katsaggelos"
+      ],
+      "venue": "IEEE Transactions on Image Processing",
+      "citation_count": 164,
+      "url": "https://openalex.org/W2808109260",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/1806.05764"
+    }
+  ],
+  "queries": [
+    "Wave-U-Net audio source separation",
+    "Demucs music source separation convolutional",
+    "Conv-TasNet time domain audio separation",
+    "dual-path RNN DPRNN speech separation",
+    "transformer speech enhancement attention",
+    "SEGAN speech enhancement generative adversarial",
+    "diffusion model audio denoising speech enhancement",
+    "U-Net speech enhancement spectrogram",
+    "dilated convolutional residual network audio denoising",
+    "dense convolutional network audio noise reduction",
+    "CRN convolutional recurrent speech enhancement",
+    "metricGAN speech enhancement adversarial",
+    "Noise2Noise unsupervised denoising audio",
+    "wavetable periodic signal restoration denoising",
+    "self-supervised audio denoising deep learning",
+    "lightweight neural network real-time speech enhancement",
+    "temporal convolutional network TCN audio separation",
+    "gated residual network audio denoising",
+    "attention U-Net speech enhancement",
+    "score-based generative model audio restoration"
+  ],
+  "source": "klaut-research-gateway local MCP research_search_papers"
+}

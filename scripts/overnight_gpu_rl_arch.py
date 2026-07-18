@@ -5,10 +5,13 @@ Overnight DenoiseOpt meta: PPO + PBT architecture search on CUDA.
 Algorithms (named accurately — not claimed as SOTA):
   - PPO (Schulman et al.): clipped surrogate actor-critic for discrete arch/edit actions
   - PBT-style population (Jaderberg et al.-inspired): exploit elites + mutate arch/hyperparams
-  - Discrete NAS over an expanded seam-operator cell space (+ soft op-mixture cell)
+  - Discrete NAS over lit-inspired composable seam/cycle cells (U-Net, dilated, attn, …)
 
 Primary score: prolonged residual R in [0,1] (1=best), vs DualCosine baseline.
 Dense history.jsonl every iter. Saves unfitted (arch JSON) and fitted (weights+arch).
+
+Arch complexity preferred over raw it/s; paper target remains 1M if rate allows,
+else honest retarget documented in run_meta.json.
 """
 from __future__ import annotations
 
@@ -29,6 +32,17 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+# Local module alongside this script
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from denoise_arch_blocks import (  # noqa: E402
+    BLOCKS,
+    CELL_KINDS,
+    ComposedSeamNet,
+    TinyAdvHead,
+    normalize_graph,
+    random_block_graph,
+)
+
 ROOT = Path(__file__).resolve().parents[1]
 META_ROOT = ROOT.parent / "denoise-opt-meta"
 SEAM_W = 8
@@ -36,7 +50,7 @@ MLP_IN = SEAM_W * 2
 N = 256
 PROLONG = 16
 
-# Expanded discrete NAS op vocabulary (broader than toy REINFORCE run).
+# Expanded discrete NAS op vocabulary (seam operators + learnable nets).
 OPS = [
     "fade_pull",
     "polish",
@@ -52,14 +66,24 @@ OPS = [
     "skip_blend",
     "edge_pin",
     "asym_wet",
+    "cycle_net",  # apply composed net on full cycle (seam-weighted)
 ]
-CELL_KINDS = ["mlp", "residual", "gated", "bottleneck", "dual_path", "soft_mix"]
 ACTS = ["relu", "tanh", "gelu", "silu"]
 
-# PPO action space: mutate depth/width/act/ops/wet/fir/cell/softmix/lr/reset
-N_ACTIONS = 10
-STATE_DIM = 24
-DEFAULT_SEED = 0x5EED_A11C  # new seed — escape prior plateau seed 0x0A172730
+# PPO action space expanded for block-graph edits
+# 0 depth, 1 width, 2 act, 3 ops, 4 wet, 5 fir, 6 cell, 7 softmix,
+# 8 widen jump, 9 reset, 10 toggle block, 11 mutate graph, 12 adv aux
+N_ACTIONS = 13
+STATE_DIM = 32
+DEFAULT_SEED = 1_701_668_511  # complex-arch restart (Int32-safe for PS launchers)
+ALGORITHMS = [
+    "PPO",
+    "PBT",
+    "discrete_NAS",
+    "soft_mix_cell",
+    "composed_arch_graph",
+    "lit_blocks_unet_dilated_attn_dualpath",
+]
 
 
 def utc_now() -> str:
@@ -75,11 +99,16 @@ class ArchConfig:
     wet: float = 0.55
     fir: list[float] = field(default_factory=lambda: [0.25, 0.5, 0.25])
     cell_kind: str = "residual"
-    # Soft mixture logits over OPS (used when cell_kind == soft_mix or as bias)
     soft_logits: list[float] = field(default_factory=lambda: [0.0] * len(OPS))
+    # Composable lit-inspired block graph (max 4)
+    blocks: list[str] = field(default_factory=lambda: ["residual"])
+    # Optional tiny adversarial auxiliary (generator-side only; not full GAN)
+    use_adv_aux: bool = False
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        d = asdict(self)
+        d["blocks"] = normalize_graph(self.blocks, self.cell_kind)
+        return d
 
 
 @dataclass
@@ -87,10 +116,11 @@ class HyperParams:
     """Per-individual trainable/search hyperparams (PBT genome)."""
 
     lr: float = 3e-3
-    fit_steps: int = 20
+    fit_steps: int = 24
     batch: int = 48
     entropy_coef: float = 0.02
     ppo_clip: float = 0.2
+    adv_coef: float = 0.05  # weight for optional adv aux
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -105,89 +135,50 @@ class Individual:
 
 
 class SeamCell(nn.Module):
-    """Searchable seam-window operator network (architecture cell)."""
+    """Searchable seam/cycle operator network (composed lit-inspired blocks)."""
 
     def __init__(self, cfg: ArchConfig):
         super().__init__()
         self.cfg = cfg
+        graph = normalize_graph(cfg.blocks, cfg.cell_kind)
+        self.cfg.blocks = graph
         h = max(2, min(48, cfg.width))
         d = max(1, min(6, cfg.depth))
-        act = cfg.act
-        layers: list[nn.Module] = []
-        in_d = MLP_IN
-        for i in range(d):
-            if cfg.cell_kind == "bottleneck" and i == 0 and d > 1:
-                out_d = max(2, h // 2)
-            elif i < d - 1:
-                out_d = h
-            else:
-                out_d = MLP_IN
-            layers.append(nn.Linear(in_d, out_d))
-            if i < d - 1:
-                layers.append(_act_module(act))
-                if cfg.cell_kind == "gated":
-                    layers.append(nn.Linear(out_d, out_d))
-            in_d = out_d
-        self.net = nn.Sequential(*layers)
-        # dual_path: second branch
-        if cfg.cell_kind == "dual_path":
-            self.net_b = nn.Sequential(
-                nn.Linear(MLP_IN, h),
-                _act_module(act),
-                nn.Linear(h, MLP_IN),
-            )
-            self.mix = nn.Parameter(torch.tensor(0.5))
-        else:
-            self.net_b = None
-            self.mix = None
+        self.seam_net = ComposedSeamNet(MLP_IN, h, d, cfg.act, cfg.cell_kind, graph)
+        self.cycle_net = ComposedSeamNet(N, max(4, h // 2), max(1, d - 1), cfg.act, cfg.cell_kind, graph)
         self.gate = nn.Parameter(torch.tensor(0.25))
         fir = list(cfg.fir) + [0.1, 0.1]
         self.fir = nn.Parameter(torch.tensor(fir[:5], dtype=torch.float32))
         self.wet = nn.Parameter(torch.tensor(cfg.wet, dtype=torch.float32))
         self.wet_asym = nn.Parameter(torch.tensor([cfg.wet, cfg.wet], dtype=torch.float32))
-        # Differentiable soft op mixture (always present; used when soft_mix / skip_blend)
         logits = torch.tensor(cfg.soft_logits[: len(OPS)], dtype=torch.float32)
         if logits.numel() < len(OPS):
             logits = F.pad(logits, (0, len(OPS) - logits.numel()))
         self.soft_logits = nn.Parameter(logits)
+        self.adv_head: TinyAdvHead | None
+        if cfg.use_adv_aux:
+            self.adv_head = TinyAdvHead(N, max(8, h // 2))
+        else:
+            self.adv_head = None
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        y = self.net(x)
-        if self.cfg.cell_kind == "dual_path" and self.net_b is not None and self.mix is not None:
-            yb = self.net_b(x)
-            m = torch.sigmoid(self.mix)
-            y = m * y + (1 - m) * yb
-        if self.cfg.cell_kind == "residual":
-            y = x + torch.tanh(y) * self.gate
-        elif self.cfg.cell_kind == "gated":
-            g = torch.sigmoid(self.gate)
-            y = g * y + (1 - g) * x
-        elif self.cfg.cell_kind == "bottleneck":
-            y = x + torch.tanh(y) * torch.sigmoid(self.gate)
-        elif self.cfg.cell_kind == "soft_mix":
-            # Residual with soft-gated scale from mixture entropy proxy
-            w = F.softmax(self.soft_logits, dim=0)
-            scale = 0.15 + 0.85 * w.max()
-            y = x + torch.tanh(y) * self.gate * scale
-        else:
-            y = x + torch.tanh(y) * self.gate
-        return y
+        return self.seam_net(x)
 
-
-def _act_module(act: str) -> nn.Module:
-    if act == "tanh":
-        return nn.Tanh()
-    if act == "gelu":
-        return nn.GELU()
-    if act == "silu":
-        return nn.SiLU()
-    return nn.ReLU()
+    def forward_cycle(self, frames: torch.Tensor) -> torch.Tensor:
+        y = self.cycle_net(frames)
+        g = torch.sigmoid(self.gate)
+        # Prefer edits near seams
+        w = SEAM_W + 4
+        mask = frames.new_zeros(1, frames.shape[1])
+        mask[:, :w] = 1.0
+        mask[:, -w:] = 1.0
+        return frames * (1 - mask * g) + y * (mask * g)
 
 
 class ActorCritic(nn.Module):
     """PPO actor-critic over discrete architecture/hyperparam edit actions."""
 
-    def __init__(self, n_actions: int = N_ACTIONS, state_dim: int = STATE_DIM, hidden: int = 128):
+    def __init__(self, n_actions: int = N_ACTIONS, state_dim: int = STATE_DIM, hidden: int = 160):
         super().__init__()
         self.shared = nn.Sequential(
             nn.Linear(state_dim, hidden),
@@ -288,7 +279,6 @@ def apply_median3(frames: torch.Tensor) -> torch.Tensor:
 def hann_blend(frames: torch.Tensor) -> torch.Tensor:
     w = SEAM_W
     n = frames.shape[1]
-    # Raised-cosine / Hann crossfade across seam
     t = torch.linspace(0, math.pi, w, device=frames.device)
     a = 0.5 - 0.5 * torch.cos(t)
     head = frames[:, :w] * (1 - a) + frames[:, n - w :] * a
@@ -313,9 +303,8 @@ def dual_cosine_blend(frames: torch.Tensor) -> torch.Tensor:
 
 def apply_ops(frames: torch.Tensor, cell: SeamCell, ops: list[str]) -> torch.Tensor:
     out = frames
-    use_soft = cell.cfg.cell_kind == "soft_mix" or "skip_blend" in ops
+    use_soft = cell.cfg.cell_kind == "soft_mix" or "skip_blend" in ops or "soft_mix" in cell.cfg.blocks
     if use_soft:
-        # Soft mixture: blend dual_cosine / hann / identity by softmax weights
         w = F.softmax(cell.soft_logits, dim=0)
         idx = {name: i for i, name in enumerate(OPS)}
         dc = dual_cosine_blend(out)
@@ -338,8 +327,21 @@ def apply_ops(frames: torch.Tensor, cell: SeamCell, ops: list[str]) -> torch.Ten
     elif "fir3" in ops:
         out = apply_fir3(out, cell.fir)
 
-    mlp_ops = {"mlp_seam", "fade_pull", "polish", "pin", "edge_pin", "asym_wet"}
-    if set(ops) & mlp_ops or cell.cfg.cell_kind == "soft_mix":
+    net_ops = {
+        "mlp_seam",
+        "fade_pull",
+        "polish",
+        "pin",
+        "edge_pin",
+        "asym_wet",
+        "cycle_net",
+    }
+    complex_cell = cell.cfg.cell_kind not in ("mlp",) or len(cell.cfg.blocks) > 1
+    if set(ops) & net_ops or cell.cfg.cell_kind == "soft_mix" or complex_cell:
+        if "cycle_net" in ops or any(
+            b in cell.cfg.blocks for b in ("unet", "conv1d", "dilated", "attn", "dual_path", "tf_split", "noise_cond")
+        ):
+            out = cell.forward_cycle(out)
         x = pack_seam(out)
         y = cell(x)
         if "asym_wet" in ops:
@@ -365,12 +367,13 @@ def residual_score(ideal: torch.Tensor, out: torch.Tensor) -> torch.Tensor:
 
 
 def arch_state_vec(cfg: ArchConfig, hp: HyperParams, device: torch.device) -> torch.Tensor:
-    op_bits = [1.0 if o in cfg.ops else 0.0 for o in OPS]  # 14
+    op_bits = [1.0 if o in cfg.ops else 0.0 for o in OPS]
     act_id = {a: i / max(len(ACTS) - 1, 1) for i, a in enumerate(ACTS)}.get(cfg.act, 0.0)
     cell_id = {c: i / max(len(CELL_KINDS) - 1, 1) for i, c in enumerate(CELL_KINDS)}.get(
         cfg.cell_kind, 0.0
     )
     soft_max = max(cfg.soft_logits) if cfg.soft_logits else 0.0
+    block_bits = [1.0 if b in cfg.blocks else 0.0 for b in BLOCKS]
     extras = [
         cfg.depth / 6.0,
         cfg.width / 48.0,
@@ -378,45 +381,61 @@ def arch_state_vec(cfg: ArchConfig, hp: HyperParams, device: torch.device) -> to
         cfg.wet,
         cell_id,
         abs(cfg.fir[1]) if cfg.fir else 0.5,
-        math.log10(max(hp.lr, 1e-6)) / -2.0,  # ~0.5 at 1e-3
+        math.log10(max(hp.lr, 1e-6)) / -2.0,
         hp.fit_steps / 64.0,
         hp.entropy_coef,
         soft_max,
+        1.0 if cfg.use_adv_aux else 0.0,
+        len(cfg.blocks) / 4.0,
     ]
-    vec = (op_bits + extras)[:STATE_DIM]
+    vec = (op_bits + block_bits[:8] + extras)[:STATE_DIM]
     while len(vec) < STATE_DIM:
         vec.append(0.0)
     return torch.tensor(vec, dtype=torch.float32, device=device)
 
 
 def ensure_trainable_ops(ops: list[str]) -> list[str]:
-    trainable = {"mlp_seam", "fade_pull", "polish", "pin", "fir3", "fir5", "edge_pin", "asym_wet"}
+    trainable = {
+        "mlp_seam",
+        "fade_pull",
+        "polish",
+        "pin",
+        "fir3",
+        "fir5",
+        "edge_pin",
+        "asym_wet",
+        "cycle_net",
+    }
     if not (set(ops) & trainable):
         return list(dict.fromkeys(list(ops) + ["mlp_seam"]))
     return ops
 
 
 def random_arch(rng: random.Random) -> ArchConfig:
-    k = rng.randint(2, min(6, len(OPS)))
+    k = rng.randint(2, min(7, len(OPS)))
+    cell = rng.choice(CELL_KINDS)
     return ArchConfig(
         depth=rng.randint(1, 6),
-        width=rng.choice([2, 4, 6, 8, 12, 16, 24, 32, 40, 48]),
+        width=rng.choice([4, 6, 8, 12, 16, 24, 32, 40, 48]),
         act=rng.choice(ACTS),
         ops=ensure_trainable_ops(rng.sample(OPS, k=k)),
         wet=rng.uniform(0.1, 0.95),
         fir=[rng.uniform(0.05, 0.55) for _ in range(5)],
-        cell_kind=rng.choice(CELL_KINDS),
+        cell_kind=cell,
         soft_logits=[rng.uniform(-1.0, 1.0) for _ in range(len(OPS))],
+        blocks=random_block_graph(rng, cell, max_extra=2),
+        use_adv_aux=rng.random() < 0.15,
     )
 
 
 def random_hp(rng: random.Random) -> HyperParams:
     return HyperParams(
         lr=10 ** rng.uniform(-4.0, -2.0),
-        fit_steps=rng.choice([12, 16, 20, 24, 32, 40]),
+        fit_steps=rng.choice([16, 20, 24, 32, 40, 48]),
         batch=rng.choice([32, 48, 64]),
-        entropy_coef=rng.uniform(0.005, 0.05),
-        ppo_clip=rng.choice([0.1, 0.2, 0.3]),
+        entropy_coef=rng.uniform(0.005, 0.06),
+        ppo_clip=rng.choice([0.1, 0.2, 0.25, 0.3]),
+        adv_coef=rng.choice([0.02, 0.05, 0.1]),
     )
 
 
@@ -425,7 +444,7 @@ def mutate_arch(cfg: ArchConfig, action: int, rng: random.Random) -> ArchConfig:
     if action == 0:
         c.depth = max(1, min(6, c.depth + rng.choice([-1, 1])))
     elif action == 1:
-        c.width = max(2, min(48, c.width + rng.choice([-4, -2, -1, 1, 2, 4])))
+        c.width = max(4, min(48, c.width + rng.choice([-4, -2, -1, 1, 2, 4])))
     elif action == 2:
         c.act = rng.choice(ACTS)
     elif action == 3:
@@ -441,8 +460,8 @@ def mutate_arch(cfg: ArchConfig, action: int, rng: random.Random) -> ArchConfig:
         c.fir = [rng.uniform(0.05, 0.6) for _ in range(5)]
     elif action == 6:
         c.cell_kind = rng.choice(CELL_KINDS)
+        c.blocks = normalize_graph(c.blocks, c.cell_kind)
     elif action == 7:
-        # Perturb soft mixture logits
         c.soft_logits = [
             float(x + rng.uniform(-0.5, 0.5)) for x in (c.soft_logits or [0.0] * len(OPS))
         ]
@@ -450,12 +469,23 @@ def mutate_arch(cfg: ArchConfig, action: int, rng: random.Random) -> ArchConfig:
             c.soft_logits.append(rng.uniform(-0.5, 0.5))
         c.soft_logits = c.soft_logits[: len(OPS)]
     elif action == 8:
-        # Widen / deepen jump
-        c.depth = rng.randint(1, 6)
-        c.width = rng.choice([4, 8, 12, 16, 24, 32, 48])
-    else:
+        c.depth = rng.randint(2, 6)
+        c.width = rng.choice([8, 12, 16, 24, 32, 48])
+    elif action == 9:
         c = random_arch(rng)
+    elif action == 10:
+        # Add/remove a lit block
+        b = rng.choice(BLOCKS)
+        if b in c.blocks and len(c.blocks) > 1:
+            c.blocks = [x for x in c.blocks if x != b]
+        else:
+            c.blocks = normalize_graph(list(c.blocks) + [b], c.cell_kind)
+    elif action == 11:
+        c.blocks = random_block_graph(rng, c.cell_kind, max_extra=3)
+    else:
+        c.use_adv_aux = not c.use_adv_aux
     c.ops = ensure_trainable_ops(c.ops)
+    c.blocks = normalize_graph(c.blocks, c.cell_kind)
     return c
 
 
@@ -466,6 +496,7 @@ def mutate_hp(hp: HyperParams, rng: random.Random) -> HyperParams:
     h.entropy_coef = float(max(0.001, min(0.1, h.entropy_coef + rng.uniform(-0.01, 0.01))))
     h.ppo_clip = float(max(0.05, min(0.4, h.ppo_clip + rng.choice([-0.05, 0.0, 0.05]))))
     h.batch = int(rng.choice([32, 48, 64]))
+    h.adv_coef = float(max(0.0, min(0.2, h.adv_coef + rng.uniform(-0.02, 0.02))))
     return h
 
 
@@ -477,22 +508,19 @@ def pbt_exploit_mutate(pop: list[Individual], rng: random.Random, elite_frac: fl
     for i, ind in enumerate(ranked[n_elite:]):
         parent = elites[i % n_elite]
         cfg = ArchConfig(**parent.cfg.to_dict())
-        # Stronger exploration after exploit to avoid diversity collapse
-        n_mut = rng.randint(2, 4)
+        n_mut = rng.randint(2, 5)
         for _ in range(n_mut):
             cfg = mutate_arch(cfg, rng.randrange(N_ACTIONS), rng)
-        if rng.random() < 0.25:
+        if rng.random() < 0.2:
             cfg = random_arch(rng)
         ind.cfg = cfg
         ind.hp = mutate_hp(HyperParams(**parent.hp.to_dict()), rng)
         ind.hp = mutate_hp(ind.hp, rng)
         ind.age = 0
-        # Keep score as prior until re-evaluated (slight decay)
         ind.score = parent.score * 0.92
 
 
 def arch_diversity(pop: list[Individual]) -> float:
-    """Crude diversity: mean pairwise Hamming over ops + cell/act mismatch."""
     if len(pop) < 2:
         return 0.0
     total = 0.0
@@ -501,11 +529,13 @@ def arch_diversity(pop: list[Individual]) -> float:
         for j in range(i + 1, len(pop)):
             a, b = pop[i].cfg, pop[j].cfg
             ops_a, ops_b = set(a.ops), set(b.ops)
+            blocks_a, blocks_b = set(a.blocks), set(b.blocks)
             ham = len(ops_a.symmetric_difference(ops_b)) / max(len(OPS), 1)
+            bham = len(blocks_a.symmetric_difference(blocks_b)) / max(len(BLOCKS), 1)
             cell_diff = 0.0 if a.cell_kind == b.cell_kind else 1.0
             act_diff = 0.0 if a.act == b.act else 1.0
             wdiff = abs(a.width - b.width) / 48.0
-            total += 0.4 * ham + 0.3 * cell_diff + 0.2 * act_diff + 0.1 * wdiff
+            total += 0.3 * ham + 0.3 * bham + 0.2 * cell_diff + 0.1 * act_diff + 0.1 * wdiff
             pairs += 1
     return total / max(pairs, 1)
 
@@ -517,6 +547,7 @@ def fit_cell(
     steps: int = 24,
     batch: int = 32,
     lr: float = 3e-3,
+    adv_coef: float = 0.05,
 ) -> tuple[float, bool]:
     trainable_ops = {
         "mlp_seam",
@@ -528,8 +559,13 @@ def fit_cell(
         "edge_pin",
         "asym_wet",
         "skip_blend",
+        "cycle_net",
     }
-    can_train = bool(set(ops) & trainable_ops) or cell.cfg.cell_kind == "soft_mix"
+    can_train = (
+        bool(set(ops) & trainable_ops)
+        or cell.cfg.cell_kind == "soft_mix"
+        or len(cell.cfg.blocks) >= 1
+    )
     opt = torch.optim.Adam(cell.parameters(), lr=lr) if can_train else None
     prev = None
     patience = 0
@@ -542,6 +578,19 @@ def fit_cell(
         last_r = float(r.detach().item())
         if can_train and opt is not None:
             loss = 1.0 - r
+            # Optional tiny adv aux: push generator outputs toward ideal discriminator score
+            if cell.adv_head is not None and adv_coef > 0:
+                fake_logit = cell.adv_head(out)
+                real_logit = cell.adv_head(ideal.detach())
+                # Non-saturating generator term + discriminator BCE (joint, light)
+                adv_g = F.binary_cross_entropy_with_logits(
+                    fake_logit, torch.ones_like(fake_logit)
+                )
+                adv_d = 0.5 * (
+                    F.binary_cross_entropy_with_logits(real_logit, torch.ones_like(real_logit))
+                    + F.binary_cross_entropy_with_logits(fake_logit.detach(), torch.zeros_like(fake_logit))
+                )
+                loss = loss + adv_coef * (adv_g + 0.5 * adv_d)
             if loss.requires_grad:
                 opt.zero_grad(set_to_none=True)
                 loss.backward()
@@ -605,7 +654,7 @@ def save_fitted(
         "residual": residual,
         "cell_state_dict": cell.state_dict(),
         "policy_state_dict": policy.state_dict() if policy is not None else None,
-        "algorithms": ["PPO", "PBT", "discrete_NAS", "soft_mix_cell"],
+        "algorithms": ALGORITHMS,
         "tag": tag,
     }
     torch.save(payload, path)
@@ -617,7 +666,7 @@ def save_fitted(
                 "hyperparams": hp.to_dict() if hp else None,
                 "residual": residual,
                 "weights_path": str(path),
-                "algorithms": ["PPO", "PBT", "discrete_NAS", "soft_mix_cell"],
+                "algorithms": ALGORITHMS,
                 "tag": tag,
             },
             indent=2,
@@ -640,8 +689,6 @@ def append_history(history_path: Path, row: dict[str, Any]) -> None:
 
 
 class RolloutBuffer:
-    """On-policy buffer for PPO updates."""
-
     def __init__(self) -> None:
         self.states: list[torch.Tensor] = []
         self.actions: list[int] = []
@@ -678,7 +725,6 @@ def ppo_update(
     rewards = torch.tensor(buf.rewards, dtype=torch.float32, device=device)
     values = torch.stack(buf.values).detach().to(device)
 
-    # GAE advantages
     advantages = torch.zeros_like(rewards)
     last_gae = 0.0
     next_value = 0.0
@@ -725,7 +771,7 @@ def ppo_update(
 
 def main() -> int:
     ap = argparse.ArgumentParser(
-        description="PPO + PBT overnight seam-arch search (not claimed SOTA)"
+        description="PPO + PBT overnight complex-arch search (not claimed SOTA)"
     )
     ap.add_argument("--iters", type=int, default=270_000)
     ap.add_argument("--ckpt-every", type=int, default=500)
@@ -736,7 +782,7 @@ def main() -> int:
         help="Append one JSONL history row every N iters (default 1 = every iter).",
     )
     ap.add_argument("--batch", type=int, default=48)
-    ap.add_argument("--fit-steps", type=int, default=20)
+    ap.add_argument("--fit-steps", type=int, default=24)
     ap.add_argument("--device", type=str, default="cuda")
     ap.add_argument("--run-id", type=str, default="")
     ap.add_argument("--max-hours", type=float, default=24.0)
@@ -744,7 +790,12 @@ def main() -> int:
     ap.add_argument("--pop-size", type=int, default=12)
     ap.add_argument("--ppo-horizon", type=int, default=32)
     ap.add_argument("--pbt-every", type=int, default=50)
-    ap.add_argument("--algo-tag", type=str, default="PPO+PBT+NAS")
+    ap.add_argument("--algo-tag", type=str, default="PPO+PBT+NAS+complex_arch")
+    ap.add_argument(
+        "--target-note",
+        type=str,
+        default="prefer_arch_complexity; keep_1M_if_rate_ok_else_retarget_200k_500k",
+    )
     args = ap.parse_args()
     if args.history_every < 1:
         print("ERROR: --history-every must be >= 1", file=sys.stderr)
@@ -782,7 +833,7 @@ def main() -> int:
 
     baseline = dual_cosine_baseline(device)
     now_local = datetime.now().astimezone()
-    algorithms = ["PPO", "PBT", "discrete_NAS", "soft_mix_cell"]
+    algorithms = list(ALGORITHMS)
     log_line(
         log_path,
         f"START run_id={run_id} algorithms={algorithms} algo_tag={args.algo_tag} "
@@ -791,9 +842,10 @@ def main() -> int:
         f"dual_cosine_baseline={baseline:.4f} target_iters={args.iters} "
         f"max_hours={args.max_hours} history_every={args.history_every} "
         f"seed={args.seed} pop_size={args.pop_size} ppo_horizon={args.ppo_horizon} "
-        f"pbt_every={args.pbt_every} history_path={history_path} "
+        f"pbt_every={args.pbt_every} blocks={BLOCKS} cell_kinds={CELL_KINDS} "
+        f"history_path={history_path} "
         f"local_start={now_local.isoformat(timespec='seconds')} "
-        f"note=not_claimed_SOTA",
+        f"note=not_claimed_SOTA complex_arch_graphs",
     )
     (run_dir / "run_meta.json").write_text(
         json.dumps(
@@ -817,9 +869,12 @@ def main() -> int:
                 "n_ops": len(OPS),
                 "ops": OPS,
                 "cell_kinds": CELL_KINDS,
+                "blocks": BLOCKS,
+                "target_note": args.target_note,
+                "literature_artifact": "brand/artifacts/literature_audio_denoise_arch.json",
                 "pid": os.getpid(),
                 "started_at": utc_now(),
-                "note": "PPO+PBT+expanded NAS — not claimed SOTA",
+                "note": "PPO+PBT+composed lit arch NAS — not claimed SOTA",
             },
             indent=2,
         ),
@@ -830,21 +885,60 @@ def main() -> int:
     policy_opt = torch.optim.Adam(policy.parameters(), lr=3e-4)
     buf = RolloutBuffer()
 
-    # PBT population
     pop: list[Individual] = [
         Individual(cfg=random_arch(rng), hp=random_hp(rng), score=-1.0) for _ in range(args.pop_size)
     ]
-    # Seed one individual near a strong prior (not the stuck champion copy)
-    pop[0].cfg = ArchConfig(
-        depth=2,
-        width=16,
-        act="gelu",
-        ops=["mlp_seam", "dual_cosine", "fir3", "hann_blend"],
-        wet=0.45,
-        fir=[0.2, 0.5, 0.2, 0.05, 0.05],
-        cell_kind="soft_mix",
-        soft_logits=[rng.uniform(-0.3, 0.3) for _ in range(len(OPS))],
-    )
+    # Seed diverse strong priors across lit families
+    seed_specs = [
+        ArchConfig(
+            depth=3,
+            width=24,
+            act="gelu",
+            ops=["mlp_seam", "dual_cosine", "fir3", "cycle_net"],
+            wet=0.45,
+            fir=[0.2, 0.5, 0.2, 0.05, 0.05],
+            cell_kind="unet",
+            blocks=["unet", "residual"],
+            soft_logits=[0.0] * len(OPS),
+        ),
+        ArchConfig(
+            depth=3,
+            width=20,
+            act="silu",
+            ops=["mlp_seam", "fir5", "cycle_net", "hann_blend"],
+            wet=0.5,
+            fir=[0.15, 0.2, 0.3, 0.2, 0.15],
+            cell_kind="dilated",
+            blocks=["dilated", "gated"],
+            soft_logits=[0.0] * len(OPS),
+        ),
+        ArchConfig(
+            depth=2,
+            width=16,
+            act="gelu",
+            ops=["mlp_seam", "dual_cosine", "cycle_net"],
+            wet=0.4,
+            fir=[0.25, 0.5, 0.25, 0.0, 0.0],
+            cell_kind="attn",
+            blocks=["attn", "dense"],
+            soft_logits=[0.0] * len(OPS),
+        ),
+        ArchConfig(
+            depth=3,
+            width=18,
+            act="relu",
+            ops=["mlp_seam", "fir3", "cycle_net", "skip_blend"],
+            wet=0.55,
+            fir=[0.2, 0.5, 0.2, 0.05, 0.05],
+            cell_kind="dual_path",
+            blocks=["dual_path", "noise_cond"],
+            soft_logits=[rng.uniform(-0.3, 0.3) for _ in range(len(OPS))],
+            use_adv_aux=False,
+        ),
+    ]
+    for i, spec in enumerate(seed_specs):
+        if i < len(pop):
+            pop[i].cfg = spec
     save_unfitted(run_dir, pop[0].cfg, "init", pop[0].hp)
     save_unfitted(meta_run, pop[0].cfg, "init", pop[0].hp)
 
@@ -860,14 +954,14 @@ def main() -> int:
     t0 = time.time()
     max_sec = args.max_hours * 3600.0
     keepalive = torch.zeros(1, device=device)
-    old_plateau = 0.9779  # prior stuck champ for logging context only
+    old_plateau = 0.9809  # prior MLP-era champ for logging context only
+    rate_note_written = False
 
     for it in range(1, args.iters + 1):
         if time.time() - t0 > max_sec:
             log_line(log_path, f"STOP time budget reached at iter={it}")
             break
 
-        # Rotate branches: PPO policy mutate | random NAS | PBT member | combo
         branch = ("ppo", "nas", "pbt", "combo")[it % 4]
         ind_idx = (it - 1) % len(pop)
         ind = pop[ind_idx]
@@ -886,7 +980,6 @@ def main() -> int:
             trial_cfg = random_arch(rng)
             trial_hp = mutate_hp(hp, rng)
         elif branch == "pbt":
-            # Evaluate / lightly mutate current population member
             trial_cfg = mutate_arch(cfg, action, rng) if rng.random() < 0.5 else cfg
             trial_hp = hp
         elif branch == "combo":
@@ -909,13 +1002,13 @@ def main() -> int:
             steps=fit_steps,
             batch=batch,
             lr=trial_hp.lr,
+            adv_coef=trial_hp.adv_coef if trial_cfg.use_adv_aux else 0.0,
         )
         r_eval = eval_cell(cell, trial_cfg.ops, device, batch=max(64, batch))
         residual = 0.5 * r_fit + 0.5 * r_eval
         branch_best[branch] = max(branch_best[branch], residual)
         recent_residuals.append(residual)
 
-        # Reward vs DualCosine baseline (advantage signal for PPO)
         reward = residual - baseline
         buf.states.append(state.squeeze(0).detach())
         buf.actions.append(action)
@@ -935,7 +1028,6 @@ def main() -> int:
             )
             buf.clear()
 
-        # Update population member if this trial is competitive
         if residual >= ind.score:
             ind.cfg = trial_cfg
             ind.hp = trial_hp
@@ -982,6 +1074,9 @@ def main() -> int:
                     "tag": tag,
                     "converged": converged,
                     "vs_old_plateau": residual - old_plateau,
+                    "cell_kind": trial_cfg.cell_kind,
+                    "blocks": trial_cfg.blocks,
+                    "use_adv_aux": trial_cfg.use_adv_aux,
                 },
             )
 
@@ -991,7 +1086,6 @@ def main() -> int:
             champion_hp = trial_hp
             champion_cell = cell
             iters_since_improve = 0
-            # Climb: inject champion into a random pop slot
             victim = rng.randrange(len(pop))
             pop[victim].cfg = ArchConfig(**trial_cfg.to_dict())
             pop[victim].hp = HyperParams(**trial_hp.to_dict())
@@ -1014,6 +1108,24 @@ def main() -> int:
             iters_since_improve += 1
 
         def write_latest(iter_n: int, *, checkpoint: bool) -> None:
+            elapsed = time.time() - t0
+            rate = iter_n / max(elapsed, 1e-6)
+            # Honest retarget guidance for paper planning
+            hours_for_1m = 1_000_000 / max(rate, 1e-9) / 3600.0
+            if hours_for_1m <= args.max_hours:
+                target_plan = {"keep_target": 1_000_000, "eta_hours_at_rate": round(hours_for_1m, 2)}
+            elif hours_for_1m <= args.max_hours * 2:
+                target_plan = {
+                    "retarget": 500_000,
+                    "reason": "rate_too_slow_for_1M_in_max_hours",
+                    "eta_hours_1M": round(hours_for_1m, 2),
+                }
+            else:
+                target_plan = {
+                    "retarget": 250_000,
+                    "reason": "complex_arch_slower_than_1M_feasible",
+                    "eta_hours_1M": round(hours_for_1m, 2),
+                }
             ckpt = {
                 "iter": iter_n,
                 "champion_residual": champion_r,
@@ -1025,11 +1137,14 @@ def main() -> int:
                 "pop_diversity": pop_div,
                 "entropy": last_ppo_stats.get("entropy", entropy_now),
                 "algorithms": algorithms,
-                "elapsed_sec": time.time() - t0,
+                "elapsed_sec": elapsed,
+                "iters_per_sec": rate,
+                "target_plan": target_plan,
                 "gpu": gpu_name,
                 "pid": os.getpid(),
                 "seed": args.seed,
                 "history_path": str(history_path),
+                "blocks": BLOCKS,
             }
             if checkpoint:
                 ckpt_path = ckpt_dir / f"ckpt_iter_{iter_n:06d}.json"
@@ -1066,12 +1181,22 @@ def main() -> int:
             mem = torch.cuda.memory_allocated(device) / (1024**2) if device.type == "cuda" else 0.0
             elapsed = time.time() - t0
             rate = it / max(elapsed, 1e-6)
+            if it >= 50 and not rate_note_written:
+                hours_1m = 1_000_000 / max(rate, 1e-9) / 3600.0
+                log_line(
+                    log_path,
+                    f"RATE_NOTE iters_per_sec={rate:.3f} eta_1M_h={hours_1m:.2f} "
+                    f"max_hours={args.max_hours} "
+                    f"plan={'keep_1M' if hours_1m <= args.max_hours else 'retarget_if_needed'}",
+                )
+                rate_note_written = True
             log_line(
                 log_path,
                 f"progress {it}/{args.iters} branch={branch} residual={residual:.4f} "
                 f"champ={champion_r:.4f} baseline={baseline:.4f} "
                 f"iters_since_improve={iters_since_improve} "
                 f"entropy={entropy_now:.4f} pop_div={pop_div:.4f} "
+                f"blocks={trial_cfg.blocks} cell={trial_cfg.cell_kind} "
                 f"converged={converged} gpu_mem_mb={mem:.1f} "
                 f"iters_per_sec={rate:.2f} elapsed_h={elapsed/3600:.3f} "
                 f"algo={args.algo_tag}",
@@ -1103,6 +1228,7 @@ def main() -> int:
         "history_path": str(history_path),
         "log_path": str(log_path),
         "seed": args.seed,
+        "champion_arch": champion_cfg.to_dict(),
     }
     (run_dir / "final_summary.json").write_text(json.dumps(final, indent=2), encoding="utf-8")
     log_line(log_path, f"DONE {json.dumps(final)}")
