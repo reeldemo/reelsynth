@@ -20,6 +20,7 @@ ReelSynth is an MIT-licensed wavetable synthesizer. This folder is the documenta
 |-------|-----|
 | File formats (`.reelwt`, `.reelpreset`, `reelpack/`) | [FORMAT.md](FORMAT.md) |
 | Export loss matrix (Vital, Serum, Ableton, …) | [INTEROP.md](INTEROP.md) |
+| DenoiseOpt (label-free crackle denoise) | [WHITEPAPER_DENOISE_OPT.md](WHITEPAPER_DENOISE_OPT.md) |
 | Serum `.fxp` byte layout | [SERUM_FXP.md](SERUM_FXP.md) |
 | Code naming conventions | [NAMING.md](NAMING.md) |
 
