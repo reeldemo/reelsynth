@@ -16,11 +16,12 @@ $LaunchLog = Join-Path $Artifacts "overnight_gpu_rl_arch_launch.log"
 $PidFile = Join-Path $Artifacts "overnight_gpu_rl_arch.pid"
 $DoneFlag = Join-Path $Artifacts "overnight_gpu_DONE.flag"
 $IntervalSec = 30 * 60
-$MaxHours = 24
+$MaxHours = 168
 $StartedAt = Get-Date
 $JobScript = Join-Path $RepoRoot "scripts\overnight_gpu_rl_arch.py"
 # Keep aligned with dense 1M overnight; only used if watchdog must restart a dead job.
-$JobArgs = @($JobScript, "--iters", "1000000", "--device", "cuda", "--max-hours", "20", "--history-every", "1")
+# No early wall-clock abort on the job itself — 168h covers ~23h@12it/s with margin.
+$JobArgs = @($JobScript, "--iters", "1000000", "--device", "cuda", "--max-hours", "168", "--history-every", "1")
 
 function Write-Heartbeat([string]$Message) {
     $ts = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")

@@ -4,7 +4,7 @@
 
 param(
     [int]$Iters = 1000000,
-    [double]$MaxHours = 20,
+    [double]$MaxHours = 168,
     [int]$HistoryEvery = 1,
     [string]$Device = "cuda",
     [string]$RepoRoot = ""
