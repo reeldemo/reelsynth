@@ -15,7 +15,7 @@ $FinishPy = Join-Path $Repo "scripts\finish_overnight_1m_to_paper.py"
 $VenvPy = Join-Path $Repo ".venv_gpu\Scripts\python.exe"
 $TargetIters = 1000000
 $PollSec = 120
-$MaxWaitHours = 168
+$MaxWaitHours = 240
 
 Set-Content -Path $PidFile -Value $PID -Encoding ascii -NoNewline
 
@@ -68,15 +68,15 @@ function Test-OneMillionDone {
 function Ensure-JobIfDead {
   $alive, $jobs = Test-TrainingAlive
   if ($alive) { return }
-  Log "TRAINING_DEAD - restarting via start_overnight_gpu_detached.ps1 (1M max-hours 168)"
+  Log "TRAINING_DEAD - restarting via start_overnight_gpu_detached.ps1 (1M max-hours 240)"
   $launcher = Join-Path $Repo "scripts\start_overnight_gpu_detached.ps1"
   if (Test-Path $launcher) {
-    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $launcher -Iters 1000000 -MaxHours 168 -HistoryEvery 1 -Device cuda
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $launcher -Iters 1000000 -MaxHours 240 -HistoryEvery 1 -Device cuda -Seed 2694965884
   } else {
     if (-not (Test-Path $VenvPy)) { Log "NO_VENV"; return }
     $argList = @(
       (Join-Path $Repo "scripts\overnight_gpu_rl_arch.py"),
-      "--iters", "1000000", "--device", "cuda", "--max-hours", "168", "--history-every", "1"
+      "--iters", "1000000", "--device", "cuda", "--max-hours", "240", "--history-every", "1", "--seed", "2694965884", "--pop-size", "12", "--algo-tag", "PPO+PBT+NAS+complex_arch"
     )
     Start-Process -FilePath $VenvPy -ArgumentList $argList -WorkingDirectory $Repo -WindowStyle Hidden
   }

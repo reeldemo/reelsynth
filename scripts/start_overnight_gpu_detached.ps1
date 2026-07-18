@@ -1,13 +1,13 @@
-# start_overnight_gpu_detached.ps1
+﻿# start_overnight_gpu_detached.ps1
 # Fully OS-detached overnight GPU RL launch (survives Cursor crash).
 # Uses Start-Process Hidden with file redirects — no pipe to calling shell.
 
 param(
     [int]$Iters = 1000000,
-    [double]$MaxHours = 168,
+    [double]$MaxHours = 240,
     [int]$HistoryEvery = 1,
     [string]$Device = "cuda",
-    [long]$Seed = 1701668511,
+    [long]$Seed = 2694965884,
     [int]$PopSize = 12,
     [string]$AlgoTag = "PPO+PBT+NAS+complex_arch",
     [string]$RepoRoot = ""

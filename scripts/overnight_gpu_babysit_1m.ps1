@@ -1,7 +1,7 @@
 ﻿# overnight_gpu_babysit_1m.ps1
 # Cursor-independent babysit for dense 1M overnight GPU RL.
 # NEVER kills python. Treats .venv_gpu launcher + system-python worker as one job.
-# Completes ONLY when iter >= 1_000_000 (or explicit DONE after that). Soft wall = 168h.
+# Completes ONLY when iter >= 1_000_000 (or explicit DONE after that). Soft wall = 240h.
 # Does NOT write overnight_gpu_DONE.flag on soft deadline (would stop the watchdog mid-run).
 
 $ErrorActionPreference = "Continue"
@@ -19,10 +19,10 @@ $Py = Join-Path $Repo ".venv_gpu\Scripts\python.exe"
 $Script = Join-Path $Repo "scripts\overnight_gpu_rl_arch.py"
 $HeartbeatSec = 1800
 $TargetIters = 1000000
-$Deadline = (Get-Date).AddHours(168)
+$Deadline = (Get-Date).AddHours(240)
 $script:LastRestart = [datetime]::MinValue
-# PPO+PBT+complex lit-arch NAS; seed 0xA0D10A7C (=1701668511)
-$script:LastArgs = @($Script, "--iters", "1000000", "--device", "cuda", "--max-hours", "168", "--history-every", "1", "--seed", "1701668511", "--pop-size", "12", "--algo-tag", "PPO+PBT+NAS+complex_arch")
+# complex_arch 1M; seed 2694965884; max-hours 240 (ETA~150-175h needs slack)
+$script:LastArgs = @($Script, "--iters", "1000000", "--device", "cuda", "--max-hours", "240", "--history-every", "1", "--seed", "2694965884", "--pop-size", "12", "--algo-tag", "PPO+PBT+NAS+complex_arch")
 $script:KnownLauncher = 0
 $script:KnownWorker = 0
 
@@ -216,7 +216,7 @@ while ($true) {
 
   if ((Get-Date) -ge $Deadline) {
     # Soft deadline: write summary but DO NOT set DONE flag (watchdog must keep going).
-    Write-FinalSummary "soft_deadline_168h_incomplete" | Out-Null
+    Write-FinalSummary "soft_deadline_240h_incomplete" | Out-Null
     Log "SOFT_DEADLINE reached without 1M - exiting babysit only; job/watchdog continue"
     Write-Output 'AGENT_BABYSIT1M_COMPLETE {"reason":"soft_deadline_no_done_flag"}'
     exit 0
