@@ -17,6 +17,55 @@ Within a tight band of the best residual ($R \ge R_{\max}-5\cdot10^{-4}$), the \
 (versus the absolute max-$R$ cell at $R\approx 0.9914$ but $\approx 7.2$\,ms/batch / $\approx 104$k params).
 Selection rule: maximize $R$, then minimize latency inside the band.
 
+\subsection{Top-5 architectures (current leaderboard snapshot)}
+\label{sec:top5-arch}
+This subsection ranks five \emph{distinct} fitted bake graphs from the CUDA inference bench
+(\texttt{inference\_bench.json}; batch 64), preferring residual $R$ first and latency on ties,
+and skipping near-duplicate copies of the same block list.
+The overnight GPU hybrid was still interim at the time of writing (monitor $\approx 5$k iterations,
+champion $R\approx 0.991$); numbers below are a \textbf{current leaderboard snapshot}, not a finished
+mean-$R$ claim after the declared budget.
+
+\begin{enumerate}
+  \item \textbf{\texttt{champion\_iter\_000235\_fitted}} (favorite).
+    Compact dual-block graph \texttt{[tf\_split, unet]}, depth~$12$, width~$40$,
+    classical bake ops \texttt{[pin, cycle\_net]}, cell \texttt{tf\_split}.
+    $\approx 37{,}489$ params; live $R\approx 0.9915$ (saved $\approx 0.9910$);
+    $\approx 3.15$\,ms/batch.
+    Ranks first on live residual \emph{and} is the latency favorite inside the near-max-$R$ band.
+
+  \item \textbf{\texttt{champion\_iter\_000140\_fitted}}.
+    Full MoE stack \texttt{[tf\_split, unet, moe\_mix, residual, noise\_cond, mlp]},
+    depth~$12$, width~$32$, ops \texttt{[fade\_pull, pin, polish]}, sequential MoE.
+    $\approx 104{,}484$ params; live $R\approx 0.9914$; $\approx 6.69$\,ms/batch.
+    Next-best distinct topology: higher capacity than the favorite at roughly $2\times$ latency.
+
+  \item \textbf{\texttt{champion\_iter\_000565\_fitted}}.
+    Mid triple \texttt{[tf\_split, unet, moe\_mix]}, depth~$12$, width~$32$,
+    ops \texttt{[fade\_pull, cycle\_net, pin, polish]}.
+    $\approx 53{,}933$ params; live $R\approx 0.9907$; $\approx 4.11$\,ms/batch.
+    Score/latency compromise between the compact dual-block and the full six-block stack.
+
+  \item \textbf{\texttt{champion\_iter\_000205\_fitted}}.
+    Same six-block MoE family as (2) but narrow width~$24$ (depth~$12$),
+    ops \texttt{[fade\_pull, cycle\_net, pin, polish]}.
+    $\approx 70{,}562$ params; live $R\approx 0.9907$; $\approx 7.29$\,ms/batch.
+    Capacity variant: fewer parameters than (2) without a latency win on this bench.
+
+  \item \textbf{\texttt{champion\_iter\_000192\_fitted}}.
+    Reordered triple \texttt{[tf\_split, moe\_mix, unet]}, depth~$12$, width~$32$,
+    ops \texttt{[fade\_pull, cycle\_net, pin, polish]}.
+    $\approx 49{,}804$ params; live $R\approx 0.9894$; $\approx 3.98$\,ms/batch.
+    Fast alternate block order; trades a small amount of $R$ for near-favorite latency.
+\end{enumerate}
+
+\paragraph{Classical vs AI (same residual protocol).}
+On the overnight runner geometry (CUDA, batch 64, prolonged residual $R$), ten non-learnable bake denoisers were timed against the neural favorite above.
+DualCosine reproduces the paper baseline at $R\approx 0.820$ ($\approx 1.19$\,ms/batch), consistent with the overnight monitor DualCosine $\approx 0.817$.
+The best \emph{active} classical method is a seam-local 3-tap FIR (\texttt{seam\_fir3}) at $R\approx 0.963$ / $\approx 0.60$\,ms/batch; identity (no-op) scores $R\approx 0.974$ and is reported only as a ceiling, not as a denoiser.
+The neural favorite reaches $R\approx 0.991$ at $\approx 2.47$\,ms/batch ($\approx 37$k params): $\Delta R \approx {+}0.028$ vs \texttt{seam\_fir3} and $\Delta R \approx {+}0.171$ vs DualCosine, at roughly $4.1\times$ / $2.1\times$ the latency of those classical baselines respectively.
+This is a matched-protocol inference bench, \emph{not} a finished overnight mean-$R$ claim.
+
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{figures/fig_inference_vs_residual.png}
@@ -29,6 +78,20 @@ Selection rule: maximize $R$, then minimize latency inside the band.
   \includegraphics[width=\columnwidth]{figures/fig_inference_latency_bars.png}
   \caption{Inference latency bars for diverse high-$R$ fitted models.}
   \label{fig:inference-bars}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/fig_classical_vs_ai_scatter.png}
+  \caption{Classical bake denoisers vs neural favorite: residual $R$ versus CUDA latency (ms/batch). Red star: AI favorite.}
+  \label{fig:classical-vs-ai-scatter}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/fig_classical_vs_ai_bars.png}
+  \caption{Classical vs AI ranking on residual (left) and latency (right). AI in red; DualCosine $\approx 0.820$ on this protocol.}
+  \label{fig:classical-vs-ai-bars}
 \end{figure}
 
 \begin{figure}[t]
