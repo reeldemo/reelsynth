@@ -78,18 +78,18 @@ The neural favorite reaches $R\approx 0.991$ ($0.991\pm0.0002$ over five seeds) 
 \label{sec:sota-main}
 
 Table~\ref{tab:sota-main} reports mean$\pm$std over the 20-waveform multi-family set (Section~\ref{sec:dataset}), with canonical-holdout SNR/SDR/wrap-jump for the same method set from \texttt{sota\_matrix.json}.
-PESQ/STOI are intentionally omitted (non-speech cycles).
+PESQ/STOI/MUSHRA are omitted for non-speech cycles (Limitations).
 Fixed MLP-on-$R$ and CNN/U-Net-lite-on-$R$ (no outer NAS) sit between DualCosine and the meta favorite.
 Paired Wilcoxon signed-rank (normal approx.) of favorite vs DualCosine on the 20 waveforms: $W{=}0$, $p{\approx}8.9{\times}10^{-5}$, mean $\Delta R{=}{+}0.162$ (bootstrap 95\% CI $[0.155,0.170]$).
 
 \begin{table*}[t]
   \centering
   \caption{SOTA comparison on 20 generative waveforms (10 families $\times$ 2 seeds, batch 64).
-  $R$/SNR/SDR/wrap-jump are multifamily mean$\pm$std; ms/batch and $\Delta R$ vs DualCosine from the canonical freeze (seed $20{,}260{,}719$) when marked *.
-  Primary metric $R$ (1~=~best). No PESQ/STOI.}
+  $R$/SNR/SDR/wrap-jump are multifamily mean$\pm$std. Columns marked * use the canonical freeze (seed $20{,}260{,}719$) for ms/batch and $\Delta R$ vs DualCosine.
+  Primary metric $R$ (1~=~best). No PESQ/STOI/MUSHRA.}
   \label{tab:sota-main}
   \setlength{\tabcolsep}{2.2pt}
-  \begin{tabular}{@{}lrrrrrr@{}}
+  \begin{tabular}{@{}lrrrrrrr@{}}
     \toprule
     Method & $R$ (20-wave) & SNR (dB) & SDR (dB) & wrap-jump & ms* & params & $\Delta R$* \\
     \midrule
@@ -120,26 +120,27 @@ Paired Wilcoxon signed-rank (normal approx.) of favorite vs DualCosine on the 20
 \subsection{Ablations and compute}
 \label{sec:ablation-compute}
 
-Table~\ref{tab:ablation} freezes branch-best residuals from the overnight history at the reported gate (honest: not isolated single-branch re-runs).
-GA and PBT lead among branches; the full hybrid champion is highest.
-Table~\ref{tab:compute} summarizes the compute budget mined from the same run.
+Table~\ref{tab:ablation} reports two views. Overnight \emph{branch-best freezes} at the $5$k gate come from one hybrid history. Isolated short-budget re-runs (GA-only, PPO-only, GA{+}PPO, full) use 150 iters on the same search seed with plateau adapt off.
+Short-budget champions sit below the multi-hour freeze by construction. They are labeled as such.
+Table~\ref{tab:compute} summarizes the overnight compute budget. Peak VRAM is from an \texttt{nvidia-smi} poll during a short full-branch search replay (30 iters) plus a champion forward{+}FitCell replay. Overnight \texttt{history.jsonl} did not log memory.
 
 \begin{table}[t]
   \centering
-  \caption{Minimal ablations via overnight branch-best freeze (run \texttt{gpu-rl-arch-20260719T083019Z}, final iter $\approx 6{,}922$). $R$ is prolonged residual on the runner geometry.}
+  \caption{Ablations. Left block: overnight branch-best freeze (run \texttt{gpu-rl-arch-20260719T083019Z}, final iter $\approx 6{,}922$). Right block: isolated short-budget re-runs (150 iters, seed $1{,}902{,}771{,}841$, plateau adapt off). $R$ is prolonged residual on the runner geometry.}
   \label{tab:ablation}
   \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{@{}lr@{}}
+  \begin{tabular}{@{}lrr@{}}
     \toprule
-    Config & $R$ \\
+    Config & Overnight freeze $R$ & Isolated 150-it $R$ \\
     \midrule
-    Full hybrid champion & 0.99093 \\
-    GA-only (branch best) & 0.99016 \\
-    PBT (branch best) & 0.99012 \\
-    PPO-only (branch best) & 0.98924 \\
-    combo (branch best) & 0.98854 \\
-    NAS (branch best) & 0.98677 \\
-    DualCosine (runner) & 0.81658 \\
+    Full hybrid & 0.99093 & 0.98113 \\
+    GA-only & 0.99016 & 0.98062 \\
+    PBT (branch best / n/a isolated) & 0.99012 & --- \\
+    PPO-only & 0.98924 & 0.97932 \\
+    GA{+}PPO & --- & 0.98007 \\
+    combo (branch best) & 0.98854 & --- \\
+    NAS (branch best) & 0.98677 & --- \\
+    DualCosine (runner) & 0.81658 & 0.81658 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -159,10 +160,35 @@ Table~\ref{tab:compute} summarizes the compute budget mined from the same run.
     Population size & 12 \\
     Final champion $R$ & 0.99093 \\
     DualCosine baseline (runner) & 0.81658 \\
-    Peak VRAM (overnight) & not logged \\
+    Peak VRAM (nvidia-smi replay) & $\approx 3.29$\,GiB \\
     \bottomrule
   \end{tabular}\\[0.4em]
-  {\footnotesize Overnight peak memory was not recorded in \texttt{history.jsonl}; bench-process peaks are not a substitute.}
+  {\footnotesize Peak memory: max \texttt{nvidia-smi} \texttt{memory.used} during a 30-iter full-branch search probe ($\approx 3.29$\,GiB) and champion forward{+}FitCell replay ($\approx 3.17$\,GiB). The multi-hour overnight process itself left no memory log. Idle GPU occupancy was already $\approx 3.0$\,GiB from other sessions.}
+\end{table}
+
+\subsection{Rust \texttt{sound\_bench} transfer (20 tiles)}
+\label{sec:rust-bench}
+
+Table~\ref{tab:rust-bench} scores the same classical set and the Python-trained neural favorite on 20 Rust-exported tiles (10 families $\times$ 2 seeds).
+This closes the prior gap where multi-family tables used only Python generative stand-ins.
+Honest transfer note: the favorite was searched on Python \texttt{make\_batch} sine{+}cliff geometry. On Rust families it still beats DualCosine (mean $\Delta R{+}0.063$, Wilcoxon $p{\approx}0.009$) but trails identity and \texttt{seam\_fir3}. The primary SOTA claim remains the Python multi-family matrix.
+
+\begin{table}[t]
+  \centering
+  \caption{Secondary transfer on 20 Rust \texttt{sound\_bench} tiles (byte-aligned export). Mean$\pm$std prolonged $R$. Favorite vs DualCosine: mean $\Delta R{+}0.063$, $p{\approx}0.009$.}
+  \label{tab:rust-bench}
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}lrr@{}}
+    \toprule
+    Method & $R$ (20 Rust tiles) & $\Delta R$ vs DualCosine \\
+    \midrule
+    identity & $0.928\pm0.084$ & ${+}0.166$ \\
+    \texttt{seam\_fir3} & $0.896\pm0.077$ & ${+}0.134$ \\
+    neural favorite & $0.825\pm0.121$ & ${+}0.063$ \\
+    classic quadratic & $0.788\pm0.110$ & ${+}0.026$ \\
+    DualCosine / cosine fade & $0.762\pm0.118$ & $0$ \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
 \begin{figure}[t]

@@ -3,7 +3,7 @@
 
 We organize prior work by mechanism.
 \textbf{Used} lines are methodological or comparative anchors for residual-scored RL+GA meta-search.
-\textbf{Screened} lines were inspected as contrast but are not treated as dependencies.
+\textbf{Screened} lines were inspected as contrast. They are excluded from the dependency set.
 Paraphrases prefer attached abstracts and PDF snippets over title-only citation.
 
 \subsection{Discontinuity control and modular audio DSP}
@@ -73,16 +73,16 @@ We \textbf{use} MoE as motivation for soft gates over heterogeneous seam blocks 
   \item MoE soft gating prior:~\cite{shazeer2017}.
 \end{itemize}
 
-\paragraph{Screened (relevant contrast, not dependencies).}
+\paragraph{Screened (contrast only).}
 \begin{itemize}
   \item \textbf{MAML}~\cite{finn2017}: bi-level / fast-adaptation framing. We do not differentiate through a deep task network. Inner fits are coordinate-style updates on bake parameters. Outer rank is residual $R$.
   \item \textbf{DARTS}~\cite{liu2019}: continuous relaxation of architecture search. We keep discrete ops + small cells under residual scoring.
   \item \textbf{Demucs / Hybrid Demucs / realtime waveform enhancement}~\cite{dfossez2019,dfossez2021,dfossez2020}: strong separators and enhancers, but full multi-scale / hybrid STFT stacks are too heavy per meta trial under overnight bake budgets.
-  \item \textbf{DiffWave}~\cite{kong2021}: diffusion vocoder. Screened as a generative sampling stack, not a seam bake operator.
+  \item \textbf{DiffWave}~\cite{kong2021}: diffusion vocoder. Screened as a generative sampling stack outside the seam bake operator set.
   \item \textbf{SEGAN-style adversarial enhancement}~\cite{pascual2017}: optional tiny adversarial cues only. Full GAN training loops screened for per-trial cost.
 \end{itemize}
 
 \paragraph{Positioning.}
 Relative to this map, the present work contributes (i)~a prolonged residual objective for periodic seam denoising, (ii)~an explicitly hybrid RL+GA(+PBT) meta-outer loop with honest branch naming, and (iii)~a used/screened literature protocol with downloaded source PDFs.
-We do not claim SOTA on general speech enhancement or music separation corpora.
-The primary claim is protocol-level: residual-scored meta-search for cycle-local audio denoise operators under a declared compute budget.
+Claims stay inside cycle-local seam restoration under a declared compute budget.
+The primary claim is protocol-level: residual-scored meta-search for cycle-local audio denoise operators.

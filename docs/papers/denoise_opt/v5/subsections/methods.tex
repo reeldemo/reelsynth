@@ -6,11 +6,12 @@
 
 Throughout, $x\in\mathbb{R}^{L}$ is the stored single-period wavetable (raw engine input).
 $y=\Theta(x;\theta)$ is the engine-baked cycle after seam ops and optional residual cells with parameters $\theta$.
-$r^{\star}\in\mathbb{R}^{L}$ is a procedural ideal sibling from the same seed and family with the open-wrap cliff withheld (not a studio-clean recording).
+$r^{\star}\in\mathbb{R}^{L}$ is a procedural ideal sibling from the same seed and family with the open-wrap cliff withheld.
+Studio-clean recordings are not used as $r^{\star}$.
 Tiling length $N$ (typically $N{=}16$) forms $y_{\mathrm{tiled}}=\mathrm{Tile}(y,N)$ and $r^{\star}_{\mathrm{tiled}}=\mathrm{Tile}(r^{\star},N)$.
 Seam width $W$ (code: \texttt{SEAM\_W}, typically $8$) is the neighborhood edited by classical fade and polish ops.
 $R\in[0,1]$ is the prolonged residual score defined below ($1$~=~best).
-These symbols are fixed for the residual objective. They do not follow the Noise2Noise clean/noisy pair convention.
+These symbols are fixed for the residual objective. They follow a different convention from Noise2Noise clean/noisy pairs.
 
 \subsection{Ideal tile construction}
 \label{sec:ideal-tile}
@@ -62,14 +63,15 @@ Suppose the only difference between engine and ideal is an endpoint cliff, and a
 Then $R$ is nondecreasing relative to the untreated engine whenever the mid-cycle penalty is dominated by the seam error reduction under~\eqref{eq:R}.
 \end{lemma}
 \begin{proof}[Sketch]
-This is a conditional accounting argument under the stated assumptions, not a claim that every DualCosine-style fade improves $R$ on every draw.
+This is a conditional accounting argument under the stated assumptions.
+It does not assert that every DualCosine-style fade improves $R$ on every draw.
 Empirical support appears in the classical and favorite benches of Section~\ref{sec:results}.
 \end{proof}
 
 \begin{remark}[Noise2Noise motivation]
 \label{rem:n2n}
 Ranking without studio-clean pairs is possible when the ideal is a procedural sibling of the engine draw~\cite{lehtinen2018,kashyap2021n2n}.
-This is a design philosophy, not a theorem about speech corpora.
+The remark is a design philosophy for procedural siblings.
 \end{remark}
 
 \begin{algorithm}[t]

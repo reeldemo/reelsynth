@@ -1219,6 +1219,12 @@ def main() -> int:
         default=4,
         help="Cap escalate aggression (depth/graph/mix) for RTX 3090 trainability.",
     )
+    ap.add_argument(
+        "--branches",
+        type=str,
+        default="ppo,nas,pbt,ga,combo",
+        help="Comma-separated branch names to rotate (isolated ablations: ga / ppo / ga,ppo / full set).",
+    )
     args = ap.parse_args()
     if args.history_every < 1:
         print("ERROR: --history-every must be >= 1", file=sys.stderr)
@@ -1232,6 +1238,18 @@ def main() -> int:
     if args.plateau_adapt_max_level < 1:
         print("ERROR: --plateau-adapt-max-level must be >= 1", file=sys.stderr)
         return 2
+    allowed_branches = {"ppo", "nas", "pbt", "ga", "combo"}
+    branch_list = tuple(
+        b.strip().lower() for b in str(args.branches).split(",") if b.strip()
+    )
+    if not branch_list:
+        print("ERROR: --branches must list at least one branch", file=sys.stderr)
+        return 2
+    bad = [b for b in branch_list if b not in allowed_branches]
+    if bad:
+        print(f"ERROR: unknown --branches {bad}; allowed={sorted(allowed_branches)}", file=sys.stderr)
+        return 2
+    args.branch_tuple = branch_list
 
     # Fresh process defaults (module may have been mutated in prior imports/tests)
     arch_blocks.set_search_caps(depth=12, graph=6, width=48)
@@ -1309,6 +1327,7 @@ def main() -> int:
                 "max_width": arch_blocks.MAX_WIDTH,
                 "plateau_adapt_every": args.plateau_adapt_every,
                 "plateau_adapt_max_level": args.plateau_adapt_max_level,
+                "branches": list(args.branch_tuple),
                 "n_ops": len(OPS),
                 "ops": OPS,
                 "cell_kinds": CELL_KINDS,
@@ -1461,7 +1480,8 @@ def main() -> int:
     keepalive = torch.zeros(1, device=device)
     old_plateau = 0.9809
     rate_note_written = False
-    BRANCHES = ("ppo", "nas", "pbt", "ga", "combo")
+    BRANCHES = args.branch_tuple
+    log_line(log_path, f"branches={','.join(BRANCHES)}")
 
     for it in range(1, args.iters + 1):
         if time.time() - t0 > max_sec:
@@ -1559,6 +1579,7 @@ def main() -> int:
             else:
                 trial_cfg = mutate_arch(cfg, action, rng, plateau)
                 proposal = "PPO_MUTATION"
+            trial_hp = mutate_hp(hp, rng)
 
         if it == 1 or it % args.ckpt_every == 1:
             save_unfitted(run_dir, trial_cfg, f"iter_{it:06d}", trial_hp)

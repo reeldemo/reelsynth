@@ -18,4 +18,6 @@ A natural next paper is family-conditional and cliff-conditional meta-learning: 
 
 \paragraph{Hybrid branches.}
 At the reported overnight freeze, GA and PBT lead branch-best residuals, with PPO close behind and NAS trailing on this seed (Table~\ref{tab:ablation}).
-The multi-family SOTA matrix (Table~\ref{tab:sota-main}) shows the same ordering theme on secondary metrics: the meta favorite dominates DualCosine on $R$, SNR, and SDR across twenty generative draws, while fixed MLP/CNN-on-$R$ baselines improve DualCosine without matching the searched favorite.
+Isolated short-budget re-runs on the same seed give measured champions under a fixed 150-iter cap (Table~\ref{tab:ablation}). Overnight branch tags are freezes from one hybrid run. They are not causal single-branch experiments.
+The multi-family SOTA matrix (Table~\ref{tab:sota-main}) shows the meta favorite ahead of DualCosine on $R$, SNR, and SDR across twenty Python generative draws. Fixed MLP/CNN-on-$R$ baselines beat DualCosine and trail the searched favorite.
+On Rust \texttt{sound\_bench} tiles (Table~\ref{tab:rust-bench}) the same favorite beats DualCosine and trails identity. That transfer gap matches the narrow Python training geometry.

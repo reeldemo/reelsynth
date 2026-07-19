@@ -3,18 +3,18 @@
 
 \paragraph{Broader impact.}
 This work targets cycle-local wavetable seam repair for virtual-analog / software-instrument workflows.
-Misuse potential is low: the method does not enhance speech for surveillance, does not remove watermarks from protected media, and operates on short synthetic periods rather than long-form recordings.
-Training and search use procedural sine{+}cliff generators; no private studio stems are required for the reported tables.
-The main resource cost is GPU time on a consumer RTX~3090 (order of hours for the $5$k-gate freeze; see Table~\ref{tab:compute}).
+Misuse potential is low. The method does not enhance speech for surveillance, does not remove watermarks from protected media, and operates only on short synthetic periods.
+Training and search use procedural sine{+}cliff generators. No private studio stems are required for the reported tables.
+The main resource cost is GPU time on a consumer RTX~3090 (order of hours for the $5$k-gate freeze, Table~\ref{tab:compute}).
 Authors should not over-claim speech enhancement or production mastering quality from these metrics.
 
 \paragraph{Reproducibility.}
-Holdout seed $20{,}260{,}719$; overnight search seed $1{,}902{,}771{,}841$.
+Holdout seed $20{,}260{,}719$. Overnight search seed $1{,}902{,}771{,}841$.
 Primary code: \url{https://github.com/reeldemo/reelsynth} (\texttt{scripts/overnight\_gpu\_rl\_arch.py}, \texttt{scripts/bench\_sota\_matrix.py}, \texttt{scripts/metrics\_snr\_sdr.py}).
 Paper companion: \url{https://github.com/reeldemo/denoise-opt-meta}.
-Dependencies for the CUDA benches: Python~3.12, PyTorch~$2.6$+CUDA~12.4, NumPy/matplotlib; Rust/\texttt{cargo} for the separate \texttt{sound\_bench} hardness probe.
+Dependencies for the CUDA benches: Python~3.12, PyTorch~$2.6$+CUDA~12.4, NumPy/matplotlib. Rust/\texttt{cargo} builds the separate \texttt{sound\_bench} hardness probe.
 JSON artifacts under \texttt{brand/artifacts/} (\texttt{sota\_matrix.json}, \texttt{canonical\_eval\_dataset/}, overnight \texttt{history.jsonl}) freeze the numbers in Section~\ref{sec:results}.
-PESQ/STOI/MUSHRA are intentionally omitted for non-speech cycles.
+PESQ/STOI are omitted for non-speech cycles (domain mismatch). MUSHRA was not run.
 
 \paragraph{Competing interests.}
 None to declare.

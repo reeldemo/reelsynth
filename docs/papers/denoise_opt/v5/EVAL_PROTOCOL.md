@@ -11,7 +11,7 @@
 | Primary | Prolonged residual $R\in[0,1]$ | $1$ = best. Tiled RMS ratio vs ideal sibling. |
 | Secondary | SNR, SDR on tiled audio vs ideal | Required for Phase 3a matrices. |
 | Seam-specific | $\|x_0-x_{L-1}\|$ / wrap-jump | Report on engine and baked cycles. |
-| Out of scope (default) | PESQ, STOI, MUSHRA | Domain mismatch on non-speech cycles. Opt-in Phase 3b only, with mismatch label. |
+| Out of scope (default) | PESQ, STOI, MUSHRA | Domain mismatch on non-speech cycles. Explicitly deferred in Limitations: no invented PESQ on sine tiles; MUSHRA not run (needs humans). Speech-proxy secondary only if OA speech snippets are imported and labeled. |
 
 ## Seeds and geometry
 
@@ -34,7 +34,9 @@
 
 ## Waveform diversity target (Phase 3a)
 
-$\ge 20$ scored items spanning Rust `sound_bench` families and/or multi-seed `make_batch` variants. Until that lands, paper tables may use the frozen single-family holdout with an explicit scope sentence.
+$\ge 20$ scored items spanning Rust `sound_bench` families and/or multi-seed `make_batch` variants.
+
+**Landed:** (i) 20 Python generative family draws (primary SOTA matrix); (ii) 20 Rust `sound_bench` tiles via `export_sound_bench_tiles` (secondary transfer table). Residual gap: Python generative families are not byte-identical to Rust. Rust export closes the “no Rust tiles in the matrix” gap for $\ge 20$ waveforms.
 
 ## Claim freeze
 

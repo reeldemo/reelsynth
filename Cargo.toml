@@ -35,6 +35,11 @@ name = "bench_denoise_opt"
 path = "src/bin/bench_denoise_opt.rs"
 required-features = []
 
+[[bin]]
+name = "export_sound_bench_tiles"
+path = "src/bin/export_sound_bench_tiles.rs"
+required-features = []
+
 [lib]
 name = "reelsynth"
 crate-type = ["cdylib", "rlib"]

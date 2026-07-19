@@ -1,0 +1,10 @@
+{
+  "protocol": "short_full_search_vram_probe",
+  "iters": 30,
+  "rc": 0,
+  "nvidia_smi_idle_peak_MiB": 3051,
+  "nvidia_smi_peak_MiB": 3374,
+  "nvidia_smi_peak_GiB": 3.294921875,
+  "n_samples": 239,
+  "note": "30-iter full-branch overnight snippet with nvidia-smi polling (proxy for overnight peak)."
+}

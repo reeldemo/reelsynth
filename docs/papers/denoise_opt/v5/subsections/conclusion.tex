@@ -4,7 +4,7 @@
 We framed wavetable wrap discontinuity as cycle-local seam artifact repair and specified DenoiseOpt, a hybrid GA--PPO(+PBT) meta-search scored by prolonged residual $R$.
 Related work separates used anchors (Noise2Noise / speech N2N, PBT, aging evolution, ERL, ENAS/PPO, Wave-U-Net/Conv-TasNet, MoE, BLIT/BLAMP, DDSP) from screened contrasts (MAML, DARTS, Demucs, DiffWave, full GAN loops).
 At the reported overnight freeze the champion reaches $R\approx 0.9909$ versus DualCosine $\approx 0.8166$.
-On the frozen canonical holdout a compact inference favorite reaches $R\approx 0.991$ versus DualCosine $R\approx 0.825$; across twenty multi-family draws, mean $\Delta R\approx{+}0.162$ vs DualCosine (Wilcoxon $p{\approx}9{\times}10^{-5}$).
+On the frozen canonical holdout a compact inference favorite reaches $R\approx 0.991$ versus DualCosine $R\approx 0.825$. Across twenty multi-family draws, mean $\Delta R\approx{+}0.162$ vs DualCosine (Wilcoxon $p{\approx}9{\times}10^{-5}$).
 Fixed MLP/CNN-on-$R$ baselines improve DualCosine but trail the meta favorite.
-Scope remains wavetable seam restoration, not general speech enhancement.
+Scope remains wavetable seam restoration.
 Companion code lives at \url{https://github.com/reeldemo/reelsynth} and \url{https://github.com/reeldemo/denoise-opt-meta}.

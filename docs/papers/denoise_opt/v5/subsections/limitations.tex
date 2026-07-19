@@ -2,11 +2,12 @@
 \label{sec:limitations}
 
 \begin{itemize}
-  \item Residual uses a procedural ideal (no-cliff sibling), not a perceptual MOS or listening panel.
-  \item Bake metrics are not a substitute for formal audio quality tests.
-  \item The overnight GPU loop currently scores random sine+harmonic seam cliffs. Family-conditional hardness is measured on the separate Rust procedural bench. Aligning both evaluators is left to follow-up work.
+  \item Residual uses a procedural ideal (no-cliff sibling). Perceptual MOS and listening panels are out of scope.
+  \item Bake metrics leave formal listening tests and speech quality metrics to separate studies.
+  \item \textbf{PESQ / STOI / MUSHRA deferred.} Primary cycles are non-speech wavetable tiles. Speech metrics would domain-mismatch sine{+}cliff families, so PESQ/STOI numbers are absent here (none invented on synthetic tiles). MUSHRA needs human listeners and was \emph{not run}. A speech-proxy secondary study would need OA speech snippets labeled as secondary. That remains out of scope for this narrow-seam paper.
+  \item The overnight CUDA runner scores Python \texttt{make\_batch} sine{+}cliff draws. A separate Rust \texttt{sound\_bench} export of 20 family tiles (byte-aligned generator) is a secondary transfer block. The Python generative SOTA matrix is the primary multi-family table.
   \item Per-trial architecture width is capped for overnight throughput. Full Demucs-/diffusion-scale stacks were screened out.
-  \item The $5$k-gate freeze reports measured champion and branch residuals on the runner and frozen holdout geometries used in this paper.
+  \item The $5$k-gate freeze reports measured champion and overnight branch-best residuals. Isolated GA/PPO/GA{+}PPO/full re-runs use a short labeled budget (same search seed). Those short runs are a different protocol from the multi-hour freeze.
   \item Classical VA/BLEP anchors use author or proceedings PDFs (\texttt{stilson1996}, \texttt{nam2009polyblep}, \texttt{esqueda2016blamp}).
 \end{itemize}
 
