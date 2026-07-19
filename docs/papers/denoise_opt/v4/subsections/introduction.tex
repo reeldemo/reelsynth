@@ -7,6 +7,20 @@ The same geometry appears whenever a short loop buffer is tiled for listening or
 We call the repair task \emph{cycle-local seam restoration}: edit a neighborhood of the wrap (and optionally a lightweight residual cell over the period) so that multi-period playback matches an ideal reference that never opens the wrap cliff.
 That outer agreement is what we score as audio denoising for this periodic artifact class.
 
+Figure~\ref{fig:intro-sine} shows one real sine-wrap edge case from the frozen canonical holdout (same \texttt{make\_batch} tile, seed $20{,}260{,}719$).
+Panel (a) is the ideal multi-period sine.
+Panel (b) is the cracked engine tile with open-wrap cliff ($R\approx0.931$).
+Panel (c) applies DualCosine on that same tile ($R\approx0.640$ on this severe cliff).
+Panel (d) is the DenoiseOpt neural favorite on the same tile ($R\approx0.986$).
+The figure is the problem story in one strip: ideal, crackle, classical attempt, our aim.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/fig_intro_sine_problem.png}
+  \caption{Sine-wrap edge case from the canonical eval holdout (same tile). Ideal periodic reference, cracked engine with wrap seams (dashed), DualCosine bake, and DenoiseOpt favorite. Prolonged residual $R$ is printed per panel.}
+  \label{fig:intro-sine}
+\end{figure*}
+
 Classical virtual-analog practice already supplies seam-local tools.
 Alias-free BLIT/BLEP-style synthesis~\cite{stilson1996}, PolyBLEP / fractional-delay antialiasing~\cite{nam2009polyblep}, and BLAMP corner corrections~\cite{esqueda2016blamp} reduce wrap and geometric discontinuity energy in-band.
 Those operators act locally.
