@@ -1,0 +1,36 @@
+# PLAN_COMPLETE
+
+Manuscript checklist implementation plan closed for REAL + PARTIAL items under the narrow-claims default path.
+
+**Date:** 19 July 2026  
+**Plan:** `MANUSCRIPT_CHECKLIST_IMPLEMENTATION_PLAN.md`  
+**Progress:** `PLAN_PROGRESS.md`
+
+## Checklist re-score (REAL + PARTIAL only)
+
+| ID | Triage | Done-when | Status |
+|----|--------|-----------|--------|
+| 1.1 | REAL | Narrow title/abstract | **PASS** |
+| 1.2 | FALSE FAIL | Grep clean open tables | **PASS** (prior) |
+| 1.3 | REAL | SNR/SDR/wrap-jump in matrices | **PASS** (`tab:sota-main`) |
+| 1.4 | PARTIAL | ≥1 learned fixed baseline | **PASS** (MLP + CNN/U-Net-on-R) |
+| 1.5 | PARTIAL | ≥20 waveforms + stats vs DualCosine | **PASS** (20-wave + Wilcoxon/bootstrap) |
+| 1.6 | REAL | Compute budget table | **PASS** (`tab:compute`) |
+| 2.1 | REAL | Abstract rewrite | **PASS** (Phase 1) |
+| 2.4 | PARTIAL | Methods + Algorithms + props | **PASS** (Phase 2 + arch fig) |
+| 2.5 | PARTIAL | Experiments diversity + protocol | **PASS** |
+| 2.6 | PARTIAL | SOTA + ablation published | **PASS** |
+| 2.10 | PARTIAL | Venue = arXiv twocolumn | **PASS** |
+| 3.1 | PARTIAL | Independent Researcher | **PASS** |
+| 3.3 | PASS→extend | Reproducibility para | **PASS** (`ethics.tex`) |
+| 3.4 | REAL | Broader impact | **PASS** |
+| 4.1 | PARTIAL | Captions + arch diagram | **PASS** |
+| 4.2 | PARTIAL | SOTA + ablation + compute tables | **PASS** |
+| 4.4 | PARTIAL | Axis/legend audit on regen figs | **PASS** (heatmap + existing overnight figs) |
+| 4.5 | REAL | Colorblind-safe palette | **PASS** (`cividis` heatmap) |
+
+**Score:** 18/18 addressed REAL+PARTIAL done-when criteria under default path (≥80% target met).
+
+**Explicit non-goals still open (opt-in):** Phase 3b PESQ/STOI/MUSHRA; isolated GA/PPO-only re-runs; overnight peak-VRAM logging; byte-identical Rust family export.
+
+**PDF:** `paper/v5/main.pdf` (12 pages, rebuilt 19 July 2026).

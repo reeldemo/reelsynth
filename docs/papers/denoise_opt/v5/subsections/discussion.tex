@@ -17,4 +17,5 @@ Plateau adaptation (deeper cells, denser MoE graphs, higher GA/PBT weight) is th
 A natural next paper is family-conditional and cliff-conditional meta-learning: train or select denoisers per family, or condition the outer loop on measured wrap statistics, and publish per-family residual curves beside the scalar champion.
 
 \paragraph{Hybrid branches.}
-At the $5$k freeze, GA and PBT lead branch-best residuals, with PPO close behind and NAS trailing on this seed.
+At the reported overnight freeze, GA and PBT lead branch-best residuals, with PPO close behind and NAS trailing on this seed (Table~\ref{tab:ablation}).
+The multi-family SOTA matrix (Table~\ref{tab:sota-main}) shows the same ordering theme on secondary metrics: the meta favorite dominates DualCosine on $R$, SNR, and SDR across twenty generative draws, while fixed MLP/CNN-on-$R$ baselines improve DualCosine without matching the searched favorite.

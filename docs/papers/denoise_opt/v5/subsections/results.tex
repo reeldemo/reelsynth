@@ -7,7 +7,7 @@ Lit-combo champion family stress (prolonged residual) similarly ranks \texttt{op
 Hard sounds recur.
 
 \paragraph{Overnight hybrid ($5$k-gate freeze).}
-At $\ge 5{,}000$ clean iterations the champion residual is $R\approx 0.99093$ with DualCosine $\approx 0.81658$ on the overnight runner ($\Delta R\approx{+}0.174$).
+At the reported overnight freeze ($\approx 6{,}922$ clean iterations, $\approx 7.9$\,h on RTX~3090) the champion residual is $R\approx 0.99093$ with DualCosine $\approx 0.81658$ on the overnight runner ($\Delta R\approx{+}0.174$).
 Monitoring plots below are regenerated from that freeze.
 Declared larger budgets continue. This paper reports the gate freeze only.
 
@@ -74,35 +74,95 @@ The neural favorite reaches $R\approx 0.991$ ($0.991\pm0.0002$ over five seeds) 
   \end{tabular}
 \end{table}
 
-\subsection{SOTA matrix skeleton (frozen holdout)}
-\label{sec:sota-skeleton}
+\subsection{SOTA matrix (multi-family + secondary metrics)}
+\label{sec:sota-main}
 
-Table~\ref{tab:sota-main} is the Phase~4 skeleton built from existing \texttt{method\_scores.json}.
-Columns for SNR, SDR, and wrap-jump await Phase~3a metric plumbing on the same tensors.
+Table~\ref{tab:sota-main} reports mean$\pm$std over the 20-waveform multi-family set (Section~\ref{sec:dataset}), with canonical-holdout SNR/SDR/wrap-jump for the same method set from \texttt{sota\_matrix.json}.
 PESQ/STOI are intentionally omitted (non-speech cycles).
+Fixed MLP-on-$R$ and CNN/U-Net-lite-on-$R$ (no outer NAS) sit between DualCosine and the meta favorite.
+Paired Wilcoxon signed-rank (normal approx.) of favorite vs DualCosine on the 20 waveforms: $W{=}0$, $p{\approx}8.9{\times}10^{-5}$, mean $\Delta R{=}{+}0.162$ (bootstrap 95\% CI $[0.155,0.170]$).
+
+\begin{table*}[t]
+  \centering
+  \caption{SOTA comparison on 20 generative waveforms (10 families $\times$ 2 seeds, batch 64).
+  $R$/SNR/SDR/wrap-jump are multifamily mean$\pm$std; ms/batch and $\Delta R$ vs DualCosine from the canonical freeze (seed $20{,}260{,}719$) when marked *.
+  Primary metric $R$ (1~=~best). No PESQ/STOI.}
+  \label{tab:sota-main}
+  \setlength{\tabcolsep}{2.2pt}
+  \begin{tabular}{@{}lrrrrrr@{}}
+    \toprule
+    Method & $R$ (20-wave) & SNR (dB) & SDR (dB) & wrap-jump & ms* & params & $\Delta R$* \\
+    \midrule
+    neural favorite & $0.977\pm0.010$ & $35.0\pm3.2$ & $35.1\pm3.2$ & $0.90\pm0.14$ & 2.44 & 37\,489 & ${+}0.166$ \\
+    identity & $0.965\pm0.008$ & $30.9\pm1.9$ & $31.0\pm1.9$ & $0.91\pm0.15$ & 0.00 & 0 & ${+}0.147$ \\
+    \texttt{seam\_fir3} & $0.955\pm0.005$ & $28.1\pm1.2$ & $28.1\pm1.2$ & $0.46\pm0.08$ & 0.59 & 0 & ${+}0.136$ \\
+    MLP-on-$R$ & $0.932\pm0.006$ & $24.6\pm0.9$ & $24.6\pm0.9$ & $0.64\pm0.07$ & 2.76 & 8\,604 & ${+}0.113$ \\
+    CNN/U-Net-on-$R$ & $0.886\pm0.012$ & $19.5\pm0.9$ & $19.5\pm0.9$ & $0.48\pm0.06$ & 5.01 & 11\,752 & ${+}0.069$ \\
+    classic quadratic & $0.835\pm0.012$ & $17.9\pm1.1$ & $17.7\pm1.2$ & $0.32\pm0.05$ & 1.78 & 0 & ${+}0.020$ \\
+    DualCosine & $0.814\pm0.013$ & $16.9\pm1.2$ & $16.8\pm1.2$ & $0.32\pm0.05$ & 1.48 & 0 & $0$ \\
+    cosine fade & $0.814\pm0.013$ & $16.9\pm1.2$ & $16.8\pm1.2$ & $0.32\pm0.05$ & 2.64 & 0 & $0$ \\
+    crossfade & $0.802\pm0.013$ & $16.7\pm1.2$ & $16.4\pm1.2$ & $0.91\pm0.15$ & 1.70 & 0 & ${-}0.013$ \\
+    hann blend & $0.793\pm0.015$ & $16.1\pm1.2$ & $15.8\pm1.2$ & $0.32\pm0.05$ & 0.57 & 0 & ${-}0.020$ \\
+    soft wide fade & $0.729\pm0.016$ & $14.0\pm1.1$ & $13.6\pm1.1$ & $0.63\pm0.08$ & 3.69 & 0 & ${-}0.082$ \\
+    detrend & $0.375\pm0.040$ & $5.5\pm1.0$ & $5.4\pm1.0$ & $0.00\pm0.00$ & 0.12 & 0 & ${-}0.417$ \\
+    ensemble DC+FIR & $0.368\pm0.040$ & $5.1\pm1.0$ & $5.0\pm1.0$ & $0.12\pm0.02$ & 1.99 & 0 & ${-}0.422$ \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/fig_sota_heatmap.png}
+  \caption{Colorblind-safe (\texttt{cividis}) heatmap of mean prolonged $R$ for selected methods $\times$ generative families (2 seeds each). Higher is better.}
+  \label{fig:sota-heatmap}
+\end{figure}
+
+\subsection{Ablations and compute}
+\label{sec:ablation-compute}
+
+Table~\ref{tab:ablation} freezes branch-best residuals from the overnight history at the reported gate (honest: not isolated single-branch re-runs).
+GA and PBT lead among branches; the full hybrid champion is highest.
+Table~\ref{tab:compute} summarizes the compute budget mined from the same run.
 
 \begin{table}[t]
   \centering
-  \caption{SOTA comparison skeleton on the frozen sine{+}cliff holdout (seed $20{,}260{,}719$, batch 64). $R$ and latency from \texttt{method\_scores.json}. $\Delta R$ is vs DualCosine on the same freeze. SNR/SDR/wrap-jump columns deferred to Phase~3a.}
-  \label{tab:sota-main}
-  \setlength{\tabcolsep}{2.5pt}
-  \begin{tabular}{@{}lrrrr@{}}
+  \caption{Minimal ablations via overnight branch-best freeze (run \texttt{gpu-rl-arch-20260719T083019Z}, final iter $\approx 6{,}922$). $R$ is prolonged residual on the runner geometry.}
+  \label{tab:ablation}
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}lr@{}}
     \toprule
-    Method & $R$ & $\Delta R$ vs DC & ms/batch & params \\
+    Config & $R$ \\
     \midrule
-    neural favorite & 0.9911 & ${+}0.1662$ & 2.56 & 37\,489 \\
-    identity & 0.9718 & ${+}0.1469$ & 0.31 & 0 \\
-    \texttt{seam\_fir3} & 0.9610 & ${+}0.1361$ & 0.67 & 0 \\
-    classic quadratic & 0.8449 & ${+}0.0200$ & 1.59 & 0 \\
-    DualCosine & 0.8249 & $0$ & 1.35 & 0 \\
-    cosine fade & 0.8249 & $0$ & 1.59 & 0 \\
-    crossfade & 0.8116 & ${-}0.0133$ & 1.50 & 0 \\
-    hann blend & 0.8048 & ${-}0.0201$ & 0.54 & 0 \\
-    soft wide fade & 0.7432 & ${-}0.0817$ & 2.64 & 0 \\
-    detrend & 0.4079 & ${-}0.4170$ & 0.36 & 0 \\
-    ensemble DC+FIR & 0.4024 & ${-}0.4225$ & 1.56 & 0 \\
+    Full hybrid champion & 0.99093 \\
+    GA-only (branch best) & 0.99016 \\
+    PBT (branch best) & 0.99012 \\
+    PPO-only (branch best) & 0.98924 \\
+    combo (branch best) & 0.98854 \\
+    NAS (branch best) & 0.98677 \\
+    DualCosine (runner) & 0.81658 \\
     \bottomrule
   \end{tabular}
+\end{table}
+
+\begin{table}[t]
+  \centering
+  \caption{Compute budget for the reported overnight freeze (RTX~3090, PyTorch $2.6$+cu124, search seed $1{,}902{,}771{,}841$). Arch evaluations $\approx$ clean iterations.}
+  \label{tab:compute}
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}lr@{}}
+    \toprule
+    Item & Value \\
+    \midrule
+    GPU & NVIDIA GeForce RTX 3090 \\
+    Elapsed wall time & $\approx 7.92$\,h \\
+    Clean iterations / arch evals & $\approx 6{,}922$ \\
+    Population size & 12 \\
+    Final champion $R$ & 0.99093 \\
+    DualCosine baseline (runner) & 0.81658 \\
+    Peak VRAM (overnight) & not logged \\
+    \bottomrule
+  \end{tabular}\\[0.4em]
+  {\footnotesize Overnight peak memory was not recorded in \texttt{history.jsonl}; bench-process peaks are not a substitute.}
 \end{table}
 
 \begin{figure}[t]
