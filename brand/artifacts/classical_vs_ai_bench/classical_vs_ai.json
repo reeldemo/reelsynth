@@ -1,0 +1,145 @@
+{
+  "device": "cuda",
+  "batch": 64,
+  "results": [
+    {
+      "name": "identity",
+      "kind": "non_ai",
+      "residual": 0.9735056161880493,
+      "ms_per_batch": 0.37121499990462326,
+      "ms_per_sample": 0.005800234373509738,
+      "n_params": 0
+    },
+    {
+      "name": "classic_quadratic",
+      "kind": "non_ai",
+      "residual": 0.839565634727478,
+      "ms_per_batch": 1.5375009999843314,
+      "ms_per_sample": 0.02402345312475518,
+      "n_params": 0
+    },
+    {
+      "name": "cosine_fade",
+      "kind": "non_ai",
+      "residual": 0.8197969198226929,
+      "ms_per_batch": 1.503143000009004,
+      "ms_per_sample": 0.023486609375140688,
+      "n_params": 0
+    },
+    {
+      "name": "dual_cosine",
+      "kind": "non_ai",
+      "residual": 0.8197969198226929,
+      "ms_per_batch": 1.1898070000461303,
+      "ms_per_sample": 0.018590734375720785,
+      "n_params": 0
+    },
+    {
+      "name": "soft_wide_fade",
+      "kind": "non_ai",
+      "residual": 0.722964882850647,
+      "ms_per_batch": 2.528959000046598,
+      "ms_per_sample": 0.03951498437572809,
+      "n_params": 0
+    },
+    {
+      "name": "detrend",
+      "kind": "non_ai",
+      "residual": 0.37032192945480347,
+      "ms_per_batch": 0.35954300008597784,
+      "ms_per_sample": 0.005617859376343404,
+      "n_params": 0
+    },
+    {
+      "name": "crossfade",
+      "kind": "non_ai",
+      "residual": 0.8143625259399414,
+      "ms_per_batch": 1.425835999980336,
+      "ms_per_sample": 0.02227868749969275,
+      "n_params": 0
+    },
+    {
+      "name": "hann_blend",
+      "kind": "non_ai",
+      "residual": 0.7992575168609619,
+      "ms_per_batch": 0.57403400001931,
+      "ms_per_sample": 0.00896928125030172,
+      "n_params": 0
+    },
+    {
+      "name": "seam_fir3",
+      "kind": "non_ai",
+      "residual": 0.963111937046051,
+      "ms_per_batch": 0.5970509999315254,
+      "ms_per_sample": 0.009328921873930085,
+      "n_params": 0
+    },
+    {
+      "name": "ensemble_detrend_dc_fir",
+      "kind": "non_ai",
+      "residual": 0.3659016489982605,
+      "ms_per_batch": 1.6461990000971127,
+      "ms_per_sample": 0.025721859376517386,
+      "n_params": 0
+    },
+    {
+      "name": "neural_favorite_meta",
+      "kind": "ai",
+      "residual": 0.9906557202339172,
+      "residual_saved": 0.9909982681274414,
+      "ms_per_batch": 2.4675409999326803,
+      "ms_per_sample": 0.03855532812394813,
+      "n_params": 37489,
+      "tag": "champion_iter_000235_fitted"
+    }
+  ],
+  "summary": {
+    "best_classical": {
+      "name": "seam_fir3",
+      "kind": "non_ai",
+      "residual": 0.963111937046051,
+      "ms_per_batch": 0.5970509999315254,
+      "ms_per_sample": 0.009328921873930085,
+      "n_params": 0
+    },
+    "best_classical_incl_identity": {
+      "name": "identity",
+      "kind": "non_ai",
+      "residual": 0.9735056161880493,
+      "ms_per_batch": 0.37121499990462326,
+      "ms_per_sample": 0.005800234373509738,
+      "n_params": 0
+    },
+    "identity_noop": {
+      "name": "identity",
+      "kind": "non_ai",
+      "residual": 0.9735056161880493,
+      "ms_per_batch": 0.37121499990462326,
+      "ms_per_sample": 0.005800234373509738,
+      "n_params": 0
+    },
+    "dual_cosine": {
+      "name": "dual_cosine",
+      "kind": "non_ai",
+      "residual": 0.8197969198226929,
+      "ms_per_batch": 1.1898070000461303,
+      "ms_per_sample": 0.018590734375720785,
+      "n_params": 0
+    },
+    "ai_favorite": {
+      "name": "neural_favorite_meta",
+      "kind": "ai",
+      "residual": 0.9906557202339172,
+      "residual_saved": 0.9909982681274414,
+      "ms_per_batch": 2.4675409999326803,
+      "ms_per_sample": 0.03855532812394813,
+      "n_params": 37489,
+      "tag": "champion_iter_000235_fitted"
+    },
+    "delta_R_ai_minus_best_classical": 0.02754378318786621,
+    "delta_R_ai_minus_dual_cosine": 0.17085880041122437,
+    "delta_R_ai_minus_identity": 0.01715010404586792,
+    "latency_ratio_ai_over_best_classical_score": 4.132881445999885,
+    "latency_ratio_ai_over_dual_cosine": 2.0739002206551236
+  }
+}
