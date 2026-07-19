@@ -1,0 +1,9 @@
+# REVIEW_FIX_COMPLETE
+
+Date: 19 July 2026  
+Plan: MANUSCRIPT_REVIEW_FIX_PLAN.md  
+
+All REAL and PARTIAL items from the Comprehensive Manuscript Review fix cycle are done.
+OCR_FALSE items verified against tex/PDF (no content change required).
+
+Optional P4 leftover: regenerate overnight line plots with shape markers (caption notes accessibility; markers deferred).

@@ -1,7 +1,8 @@
 # Manuscript checklist plan progress
 
 **Plan:** `MANUSCRIPT_CHECKLIST_IMPLEMENTATION_PLAN.md`  
-**Updated:** 19 July 2026 (deferred closeout + slop audit)
+**Review fix plan:** `MANUSCRIPT_REVIEW_FIX_PLAN.md`  
+**Updated:** 19 July 2026 (comprehensive manuscript review fix cycle)
 
 | Phase | Status | Notes |
 |-------|--------|-------|
@@ -12,6 +13,17 @@
 | **4 Results artifacts** | **DONE** | `tab:sota-main`, dual-view `tab:ablation`, `tab:compute` with VRAM replay, `tab:rust-bench`. |
 | **5 Ethics** | **DONE** | Broader impact, reproducibility, CoI none. PESQ/STOI omit + MUSHRA not run. |
 | **6 Release gate** | **DONE** | PDF rebuild, mirror, deferred closeout. |
+| **7 Manuscript review fix** | **DONE** | Triage REAL/PARTIAL/OCR_FALSE; P1–P4 applied; `REVIEW_FIX_COMPLETE.flag`. |
+
+## Review fix triage (19 July 2026)
+
+| Bucket | Count |
+|--------|------:|
+| REAL | 18 |
+| PARTIAL | 9 |
+| OCR_FALSE | 28 |
+
+Key REAL fixes: §6-style abstract (no em dash); semicolon keywords; seed `\texttt{20260719}` / `\texttt{1902771841}`; Table 1 runner defaults; funding / CRediT / data availability; Acknowledgments; symbol table; Results RQ transitions; Outlook as subsection; competing interests subsection.
 
 ## Headline measured numbers
 
@@ -37,3 +49,4 @@
 ## Slop audit (post-deferred)
 
 Prose pass on `main.tex` + `subsections/*.tex`: removed em-dash/semicolon prose chains, “rather than” / stacked “y, not x” contrasts, and related throat-clearing. Algorithm `\State` semicolons kept (pseudocode). Findings fixed: **22**.
+Review-rewrite integration kept clarity without reintroducing em dashes or contrast slop.

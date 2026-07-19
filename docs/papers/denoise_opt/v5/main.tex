@@ -48,24 +48,27 @@ Hybrid GA--PPO Meta-Search}
     \url{https://github.com/reeldemo/denoise-opt-meta}
   \end{center}
   \begin{abstract}
-    When a single-period wavetable is played with phase wrap, a sample discontinuity at the
-    period boundary injects a broadband transient that repeats at the fundamental.
-    We repair this cycle-local seam artifact by baking seam-local operators into the period
-    inside a \textbf{bake cell}: classical DualCosine crossfade, polish, FIR blends, and optional
-    tiny residual networks, optionally mixed by MoE soft gates.
-    Candidates are ranked by the prolonged residual score $R\in[0,1]$ (1~=~best), the clamped
-    tiled RMS agreement between the baked multi-period waveform and a procedural ideal sibling
-    that withholds the open-wrap cliff.
-    \textbf{DenoiseOpt} is the residual-scored hybrid meta-search: GA tournament updates,
-    PPO architecture proposals, optional PBT exploit--mutate, and MoE routing over bake cells.
-    Studio-clean pairs are not required for every trial.
-    On the frozen canonical sine{+}cliff holdout (seed $20{,}260{,}719$), a compact favorite reaches
-    $R\approx 0.991$ versus DualCosine $R\approx 0.825$ ($\Delta R\approx{+}0.166$).
-    Separately, a live GPU campaign at the $5{,}000$-iteration clean gate reports champion
-    $R\approx 0.9909$ against DualCosine $\approx 0.8166$ on the runner geometry.
-    Scope is cycle-local wavetable seam restoration.
+    In single-period wavetable synthesis, a sample discontinuity at the wrap boundary injects a
+    broadband transient that repeats at the fundamental frequency, producing an audible periodic click.
+    We address this \emph{cycle-local seam artifact} with \textbf{DenoiseOpt}, a residual-scored hybrid
+    meta-search that selects and fits bake-cell operators applied at the period boundary.
+    The bake cell composes classical DualCosine crossfades, FIR blends, and optional lightweight
+    residual networks, possibly routed via Mixture-of-Experts (MoE) soft gating, without requiring
+    paired studio-clean recordings.
+    Candidates are ranked by the \emph{prolonged residual score} $R\in[0,1]$ (higher is better):
+    the clamped tiled-RMS agreement between the baked multi-period output and a procedural ideal
+    sibling that suppresses the open-wrap cliff.
+    The outer search loop interleaves genetic algorithm (GA) tournament selection,
+    PPO-based architecture proposals, and optional population-based training (PBT).
+    On a frozen canonical sine{+}cliff holdout (seed~\texttt{20260719}), the compact meta-favorite
+    achieves $R\approx 0.991$ versus DualCosine $R\approx 0.825$ ($\Delta R={+}0.166$).
+    In an overnight GPU campaign (RTX~3090, $5{,}000$ clean iterations), the champion reaches
+    $R\approx 0.9909$ versus DualCosine $\approx 0.8166$ ($\Delta R\approx{+}0.174$).
+    Across twenty multi-family generative draws, mean $\Delta R={+}0.162$ over DualCosine
+    (Wilcoxon $p\approx 8.9{\times}10^{-5}$).
+    Scope is strictly cycle-local wavetable seam restoration.
   \end{abstract}
-  \keywords{unsupervised learning $\cdot$ wavetable $\cdot$ wrap discontinuity $\cdot$ seam restoration $\cdot$ DenoiseOpt $\cdot$ residual score $\cdot$ neural architecture search $\cdot$ reinforcement learning $\cdot$ genetic algorithms $\cdot$ meta-learning}
+  \keywords{unsupervised learning; wavetable; wrap discontinuity; seam restoration; DenoiseOpt; prolonged residual score; neural architecture search; reinforcement learning; genetic algorithms; meta-learning}
   \vspace{0.6em}
 }]
 
@@ -79,6 +82,7 @@ Hybrid GA--PPO Meta-Search}
 \input{subsections/ethics}
 \input{subsections/limitations}
 \input{subsections/conclusion}
+\input{subsections/acknowledgments}
 
 \FloatBarrier
 \raggedbottom

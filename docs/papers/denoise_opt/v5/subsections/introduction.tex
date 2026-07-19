@@ -1,23 +1,23 @@
 \section{Introduction}
 \label{sec:introduction}
 
-Wavetable oscillators store one period of a waveform and advance a read pointer modulo the table length.
-If $x[0]\neq x[L-1]$, the wrap is a hard discontinuity. Under cyclic playback it becomes a periodic click whose spectrum is broadband and locked to the fundamental.
+Wavetable oscillators store a single period of a waveform and advance a read pointer modulo the table length.
+When $x[0]\neq x[L-1]$, the wrap is a hard discontinuity that, under cyclic playback, becomes a periodic click with a broadband spectrum locked to the fundamental.
 The same geometry appears whenever a short loop buffer is tiled for listening or for objective evaluation.
-We call the repair task \emph{cycle-local seam restoration}: edit a neighborhood of the wrap (and optionally a lightweight residual cell over the period) so that multi-period playback matches an ideal reference that never opens the wrap cliff.
+We define the repair task as \emph{cycle-local seam restoration}: edit a neighborhood of the wrap (and optionally a lightweight residual cell over the period) so that multi-period playback matches an ideal reference that never opens the wrap cliff.
 That outer agreement is scored by the prolonged residual $R$ for this periodic seam artifact class.
 
-Figure~\ref{fig:intro-sine} shows one real sine-wrap edge case from the frozen canonical holdout (same \texttt{make\_batch} tile, seed $20{,}260{,}719$).
+Figure~\ref{fig:intro-sine} shows one real sine-wrap edge case from the frozen canonical holdout (same \texttt{make\_batch} tile, seed~\texttt{20260719}).
 Panel (a) is the ideal multi-period sine.
-Panel (b) is the cracked engine tile after open-wrap cliff modulation ($R\approx0.950$), with the ideal overlaid so the seam jump is visible.
-Panel (c) applies DualCosine on that same tile ($R\approx0.603$ on this severe cliff).
-Panel (d) is the top DenoiseOpt favorite (\texttt{champion\_iter\_000235}, batch $R\approx0.991$) on the same tile ($R\approx0.9917$).
+Panel (b) is the cracked engine tile after open-wrap cliff modulation ($R\approx 0.950$), with the ideal overlaid so the seam jump is visible.
+Panel (c) applies DualCosine on that same tile ($R\approx 0.603$ on this severe cliff).
+Panel (d) is the top DenoiseOpt favorite (\texttt{champion\_iter\_000235}, batch $R\approx 0.991$) on the same tile ($R\approx 0.9917$).
 Panels (e)--(f) plot the modulation residual and a seam zoom so the favorite's correction is readable against DualCosine.
 
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\textwidth]{figures/fig_intro_sine_problem.png}
-  \caption{Canonical holdout sine-wrap edge case (seed $20{,}260{,}719$, $L{=}256$, $N{=}16$ tiles, same tile across panels). (a)~Ideal sibling (cliff withheld). (b)~Engine with open-wrap cliff (ideal overlay). (c)~DualCosine bake. (d)~DenoiseOpt favorite bake. (e)--(f)~Modulation residual and seam zoom. Prolonged residual $R\in[0,1]$ (1~=~best) is printed per panel where scored.}
+  \caption{Canonical holdout sine-wrap edge case (seed~\texttt{20260719}, $L{=}256$, $N{=}16$ tiles, same tile across panels). (a)~Ideal sibling (cliff withheld). (b)~Engine with open-wrap cliff (ideal overlay). (c)~DualCosine bake. (d)~DenoiseOpt favorite bake. (e)--(f)~Modulation residual and seam zoom. Prolonged residual $R\in[0,1]$ (1~=~best) is printed per panel where scored. Accessibility: six-panel waveform comparison of ideal, cracked, DualCosine, and favorite seam repairs.}
   \label{fig:intro-sine}
 \end{figure*}
 
@@ -40,10 +40,11 @@ Paired studio-clean wavetables are not required for every trial.
 Differentiable DSP modules~\cite{engel2020} place DualCosine / FIR / MLP seam ops in an interpretable stack.
 Bayesian HPO~\cite{snoek2012} informs prior families that compete under the same $R$.
 A CUDA overnight campaign (PPO+GA+PBT+NAS, depth and MoE biases) has passed a $5{,}000$-iteration clean gate with champion $R\approx 0.9909$ versus DualCosine $\approx 0.8166$ on the runner geometry.
-The frozen canonical holdout and inference benches in Results are the measured evaluation matrices for this report.
+The frozen canonical holdout and inference benches in Section~\ref{sec:results} are the measured evaluation matrices for this report.
 We do not claim general speech or music enhancement SOTA.
 
-\paragraph{Contributions.}
+\subsection{Contributions}
+\label{sec:contributions}
 \begin{enumerate}
   \item \textbf{Problem framing.} Cast wavetable wrap discontinuity as cycle-local seam restoration under prolonged tiled evaluation, separating seam-local diagnostics from residual $R$.
   \item \textbf{Hybrid DenoiseOpt outer loop.} Specify RL+GA(+PBT) search over discrete operator graphs and continuous bake parameters, with named branches (GA crossover, PPO mutation, PBT exploit, MoE soft gates).
@@ -53,4 +54,4 @@ We do not claim general speech or music enhancement SOTA.
 
 Section~\ref{sec:related_work} organizes related work by mechanism.
 Sections~\ref{sec:methods}--\ref{sec:experiments} detail the residual objective and search protocol.
-Results report the $5$k-gate freeze and inference benches.
+Section~\ref{sec:results} reports the $5$k-gate freeze and inference benches.

@@ -13,6 +13,27 @@ Seam width $W$ (code: \texttt{SEAM\_W}, typically $8$) is the neighborhood edite
 $R\in[0,1]$ is the prolonged residual score defined below ($1$~=~best).
 These symbols are fixed for the residual objective. They follow a different convention from Noise2Noise clean/noisy pairs.
 
+\begin{table}[t]
+  \centering
+  \caption{Core symbols used in Methods.}
+  \label{tab:symbols}
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}cl@{}}
+    \toprule
+    Symbol & Meaning \\
+    \midrule
+    $L$ & Cycle length (samples per period) \\
+    $x$ & Raw engine wavetable period \\
+    $y=\Theta(x;\theta)$ & Baked cycle after seam ops / residual cell \\
+    $r^{\star}$ & Ideal sibling (open-wrap cliff withheld) \\
+    $N$ & Prolong tiling count \\
+    $W$ & Seam neighborhood width \\
+    $R$ & Prolonged residual score in $[0,1]$ (1~=~best) \\
+    $\theta$ & Continuous bake / residual parameters \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
 \subsection{Ideal tile construction}
 \label{sec:ideal-tile}
 
@@ -232,23 +253,27 @@ Canonical companion pseudocode lives in \texttt{docs/PSEUDOCODE.md} (mirrored Al
 
 \begin{table}[t]
   \centering
-  \caption{Overnight hybrid search hyperparameters (RTX~3090 runner defaults).}
+  \small
+  \caption{Overnight hybrid search hyperparameters (RTX~3090 runner defaults from \texttt{overnight\_gpu\_rl\_arch.py} / \texttt{denoise\_meta\_evo.py}).}
   \label{tab:hyperparams}
   \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{@{}lr@{}}
+  \begin{tabular}{@{}lp{0.48\columnwidth}@{}}
     \toprule
     Parameter & Value \\
     \midrule
     Population size $n$ & 12 \\
     GA tournament $k$ & 3 \\
-    Crossover / mutation rates $p_c$, $p_m$ & $0.7$, $0.3$ \\
-    PPO clip $\epsilon$ & $0.2$ \\
-    Adam learning rate (fit) & $10^{-3}$ \\
-    Entropy bonus (PPO) & small positive \\
-    PBT exploit quantile / mutate scale & top $1/3$, $\sigma{\approx}0.2$ \\
-    MoE experts $K$ & $\{2,3,4\}$ when enabled \\
-    Plateau boredom threshold & $1000$ iters \\
+    GA crossover fraction $p_c$ & $0.5$ (else clone elite parent) \\
+    GA mutation & $\ge 1$ mutate after inherit ($+50\%$ second mutate) \\
+    PPO clip $\epsilon$ & $0.2$ (default; searchable $\{0.1,0.2,0.25,0.3\}$) \\
+    Adam learning rate (fit) & $3{\times}10^{-3}$ (default; PBT-searchable) \\
+    Adam learning rate (policy) & $3{\times}10^{-4}$ \\
+    Entropy coefficient (PPO) & $0.02$ (default; searchable $\approx 0.005$--$0.06$) \\
+    PBT exploit / mutate & elite fraction $0.25$; multi-step arch+hp mutate \\
+    MoE routing & \texttt{sequential} or \texttt{moe\_parallel} when enabled \\
+    Plateau boredom threshold & $1000$ iters without champ improve \\
     Cycle length $L$ / tiles $N$ / seam $W$ & $256$ / $16$ / $8$ \\
+    Fit steps / batch (default) & $24$ / $48$ \\
     Algo tag & \texttt{PPO+GA+PBT+NAS+depth+MoE} \\
     \bottomrule
   \end{tabular}

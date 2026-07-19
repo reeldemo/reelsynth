@@ -9,12 +9,29 @@ The main resource cost is GPU time on a consumer RTX~3090 (order of hours for th
 Authors should not over-claim speech enhancement or production mastering quality from these metrics.
 
 \paragraph{Reproducibility.}
-Holdout seed $20{,}260{,}719$. Overnight search seed $1{,}902{,}771{,}841$.
+Holdout seed~\texttt{20260719}. Overnight search seed~\texttt{1902771841}.
 Primary code: \url{https://github.com/reeldemo/reelsynth} (\texttt{scripts/overnight\_gpu\_rl\_arch.py}, \texttt{scripts/bench\_sota\_matrix.py}, \texttt{scripts/metrics\_snr\_sdr.py}).
 Paper companion: \url{https://github.com/reeldemo/denoise-opt-meta}.
 Dependencies for the CUDA benches: Python~3.12, PyTorch~$2.6$+CUDA~12.4, NumPy/matplotlib. Rust/\texttt{cargo} builds the separate \texttt{sound\_bench} hardness probe.
 JSON artifacts under \texttt{brand/artifacts/} (\texttt{sota\_matrix.json}, \texttt{canonical\_eval\_dataset/}, overnight \texttt{history.jsonl}) freeze the numbers in Section~\ref{sec:results}.
 PESQ/STOI are omitted for non-speech cycles (domain mismatch). MUSHRA was not run.
 
-\paragraph{Competing interests.}
-None to declare.
+\subsection{Funding}
+\label{sec:funding}
+This research received no external funding.
+
+\subsection{Author contributions (CRediT)}
+\label{sec:credit}
+Julian~M.~Kleber: Conceptualization, Methodology, Software, Investigation, Formal analysis, Data curation, Writing (original draft), Writing (review and editing), Visualization.
+
+\subsection{Data availability}
+\label{sec:data-availability}
+Frozen evaluation artifacts (JSON matrices, overnight history, fitted champions) are published with the companion repositories:
+\url{https://github.com/reeldemo/reelsynth} under \texttt{brand/artifacts/}, and
+\url{https://github.com/reeldemo/denoise-opt-meta} under \texttt{artifacts/} and \texttt{paper/v5/figures/}.
+All reported tables regenerate from those files plus the scripts named above.
+No private studio recordings were used.
+
+\subsection{Competing interests}
+\label{sec:competing}
+None declared.

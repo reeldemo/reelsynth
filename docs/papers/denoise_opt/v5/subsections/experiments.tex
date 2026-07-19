@@ -4,7 +4,7 @@
 \paragraph{Protocol freeze.}
 Evaluation follows \texttt{paper/v5/EVAL\_PROTOCOL.md} (v1).
 Primary metric: prolonged $R$. Secondary: SNR, SDR, and wrap-jump on tiled audio.
-Holdout seed $20{,}260{,}719$. Search seed $1{,}902{,}771{,}841$.
+Holdout seed \texttt{20260719}. Search seed \texttt{1902771841}.
 We report the $5$k-gate freeze plus frozen holdout. We make no unfinished-budget claims. PESQ/STOI stay out of scope on non-speech cycles.
 
 \subsection{Dataset}
@@ -18,12 +18,12 @@ An open-wrap seam cliff of amplitude $\pm\mathcal{U}(0.08,0.43)$ is applied over
 Seam-boosted Gaussian noise (scale $0.02$ at the ends, $0.15\times$ in the mid-cycle) is added to form the engine input.
 The ideal withholds the cliff and is used only for residual scoring.
 Prolonged residual $R$ tiles each cycle $N{=}16$ times before the RMS ratio.
-The holdout seed is $20{,}260{,}719$ (distinct from the overnight search seed $1{,}902{,}771{,}841$).
+The holdout seed is \texttt{20260719} (distinct from the overnight search seed \texttt{1902771841}).
 Overnight search draws fresh i.i.d.\ batches from this generator and does not train on the frozen holdout tensors.
 There is no supervised clean/noisy training split of studio audio.
 
 \paragraph{Multi-family diversity ($\ge 20$ waveforms).}
-Beyond the single sine{+}cliff holdout, Phase~3a scores methods on \textbf{20} generative draws: ten family variants (\texttt{sine\_cliff}, \texttt{harmonic\_fft}, \texttt{am\_fm}, \texttt{nonlinear}, \texttt{combo}, \texttt{triple\_mix}, \texttt{extreme\_overlay}, \texttt{open\_wrap\_bias}, \texttt{soft\_noise}, \texttt{wide\_seam}) $\times$ two seeds ($20{,}260{,}719$ and $20{,}260{,}720$), batch 64 each.
+Beyond the single sine{+}cliff holdout, Phase~3a scores methods on \textbf{20} generative draws: ten family variants (\texttt{sine\_cliff}, \texttt{harmonic\_fft}, \texttt{am\_fm}, \texttt{nonlinear}, \texttt{combo}, \texttt{triple\_mix}, \texttt{extreme\_overlay}, \texttt{open\_wrap\_bias}, \texttt{soft\_noise}, \texttt{wide\_seam}) $\times$ two seeds (\texttt{20260719} and \texttt{20260720}), batch 64 each.
 These Python generative variants stress harmonic / AM--FM / nonlinear / overlay / open-wrap behavior of \texttt{make\_batch} and remain the primary SOTA matrix.
 Separately, \texttt{export\_sound\_bench\_tiles} exports \textbf{20} Rust \texttt{sound\_bench} engine/ideal pairs (10 families $\times$ 2 seeds, $L{=}256$, byte-aligned with \texttt{generate\_sound} / \texttt{generate\_sound\_ideal}) scored under the same residual geometry as a secondary transfer block (Table~\ref{tab:rust-bench}).
 Every method sees the same tensors per waveform. DualCosine is the paired baseline for $\Delta R$ and Wilcoxon tests.
