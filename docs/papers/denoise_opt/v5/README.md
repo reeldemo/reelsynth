@@ -2,6 +2,10 @@
 
 arXiv-style double-column preprint for the DenoiseOpt residual-scored hybrid RL+GA meta-search on wavetable seam restoration.
 
+## Revision plan (checklist)
+
+See [`MANUSCRIPT_CHECKLIST_IMPLEMENTATION_PLAN.md`](MANUSCRIPT_CHECKLIST_IMPLEMENTATION_PLAN.md) for the Phase 0–6 plan against the Manuscript Checklist Review (triage of REAL vs FALSE FAIL, ambitious SOTA/Methods extension, narrow claims).
+
 ## Build
 
 ```bash
