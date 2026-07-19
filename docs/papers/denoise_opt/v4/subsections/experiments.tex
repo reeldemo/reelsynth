@@ -1,13 +1,14 @@
 \section{Experiments}
 \label{sec:experiments}
 
-\textit{Placeholder: protocol sketch only; numbers below are interim and must not be read as final.}
+\paragraph{Overnight hybrid campaign ($5$k clean gate).}
+A CUDA search tagged \texttt{PPO+GA+PBT+NAS} (depth and MoE biases) runs with a large declared iteration budget (order $10^{5}$).
+At the $5{,}000$-iteration clean gate the live job reports champion residual $R\approx 0.99093$ against DualCosine baseline $\approx 0.81658$ on the same runner geometry ($\Delta R\approx{+}0.174$).
+Branch-best residuals at the freeze: GA $\approx 0.99016$, PBT $\approx 0.99012$, PPO $\approx 0.98924$, combo $\approx 0.98854$, NAS $\approx 0.98677$.
+Figures in Section~\ref{sec:results} regenerate from \texttt{history.jsonl} at this gate.
+Declared long-horizon mean-$R$ is \emph{not} claimed here. The GPU job continues past the gate.
 
-\paragraph{Ongoing overnight campaign.}
-A CUDA search tagged \texttt{PPO+GA+PBT+NAS} (depth and MoE biases) is running with a large iteration budget (order $10^{5}$--$10^{6}$).
-Early fitted champions already reach residual $\approx 0.99$ on the training/validation geometry used by the runner, against DualCosine baselines near $\approx 0.82$--$0.84$ on the same geometry (v3 reported DualCosine residual $\approx 0.698$ at $N{=}2000$ on a prior held-out matrix).
-We will replace this paragraph with the completed budget, seeds, population size, and held-out matrix when the job finishes, without interrupting the live GPU process.
-
-\paragraph{Prior completed study (v3 reference).}
-A 1500-trial literature-informed CPU/GPU study selected \path{evo_explore_515} at residual $\approx 0.824$ versus DualCosine $\approx 0.698$ ($\Delta\approx +0.126$).
-That result anchors the residual-primary protocol; the overnight hybrid RL+GA run is the scale-up under test.
+\paragraph{Inference and classical matched benches.}
+High-$R$ fitted cells ($R\ge 0.98$) are timed on CUDA (batch 64, prolonged residual).
+Ten non-learnable bake denoisers share the same residual protocol against the neural favorite.
+Family-conditional hardness uses the separate Rust procedural $100{,}000$-cycle bench reported in Results.

@@ -1,39 +1,35 @@
-# DenoiseOpt paper v4 — LaTeX layout
+# DenoiseOpt paper: LaTeX layout
 
-## Template choice
+arXiv-style double-column preprint for the DenoiseOpt residual-scored hybrid RL+GA meta-search on wavetable seam restoration.
 
-**Double-column arXiv-style preprint** using:
+## Build
 
-```latex
-\documentclass[10pt,twocolumn,letterpaper]{article}
-\usepackage{arxiv-twocolumn}
+```bash
+pdflatex main.tex
+pdflatex main.tex
 ```
 
-Local style file: [`arxiv-twocolumn.sty`](arxiv-twocolumn.sty).
+## Bibliography policy (OA-only)
 
-### Why this approach (2024–2026 CS/ML practice)
+Every `\bibitem` must have a downloadable open-access PDF.
+Catalog + fetcher:
 
-| Option | Notes | Decision |
-|--------|--------|----------|
-| [`kourgeorge/arxiv-style`](https://github.com/kourgeorge/arxiv-style) (`arxiv.sty`, MIT) | Very common for ML preprints; NeurIPS-derived look | **Single-column** by default (`textwidth=6.5in`) — not used as-is |
-| [`myst-templates/arxiv_two_column`](https://github.com/myst-templates/arxiv_two_column) / [Brenhin Keller preprint](https://github.com/brenhinkeller/preprint-template.tex) | True two-column arXiv look | Pulls `background` / TikZ crop marks / `scalerel` ORCID — heavier than needed for arXiv upload |
-| Conference styles (NeurIPS/ICML) | Often one-column for review | User wants **double column** |
-| **`article` + `twocolumn` + lean local sty** | Standard packages only; pdflatex / MiKTeX / arXiv-safe | **Chosen** |
+```bash
+python scripts/fetch_oa_pdfs.py
+```
 
-`arxiv-twocolumn.sty` keeps the familiar preprint title rules, compact sectioning, Times text (`times`/`mathptmx`), and `fancyhdr` headers, while relying on the built-in `twocolumn` class option and `geometry`. No exotic fonts or non-TeX-Live packages.
+PDFs land in `artifacts/literature_oa/pdfs/`. Inventory: `artifacts/literature_oa/REFERENCES_OA.md`.
 
-Title/abstract span both columns via the standard `\twocolumn[{...}]` idiom; body text is two-column. Single-column figures use `width=\columnwidth`; wide panels use `figure*` + `width=\textwidth`.
+## Figures
 
-## Build (Windows / MiKTeX)
+Regenerate overnight plots from the live history (one command):
 
 ```powershell
-cd paper\v4
-pdflatex -interaction=nonstopmode main.tex
-pdflatex -interaction=nonstopmode main.tex
+powershell -File paper/v4/regen_overnight_figures.ps1
 ```
 
-Output: `main.pdf`.
+## Style
 
-## License note
-
-Style inspiration from MIT-licensed community templates (kourgeorge/arxiv-style; myst arxiv_two_column lineage). The local `.sty` is a clean-room lean adaptation for double-column + arXiv package constraints.
+`article` + `twocolumn` + lean local `arxiv-twocolumn.sty`.
+Title/abstract span both columns via `\twocolumn[{...}]`.
+Single-column figures use `width=\columnwidth`. Wide panels use `figure*` + `width=\textwidth`.

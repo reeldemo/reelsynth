@@ -2,9 +2,9 @@
 \label{sec:discussion}
 
 \paragraph{Where residual mass remains.}
-Across the 100\,000-cycle procedural bench and lit-combo family stress tests, wrap error is not uniform.
+Across the $100{,}000$-cycle procedural bench and lit-combo family stress tests, wrap error is not uniform.
 The same generator families repeatedly dominate the residual budget: \texttt{nonlinear}, \texttt{combo}, \texttt{triple\_mix}, and \texttt{extreme\_overlay} show the weakest denoise / residual scores, while \texttt{harmonic\_fft} and \texttt{am\_fm} are comparatively easy.
-\texttt{open\_wrap\_bias} can look strong on wrap-energy proxies yet still lag on prolonged residual---a reminder that cliff reduction and ideal-matched tiling are related but not identical objectives.
+\texttt{open\_wrap\_bias} can look strong on wrap-energy proxies yet still lag on prolonged residual. Cliff reduction and ideal-matched tiling are related objectives with different rankings.
 
 \paragraph{Implication for this paper.}
 Mean $R$ (and mean DualCosine gaps) therefore compress a structured difficulty map.
@@ -12,9 +12,10 @@ Reporting only the overnight mean on synthetic sine cliffs understates how much 
 That structure is a first-class empirical claim of the present work, independent of whether the GPU hybrid later nudges mean $R$ from $\approx 0.99$ toward $0.999$.
 
 \paragraph{Hybrid search vs.\ plateau.}
-Interim overnight traces show early gains then long plateaus near $R\approx 0.99$.
-Plateau adaptation (deeper cells, denser MoE graphs, higher GA/PBT weight) is the operational response inside one campaign; it does not by itself rebalance family-conditional risk.
-A natural next paper is family-conditional and cliff-conditional meta-learning: train or select denoisers per family, or condition the outer loop on measured wrap statistics, and publish per-family ROC-style residual curves rather than a single scalar champion.
+Overnight traces at the $5$k gate show early high champions then long plateaus near $R\approx 0.99$.
+Plateau adaptation (deeper cells, denser MoE graphs, higher GA/PBT weight) is the operational response inside one campaign. It does not by itself rebalance family-conditional risk.
+A natural next paper is family-conditional and cliff-conditional meta-learning: train or select denoisers per family, or condition the outer loop on measured wrap statistics, and publish per-family residual curves beside the scalar champion.
 
-\paragraph{Hybrid branches (interim).}
-Final branch win-rates (GA / PPO / PBT / NAS / lit-combo) remain deferred until the declared GPU budget completes; anticipated comparison is against the v3 finding that light evolutionary explore beat nested loss-opt elites under a smaller residual budget.
+\paragraph{Hybrid branches.}
+At the $5$k freeze, GA and PBT lead branch-best residuals, with PPO close behind and NAS trailing on this seed.
+Final win-rates after the declared GPU budget remain deferred.

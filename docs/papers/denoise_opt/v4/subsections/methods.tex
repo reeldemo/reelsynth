@@ -1,8 +1,6 @@
 \section{Methods}
 \label{sec:methods}
 
-\textit{Placeholder: full methods will track the frozen overnight protocol after the declared iteration budget completes.}
-
 \paragraph{Residual score.}
 Let $y$ be the engine-baked cycle and $r^{\star}$ an ideal multi-period reference from the same seed with open-wrap cliffs withheld.
 With tiling length $N$ (typically $N{=}16$),
@@ -13,8 +11,9 @@ By construction $R\in[0,1]$ with $1$ best. Soft shape gates (when enabled) down-
 
 \paragraph{Searchable operator.}
 Candidates combine classical seam ops (DualCosine, polish, soft seam, FIR blends) with tiny residual cells (MLP/FIR/U-Net-lite/attention-lite) and optional MoE soft gates.
-Bake parameters $\theta$ live in a bounded box; architecture strings are discrete graphs over those ops.
+Bake parameters $\theta$ live in a bounded box. Architecture strings are discrete graphs over those ops.
 
 \paragraph{Hybrid outer loop.}
 Each iteration may (i)~run GA tournament selection with crossover/mutation, (ii)~sample PPO actions that edit ops/hyperparameters, (iii)~apply PBT-style exploit--mutate on elites, and (iv)~evaluate literature-combo priors.
-Selection is always by residual $R$ (and logged auxiliaries). Implementation details and exact action sets will be frozen to the overnight run configuration in the results revision.
+Selection is always by residual $R$ (and logged auxiliaries).
+The live overnight configuration is tagged \texttt{PPO+GA+PBT+NAS+depth+MoE} with population size $12$, plateau adaptation every $1000$ iterations, and CUDA scoring on an RTX~3090.

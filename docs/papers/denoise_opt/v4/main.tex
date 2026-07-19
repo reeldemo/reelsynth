@@ -1,6 +1,6 @@
-%% DenoiseOpt paper v4 -- arXiv-style double-column preprint
+%% DenoiseOpt paper -- arXiv-style double-column preprint
 %% Template: article[twocolumn] + local arxiv-twocolumn.sty
-%% See README.md for rationale and sources.
+%% Bibliography policy: OA-only (every \\bibitem has a downloadable OA PDF).
 \documentclass[10pt,twocolumn,letterpaper]{article}
 
 \usepackage{arxiv-twocolumn}
@@ -25,9 +25,7 @@ Hybrid Reinforcement Learning and Genetic Algorithm Meta-Learning}
   Email:
   \href{mailto:julian.m.kleber@gmail.com}{\texttt{julian.m.kleber@gmail.com}}
 }
-\date{18 July 2026\\[2pt]
-  \small Paper version \texttt{v4}
-  (problem framing and related work; experiments ongoing)}
+\date{19 July 2026}
 \newcommand{\papershorttitle}{Unsupervised Deep Audio Denoising}
 
 \begin{document}
@@ -35,7 +33,7 @@ Hybrid Reinforcement Learning and Genetic Algorithm Meta-Learning}
 \twocolumn[{%
   \maketitle
   \begin{center}\footnotesize
-    Code:
+    Code (ReelSynth engine + DenoiseOpt meta-search):
     \url{https://github.com/reeldemo/reelsynth},
     \url{https://github.com/reeldemo/denoise-opt-meta}
   \end{center}
@@ -46,16 +44,18 @@ Hybrid Reinforcement Learning and Genetic Algorithm Meta-Learning}
     seam-local operators (DualCosine crossfade, polish, FIR blends, optional tiny residual cells)
     are baked into the period, then judged by a prolonged residual $R\in[0,1]$ against an ideal
     multi-period tiling that withholds the open-wrap cliff (1~=~best).
-    An outer hybrid meta-search interleaves GA tournament updates with PPO architecture proposals,
+    We call the residual-scored hybrid search \textbf{DenoiseOpt}.
+    An outer hybrid meta-search interleaves GA tournament updates with proximal policy
+    optimization (PPO) architecture proposals,
     optional PBT exploit--mutate schedules, and MoE soft gates over heterogeneous bake cells.
     Candidates need not be paired with studio-clean waveforms for every trial.
-    This draft fixes the problem statement and a used-versus-screened literature map grounded on
-    OA PDF analyses (Noise2Noise, PBT, Aging Evolution, ERL, ENAS/PPO, Wave-U-Net/Conv-TasNet,
-    MoE, DDSP; Demucs/DiffWave/MAML/DARTS screened).
-    A CUDA campaign (\texttt{PPO+GA+PBT+NAS}) is still running; quantitative tables wait until the
-    declared budget finishes.
+    On a matched CUDA inference bench, a compact favorite reaches $R\approx 0.991$ versus
+    DualCosine $R\approx 0.820$ ($\Delta R\approx{+}0.171$).
+    A live GPU hybrid campaign has passed $5{,}000$ clean iterations with champion
+    $R\approx 0.9909$ against DualCosine $\approx 0.8166$ on the runner geometry.
+    Declared long-horizon mean-$R$ tables remain open until the full budget finishes.
   \end{abstract}
-  \keywords{unsupervised learning $\cdot$ audio denoising $\cdot$ neural architecture search $\cdot$ reinforcement learning $\cdot$ genetic algorithms $\cdot$ wavetable synthesis $\cdot$ meta-learning}
+  \keywords{unsupervised learning $\cdot$ audio denoising $\cdot$ DenoiseOpt $\cdot$ neural architecture search $\cdot$ reinforcement learning $\cdot$ genetic algorithms $\cdot$ wavetable synthesis $\cdot$ wrap discontinuity $\cdot$ meta-learning}
   \vspace{0.6em}
 }]
 
@@ -80,29 +80,46 @@ Hybrid Reinforcement Learning and Genetic Algorithm Meta-Learning}
 \setlength{\parsep}{0pt}
 \setlength{\parskip}{0pt}
 
-\bibitem{valimaki2006va}
-V.~V\"alim\"aki and A.~Huovilainen.
-\newblock Oscillator and filter algorithms for virtual analog synthesis.
-\newblock \emph{Computer Music Journal}, 30(2), 2006.
-\newblock Access: \textbf{[non-OA]}.
-
-\bibitem{esqueda2016aliasing}
-F.~Esqueda, S.~Bilbao, and V.~V\"alim\"aki.
-\newblock Aliasing reduction in clipped signals.
-\newblock \emph{IEEE Transactions on Signal Processing}, 2016.
-\newblock Access: \textbf{[non-OA]}.
+\bibitem{stilson1996}
+T.~Stilson and J.~O.~Smith.
+\newblock Alias-free digital synthesis of classic analog waveforms.
+\newblock In \emph{Proc.\ ICMC}, 1996.
+\newblock \url{https://ccrma.stanford.edu/~stilti/papers/blit.pdf}.
+\newblock Access: \textbf{[OA]}.
 
 \bibitem{esqueda2016blamp}
 F.~Esqueda, V.~V\"alim\"aki, and S.~Bilbao.
 \newblock Rounding corners with BLAMP.
 \newblock In \emph{Proc.\ DAFx}, 2016.
-\newblock Access: \textbf{[non-OA]}.
+\newblock \url{https://www.dafx.de/paper-archive/2016/dafxpapers/18-DAFx-16_paper_33-PN.pdf}.
+\newblock Access: \textbf{[OA]}.
+
+\bibitem{valimaki2010dpw}
+V.~V\"alim\"aki, J.~Nam, J.~O.~Smith, and J.~S.~Abel.
+\newblock Alias-suppressed oscillators based on differentiated polynomial waveforms.
+\newblock \emph{IEEE Trans.\ Audio, Speech, Lang.\ Process.}, 2010.
+\newblock Author PDF: \url{https://mac.kaist.ac.kr/pubs/ValimakiNamSmithAbel-taslp2010.pdf}.
+\newblock Access: \textbf{[OA]}.
+
+\bibitem{nam2009polyblep}
+J.~Nam, V.~V\"alim\"aki, J.~S.~Abel, and J.~O.~Smith.
+\newblock Efficient antialiasing oscillator algorithms using low-order fractional delay filters.
+\newblock In \emph{Proc.\ DAFx}, 2009.
+\newblock \url{https://ccrma.stanford.edu/~juhan/pubs/jnam-dafx09.pdf}.
+\newblock Access: \textbf{[OA]}.
 
 \bibitem{lehtinen2018}
 J.~Lehtinen et al.
 \newblock Noise2Noise: Learning image restoration without clean data.
 \newblock In \emph{ICML}, 2018.
 \newblock \href{https://arxiv.org/abs/1803.04189}{arXiv:1803.04189}.
+\newblock Access: \textbf{[OA]}.
+
+\bibitem{kashyap2021n2n}
+M.~M.~Kashyap, A.~Tambwekar, K.~Manohara, and S.~Natarajan.
+\newblock Speech denoising without clean training data: A Noise2Noise approach.
+\newblock In \emph{INTERSPEECH}, 2021.
+\newblock \url{https://www.isca-archive.org/interspeech_2021/kashyap21_interspeech.pdf}.
 \newblock Access: \textbf{[OA]}.
 
 \bibitem{engel2020}
@@ -126,23 +143,66 @@ D.~Stoller, S.~Ewert, and S.~Dixon.
 \newblock \href{https://arxiv.org/abs/1806.03185}{arXiv:1806.03185}.
 \newblock Access: \textbf{[OA]}.
 
+\bibitem{macartney2018}
+C.~Macartney and T.~Weyde.
+\newblock Improved speech enhancement with the Wave-U-Net.
+\newblock \href{https://arxiv.org/abs/1811.11307}{arXiv:1811.11307}, 2018.
+\newblock Access: \textbf{[OA]}.
+
 \bibitem{jansson2017}
 A.~Jansson et al.
 \newblock Singing voice separation with deep U-Net convolutional networks.
 \newblock In \emph{ISMIR}, 2017.
-\newblock Access: \textbf{[non-OA]}.
+\newblock \url{https://openaccess.city.ac.uk/id/eprint/19289/1/7bb8d1600fba70dd79408775cd0c37a4ff62.pdf}.
+\newblock Access: \textbf{[OA]}.
 
 \bibitem{luo2019}
 Y.~Luo and N.~Mesgarani.
 \newblock Conv-TasNet: Surpassing ideal time--frequency magnitude masking for speech separation.
 \newblock \emph{IEEE/ACM TASLP}, 2019.
-\newblock Access: \textbf{[non-OA]}.
+\newblock \href{https://arxiv.org/abs/1809.07454}{arXiv:1809.07454}.
+\newblock Access: \textbf{[OA]}.
+
+\bibitem{luo2020dprnn}
+Y.~Luo, Z.~Chen, and T.~Yoshioka.
+\newblock Dual-path RNN: Efficient long sequence modeling for time-domain speech separation.
+\newblock In \emph{ICASSP}, 2020.
+\newblock \href{https://arxiv.org/abs/1910.06379}{arXiv:1910.06379}.
+\newblock Access: \textbf{[OA]}.
+
+\bibitem{ronneberger2015}
+O.~Ronneberger, P.~Fischer, and T.~Brox.
+\newblock U-Net: Convolutional networks for biomedical image segmentation.
+\newblock In \emph{MICCAI}, 2015.
+\newblock \href{https://arxiv.org/abs/1505.04597}{arXiv:1505.04597}.
+\newblock Access: \textbf{[OA]}.
+
+\bibitem{he2016resnet}
+K.~He, X.~Zhang, S.~Ren, and J.~Sun.
+\newblock Deep residual learning for image recognition.
+\newblock In \emph{CVPR}, 2016.
+\newblock \href{https://arxiv.org/abs/1512.03385}{arXiv:1512.03385}.
+\newblock Access: \textbf{[OA]}.
+
+\bibitem{vaswani2017}
+A.~Vaswani et al.
+\newblock Attention is all you need.
+\newblock In \emph{NeurIPS}, 2017.
+\newblock \href{https://arxiv.org/abs/1706.03762}{arXiv:1706.03762}.
+\newblock Access: \textbf{[OA]}.
 
 \bibitem{elsken2019}
 T.~Elsken, J.~H.~Metzen, and F.~Hutter.
 \newblock Neural architecture search: A survey.
 \newblock \emph{JMLR}, 2019.
 \newblock \href{https://arxiv.org/abs/1808.05377}{arXiv:1808.05377}.
+\newblock Access: \textbf{[OA]}.
+
+\bibitem{zoph2017nas}
+B.~Zoph and Q.~V.~Le.
+\newblock Neural architecture search with reinforcement learning.
+\newblock In \emph{ICLR}, 2017.
+\newblock \href{https://arxiv.org/abs/1611.01578}{arXiv:1611.01578}.
 \newblock Access: \textbf{[OA]}.
 
 \bibitem{pham2018}
@@ -156,6 +216,13 @@ H.~Pham et al.
 J.~Schulman et al.
 \newblock Proximal policy optimization algorithms.
 \newblock \href{https://arxiv.org/abs/1707.06347}{arXiv:1707.06347}, 2017.
+\newblock Access: \textbf{[OA]}.
+
+\bibitem{real2017large}
+E.~Real et al.
+\newblock Large-scale evolution of image classifiers.
+\newblock In \emph{ICML}, 2017.
+\newblock \href{https://arxiv.org/abs/1703.01041}{arXiv:1703.01041}.
 \newblock Access: \textbf{[OA]}.
 
 \bibitem{real2019}
@@ -178,6 +245,12 @@ S.~Khadka and K.~Tumer.
 \newblock \href{https://arxiv.org/abs/1805.07917}{arXiv:1805.07917}.
 \newblock Access: \textbf{[OA]}.
 
+\bibitem{hansen2016cmaes}
+N.~Hansen.
+\newblock The CMA evolution strategy: A tutorial.
+\newblock \href{https://arxiv.org/abs/1604.00772}{arXiv:1604.00772}, 2016.
+\newblock Access: \textbf{[OA]}.
+
 \bibitem{shazeer2017}
 N.~Shazeer et al.
 \newblock Outrageously large neural networks: The sparsely-gated mixture-of-experts layer.
@@ -192,11 +265,40 @@ J.~Snoek, H.~Larochelle, and R.~P.~Adams.
 \newblock \href{https://arxiv.org/abs/1206.2944}{arXiv:1206.2944}.
 \newblock Access: \textbf{[OA]}.
 
-\bibitem{zhang2007}
-Q.~Zhang and H.~Li.
-\newblock MOEA/D: A multiobjective evolutionary algorithm based on decomposition.
-\newblock \emph{IEEE Trans.\ Evolutionary Computation}, 2007.
-\newblock Access: \textbf{[non-OA]}.
+\bibitem{tan2019mnasnet}
+M.~Tan et al.
+\newblock MnasNet: Platform-aware neural architecture search for mobile.
+\newblock In \emph{CVPR}, 2019.
+\newblock \href{https://arxiv.org/abs/1807.11626}{arXiv:1807.11626}.
+\newblock Access: \textbf{[OA]}.
+
+\bibitem{liu2018pnas}
+C.~Liu et al.
+\newblock Progressive neural architecture search.
+\newblock In \emph{ECCV}, 2018.
+\newblock \href{https://arxiv.org/abs/1712.00559}{arXiv:1712.00559}.
+\newblock Access: \textbf{[OA]}.
+
+\bibitem{wisdom2020}
+S.~Wisdom et al.
+\newblock Unsupervised sound separation using mixture invariant training.
+\newblock In \emph{NeurIPS}, 2020.
+\newblock \href{https://arxiv.org/abs/2006.12701}{arXiv:2006.12701}.
+\newblock Access: \textbf{[OA]}.
+
+\bibitem{subakan2021}
+C.~Subakan, M.~Ravanelli, S.~Cornell, M.~Bronzi, and J.~Zhong.
+\newblock Attention is all you need in speech separation.
+\newblock In \emph{ICASSP}, 2021.
+\newblock \href{https://arxiv.org/abs/2010.13154}{arXiv:2010.13154}.
+\newblock Access: \textbf{[OA]}.
+
+\bibitem{gong2021ast}
+Y.~Gong, Y.-A.~Chung, and J.~Glass.
+\newblock AST: Audio spectrogram transformer.
+\newblock In \emph{INTERSPEECH}, 2021.
+\newblock \href{https://arxiv.org/abs/2104.01778}{arXiv:2104.01778}.
+\newblock Access: \textbf{[OA]}.
 
 \bibitem{finn2017}
 C.~Finn, P.~Abbeel, and S.~Levine.
@@ -218,6 +320,13 @@ A.~D\'efossez et al.
 \newblock \href{https://arxiv.org/abs/1911.13254}{arXiv:1911.13254}, 2019. \textit{(Screened.)}
 \newblock Access: \textbf{[OA]}.
 
+\bibitem{dfossez2020}
+A.~D\'efossez, G.~Synnaeve, and Y.~Adi.
+\newblock Real time speech enhancement in the waveform domain.
+\newblock In \emph{INTERSPEECH}, 2020. \textit{(Screened.)}
+\newblock \href{https://arxiv.org/abs/2006.12847}{arXiv:2006.12847}.
+\newblock Access: \textbf{[OA]}.
+
 \bibitem{dfossez2021}
 A.~D\'efossez.
 \newblock Hybrid spectrogram and waveform source separation.
@@ -235,7 +344,8 @@ Z.~Kong et al.
 S.~Pascual, A.~Bonafonte, and J.~Serr\`a.
 \newblock SEGAN: Speech enhancement generative adversarial network.
 \newblock In \emph{INTERSPEECH}, 2017. \textit{(Screened.)}
-\newblock Access: \textbf{[non-OA]}.
+\newblock \href{https://arxiv.org/abs/1703.09452}{arXiv:1703.09452}.
+\newblock Access: \textbf{[OA]}.
 
 \end{thebibliography}
 }

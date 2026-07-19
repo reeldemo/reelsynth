@@ -1,40 +1,44 @@
-# Literature grounding notes (v4)
+# Literature grounding notes
 
-Generated from OA arXiv PDFs under `paper/klaut_artifacts/hybrid-reinforcement-learning-and-genetic-algori-1e29c690/pdfs/` plus classical VA/BLEP anchors from prior versions.
-Use only for claims supported by these sources; do not invent citations.
+Generated from OA PDFs under `artifacts/literature_oa/pdfs/` (catalog: `artifacts/literature_oa/oa_catalog.json`).
+Policy: **OA-only**. Do not invent citations. Do not cite paywalled-only works.
 
 ## Used (method / design anchors)
 
 | cite_key | Paper | Relevance |
 |----------|-------|-----------|
-| lehtinen2018 | Noise2Noise | Label-free restoration philosophy for unsupervised residual scoring |
-| engel2020 | DDSP | Modular/differentiable DSP context for seam bake ops |
+| stilson1996 | Alias-free classic analog waveforms | Wrap / BLIT discontinuity |
+| esqueda2016blamp | BLAMP | Corner / derivative discontinuity |
+| valimaki2010dpw | DPW oscillators | Alias-suppressed VA oscillators (author PDF) |
+| nam2009polyblep | PolyBLEP / frac delay | Practical antialiasing oscillators |
+| lehtinen2018 | Noise2Noise | Label-free restoration philosophy |
+| kashyap2021n2n | Speech Noise2Noise | Audio unsupervised denoise |
+| wisdom2020 | MixIT | Unsupervised separation ranking |
+| engel2020 | DDSP | Modular/differentiable DSP context |
 | jaderberg2017 | PBT | Exploit–mutate population schedules |
-| real2019 | Regularized / Aging Evolution | GA/evolutionary NAS prior |
-| khadka2018 | ERL | Interleave GA population with RL policy updates |
+| real2017large / real2019 | Evolution NAS | GA/evolutionary NAS prior |
+| khadka2018 | ERL | Interleave GA population with RL |
 | schulman2017 | PPO | Clipped surrogate for discrete arch mutations |
-| pham2018 | ENAS | RL controller + sharing ancestor |
+| zoph2017nas / pham2018 | RL-NAS / ENAS | RL controller ancestors |
 | elsken2019 | NAS survey | Search space / strategy / evaluation taxonomy |
 | shazeer2017 | MoE | Soft gates over heterogeneous blocks |
-| stoller2018 | Wave-U-Net | Tiny U-Net cell prior |
-| luo2019 | Conv-TasNet | Time-domain / TCN-inspired cells |
-| jansson2017 | Singing U-Net | Audio U-Net lineage |
-| purwins2019 | Deep Learning for Audio | Domain survey |
-| snoek2012 | Practical BO | Local Bayesian prior family |
-| zhang2007 | MOEA/D | Multi-objective cues |
-| valimaki2006va, esqueda2016* | VA / aliasing / BLAMP | Classical discontinuity control |
+| stoller2018 / macartney2018 / luo2019 / luo2020dprnn | Waveform cells | Tiny U-Net / TCN / dual-path priors |
+| snoek2012 / hansen2016cmaes | BO / CMA-ES | Local Bayesian and continuous evolutionary priors |
 
 ## Screened (contrast only)
 
 | cite_key | Why screened |
 |----------|----------------|
-| finn2017 | MAML — no task-gradient through a deep net |
-| liu2019 | DARTS — continuous relaxation; we keep discrete ops |
-| dfossez2019 / dfossez2021 | Demucs / Hybrid Demucs — too heavy per trial |
-| kong2021 | DiffWave — generative sampling stack, not seam bake |
-| pascual2017 | SEGAN — full GAN loops screened for cost |
+| finn2017 | MAML: no task-gradient through a deep net |
+| liu2019 | DARTS: continuous relaxation. We keep discrete ops |
+| dfossez2019 / dfossez2020 / dfossez2021 | Demucs / realtime SE: too heavy per trial |
+| kong2021 | DiffWave: generative sampling stack, not seam bake |
+| pascual2017 | SEGAN: full GAN loops screened for cost |
 
-## Klaut workflow
-- Paper id: `hybrid-reinforcement-learning-and-genetic-algori-1e29c690`
-- Attach → fetch PDFs → analyze → plan → LLM draft → **author revision** (claim hygiene)
-- Ollama model: `qwen3.5:9b`
+## Dropped non-OA (replaced)
+- `valimaki2006va` (CMJ paywall) → stilson1996, valimaki2010dpw, nam2009polyblep
+- `esqueda2016aliasing` (IEEE TSP paywall) → esqueda2016blamp, valimaki2010dpw
+- `zhang2007` (IEEE TEC paywall) → hansen2016cmaes, snoek2012
+
+## Borderline
+- `valimaki2010dpw`: author-hosted PDF of an IEEE TASLP article (kept, flagged).

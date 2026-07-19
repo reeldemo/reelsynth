@@ -9,9 +9,10 @@ Open literature was gathered with the Klaut Research Gateway (local OpenAlex /
 Crossref / arXiv providers) under queries spanning virtual-analog anti-aliasing,
 unsupervised restoration, HPO/PBT, RL--GA hybrids for NAS, and audio denoise
 architectures.
-Harvest JSONs live in the companion meta repository; OA PDFs were downloaded
-where arXiv (or explicit OA URLs) exist, and non-OA items are flagged in
-\texttt{artifacts/literature\_oa/REFERENCES\_OA.md}.
+Harvest JSONs live in the companion meta repository.
+OA PDFs were downloaded for every bibliography entry
+(\texttt{artifacts/literature\_oa/pdfs/}).
+Non-OA items were dropped or replaced.
 
 \paragraph{Paper drafting.}
 Section planning, subsection drafts, and revision passes used Klaut
@@ -19,16 +20,18 @@ Section planning, subsection drafts, and revision passes used Klaut
 available, under an explicit scientific workflow (plan $\rightarrow$ write
 $\rightarrow$ revise $\rightarrow$ export) into an arXiv-style twocolumn
 template.
-AI drafts were treated as \emph{scaffolding}: claims, numbers, and citations
-were checked against harvest records, PDF analyses, and measured artifacts;
-final prose was edited for DSP terminology and to remove generic filler.
+AI drafts were treated as scaffolding. Claims, numbers, and citations
+were checked against harvest records, PDF analyses, and measured artifacts.
+Final prose was edited for DSP terminology and to remove generic filler.
 
 \paragraph{Why AI was used.}
 (1)~Scale literature triage across DSP and AutoML without pretending every
-high-cite hit is in-domain; (2)~accelerate IMRaD scaffolding so human effort
-focuses on metric honesty (residual vs DualCosine, family hardness, interim
-vs final overnight claims); (3)~keep an auditable tool chain (plans, PDF
-snippet analyses, OA flags) rather than opaque chat-only writing.
+high-cite hit is in-domain.
+(2)~Accelerate IMRaD scaffolding so human effort
+focuses on metric honesty (residual vs DualCosine, family hardness, gate vs
+final overnight claims).
+(3)~Keep an auditable tool chain (plans, PDF
+snippet analyses, OA flags) over opaque chat-only writing.
 
 \paragraph{Where AI was \emph{not} used.}
 Model fitting, residual scoring, DualCosine baselines, lit-combo / overnight
@@ -37,6 +40,6 @@ with deterministic logs and JSON artifacts.
 AI did not invent experimental numbers.
 
 \paragraph{Other tools.}
-Rust/\texttt{cargo} for the procedural bench and meta binaries; PyTorch CUDA
-for overnight hybrid search; matplotlib for figures; MiKTeX \texttt{pdflatex}
-for PDF builds; GitHub for versioned papers and artifacts.
+Rust/\texttt{cargo} for the procedural bench and meta binaries. PyTorch CUDA
+for overnight hybrid search. matplotlib for figures. MiKTeX \texttt{pdflatex}
+for PDF builds. GitHub for versioned papers and artifacts.
