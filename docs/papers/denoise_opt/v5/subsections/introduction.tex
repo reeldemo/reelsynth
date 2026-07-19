@@ -5,7 +5,7 @@ Wavetable oscillators store one period of a waveform and advance a read pointer 
 If $x[0]\neq x[L-1]$, the wrap is a hard discontinuity. Under cyclic playback it becomes a periodic click whose spectrum is broadband and locked to the fundamental.
 The same geometry appears whenever a short loop buffer is tiled for listening or for objective evaluation.
 We call the repair task \emph{cycle-local seam restoration}: edit a neighborhood of the wrap (and optionally a lightweight residual cell over the period) so that multi-period playback matches an ideal reference that never opens the wrap cliff.
-That outer agreement is what we score as audio denoising for this periodic artifact class.
+That outer agreement is scored by the prolonged residual $R$ for this periodic seam artifact class.
 
 Figure~\ref{fig:intro-sine} shows one real sine-wrap edge case from the frozen canonical holdout (same \texttt{make\_batch} tile, seed $20{,}260{,}719$).
 Panel (a) is the ideal multi-period sine.
@@ -17,7 +17,7 @@ Panels (e)--(f) plot the modulation residual and a seam zoom so the favorite's c
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\textwidth]{figures/fig_intro_sine_problem.png}
-  \caption{Sine-wrap modulation edge case from the canonical eval holdout (same tile). Ideal reference, cliff-modulated engine (ideal overlay), DualCosine bake, and top meta favorite ($R\approx0.9917$ on this tile, batch mean $R\approx0.991$). Bottom: modulation residual and seam zoom. Prolonged residual $R$ is printed per panel.}
+  \caption{Canonical holdout sine-wrap edge case (seed $20{,}260{,}719$, $L{=}256$, $N{=}16$ tiles, same tile across panels). (a)~Ideal sibling (cliff withheld). (b)~Engine with open-wrap cliff (ideal overlay). (c)~DualCosine bake. (d)~DenoiseOpt favorite bake. (e)--(f)~Modulation residual and seam zoom. Prolonged residual $R\in[0,1]$ (1~=~best) is printed per panel where scored.}
   \label{fig:intro-sine}
 \end{figure*}
 
@@ -33,23 +33,24 @@ Platform-aware and progressive NAS add compute-aware search priors~\cite{tan2019
 MoE soft gates suggest routing among heterogeneous tiny cells under one residual score~\cite{shazeer2017}.
 Waveform separation nets (Wave-U-Net, Conv-TasNet, dual-path RNN, SepFormer) and audio DL surveys inform the searchable cell family at bake-scale width~\cite{stoller2018,macartney2018,luo2019,luo2020dprnn,subakan2021,purwins2019,gong2021ast}, with U-Net / ResNet / attention primitives as block ancestors~\cite{ronneberger2015,he2016resnet,vaswani2017,jansson2017}.
 
-The contribution is a meta-learning protocol for this periodic instance.
-An outer RL+GA(+PBT) loop proposes denoising operator graphs and continuous bake parameters.
-Each candidate is scored by a prolonged residual $R\in[0,1]$ (1~=~best) between engine-baked multi-period audio and a procedural ideal tiling.
+The contribution is a meta-learning protocol for this periodic seam instance.
+An outer RL+GA(+PBT) loop proposes bake-cell operator graphs and continuous bake parameters.
+Each candidate is scored by prolonged residual $R\in[0,1]$ (1~=~best) between engine-baked multi-period audio and a procedural ideal tiling.
 Paired studio-clean wavetables are not required for every trial.
 Differentiable DSP modules~\cite{engel2020} place DualCosine / FIR / MLP seam ops in an interpretable stack.
 Bayesian HPO~\cite{snoek2012} informs prior families that compete under the same $R$.
 A CUDA overnight campaign (PPO+GA+PBT+NAS, depth and MoE biases) has passed a $5{,}000$-iteration clean gate with champion $R\approx 0.9909$ versus DualCosine $\approx 0.8166$ on the runner geometry.
 The frozen canonical holdout and inference benches in Results are the measured evaluation matrices for this report.
+We do not claim general speech or music enhancement SOTA.
 
 \paragraph{Contributions.}
 \begin{enumerate}
-  \item \textbf{Problem framing.} Cast wavetable wrap discontinuity / cycle-local seam restoration as audio denoising under prolonged tiled evaluation, separating seam-local diagnostics from residual $R$.
+  \item \textbf{Problem framing.} Cast wavetable wrap discontinuity as cycle-local seam restoration under prolonged tiled evaluation, separating seam-local diagnostics from residual $R$.
   \item \textbf{Hybrid DenoiseOpt outer loop.} Specify RL+GA(+PBT) search over discrete operator graphs and continuous bake parameters, with named branches (GA crossover, PPO mutation, PBT exploit, MoE soft gates).
-  \item \textbf{Literature protocol.} Separate used versus screened prior work for audio denoise cells and RL--evolutionary hybrids, grounded on downloaded source PDFs.
-  \item \textbf{Open evaluation path.} Release companion code for the synthesizer engine and meta search, with frozen $5$k-gate figures and matched classical-vs-AI benches.
+  \item \textbf{Formal residual protocol.} Define ideal-tile siblings, $R$ with range/perfect-match/monotone properties, and reimplementable Algorithms~\ref{alg:residual}--\ref{alg:hybrid}.
+  \item \textbf{Open evaluation path.} Release companion code for the synthesizer engine and meta search, with frozen $5$k-gate figures and matched classical-vs-favorite benches.
 \end{enumerate}
 
 Section~\ref{sec:related_work} organizes related work by mechanism.
-Sections~\ref{sec:methods}--\ref{sec:experiments} outline the residual objective and search protocol.
+Sections~\ref{sec:methods}--\ref{sec:experiments} detail the residual objective and search protocol.
 Results report the $5$k-gate freeze and inference benches.

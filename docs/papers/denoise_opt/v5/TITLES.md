@@ -1,19 +1,19 @@
 # Title options
 
 ## Primary (used in `main.tex`)
-**Unsupervised Deep Audio Denoising Algorithms via Hybrid Reinforcement Learning and Genetic Algorithm Meta-Learning**
+**Unsupervised Wavetable Seam Artifact Repair via Hybrid GA–PPO Meta-Search**
 
-SEO / discoverability: front-loads *Unsupervised* + *Deep Audio Denoising Algorithms*, spells out *Reinforcement Learning*, keeps *Genetic Algorithm*, and uses hyphenated *Meta-Learning*. Plural *Algorithms* (no leading article).
+SEO / discoverability: leads with *Unsupervised* + *Wavetable Seam*, keeps hybrid GA/PPO, names the repair task honestly. Method name **DenoiseOpt** lives in the abstract and keywords, not the title.
 
-Running header (`\papershorttitle`): **Unsupervised Deep Audio Denoising**
+Running header (`\papershorttitle`): **Wavetable Seam Artifact Repair**
 
-## Alternates
-1. **Unsupervised Deep Audio Denoising Algorithms via Hybrid Reinforcement Learning and Genetic Algorithms Meta-Learning** (plural GA, slightly longer).
-2. **Unsupervised Deep Audio Denoising Algorithms with a Hybrid RL–GA Meta-Learning Outer Loop** (shorter, RL abbreviated, weaker SEO).
-3. **Meta-Learning Audio Signal Denoising via Combined Reinforcement Learning and Evolutionary Search** (meta-learning first, weaker unsupervised signal).
+## Alternates (narrow claims)
+1. **Cycle-Local Seam Restoration with Residual-Scored Hybrid RL+GA** (shorter, RL abbreviated).
+2. **Unsupervised Wrap-Discontinuity Repair via Residual-Scored Hybrid Meta-Search** (emphasizes wrap cliff).
+3. **DenoiseOpt: Hybrid GA–PPO Meta-Search for Wavetable Seam Restoration** (method-first).
 
 ## Rejected directions
-- Titles that lead with “DenoiseOpt Overnight” or “1M-step” (implementation / run tags, not science).
+- Broad “Deep Audio Denoising Algorithms” without seam/wavetable scope (overclaims vs evidence).
+- Titles that lead with “DenoiseOpt Overnight” or “1M-step” (run tags, not science).
 - Clickbait (“killing wrap crackle”, “SOTA seam bake”).
-- “Reinforcement” without “Learning” (weaker academic search match).
-- Leading with RL+GA only (buries unsupervised learning / audio denoising).
+- General speech-enhancement framing.

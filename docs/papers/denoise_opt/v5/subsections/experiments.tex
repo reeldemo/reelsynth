@@ -1,6 +1,9 @@
 \section{Experiments}
 \label{sec:experiments}
 
+\paragraph{Protocol freeze.}
+Evaluation follows \texttt{paper/v5/EVAL\_PROTOCOL.md} (v1): primary metric prolonged $R$, secondary SNR/SDR and wrap-jump planned for multi-family matrices, holdout seed $20{,}260{,}719$, search seed $1{,}902{,}771{,}841$, report $5$k-gate freeze plus frozen holdout, no unfinished-budget claims, no PESQ/STOI on non-speech cycles.
+
 \subsection{Dataset}
 \label{sec:dataset}
 
@@ -15,7 +18,7 @@ Prolonged residual $R$ tiles each cycle $N{=}16$ times before the RMS ratio.
 The holdout seed is $20{,}260{,}719$ (distinct from the overnight search seed $1{,}902{,}771{,}841$).
 Overnight search draws fresh i.i.d.\ batches from this generator and does not train on the frozen holdout tensors.
 There is no supervised clean/noisy training split of studio audio.
-Family labels are absent: this corpus is a single sine{+}cliff family (Rust \texttt{sound\_bench} families remain a separate hardness probe in Results).
+Family labels are absent: this corpus is a single sine{+}cliff family (Rust \texttt{sound\_bench} families remain a separate hardness probe in Results). Diversity target $\ge 20$ waveforms is Phase~3a work.
 
 \paragraph{Dataset metrics.}
 A metrics draw of $4{,}096$ cycles under the holdout seed yields mean ideal RMS $0.721\pm0.016$, mean engine residual RMS $0.021\pm0.013$, and mean absolute wrap jump $|x_0-x_{L-1}|$ of $0.913\pm0.634$.

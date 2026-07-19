@@ -10,23 +10,31 @@
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{placeins}
-\usepackage{amsmath,amssymb}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 \usepackage{xurl}
 \usepackage{cite}
 \usepackage{balance}
 \usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
 \usepackage{orcidlink}
 
-\title{Unsupervised Deep Audio Denoising Algorithms via\\
-Hybrid Reinforcement Learning and Genetic Algorithm Meta-Learning}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+\title{Unsupervised Wavetable Seam Artifact Repair via\\
+Hybrid GA--PPO Meta-Search}
 \author{%
   Julian~M.~Kleber\,\orcidlink{0000-0001-5518-0932}\\[2pt]
+  \textit{Independent Researcher}\\[2pt]
   \normalsize
   Email:
   \href{mailto:julian.m.kleber@gmail.com}{\texttt{julian.m.kleber@gmail.com}}
 }
 \date{19 July 2026}
-\newcommand{\papershorttitle}{Unsupervised Deep Audio Denoising}
+\newcommand{\papershorttitle}{Wavetable Seam Artifact Repair}
 
 \begin{document}
 
@@ -38,23 +46,24 @@ Hybrid Reinforcement Learning and Genetic Algorithm Meta-Learning}
     \url{https://github.com/reeldemo/denoise-opt-meta}
   \end{center}
   \begin{abstract}
-    When a single-period wavetable (or any short cyclic buffer) is played with phase wrap,
-    a sample discontinuity at the period boundary injects a broadband transient that repeats
-    at the fundamental. We treat this cycle-local seam crackle as an audio denoising problem:
-    seam-local operators (DualCosine crossfade, polish, FIR blends, optional tiny residual cells)
-    are baked into the period, then judged by a prolonged residual $R\in[0,1]$ against an ideal
-    multi-period tiling that withholds the open-wrap cliff (1~=~best).
-    We call the residual-scored hybrid search \textbf{DenoiseOpt}.
-    An outer hybrid meta-search interleaves GA tournament updates with proximal policy
-    optimization (PPO) architecture proposals,
-    optional PBT exploit--mutate schedules, and MoE soft gates over heterogeneous bake cells.
-    Candidates need not be paired with studio-clean waveforms for every trial.
-    On the frozen canonical sine{+}cliff holdout, a compact favorite reaches $R\approx 0.991$ versus
-    DualCosine $R\approx 0.825$ ($\Delta R\approx{+}0.166$).
-    A live GPU hybrid campaign has passed $5{,}000$ clean iterations with champion
+    When a single-period wavetable is played with phase wrap, a sample discontinuity at the
+    period boundary injects a broadband transient that repeats at the fundamental.
+    We repair this cycle-local seam artifact by baking seam-local operators into the period
+    inside a \textbf{bake cell}: classical DualCosine crossfade, polish, FIR blends, and optional
+    tiny residual networks, optionally mixed by MoE soft gates.
+    Candidates are ranked by the prolonged residual score $R\in[0,1]$ (1~=~best), the clamped
+    tiled RMS agreement between the baked multi-period waveform and a procedural ideal sibling
+    that withholds the open-wrap cliff.
+    \textbf{DenoiseOpt} is the residual-scored hybrid meta-search: GA tournament updates,
+    PPO architecture proposals, optional PBT exploit--mutate, and MoE routing over bake cells.
+    Studio-clean pairs are not required for every trial.
+    On the frozen canonical sine{+}cliff holdout (seed $20{,}260{,}719$), a compact favorite reaches
+    $R\approx 0.991$ versus DualCosine $R\approx 0.825$ ($\Delta R\approx{+}0.166$).
+    Separately, a live GPU campaign at the $5{,}000$-iteration clean gate reports champion
     $R\approx 0.9909$ against DualCosine $\approx 0.8166$ on the runner geometry.
+    Scope is cycle-local wavetable seam restoration, not general speech enhancement.
   \end{abstract}
-  \keywords{unsupervised learning $\cdot$ audio denoising $\cdot$ DenoiseOpt $\cdot$ neural architecture search $\cdot$ reinforcement learning $\cdot$ genetic algorithms $\cdot$ wavetable synthesis $\cdot$ wrap discontinuity $\cdot$ meta-learning}
+  \keywords{unsupervised learning $\cdot$ wavetable $\cdot$ wrap discontinuity $\cdot$ seam restoration $\cdot$ DenoiseOpt $\cdot$ residual score $\cdot$ neural architecture search $\cdot$ reinforcement learning $\cdot$ genetic algorithms $\cdot$ meta-learning}
   \vspace{0.6em}
 }]
 
