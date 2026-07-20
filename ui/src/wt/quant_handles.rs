@@ -973,13 +973,15 @@ mod tests {
 
     #[test]
     fn hold_flat_per_slot_band() {
+        set_quant_seam_mode(QuantSeamMode::Off);
+        set_crackle_amount(1.0);
         let mut frame = vec![0.0_f32; 256];
         let points = vec![0.0, 1.0, 0.0, 1.0];
         resample_frame_from_quant_points_uniform(&mut frame, &points, WtQuantInterp::Hold);
         let q1 = frame[32];
         let q2 = frame[96];
-        assert!((q1 - 0.0).abs() < 1e-3);
-        assert!((q2 - 1.0).abs() < 1e-3);
+        assert!((q1 - 0.0).abs() < 1e-3, "got q1={q1}");
+        assert!((q2 - 1.0).abs() < 1e-3, "got q2={q2}");
     }
 
     #[test]
@@ -1065,19 +1067,33 @@ mod tests {
 
     #[test]
     fn linear_hits_endpoints() {
+        set_quant_seam_mode(QuantSeamMode::Off);
+        set_crackle_amount(1.0);
         let mut frame = vec![0.0_f32; 128];
         let points = vec![-0.5_f32, 0.8];
         resample_frame_from_quant_points_uniform(&mut frame, &points, WtQuantInterp::Linear);
-        assert!((frame[0] - (-0.5)).abs() < 1e-3);
-        // Seam is periodized for wrap — last sample matches first, not the last knob.
+        assert!(
+            (frame[0] - (-0.5)).abs() < 1e-3,
+            "first sample got {}",
+            frame[0]
+        );
+        assert!(
+            (frame[frame.len() - 1] - 0.8).abs() < 1e-3,
+            "last sample got {}",
+            frame[frame.len() - 1]
+        );
+        set_crackle_amount(0.0);
+        periodize_quant_frame_with_mode(&mut frame, QuantSeamMode::Soft);
         assert!(
             (frame[frame.len() - 1] - frame[0]).abs() < 1e-3,
-            "quant resample must close wrap seam"
+            "soft periodize must close wrap seam"
         );
     }
 
     #[test]
     fn quant_hold_wrap_seam_is_periodized() {
+        set_quant_seam_mode(QuantSeamMode::Soft);
+        set_crackle_amount(0.0);
         let mut frame = vec![0.0_f32; 512];
         // Opposite endpoints — classic Hold wrap cliff without periodize.
         let points = vec![1.0_f32, 0.0, 0.0, -1.0];
@@ -1097,19 +1113,17 @@ mod tests {
 
     #[test]
     fn expo_monotonic_same_sign_endpoints() {
+        set_quant_seam_mode(QuantSeamMode::Off);
+        set_crackle_amount(1.0);
         let mut frame = vec![0.0_f32; 128];
         let points = vec![0.2_f32, 0.9];
         resample_frame_from_quant_points_uniform(&mut frame, &points, WtQuantInterp::Exponential);
-        // Wrap seam is periodized (last → first), so the tail is not monotonic.
-        // Body of the rising expo curve must still climb.
-        let body_end = frame.len().saturating_sub(frame.len() / 8).max(2);
+        // Off/Raw leaves wrap open — only assert the rising body, not the seam sample.
+        let body_end = frame.len().saturating_sub(2).max(2);
         for w in frame[..body_end].windows(2) {
             assert!(w[1] + 1e-4 >= w[0], "expo body must be non-decreasing");
         }
-        assert!(
-            (frame[frame.len() - 1] - frame[0]).abs() < 1e-3,
-            "quant resample must close wrap seam"
-        );
+        assert!(frame[body_end - 1] > frame[0] + 0.3, "expo must climb");
     }
 
     #[test]
