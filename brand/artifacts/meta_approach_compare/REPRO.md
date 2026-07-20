@@ -5,6 +5,7 @@
 - Seed: `1902771841`
 - Iters: `5000` per approach
 - Approaches: random, cmaes, reinforce, aging_evo, tpe, hybrid_lstm
+  (manuscript: Random NAS, Cont. CMA-ES, Arch REINFORCE, Aging evolution, TPE Bayes NAS, Ours (hybrid GA–PPO))
 - Vocab: LSTM + xLSTM in `BLOCKS`
 - Reward modes (hybrid/REINFORCE/PBT): abs_r, vs_dualcosine, vs_nobake, neglog_gap
 - Device: `NVIDIA GeForce RTX 3090` / torch `2.6.0+cu124`

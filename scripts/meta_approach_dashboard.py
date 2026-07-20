@@ -130,6 +130,15 @@ const COLORS = {
   tpe: '#0072B2',
   hybrid_lstm: '#D55E00',
 };
+const DISPLAY = {
+  random: 'Random NAS',
+  cmaes: 'Cont. CMA-ES',
+  reinforce: 'Arch REINFORCE',
+  aging_evo: 'Aging evolution',
+  tpe: 'TPE Bayes NAS',
+  hybrid_lstm: 'Ours (hybrid GA–PPO)',
+};
+function displayName(key) { return DISPLAY[key] || key; }
 let chart;
 let lastFingerprint = '';
 let lastOkAt = 0;
@@ -157,14 +166,14 @@ function fingerprint(st, curves) {
 
 function renderStatus(st) {
   document.getElementById('phase').textContent =
-    `phase=${st.phase || '?'} · ${st.n_complete || 0}/${st.n_total || 0} complete · current=${st.current_approach || '—'}@${st.current_iter ?? '—'}`;
+    `phase=${st.phase || '?'} · ${st.n_complete || 0}/${st.n_total || 0} complete · current=${displayName(st.current_approach) || '—'}@${st.current_iter ?? '—'}`;
   document.getElementById('updated').textContent = st.live_updated_at || st.updated_at || '';
   document.getElementById('outDir').textContent = st.out_dir || '';
   const rows = st.rows || [];
   const active = rows.find(r => r.approach === st.current_approach) || rows.find(r => r.iters_done > 0) || {};
   const kpis = [
-    { label: 'Current', value: st.current_approach || '—', sub: `iter ${st.current_iter ?? 0}` },
-    { label: 'Champ R', value: fmt(active.champ_r), sub: active.approach || '' },
+    { label: 'Current', value: displayName(st.current_approach) || '—', sub: `iter ${st.current_iter ?? 0}` },
+    { label: 'Champ R', value: fmt(active.champ_r), sub: displayName(active.approach) || '' },
     { label: 'Progress', value: `${st.n_complete || 0}/${st.n_total || 0}`, sub: 'approaches done' },
     { label: 'Active %', value: `${(active.pct || 0).toFixed(1)}%`, sub: `${active.iters_done || 0}/${active.target_iters || st.target_iters || 5000}` },
   ];
@@ -178,7 +187,7 @@ function renderStatus(st) {
     if (st.current_approach === r.approach && !r.complete) state = 'ACTIVE';
     const cls = state === 'ACTIVE' ? 'active' : (state === 'DONE' ? 'done' : '');
     return `<tr class="${state === 'ACTIVE' ? 'flash' : ''}">
-      <td class="${cls}">${r.approach}</td>
+      <td class="${cls}">${displayName(r.approach)}</td>
       <td class="num">${r.iters_done || 0}/${r.target_iters || 0}</td>
       <td class="num">${pct.toFixed(1)}%
         <div class="bar-wrap"><div class="bar" style="width:${Math.min(100,pct)}%"></div></div>
@@ -194,7 +203,7 @@ function renderStatus(st) {
 
 function renderCurves(curves) {
   const datasets = Object.entries(curves.series || {}).map(([name, pts]) => ({
-    label: name,
+    label: displayName(name),
     data: pts.map(p => ({ x: p.iter, y: p.champ })),
     borderColor: COLORS[name] || '#ccc',
     backgroundColor: COLORS[name] || '#ccc',

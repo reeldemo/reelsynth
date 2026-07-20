@@ -1078,12 +1078,12 @@ def run_approach(
 
 def write_meta_table_tex(aggregate: dict[str, Any], out_tex: Path) -> None:
     labels = {
-        "random": "Random search",
-        "cmaes": "CMA-ES",
-        "reinforce": "REINFORCE",
+        "random": "Random NAS",
+        "cmaes": "Cont.\\ CMA-ES",
+        "reinforce": "Arch REINFORCE",
         "aging_evo": "Aging evolution",
-        "tpe": "TPE (lite BO)",
-        "hybrid_lstm": "Hybrid (+LSTM/xLSTM)",
+        "tpe": "TPE Bayes NAS",
+        "hybrid_lstm": "Ours (hybrid GA--PPO)",
     }
     rows: list[str] = []
     for row in aggregate.get("table", []):
@@ -1099,11 +1099,11 @@ def write_meta_table_tex(aggregate: dict[str, Any], out_tex: Path) -> None:
     tex = (
         "\\begin{table}[t]\n"
         "  \\centering\n"
-        "  \\caption{Matched $5$k-budget meta-learning comparison (search seed "
-        "\\texttt{1902771841}, LSTM and xLSTM in searchable bake vocabulary). Champion $R$ is "
-        "prolonged residual on the runner geometry; $\\Delta R$ vs DualCosine on the "
-        "same baseline. Wall hours are per-approach CUDA wall time. LSTM?/xLSTM?: "
-        "whether the champion graph included that block.}\n"
+        "  \\caption{Matched $5$k-budget outer-loop comparison (search seed "
+        "\\texttt{1902771841}; LSTM+xLSTM in bake vocab; reward-mode + HP co-tune in Ours). "
+        "Champion $R$ vs ideal sibling; $\\Delta R$ vs DualCosine is one classical gap only. "
+        "Wall-h: per-method CUDA wall time. LSTM?/xLSTM?: whether the champion graph "
+        "included that block.}\n"
         "  \\label{tab:meta-approaches}\n"
         "  \\setlength{\\tabcolsep}{3pt}\n"
         "  \\small\n"
@@ -1118,6 +1118,15 @@ def write_meta_table_tex(aggregate: dict[str, Any], out_tex: Path) -> None:
     )
     out_tex.write_text(tex, encoding="utf-8")
 
+
+DISPLAY_NAMES = {
+    "random": "Random NAS",
+    "cmaes": "Cont. CMA-ES",
+    "reinforce": "Arch REINFORCE",
+    "aging_evo": "Aging evolution",
+    "tpe": "TPE Bayes NAS",
+    "hybrid_lstm": "Ours (hybrid GA–PPO)",
+}
 
 def plot_compare(aggregate: dict[str, Any], out_png: Path) -> None:
     import matplotlib
@@ -1159,7 +1168,7 @@ def plot_compare(aggregate: dict[str, Any], out_png: Path) -> None:
         ax.plot(
             xs,
             ys,
-            label=name.replace("_", "+"),
+            label=DISPLAY_NAMES.get(name, name.replace("_", " ")),
             color=st["color"],
             marker=st["marker"],
             linestyle=st["linestyle"],
