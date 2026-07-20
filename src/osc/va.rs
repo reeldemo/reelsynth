@@ -56,8 +56,21 @@ pub(crate) fn poly_blep(t: f32, dt: f32) -> f32 {
     }
 }
 
-fn blep(t: f32, dt: f32) -> f32 {
-    poly_blep(t, dt)
+/// Widen the BLEP window so wrap cliffs stay gentle at musical pitches.
+///
+/// A classical 1-sample polyBLEP still leaves ~0.98 adjacent jumps at A4; those
+/// residual edges fight any post-filter slew and read as held-note crackle.
+/// Stretching the correction to ~10 samples keeps brightness while capping wrap.
+pub(crate) fn blep_dt(phase_inc: f32) -> f32 {
+    const MIN_SAMPLES: f32 = 10.0;
+    if phase_inc <= 0.0 {
+        return 0.0;
+    }
+    (phase_inc * MIN_SAMPLES).clamp(phase_inc, 0.35)
+}
+
+fn blep(t: f32, phase_inc: f32) -> f32 {
+    poly_blep(t, blep_dt(phase_inc))
 }
 
 fn saw_blep(phase: f32, dt: f32) -> f32 {
@@ -112,5 +125,25 @@ mod tests {
     fn va_waveforms_parse() {
         assert_eq!(VaWaveform::from_osc_type("saw"), Some(VaWaveform::Saw));
         assert_eq!(VaWaveform::from_osc_type("wavetable"), None);
+    }
+
+    /// Classical 1-sample polyBLEP left ~0.98 adjacent jumps at A4 — audible wrap crackle.
+    /// Widened BLEP must keep the cliff gentle so slew does not fight every cycle.
+    #[test]
+    fn saw_wrap_jump_bounded_at_a4() {
+        let dt = 440.0 / 44_100.0;
+        let mut phase = 1.0 - 8.0 * dt;
+        let mut prev = sample_va(VaWaveform::Saw, phase, dt, 0.5);
+        let mut max_jump = 0.0f32;
+        for _ in 0..16 {
+            phase = (phase + dt).fract();
+            let cur = sample_va(VaWaveform::Saw, phase, dt, 0.5);
+            max_jump = max_jump.max((cur - prev).abs());
+            prev = cur;
+        }
+        assert!(
+            max_jump < 0.28,
+            "saw wrap jump too steep: {max_jump} (causes held-note crackle)"
+        );
     }
 }

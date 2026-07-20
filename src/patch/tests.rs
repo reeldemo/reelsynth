@@ -173,3 +173,61 @@ fn v1_migration_adds_wave_slot_fields() {
     assert_eq!(p.oscillators[0].wave_quant, 16);
     assert_eq!(p.oscillators[0].wave_slot, 7);
 }
+
+#[test]
+fn wave_layer_quant_interp_defaults_and_roundtrips() {
+    let old: WaveLayer = serde_json::from_str(r#"{"type":"saw","level":0.5}"#).unwrap();
+    assert_eq!(old.quant_interp, "hold");
+    assert!(old.quant_segment_interps.is_empty());
+
+    let layer = WaveLayer {
+        source_type: "wavetable".into(),
+        quant_interp: "expo".into(),
+        quant_segment_interps: vec![
+            "hold".to_string(),
+            "linear".to_string(),
+            "spline".to_string(),
+        ],
+        ..WaveLayer::default()
+    };
+    let json = serde_json::to_string(&layer).unwrap();
+    let back: WaveLayer = serde_json::from_str(&json).unwrap();
+    assert_eq!(back.quant_interp, "expo");
+    assert_eq!(back.quant_segment_interps.len(), 3);
+}
+
+#[test]
+fn missing_filters_key_uses_legacy_dual() {
+    let p = Patch::from_json(r#"{"filter":{"type":"lowpass","cutoff":800}}"#).unwrap();
+    assert!(p.filters.is_none());
+    let slots = p.effective_filter_slots();
+    assert_eq!(slots.len(), 2);
+    assert_eq!(slots[0].cutoff, 800.0);
+}
+
+#[test]
+fn empty_filters_array_is_bypass() {
+    let p = Patch::from_json(r#"{"filters":[]}"#).unwrap();
+    assert_eq!(p.filters.as_ref().map(|s| s.len()), Some(0));
+    assert!(p.effective_filter_slots().is_empty());
+}
+
+#[test]
+fn filter_chain_roundtrip_and_legacy_mirror() {
+    let json = r#"{
+        "filters":[
+            {"type":"highpass","cutoff":200,"resonance":0.2},
+            {"type":"lowpass","cutoff":4000,"resonance":0.3,"drive":0.1}
+        ]
+    }"#;
+    let mut p = Patch::from_json(json).unwrap();
+    assert_eq!(p.filters.as_ref().unwrap().len(), 2);
+    assert_eq!(p.filter.filter_type, "highpass");
+    assert_eq!(p.filter.cutoff, 200.0);
+    assert_eq!(p.filter2.filter_type, "lowpass");
+    assert_eq!(p.filter2.cutoff, 4000.0);
+    p.filters.as_mut().unwrap().swap(0, 1);
+    p.sync_legacy_filters_from_chain();
+    assert_eq!(p.filter.filter_type, "lowpass");
+    assert_eq!(p.filter2.filter_type, "highpass");
+}

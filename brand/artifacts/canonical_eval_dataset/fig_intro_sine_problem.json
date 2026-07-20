@@ -1,0 +1,16 @@
+{
+  "eval_seed": 20260719,
+  "tile_index": 46,
+  "wrap_abs": 2.282712936401367,
+  "R_engine": 0.9503467082977295,
+  "R_dual_cosine": 0.6029019951820374,
+  "R_neural_favorite_tile": 0.9917222857475281,
+  "R_neural_favorite_batch_mean": 0.9910600781440735,
+  "R_neural_favorite_saved": 0.9909982681274414,
+  "favorite_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T061909Z\\fitted\\champion_iter_000235_fitted.pt",
+  "favorite_tag": "champion_iter_000235_fitted",
+  "periods_shown": 3,
+  "cycle_length": 256,
+  "pick_note": "band_match_max_wrap",
+  "note": "Same holdout_batch.pt tile; DualCosine + top favorite via overnight bake path. Panels show wrap modulation and favorite correction."
+}

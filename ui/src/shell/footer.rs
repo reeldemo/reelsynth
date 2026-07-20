@@ -63,8 +63,9 @@ pub(super) fn draw_piano_wrap(
                         actions.chord_degree_off = Some(deg);
                     }
                 } else {
-                    let scale_fold = state.shell_mode == crate::state::ShellMode::Compose
-                        || perf.layout == PerformanceLayout::Scale;
+                    // Same rule as Design: fold only in Scale layout. Compose must not
+                    // force-fold — that blocked chromatic black keys (C#/D#/…) on Major.
+                    let scale_fold = crate::widgets::piano_scale_fold_enabled(perf.layout);
                     let piano = PianoKeyboard::new(&state.keys_down)
                         .with_scale_fold(perf.root, perf.scale, scale_fold);
                     let (_, piano) = piano.show_in_rect(ui, inner);

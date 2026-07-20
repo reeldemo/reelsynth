@@ -3,7 +3,7 @@
 use egui::{Rect, Sense, Ui};
 use reelsynth_ui_theme::{ACCENT_UI, Tokens};
 
-use crate::audit_registry::{record_region, record_used, AuditId};
+use crate::audit_registry::{record_region, AuditId};
 use crate::layout::GRID_UNIT;
 use crate::region::region;
 
@@ -29,11 +29,27 @@ pub fn draw_scene_grid(ui: &mut Ui, rect: Rect, compose: &mut ComposeUi) -> Scen
         egui::Frame::none()
             .inner_margin(egui::Margin::symmetric(GRID_UNIT, GRID_UNIT * 0.5))
             .show(ui, |ui| {
-                ui.label(
-                    egui::RichText::new("Scenes")
-                        .size(10.0)
-                        .color(tokens.text_muted),
-                );
+                ui.horizontal(|ui| {
+                    let arrow = if compose.scenes_collapsed { "▸" } else { "▾" };
+                    if ui
+                        .add(
+                            egui::Button::new(
+                                egui::RichText::new(format!("Scenes {arrow}"))
+                                    .size(10.0)
+                                    .color(tokens.text_muted),
+                            )
+                            .frame(false),
+                        )
+                        .clicked()
+                    {
+                        compose.scenes_collapsed = !compose.scenes_collapsed;
+                    }
+                });
+
+                if compose.scenes_collapsed {
+                    return;
+                }
+
                 ui.add_space(GRID_UNIT * 0.25);
 
                 let scene_count = compose.project.scenes.len();

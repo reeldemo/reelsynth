@@ -11,6 +11,7 @@ ReelSynth is an MIT-licensed wavetable synthesizer. This folder is the documenta
 | **Using free tools only** — DAWs, Vital, no paid stack | [FREE_STACK.md](FREE_STACK.md) |
 | **Using Reeldemo Studio** — agent compose → Ableton handoff | [REELDEMO_INTEGRATION.md](REELDEMO_INTEGRATION.md) |
 | **Integrating in code** — Python, Rust, CLI, C FFI | [SDK.md](SDK.md) |
+| **Automating the UI** — AgentSession + MCP tools | [AGENT_API.md](AGENT_API.md) |
 | **Learning the UI** — regions, shortcuts, MIDI | [UI.md](UI.md) |
 
 ## Reference
@@ -19,6 +20,7 @@ ReelSynth is an MIT-licensed wavetable synthesizer. This folder is the documenta
 |-------|-----|
 | File formats (`.reelwt`, `.reelpreset`, `reelpack/`) | [FORMAT.md](FORMAT.md) |
 | Export loss matrix (Vital, Serum, Ableton, …) | [INTEROP.md](INTEROP.md) |
+| DenoiseOpt (label-free crackle denoise) | [WHITEPAPER_DENOISE_OPT.md](WHITEPAPER_DENOISE_OPT.md) · [arXiv-style paper](papers/denoise_opt/) |
 | Serum `.fxp` byte layout | [SERUM_FXP.md](SERUM_FXP.md) |
 | Code naming conventions | [NAMING.md](NAMING.md) |
 

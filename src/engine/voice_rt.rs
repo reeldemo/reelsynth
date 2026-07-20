@@ -47,15 +47,26 @@ impl RtVoice {
         start_time: f32,
         mpe: VoiceMpe,
     ) {
-        let legato = self.active && self.gate && self.state.amp_env_level > 1e-5;
-        if !legato {
+        // Soft-continue when the voice is still audible — including the common
+        // "brief note-off then note-on" path while releasing. A hard reset here
+        // zeroed filter_fade and caused a held-note silence gap before sustain
+        // resumed (user-reported "stops shortly then keeps playing").
+        let audible = self.active && self.state.amp_env_level > 1e-5;
+        let releasing = self.state.amp_env_stage == 3;
+        if audible && (self.gate || releasing) {
+            if releasing || !self.gate {
+                self.state.amp_env_stage = 2;
+                self.state.amp_env_level =
+                    patch.envelope.sustain.max(self.state.amp_env_level);
+                self.state.filt_env_stage = 2;
+                self.state.filt_env_level = patch
+                    .filter_envelope
+                    .sustain
+                    .max(self.state.filt_env_level);
+            }
+            // Keep filter_fade / slew state — no soft-start dropout.
+        } else {
             self.state.reset(patch);
-        } else if self.state.amp_env_stage == 3 {
-            // Same note retrigger while releasing — snap back to sustain instead of hard reset.
-            self.state.amp_env_stage = 2;
-            self.state.amp_env_level = patch.envelope.sustain.max(self.state.amp_env_level);
-            self.state.filt_env_stage = 2;
-            self.state.filt_env_level = patch.filter_envelope.sustain.max(self.state.filt_env_level);
         }
         self.note = note;
         self.channel = channel;
@@ -139,5 +150,54 @@ impl RtVoice {
         }
 
         sample
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::patch::{Envelope, Patch};
+
+    #[test]
+    fn retrigger_while_releasing_keeps_filter_fade() {
+        let mut patch = Patch::default_mono();
+        patch.envelope = Envelope {
+            attack: 0.001,
+            decay: 0.05,
+            sustain: 0.8,
+            release: 0.4,
+        };
+        let mut voice = RtVoice::new(&patch);
+        voice.trigger(&patch, 0, 60, 440.0, 1.0, 0.0, VoiceMpe::default());
+        // Advance into sustain so amp is high and fade is complete.
+        voice.state.filter_fade = 1.0;
+        voice.state.amp_env_stage = 2;
+        voice.state.amp_env_level = 0.8;
+        voice.release();
+        voice.state.amp_env_stage = 3;
+        voice.state.amp_env_level = 0.55;
+
+        voice.trigger(&patch, 0, 60, 440.0, 1.0, 0.1, VoiceMpe::default());
+
+        assert!(
+            voice.state.filter_fade > 0.99,
+            "retrigger while releasing must not soft-start from silence (fade={})",
+            voice.state.filter_fade
+        );
+        assert_eq!(voice.state.amp_env_stage, 2);
+        assert!(voice.gate);
+        assert!(voice.state.amp_env_level >= 0.55);
+    }
+
+    #[test]
+    fn fresh_note_still_soft_starts() {
+        let patch = Patch::default_mono();
+        let mut voice = RtVoice::new(&patch);
+        voice.trigger(&patch, 0, 60, 440.0, 1.0, 0.0, VoiceMpe::default());
+        assert!(
+            voice.state.filter_fade < 0.01,
+            "cold note-on must soft-start (fade={})",
+            voice.state.filter_fade
+        );
     }
 }

@@ -1,0 +1,10 @@
+# REVIEW_FIX_COMPLETE
+
+Date: 19 July 2026  
+Plan: MANUSCRIPT_REVIEW_FIX_PLAN.md  
+
+All REAL and PARTIAL items from the Comprehensive Manuscript Review fix cycle are done.
+OCR_FALSE items verified against tex/PDF (no content change required).
+
+P4 shape markers: done (overnight line plots regenerated with Okabe-Ito colors + distinct markers; x-axis capped at 5000 iterations).
+MUSHRA: ignored (not run; not in scope for this paper).

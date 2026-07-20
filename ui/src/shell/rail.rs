@@ -11,8 +11,7 @@ use crate::layout_audit::{
 };
 use crate::region::region;
 use crate::widgets::{
-    labeled_select, panel_audit, tab_bar, Knob, KnobResponse, KnobSize, KnobStyle, panel,
-    panel_disabled,
+    labeled_select, panel_audit, Knob, KnobResponse, KnobSize, KnobStyle, panel, panel_disabled,
 };
 
 pub(super) fn draw_rail(
@@ -87,24 +86,19 @@ fn draw_rail_panels(
     panel_audit(ui, "Filter", Some(AuditId::RailPanelFilter), |ui| {
         let filter_body_top = ui.cursor().min.y;
         if config.show_osc_column {
-            let tabs_start = ui.cursor().min;
-            let prev = state.filter_mode;
-            tab_bar(ui, &["LP", "HP", "BP", "Notch"], &mut state.filter_mode);
-            record_row(ui.ctx(), AuditId::RailFilterTabs, ui, tabs_start);
-            if prev != state.filter_mode {
+            let knobs_start = ui.cursor().min;
+            let rack = crate::draw_filter_chain(ui, &mut state.filter_slots, s);
+            if rack.changed {
+                if let Some(s0) = state.filter_slots.first() {
+                    state.filter_cutoff = s0.cutoff;
+                    state.filter_resonance = s0.resonance;
+                    state.filter_key_tracking = s0.key_tracking;
+                    state.filter_drive = s0.drive;
+                    state.filter_mode = crate::filter_mode_from_type(&s0.filter_type);
+                }
                 actions.params_changed = true;
             }
-            ui.add_space(GRID_UNIT * s * 0.75);
-            let knobs_start = ui.cursor().min;
-            draw_filter_knobs_compact(ui, state, actions, s);
             record_row(ui.ctx(), AuditId::RailFilterKnobs, ui, knobs_start);
-        } else {
-            ui.horizontal_wrapped(|ui| {
-                ui.spacing_mut().item_spacing = egui::vec2(SPACE_SM * s, SPACE_SM * s);
-                draw_filter_knobs_row(ui, state, config, actions, knob_md, knob_sm, s);
-            });
-        }
-        if config.show_osc_column {
             let used = ui.min_rect();
             let allocated = Rect::from_min_max(
                 egui::pos2(ui.max_rect().min.x, filter_body_top),
@@ -113,6 +107,11 @@ fn draw_rail_panels(
             ui.ctx().data_mut(|d| {
                 d.insert_temp(rail_filter_used_rect_id(), used);
                 d.insert_temp(rail_filter_allocated_rect_id(), allocated);
+            });
+        } else {
+            ui.horizontal_wrapped(|ui| {
+                ui.spacing_mut().item_spacing = egui::vec2(SPACE_SM * s, SPACE_SM * s);
+                draw_filter_knobs_row(ui, state, config, actions, knob_md, knob_sm, s);
             });
         }
     });
@@ -382,6 +381,7 @@ fn env_knob_cell(
     .inner
 }
 
+#[allow(dead_code)] // reserved for compact / non-chain layouts
 fn draw_filter_knobs_compact(
     ui: &mut Ui,
     state: &mut UiState,
@@ -500,6 +500,7 @@ fn draw_filter_knobs_row(
         .style(KnobStyle::Wired)
         .value_text(drive_text)
         .show(ui);
+    let mut local_changed = r1.changed || r2.changed || r_drive.changed;
     if config.show_osc_column {
         let key_text = format!("{:.0}%", state.filter_key_tracking * 100.0);
         let r3 = Knob::new(&mut state.filter_key_tracking, 0.0..=1.0, "Key")
@@ -516,12 +517,33 @@ fn draw_filter_knobs_row(
             .logarithmic(true)
             .value_text(f2_text)
             .show(ui);
-        if r3.changed || r4.changed {
-            actions.params_changed = true;
-        }
+        local_changed |= r3.changed || r4.changed;
     }
-    if r1.changed || r2.changed || r_drive.changed {
+    if local_changed {
         actions.params_changed = true;
+        if state.filter_slots.is_empty() {
+            state.filter_slots.push(crate::FilterSlotUi::default_new());
+        }
+        if let Some(s0) = state.filter_slots.first_mut() {
+            s0.cutoff = state.filter_cutoff;
+            s0.resonance = state.filter_resonance;
+            s0.drive = state.filter_drive;
+            s0.key_tracking = state.filter_key_tracking;
+            s0.filter_type = crate::filter_type_from_mode(state.filter_mode).into();
+        }
+        if let Some(s1) = state.filter_slots.get_mut(1) {
+            s1.cutoff = state.filter2_cutoff;
+            s1.resonance = state.filter2_resonance;
+            s1.drive = state.filter2_drive;
+            s1.filter_type = crate::filter_type_from_mode(state.filter2_mode).into();
+        } else if config.show_osc_column && state.filter_slots.len() == 1 {
+            let mut s1 = crate::FilterSlotUi::default_new();
+            s1.cutoff = state.filter2_cutoff;
+            s1.resonance = state.filter2_resonance;
+            s1.drive = state.filter2_drive;
+            s1.filter_type = crate::filter_type_from_mode(state.filter2_mode).into();
+            state.filter_slots.push(s1);
+        }
     }
 }
 

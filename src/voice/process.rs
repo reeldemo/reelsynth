@@ -5,12 +5,21 @@ use crate::lfo::{lfo_for_target, lfo_value, LfoRuntime};
 use crate::modulation::{compute_macro_mods, compute_mods, merge_mods, ModSources};
 use crate::osc::WtWarpMode;
 use crate::oversample::{process_os, OS_FACTOR};
-use crate::patch::{Lfo, Oscillator, Patch};
+use crate::patch::{FilterSlot, Lfo, Oscillator, Patch};
 use crate::wt_quant::resolve_wt_position;
 use crate::wavetable::WavetableBank;
 use crate::engine::VoiceMpe;
 use super::envelope::advance_envelope;
 use super::filter_svf::{compute_cutoff, equal_power_pan, svf_filter};
+
+/// Stereo SVF state for one filter-chain slot.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct SvfStereoState {
+    pub low: f32,
+    pub band: f32,
+    pub r_low: f32,
+    pub r_band: f32,
+}
 
 /// Per-voice DSP state shared by offline `render_note` and realtime voices.
 #[derive(Clone, Debug)]
@@ -22,14 +31,8 @@ pub struct VoiceState {
     pub filt_env_level: f32,
     pub filt_env_stage: u8,
     pub filt_env_time: f32,
-    pub svf_low: f32,
-    pub svf_band: f32,
-    pub svf_r_low: f32,
-    pub svf_r_band: f32,
-    pub svf2_low: f32,
-    pub svf2_band: f32,
-    pub svf2_r_low: f32,
-    pub svf2_r_band: f32,
+    /// Per-slot SVF state for the musical filter chain (L/R).
+    pub svf_stages: Vec<SvfStereoState>,
     /// 0..1 fade applied to filter output after note-on (kills HP cold-start click).
     pub filter_fade: f32,
     /// Previous filtered outputs for pitch-aware slew limiting (kills residual wrap clicks).
@@ -62,14 +65,7 @@ impl VoiceState {
             filt_env_level: 0.0,
             filt_env_stage: 0,
             filt_env_time: 0.0,
-            svf_low: 0.0,
-            svf_band: 0.0,
-            svf_r_low: 0.0,
-            svf_r_band: 0.0,
-            svf2_low: 0.0,
-            svf2_band: 0.0,
-            svf2_r_low: 0.0,
-            svf2_r_band: 0.0,
+            svf_stages: vec![SvfStereoState::default(); 2],
             filter_fade: 0.0,
             last_out_l: 0.0,
             last_out_r: 0.0,
@@ -95,14 +91,7 @@ impl VoiceState {
         self.filt_env_level = 0.0;
         self.filt_env_stage = 0;
         self.filt_env_time = 0.0;
-        self.svf_low = 0.0;
-        self.svf_band = 0.0;
-        self.svf_r_low = 0.0;
-        self.svf_r_band = 0.0;
-        self.svf2_low = 0.0;
-        self.svf2_band = 0.0;
-        self.svf2_r_low = 0.0;
-        self.svf2_r_band = 0.0;
+        self.svf_stages.clear();
         self.filter_fade = 0.0;
         self.last_out_l = 0.0;
         self.last_out_r = 0.0;
@@ -225,7 +214,11 @@ pub fn process_sample_stages(state: &mut VoiceState, ctx: &VoiceSampleContext<'_
         let bank = ctx
             .banks
             .get(bank_idx)
-            .unwrap_or_else(|| ctx.banks.first().expect("at least one bank"));
+            .or_else(|| ctx.banks.first());
+        let Some(bank) = bank else {
+            phase_idx += osc.unison.max(1) as usize;
+            continue;
+        };
 
         let pos_mod = mods
             .get(&format!("osc{}_position", oi + 1))
@@ -336,85 +329,69 @@ pub fn process_sample_stages(state: &mut VoiceState, ctx: &VoiceSampleContext<'_
 
     let filt_env_level = filt_env;
 
+    let base_cutoff_ref = ctx.patch.filter.cutoff.max(1.0);
     let cutoff_mod = mods.get("filter_cutoff").copied().unwrap_or(0.0)
-        + lfo_for_target(&ctx.patch.lfo, lfo1, "cutoff") * ctx.patch.filter.cutoff
-        + lfo_for_target(&ctx.patch.lfo2, lfo2, "cutoff") * ctx.patch.filter.cutoff
+        + lfo_for_target(&ctx.patch.lfo, lfo1, "cutoff") * base_cutoff_ref
+        + lfo_for_target(&ctx.patch.lfo2, lfo2, "cutoff") * base_cutoff_ref
         + ctx.mpe.timbre * 2000.0;
     let res_mod = mods.get("filter_resonance").copied().unwrap_or(0.0)
         + ctx.mpe.timbre * 0.15;
 
-    let cutoff1 = compute_cutoff(
-        &ctx.patch.filter,
-        cutoff_mod,
-        base_freq,
-        filt_env_level,
-        ctx.sr,
-    );
-    let resonance1 = (ctx.patch.filter.resonance + res_mod).clamp(0.0, 0.95);
+    let slots = ctx.patch.effective_filter_slots();
+    let n_stages = slots.len().min(FilterSlot::MAX_SLOTS);
+    if state.svf_stages.len() != n_stages {
+        state.svf_stages.resize(n_stages, SvfStereoState::default());
+    }
 
-    let cutoff2 = compute_cutoff(
-        &ctx.patch.filter2,
-        cutoff_mod * 0.5,
-        base_freq,
-        filt_env_level,
-        ctx.sr,
-    );
-    let resonance2 = (ctx.patch.filter2.resonance + res_mod * 0.5).clamp(0.0, 0.95);
+    let mut filtered_l = left;
+    let mut filtered_r = right;
 
-    let driven_l = process_os(left, |sample, _| soft_drive(sample, ctx.patch.filter.drive));
-    let driven_r = process_os(
-        right,
-        |sample, _| soft_drive(sample, ctx.patch.filter2.drive.max(ctx.patch.filter.drive)),
-    );
-    // Stereo-coherent series dual filter: same chain on L and R (never HP-only on one ear).
-    let stage1_l = svf_filter(
-        &mut state.svf_low,
-        &mut state.svf_band,
-        driven_l,
-        cutoff1,
-        resonance1,
-        &ctx.patch.filter.filter_type,
-        ctx.sr,
-        ctx.patch.filter.drive,
-        ctx.dt,
-        0,
-    );
-    let stage1_r = svf_filter(
-        &mut state.svf_r_low,
-        &mut state.svf_r_band,
-        driven_r,
-        cutoff1,
-        resonance1,
-        &ctx.patch.filter.filter_type,
-        ctx.sr,
-        ctx.patch.filter.drive,
-        ctx.dt,
-        0,
-    );
-    let filtered_l = svf_filter(
-        &mut state.svf2_low,
-        &mut state.svf2_band,
-        stage1_l,
-        cutoff2,
-        resonance2,
-        &ctx.patch.filter2.filter_type,
-        ctx.sr,
-        ctx.patch.filter2.drive,
-        ctx.dt,
-        0,
-    );
-    let filtered_r = svf_filter(
-        &mut state.svf2_r_low,
-        &mut state.svf2_r_band,
-        stage1_r,
-        cutoff2,
-        resonance2,
-        &ctx.patch.filter2.filter_type,
-        ctx.sr,
-        ctx.patch.filter2.drive,
-        ctx.dt,
-        0,
-    );
+    if n_stages == 0 {
+        // Explicit empty chain = bypass (no SVF).
+    } else {
+        let mut active_idx = 0usize;
+        for (si, slot) in slots.iter().take(n_stages).enumerate() {
+            if !slot.is_active() {
+                continue;
+            }
+            let mod_scale = if active_idx == 0 { 1.0 } else { 0.5 };
+            active_idx += 1;
+            let filter = slot.to_filter();
+            let cutoff = compute_cutoff(
+                &filter,
+                cutoff_mod * mod_scale,
+                base_freq,
+                filt_env_level,
+                ctx.sr,
+            );
+            let resonance = (filter.resonance + res_mod * mod_scale).clamp(0.0, 0.95);
+            let stage = &mut state.svf_stages[si];
+            filtered_l = svf_filter(
+                &mut stage.low,
+                &mut stage.band,
+                filtered_l,
+                cutoff,
+                resonance,
+                &filter.filter_type,
+                ctx.sr,
+                filter.drive,
+                ctx.dt,
+                0,
+            );
+            filtered_r = svf_filter(
+                &mut stage.r_low,
+                &mut stage.r_band,
+                filtered_r,
+                cutoff,
+                resonance,
+                &filter.filter_type,
+                ctx.sr,
+                filter.drive,
+                ctx.dt,
+                0,
+            );
+        }
+    }
 
     if state.filter_fade < 1.0 {
         state.filter_fade = (state.filter_fade + ctx.dt / FILTER_FADE_SECONDS).min(1.0);
@@ -500,13 +477,6 @@ fn wt_position(
     let lfo_pos = lfo_for_target(lfo1_cfg, lfo1, "wt_position")
         + lfo_for_target(lfo2_cfg, lfo2, "wt_position");
     resolve_wt_position(osc, pos_mod + lfo_pos, slot_mod, num_frames).clamp(0.0, max_pos)
-}
-
-fn soft_drive(input: f32, drive: f32) -> f32 {
-    if drive <= 0.0 {
-        return input;
-    }
-    (input * (1.0 + drive * 4.0)).tanh()
 }
 
 fn pseudo_noise(seed: u32) -> f32 {

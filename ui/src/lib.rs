@@ -1,15 +1,19 @@
 mod ambient;
+mod agent_api;
 mod audit_registry;
 mod center_layout;
 mod compose;
 mod contrast_audit;
 mod region;
+mod filter_rack;
 mod fx_rack;
+mod overtone_rack;
 mod layout;
 mod layout_audit;
 mod mod_matrix;
 mod osc_column;
 mod oscillator_ui;
+mod quant_interp;
 mod performance;
 mod scope_strip;
 mod shell;
@@ -18,11 +22,19 @@ mod state_sync;
 pub mod widgets;
 pub mod wt;
 
+pub use agent_api::{AgentLayerSnap, AgentSession, AgentSnapshot};
 pub use region::region;
+pub use filter_rack::{
+    draw_filter_chain, filter_slots_from_patch, filter_slots_to_patch, FilterRackResult,
+    FilterSlotUi,
+};
 pub use fx_rack::{
     default_effect_slots, draw_effect_rack, draw_effect_rack_sidebar, effect_slots_from_bypass,
     effect_slots_from_patch, effect_slots_to_bypass, effect_slots_to_patch, EffectRackState,
     EffectSlotUi,
+};
+pub use overtone_rack::{
+    draw_overtone_chain_menu, overtone_slots_to_engine, OvertoneFilterSlotUi, OvertoneRackResult,
 };
 pub use audit_registry::{
     audit_all_elements, audit_compose_panels, audit_id_rect, audit_no_horizontal_overflow,
@@ -59,6 +71,7 @@ pub use osc_column::{
     warp_mode_index, OscColumnInput, OscColumnResult, OscColumnState,
 };
 pub use oscillator_ui::{OscillatorUi, WaveLayerUi, MIN_OSCILLATORS};
+pub use quant_interp::WtQuantInterp;
 pub use performance::PerformanceUi;
 pub use scope_strip::{
     autofix_stack_levels, draw_scope_strip, ScopeStripInput, ScopeStripState, SCOPE_RESULT_LABEL,
@@ -71,15 +84,16 @@ pub use compose::{
 pub use reelsynth::QuantizeDivision;
 pub use shell::draw_shell;
 pub use state::{
-    OscStripContext, OscStripPreviewState, ScopeStripContext, ShellActions, ShellConfig,
-    ShellMidiDevices, ShellMode, UiState, WtView3dMode,
+    OscStripContext, OscStripPreviewState, ScopeStripContext, ShellActions, ShellAppSettings,
+    ShellAudioDevices, ShellConfig, ShellMidiDevices, ShellMode, UiState, WtView3dMode,
 };
 pub use wt::{
     composite_stack_sample, factory_bank, factory_label, set_gpu_renderer_active, FactoryBankEntry,
-    FACTORY_BANKS,
+    QuantSeamMode, FACTORY_BANKS,
 };
 
 pub use state_sync::{
-    compose_to_patch_sequence, filter_mode_from_type, filter_type_from_mode, lfo_shape_from_index,
-    lfo_shape_index, patch_from_state, sync_state_from_patch,
+    apply_loaded_bank_to_design, compose_to_patch_sequence, filter_mode_from_type,
+    filter_type_from_mode, lfo_shape_from_index, lfo_shape_index, patch_from_state,
+    sync_state_from_patch,
 };

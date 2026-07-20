@@ -4,6 +4,16 @@ pub mod patch;
 pub mod osc;
 pub mod fm;
 pub mod fx;
+pub mod overtone;
+pub mod crackle_diag;
+pub mod crackle_eam;
+pub mod artifact_reduce;
+pub mod denoise_opt;
+pub mod denoise_meta;
+pub mod denoise_meta_overnight;
+pub mod sound_bench;
+pub mod seam;
+pub mod signal_library;
 pub mod voice;
 pub mod scope;
 pub mod import;
@@ -25,7 +35,14 @@ pub use performance::{
 };
 pub use wavetable::WavetableBank;
 pub use fx::{default_effects, effects_from_bypass, EffectSlot, EffectType, FxBypass, FxChain};
-pub use patch::{Envelope, Macro, ModSlot, Oscillator, Patch, WaveLayer, WaveSlot};
+pub use overtone::{
+    curve_harshness, OvertoneFilterChain, OvertoneFilterSlot, OvertoneFilterType,
+};
+pub use seam::{periodize_cycle, seam_mode_to_crackle, CrackleVoice, SeamStyle};
+pub use patch::{
+    filter_type_label, legacy_filter_slots, normalize_filter_type, Envelope, Filter, FilterSlot,
+    FILTER_TYPES, Macro, ModSlot, Oscillator, Patch, WaveLayer, WaveSlot,
+};
 pub use wt_quant::{generate_even_wave_slots, resolve_wt_position, resolved_wave_slots};
 pub use voice::{render_note, render_note_single_bank};
 pub use scope::{

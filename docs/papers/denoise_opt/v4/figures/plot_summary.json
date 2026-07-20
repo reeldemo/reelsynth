@@ -1,0 +1,24 @@
+{
+  "run_dir": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T083019Z",
+  "n_points": 5849,
+  "final_iter": 5844,
+  "final_champ": 0.9909298121929169,
+  "baseline_dual_cosine": 0.816584944725037,
+  "delta_vs_baseline": 0.17434486746787992,
+  "n_champ_updates": 1,
+  "champ_events_tail": [
+    {
+      "iter": 1,
+      "champ": 0.9909298121929169,
+      "branch": "nas",
+      "arch_id": "iter_000001"
+    }
+  ],
+  "figures": [
+    "champ_residual_vs_iter.png",
+    "branch_bests_vs_iter.png",
+    "residual_by_branch.png",
+    "champion_timeline.png",
+    "overnight_panel.png"
+  ]
+}

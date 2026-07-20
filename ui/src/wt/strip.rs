@@ -3,7 +3,7 @@ use reelsynth::patch::{Oscillator, WaveSlot};
 use reelsynth::{resolve_wt_position, WavetableBank};
 use reelsynth_ui_theme::{ACCENT_UI, Tokens};
 
-use crate::audit_registry::{record_region, record_used, AuditId};
+use crate::audit_registry::{record_used, AuditId};
 use crate::layout::{RADIUS_SM, WT_STRIP_HEIGHT};
 use crate::oscillator_ui::WaveLayerUi;
 
@@ -186,7 +186,11 @@ fn paint_layer_chips(
             }
         }
 
-        let type_label = layer.source_type.chars().take(3).collect::<String>();
+        let type_label = if layer.residual {
+            "Residual".to_string()
+        } else {
+            layer.source_type.chars().take(3).collect::<String>()
+        };
         painter.text(
             Pos2::new(cell.min.x + 4.0, cell.min.y + 2.0),
             egui::Align2::LEFT_TOP,

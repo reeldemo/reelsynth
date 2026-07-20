@@ -14,6 +14,7 @@ pub enum GraphicsBackend {
 }
 
 impl GraphicsBackend {
+    #[allow(dead_code)] // used by settings UI labels when exposed
     pub fn label(self) -> &'static str {
         match self {
             Self::Auto => "Auto",
@@ -57,6 +58,7 @@ pub enum KeyboardLayoutSetting {
 }
 
 impl KeyboardLayoutSetting {
+    #[allow(dead_code)] // used by settings UI labels when exposed
     pub fn label(self) -> &'static str {
         match self {
             Self::Auto => "Auto",
@@ -90,8 +92,17 @@ pub struct AppSettings {
     pub graphics_backend: GraphicsBackend,
     pub gpu_waveforms: bool,
     pub auto_midi_keyboard: bool,
+    #[serde(default = "default_true")]
+    pub auto_audio_output: bool,
+    /// Last selected CPAL output device name (best-effort; names can change on Windows).
+    #[serde(default)]
+    pub audio_output_device: Option<String>,
     pub keyboard_layout: KeyboardLayoutSetting,
     pub pending_backend_restart: bool,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 impl Default for AppSettings {
@@ -100,6 +111,8 @@ impl Default for AppSettings {
             graphics_backend: GraphicsBackend::Auto,
             gpu_waveforms: true,
             auto_midi_keyboard: true,
+            auto_audio_output: true,
+            audio_output_device: None,
             keyboard_layout: KeyboardLayoutSetting::Auto,
             pending_backend_restart: false,
         }

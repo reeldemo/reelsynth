@@ -3067,7 +3067,7 @@ dependencies = [
 
 [[package]]
 name = "reelsynth"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "approx",
  "numpy",
@@ -3079,7 +3079,7 @@ dependencies = [
 
 [[package]]
 name = "reelsynth-app"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "cpal",
  "crossbeam-channel",
@@ -3096,8 +3096,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "reelsynth-mcp"
+version = "0.2.0"
+dependencies = [
+ "reelsynth-ui",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "reelsynth-plugin"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "eframe",
  "egui",
@@ -3108,7 +3117,7 @@ dependencies = [
 
 [[package]]
 name = "reelsynth-ui"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "eframe",
  "egui",
@@ -3116,11 +3125,12 @@ dependencies = [
  "reelsynth",
  "reelsynth-ui-theme",
  "serde",
+ "serde_json",
 ]
 
 [[package]]
 name = "reelsynth-ui-theme"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "eframe",
  "egui",

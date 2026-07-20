@@ -1,0 +1,38 @@
+% DenoiseOpt architecture diagram (TikZ)
+\begin{figure}[t]
+  \centering
+  \resizebox{\columnwidth}{!}{%
+  \begin{tikzpicture}[
+    font=\footnotesize,
+    box/.style={draw, rounded corners=1.5pt, align=center, inner sep=3pt, minimum height=0.55cm},
+    io/.style={box, fill=black!6},
+    classical/.style={box, fill=black!3},
+    neural/.style={box, fill=black!8},
+    meta/.style={box, fill=black!12},
+    arr/.style={-{Stealth}, thick},
+    node distance=0.45cm and 0.35cm
+  ]
+    \node[io] (eng) {engine cycle $x$};
+    \node[classical, right=of eng] (dc) {DualCosine / FIR / fades};
+    \node[neural, right=of dc] (cell) {bake cell\\(MLP / U-Net-lite / MoE)};
+    \node[io, right=of cell] (y) {baked $y=\Theta(x;\theta)$};
+    \node[io, below=0.7cm of eng] (ideal) {ideal sibling $r^{\star}$};
+    \node[meta, below=0.7cm of cell] (R) {prolonged $R$\\(tile $N{=}16$)};
+    \node[meta, below=0.55cm of R] (outer) {Hybrid outer loop:\\PPO $\cdot$ GA $\cdot$ PBT $\cdot$ NAS $\cdot$ combo};
+    \node[io, right=of outer] (champ) {champion / favorite};
+
+    \draw[arr] (eng) -- (dc);
+    \draw[arr] (dc) -- (cell);
+    \draw[arr] (cell) -- (y);
+    \draw[arr] (y) |- (R);
+    \draw[arr] (ideal) -| (R);
+    \draw[arr] (R) -- (outer);
+    \draw[arr] (outer) -- (champ);
+    \draw[arr, dashed] (outer) |- ++(0,1.15) -| (cell);
+  \end{tikzpicture}%
+  }
+  \caption{DenoiseOpt bake path and residual-scored hybrid meta-search.
+  Classical seam ops and optional residual cells form a bake cell. Prolonged $R$ ranks proposals.
+  The outer loop rotates PPO/GA/PBT/NAS/combo branches. Dashed arrow: architecture proposals update the cell.}
+  \label{fig:denoiseopt-arch}
+\end{figure}

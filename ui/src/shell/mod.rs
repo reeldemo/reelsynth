@@ -18,8 +18,8 @@ use crate::mod_matrix::{draw_mod_matrix, ModMatrixState};
 use crate::region::region;
 
 pub use crate::state::{
-    OscStripContext, OscStripPreviewState, ScopeStripContext, ShellActions, ShellConfig,
-    ShellMidiDevices, ShellMode, UiState, WtView3dMode,
+    OscStripContext, ScopeStripContext, ShellActions, ShellAppSettings, ShellAudioDevices,
+    ShellConfig, ShellMidiDevices, ShellMode, UiState, WtView3dMode,
 };
 
 // Re-exports for shell submodules (`use super::*`).
@@ -27,17 +27,16 @@ pub(super) use egui::{Color32, FontId};
 pub(super) use reelsynth::WavetableBank;
 pub(super) use reelsynth_ui_theme::heading_font;
 pub(super) use crate::layout::{
-    GRID_UNIT, SPACE_SM, WT_MORPH_HEIGHT, WT_STRIP_HEIGHT, WT_VIEW_MIN_HEIGHT,
+    GRID_UNIT, SPACE_SM, WT_VIEW_MIN_HEIGHT,
 };
-pub(super) use crate::osc_column::{draw_osc_column, OscColumnState};
 pub(super) use crate::scope_strip::{
-    draw_scope_strip, ScopeStripInput, ScopeStripState, SCOPE_STRIP_HEIGHT,
+    draw_scope_strip, ScopeStripInput, ScopeStripState,
 };
 pub(super) use crate::widgets::{
     adsr_graph, format_depth, format_env_time, format_lfo_rate, format_sustain, PianoKeyboard,
 };
 pub(super) use crate::wt::{
-    morph_amount_for_position, morph_position, StripMode, WtMorph, WtStrip, WtView2d,
+    morph_amount_for_position, StripMode, WtMorph, WtStrip, WtSelectedLayerView, WtViewResult,
     WtView3dStack, FACTORY_BANKS,
 };
 
@@ -48,9 +47,11 @@ pub fn draw_shell(
     bank: Option<&mut WavetableBank>,
     preview_patch: &Patch,
     midi: &ShellMidiDevices<'_>,
+    audio: &ShellAudioDevices<'_>,
     config: &ShellConfig,
     scope: Option<ScopeStripContext<'_>>,
     osc_preview: Option<OscStripContext<'_>>,
+    app_settings: Option<&mut ShellAppSettings>,
 ) -> ShellActions {
     let compose_mode = state.shell_mode == ShellMode::Compose;
     let layout_opts = ShellLayoutOptions {
@@ -120,7 +121,7 @@ pub fn draw_shell(
         border,
     );
 
-    draw_header(ui, layout.header, state, midi, &mut actions);
+    draw_header(ui, layout.header, state, midi, audio, &mut actions, app_settings);
 
     if compose_mode {
         draw_compose_shell(ui, layout.main, state, &mut actions, layout.scale);

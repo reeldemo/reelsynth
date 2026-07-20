@@ -1,0 +1,89 @@
+\section{Related Work}
+\label{sec:related_work}
+
+We organize prior work by mechanism.
+\textbf{Used} lines are methodological or comparative anchors for residual-scored RL+GA meta-search.
+\textbf{Screened} lines were inspected as contrast but are not treated as dependencies.
+Every citation below has a downloaded OA PDF in the companion meta repository.
+Paraphrases prefer attached abstracts and OA PDF snippets over title-only citation.
+
+\subsection{Discontinuity control and modular audio DSP}
+Alias-free digital synthesis of classic analog waveforms (BLIT/BLEP lineage) states the wrap discontinuity problem for trivial oscillators~\cite{stilson1996}.
+PolyBLEP-style fractional-delay corrections give practical antialiasing oscillators for subtractive synthesis~\cite{nam2009polyblep}.
+BLAMP corner rounding treats discontinuities in the first derivative (triangular edges, clipping, rectification) without heavy oversampling~\cite{esqueda2016blamp}.
+DDSP reframes DSP modules as composable blocks inside learning pipelines~\cite{engel2020}.
+We use that framing for small bake/FIR/MLP seam cells.
+We do not train end-to-end neural vocoders for every meta trial.
+These works are \textbf{used} as domain anchors for the operator vocabulary and for why prolonged cyclic playback is the outer judge.
+
+\subsection{Label-free restoration}
+Noise2Noise shows that restoration mappings can be learned from corrupted observations alone by exploiting structure in the corruption process~\cite{lehtinen2018}.
+Speech Noise2Noise denoisers apply the same idea to waveforms without clean paired audio~\cite{kashyap2021n2n}.
+Mixture invariant training ranks unsupervised separation systems without stem labels~\cite{wisdom2020}.
+That philosophy motivates ranking denoise candidates without paired studio-clean wavetable cycles.
+The residual compares an engine-baked tiling to a procedural ideal that withholds open-wrap cliffs.
+We \textbf{use} this family as conceptual justification for unsupervised residual ranking.
+We do not retrain a Noise2Noise CNN on images.
+
+\subsection{Waveform denoising and separation cells}
+Deep learning for audio surveys the move from hand-designed features to learned time/frequency models~\cite{purwins2019}.
+Wave-U-Net performs end-to-end source separation with multi-scale 1-D U-Nets~\cite{stoller2018}.
+Improved Wave-U-Net speech enhancement and singing-voice U-Nets popularized encoder--decoder skips on audio~\cite{macartney2018,jansson2017}.
+The original U-Net, ResNet residuals, and Transformer attention supply the block primitives we shrink to bake width~\cite{ronneberger2015,he2016resnet,vaswani2017}.
+Conv-TasNet and dual-path RNN demonstrated strong time-domain separation with temporal convolutions and long-context paths~\cite{luo2019,luo2020dprnn}.
+SepFormer and audio spectrogram transformers push attention-heavy audio stacks further~\cite{subakan2021,gong2021ast}.
+These lines are \textbf{used} as design priors for tiny searchable cells (shallow U-Net / dilated / dual-path / attention blocks under a strict per-trial bake budget).
+They are not frozen full-scale separators inside every meta trial.
+
+\subsection{NAS and RL controllers}
+Elsken et al.\ taxonomize NAS by search space, strategy, and evaluation cost~\cite{elsken2019}.
+Their performance-estimation axis includes lower-fidelity proxies such as shorter training, data subsets, and lower-resolution images~\cite{elsken2019}.
+Zoph and Le couple RL controllers to architecture search~\cite{zoph2017nas}.
+ENAS adds parameter sharing for efficient discrete search~\cite{pham2018}.
+Progressive and platform-aware NAS add staged evaluation and latency-aware rewards~\cite{liu2018pnas,tan2019mnasnet}.
+We \textbf{use} this family as the ancestor of RL proposing architecture edits (add/remove/mutate ops, toggle residual-primary, mutate MLP/FIR), scored with prolonged residual.
+PPO supplies the clipped-surrogate policy update when the overnight loop logs PPO mutation branches~\cite{schulman2017}.
+
+\subsection{Evolutionary NAS and population schedules}
+Large-scale and regularized / aging evolution showed that evolutionary NAS can discover competitive image classifiers when population turnover is carefully regularized~\cite{real2017large,real2019}.
+Population Based Training jointly adapts weights and hyperparameters in an asynchronous population~\cite{jaderberg2017}.
+Practical Bayesian optimization~\cite{snoek2012} and CMA-ES tutorials~\cite{hansen2016cmaes} inform local Bayesian and continuous evolutionary prior families.
+These are \textbf{used} for GA tournament/crossover branches, PBT-style exploit--mutate, and literature-combo priors, implemented at synthesizer-trial scale.
+
+\subsection{Evolutionary reinforcement learning hybrids}
+Khadka and Tumer's evolution-guided policy gradient (ERL) interleaves an evolutionary population with an RL actor to mitigate sparse reward and brittle hyperparameters in deep RL~\cite{khadka2018}.
+We \textbf{use} ERL as the spirit of interleaving GA population steps with PPO updates at tiny population sizes.
+We do not claim a full ERL robotics stack.
+
+\subsection{Mixture-of-experts soft gating}
+Sparsely gated MoE layers increase capacity via conditional computation~\cite{shazeer2017}.
+We \textbf{use} MoE as motivation for soft gates over heterogeneous seam blocks (e.g., U-Net vs dilated vs attention cells) under residual scoring, at bake-scale widths.
+
+\subsection{Used versus screened}
+\label{sec:used-screened}
+
+\paragraph{Used (methodological or comparative anchors).}
+\begin{itemize}
+  \item Discontinuity / VA lineage:~\cite{stilson1996,esqueda2016blamp,nam2009polyblep}.
+  \item Unsupervised restoration philosophy:~\cite{lehtinen2018,kashyap2021n2n,wisdom2020}.
+  \item Modular / differentiable audio DSP context:~\cite{engel2020}.
+  \item Audio DL and compact waveform cells:~\cite{purwins2019,stoller2018,macartney2018,jansson2017,luo2019,luo2020dprnn,subakan2021,gong2021ast,ronneberger2015,he2016resnet,vaswani2017}.
+  \item NAS / RL controllers / PPO:~\cite{elsken2019,zoph2017nas,pham2018,schulman2017,tan2019mnasnet,liu2018pnas}.
+  \item Evolutionary NAS and population HPO:~\cite{real2017large,real2019,jaderberg2017,snoek2012,hansen2016cmaes}.
+  \item ERL hybrid outer loop:~\cite{khadka2018}.
+  \item MoE soft gating prior:~\cite{shazeer2017}.
+\end{itemize}
+
+\paragraph{Screened (relevant contrast, not dependencies).}
+\begin{itemize}
+  \item \textbf{MAML}~\cite{finn2017}: bi-level / fast-adaptation framing. We do not differentiate through a deep task network. Inner fits are coordinate-style updates on bake parameters. Outer rank is residual $R$.
+  \item \textbf{DARTS}~\cite{liu2019}: continuous relaxation of architecture search. We keep discrete ops + small cells under residual scoring.
+  \item \textbf{Demucs / Hybrid Demucs / realtime waveform enhancement}~\cite{dfossez2019,dfossez2021,dfossez2020}: strong separators and enhancers, but full multi-scale / hybrid STFT stacks are too heavy per meta trial under overnight bake budgets.
+  \item \textbf{DiffWave}~\cite{kong2021}: diffusion vocoder. Screened as a generative sampling stack, not a seam bake operator.
+  \item \textbf{SEGAN-style adversarial enhancement}~\cite{pascual2017}: optional tiny adversarial cues only. Full GAN training loops screened for per-trial cost.
+\end{itemize}
+
+\paragraph{Positioning.}
+Relative to this map, the present work contributes (i)~a prolonged residual objective for periodic seam denoising, (ii)~an explicitly hybrid RL+GA(+PBT) meta-outer loop with honest branch naming, and (iii)~a used/screened literature protocol tied to OA PDF downloads.
+We do not claim SOTA on general speech enhancement or music separation corpora.
+The primary claim is protocol-level: residual-scored meta-search for cycle-local audio denoise operators under a declared compute budget.

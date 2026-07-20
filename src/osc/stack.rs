@@ -333,4 +333,222 @@ mod tests {
             "avg ({avg}) vs avg_equal ({eq}) should differ"
         );
     }
+
+    /// Overlay is same-sample-time Add (not async mistiming). Crackle tracks waveform
+    /// shape / wrap cliffs / HF — different signal types behave differently.
+    #[test]
+    fn diagnose_signal_types_and_simultaneous_overlay() {
+        use crate::overtone::{hf_harshness, wrap_harshness};
+
+        let bank = WavetableBank::factory_saw_morph();
+        let n = 256usize;
+        let phase_inc = 1.0 / n as f32;
+
+        let render = |types: &[&str], detune_cents: f32| -> Vec<f32> {
+            let osc = Oscillator {
+                wave_layers: types
+                    .iter()
+                    .enumerate()
+                    .map(|(i, ty)| WaveLayer {
+                        source_type: (*ty).into(),
+                        level: 1.0,
+                        detune: if i == 1 { detune_cents } else { 0.0 },
+                        ..WaveLayer::default()
+                    })
+                    .collect(),
+                stack_mode: "add".into(),
+                ..Oscillator::default_va()
+            };
+            (0..n)
+                .map(|i| {
+                    let phase = i as f32 / n as f32;
+                    sample_stack(
+                        &osc,
+                        &bank,
+                        std::slice::from_ref(&bank),
+                        &[],
+                        phase,
+                        phase_inc,
+                        0.0,
+                        WtWarpMode::None,
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0,
+                    )
+                })
+                .collect()
+        };
+
+        let l0 = WaveLayer {
+            source_type: "sine".into(),
+            level: 1.0,
+            ..WaveLayer::default()
+        };
+        let l1 = WaveLayer {
+            source_type: "sine".into(),
+            level: 1.0,
+            ..WaveLayer::default()
+        };
+        let phase = 0.3f32;
+        let a = sample_layer(
+            &l0,
+            &bank,
+            phase,
+            phase_inc,
+            0.0,
+            WtWarpMode::None,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+        );
+        let b = sample_layer(
+            &l1,
+            &bank,
+            phase,
+            phase_inc,
+            0.0,
+            WtWarpMode::None,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+        );
+        let sum = sample_stack(
+            &Oscillator {
+                wave_layers: vec![l0, l1],
+                stack_mode: "add".into(),
+                ..Oscillator::default_va()
+            },
+            &bank,
+            std::slice::from_ref(&bank),
+            &[],
+            phase,
+            phase_inc,
+            0.0,
+            WtWarpMode::None,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+        );
+        let simultaneous_add_ok = (sum - (a + b)).abs() < 1e-5;
+
+        let pairs: &[(&str, &[&str], f32)] = &[
+            ("sine+sine", &["sine", "sine"], 0.0),
+            ("sine+saw", &["sine", "saw"], 0.0),
+            ("saw+saw", &["saw", "saw"], 0.0),
+            ("square+square", &["square", "square"], 0.0),
+            ("saw+saw_detune7c", &["saw", "saw"], 7.0),
+        ];
+
+        let mut rows = Vec::new();
+        for (name, types, detune) in pairs {
+            let sig = render(types, *detune);
+            let peak = sig.iter().copied().map(f32::abs).fold(0.0f32, f32::max);
+            let wrap = wrap_harshness(&sig);
+            let hf = hf_harshness(&sig);
+            let mut max_step = 0.0f32;
+            for w in sig.windows(2) {
+                max_step = max_step.max((w[1] - w[0]).abs());
+            }
+            max_step = max_step.max((sig[0] - sig[sig.len() - 1]).abs());
+            let above1 = sig.iter().filter(|&&x| x.abs() > 1.0).count();
+            rows.push(serde_json::json!({
+                "pair": name,
+                "peak": peak,
+                "wrap": wrap,
+                "hf": hf,
+                "max_step": max_step,
+                "samples_above_1": above1,
+            }));
+        }
+
+        // #region agent log
+        let payload = serde_json::json!({
+            "sessionId": "0ab8f9",
+            "runId": "signal-types",
+            "hypothesisId": "H-timing-vs-shape",
+            "location": "osc/stack.rs:diagnose_signal_types_and_simultaneous_overlay",
+            "message": "overlay is same-time Add; crackle from shape/wrap not async delay",
+            "data": {
+                "simultaneous_add_equals_a_plus_b": simultaneous_add_ok,
+                "carrier_phase_shared": true,
+                "async_mistiming": false,
+                "detune_shifts_layer_phase": true,
+                "pairs": rows
+            },
+            "timestamp": std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_millis())
+                .unwrap_or(0)
+        });
+        if let Ok(mut f) = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open("debug-0ab8f9.log")
+        {
+            use std::io::Write;
+            let _ = writeln!(f, "{payload}");
+        }
+        // #endregion
+
+        assert!(simultaneous_add_ok, "layers must be summed at the same sample instant");
+        let sine_sine = render(&["sine", "sine"], 0.0);
+        let saw_saw = render(&["saw", "saw"], 0.0);
+        assert!(
+            wrap_harshness(&saw_saw) > wrap_harshness(&sine_sine) * 5.0,
+            "saw+saw wrap much worse than sine+sine"
+        );
+        assert!(hf_harshness(&saw_saw) > hf_harshness(&sine_sine));
+    }
+
+    /// Result / composite curve must not have a near-vertical wrap cliff at A4.
+    #[test]
+    fn factory_lead_stack_wrap_not_steep() {
+        let bank = WavetableBank::factory_saw_morph();
+        let patch = crate::patch::Patch::factory_lead();
+        let osc = &patch.oscillators[0];
+        let dt = 440.0 / 44_100.0;
+        let mut phase = 1.0 - 8.0 * dt;
+        let mut prev = sample_stack(
+            osc,
+            &bank,
+            std::slice::from_ref(&bank),
+            &[],
+            phase,
+            dt,
+            0.0,
+            WtWarpMode::None,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+        );
+        let mut max_jump = 0.0f32;
+        for _ in 0..16 {
+            phase = (phase + dt).fract();
+            let cur = sample_stack(
+                osc,
+                &bank,
+                std::slice::from_ref(&bank),
+                &[],
+                phase,
+                dt,
+                0.0,
+                WtWarpMode::None,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+            );
+            max_jump = max_jump.max((cur - prev).abs());
+            prev = cur;
+        }
+        assert!(
+            max_jump < 0.22,
+            "result curve wrap too steep: {max_jump}"
+        );
+    }
 }

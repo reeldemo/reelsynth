@@ -1,0 +1,59 @@
+{
+  "metrics": {
+    "n_samples": 4096,
+    "cycle_length_N": 256,
+    "prolong_tiles": 16,
+    "seam_width": 8,
+    "ideal_rms": {
+      "mean": 0.7210429310798645,
+      "std": 0.01584848202764988,
+      "min": 0.6727251410484314,
+      "max": 0.7797593474388123,
+      "p50": 0.7201662659645081
+    },
+    "engine_residual_rms": {
+      "mean": 0.020539075136184692,
+      "std": 0.01315583847463131,
+      "min": 0.0039571174420416355,
+      "max": 0.06435546278953552,
+      "p50": 0.016811171546578407
+    },
+    "wrap_discontinuity_abs": {
+      "mean": 0.9130843877792358,
+      "std": 0.6336261630058289,
+      "min": 1.9848346710205078e-05,
+      "max": 2.7871997356414795,
+      "p50": 0.8319320678710938
+    },
+    "identity_residual_R": {
+      "mean": 0.9714958667755127,
+      "std": 0.018290098756551743,
+      "min": 0.9054800271987915,
+      "max": 0.9947156310081482
+    },
+    "family_labels": null,
+    "note": "Single synthetic family: make_batch sine+cliff (not Rust sound_bench families). No train/eval split of labeled clean audio: overnight search draws i.i.d. batches from the same generator; this freeze is the paper holdout for method tables.",
+    "generator": {
+      "fn": "overnight_gpu_rl_arch.make_batch",
+      "procedure": "Per sample: two-harmonic sine (freq~U(1,4), phase~U(0,2pi)), seam cliff amplitude ~\u00b1U(0.08,0.43) applied over SEAM_W samples at both ends, plus seam-boosted Gaussian noise (0.02 at ends, 0.15\u00d7 mid).",
+      "eval_seed": 20260719,
+      "overnight_search_seed": 1902771841,
+      "cycle_length": 256,
+      "prolong_tiles": 16,
+      "seam_width": 8,
+      "score_batch": 64,
+      "metrics_n_samples": 4096
+    }
+  },
+  "generator": {
+    "fn": "overnight_gpu_rl_arch.make_batch",
+    "procedure": "Per sample: two-harmonic sine (freq~U(1,4), phase~U(0,2pi)), seam cliff amplitude ~\u00b1U(0.08,0.43) applied over SEAM_W samples at both ends, plus seam-boosted Gaussian noise (0.02 at ends, 0.15\u00d7 mid).",
+    "eval_seed": 20260719,
+    "overnight_search_seed": 1902771841,
+    "cycle_length": 256,
+    "prolong_tiles": 16,
+    "seam_width": 8,
+    "score_batch": 64,
+    "metrics_n_samples": 4096
+  }
+}

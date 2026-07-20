@@ -60,7 +60,7 @@ pub fn draw_performance_header(
             .size(10.0)
             .color(tokens.text_muted),
     );
-    let combo = reel_combo(ui, "perf_settings", select_value_text(&summary), 148.0, |ui| {
+    let combo = reel_combo(ui, "perf_settings", select_value_text(&summary), 110.0, |ui| {
         styled_menu_body(ui, |ui| {
             let perf = &mut state.performance;
 

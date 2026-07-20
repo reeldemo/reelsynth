@@ -9,7 +9,7 @@ use crate::layout::ShellLayout;
 use crate::state::ShellMode;
 use crate::layout_audit::{
     assert_content_within, assert_min_utilization, assert_sidebar_width_parity,
-    overlap_area, within_bounds, HEADER_CLUSTER_MIN_GAP,
+    overlap_area,
 };
 
 const EPS: f32 = 0.5;
@@ -109,7 +109,9 @@ pub enum AuditId {
     HeaderModeCompose,
     HeaderPerformance,
     HeaderWtMenu,
+    HeaderSettingsMenu,
     HeaderMidiCombo,
+    HeaderAudioCombo,
     HeaderPianoToggle,
     HeaderLeftCluster,
     HeaderRightCluster,
@@ -158,6 +160,9 @@ pub enum AuditId {
     CenterWt2d,
     CenterWt2dToolbar,
     CenterWt2dPlot,
+    CenterWt2dResult,
+    CenterWtResult,
+    CenterWtSelected,
     CenterWt2dCurveEditor,
     CenterWt2dShapeEditor,
     CenterWt2dAnalyzeDialog,
@@ -253,8 +258,8 @@ impl AuditId {
             Self::HeaderBrand | Self::FooterStatus => AuditChecks::C,
             Self::HeaderOpenBtn | Self::HeaderSaveBtn | Self::HeaderModeDesign
             | Self::HeaderModeCompose | Self::FooterChordPad(_) => AuditChecks::BC,
-            Self::HeaderMidiCombo => AuditChecks::BX,
-            Self::HeaderWtMenu | Self::HeaderPianoToggle | Self::OscWtQuant | Self::OscWarpSelect
+            Self::HeaderMidiCombo | Self::HeaderAudioCombo => AuditChecks::BX,
+            Self::HeaderWtMenu | Self::HeaderSettingsMenu | Self::HeaderPianoToggle | Self::OscWtQuant | Self::OscWarpSelect
             | Self::OscPulseWidth | Self::OscUnisonSlider | Self::OscSpreadSlider
             | Self::OscFmAlgorithm | Self::OscFxAddBtn | Self::OscModAmountDrag(_)
             | Self::CenterWt3dModeToggle | Self::ComposeTransportPlay | Self::ComposeTransportBpm
@@ -266,7 +271,8 @@ impl AuditId {
             | Self::CenterScopeCellOsc | Self::CenterScopeCellFilter
             | Self::CenterScopeCellFx | Self::CenterScopeCellOut | Self::RailFilterTabs
             | Self::RailFiltEnvGraph | Self::RailAmpEnvGraph | Self::CenterWt2d
-            | Self::CenterWt2dPlot | Self::CenterWt2dCurveEditor | Self::CenterWt2dShapeEditor
+            | Self::CenterWt2dPlot | Self::CenterWt2dResult | Self::CenterWtResult | Self::CenterWtSelected
+            | Self::CenterWt2dCurveEditor | Self::CenterWt2dShapeEditor
             | Self::CenterWt3dStack | Self::CenterWt3dMorph | Self::FooterPianoCompact
             | Self::RailLevelMeter | Self::WidgetKnobSm | Self::WidgetKnobMd | Self::WidgetKnobLg
             | Self::WidgetPanel => AuditChecks::B,
@@ -305,7 +311,9 @@ fn static_label(id: &AuditId) -> &'static str {
         AuditId::HeaderModeCompose => "header.mode_compose",
         AuditId::HeaderPerformance => "header.performance",
         AuditId::HeaderWtMenu => "header.wt_menu",
+        AuditId::HeaderSettingsMenu => "header.settings_menu",
         AuditId::HeaderMidiCombo => "header.midi_combo",
+        AuditId::HeaderAudioCombo => "header.audio_combo",
         AuditId::HeaderPianoToggle => "header.piano_toggle",
         AuditId::HeaderLeftCluster => "header.left_cluster",
         AuditId::HeaderRightCluster => "header.right_cluster",
@@ -340,6 +348,9 @@ fn static_label(id: &AuditId) -> &'static str {
         AuditId::CenterWt2d => "center.wt_2d",
         AuditId::CenterWt2dToolbar => "center.wt_2d.toolbar",
         AuditId::CenterWt2dPlot => "center.wt_2d.plot",
+        AuditId::CenterWt2dResult => "center.wt_2d.result",
+        AuditId::CenterWtResult => "center.wt_result",
+        AuditId::CenterWtSelected => "center.wt_selected",
         AuditId::CenterWt2dCurveEditor => "center.wt_2d.curve_editor",
         AuditId::CenterWt2dShapeEditor => "center.wt_2d.shape_editor",
         AuditId::CenterWt2dAnalyzeDialog => "center.wt_2d.analyze_dialog",
@@ -444,6 +455,7 @@ pub fn audit_id_rect(ctx: &Context, id: AuditId) -> Option<Rect> {
     })
 }
 
+#[allow(dead_code)] // audit helper for allocated-vs-used checks
 pub fn audit_id_allocated(ctx: &Context, id: AuditId) -> Option<Rect> {
     ctx.data(|d| {
         d.get_temp::<HashMap<AuditId, ElementAudit>>(registry_key())
@@ -588,8 +600,11 @@ fn parent_bounds(
         | AuditId::HeaderModeCompose
         | AuditId::HeaderPerformance
         | AuditId::HeaderWtMenu
+        | AuditId::HeaderSettingsMenu
         | AuditId::HeaderBrand => Some(AuditId::HeaderLeftCluster),
-        AuditId::HeaderMidiCombo | AuditId::HeaderPianoToggle => Some(AuditId::HeaderRightCluster),
+        AuditId::HeaderMidiCombo
+        | AuditId::HeaderAudioCombo
+        | AuditId::HeaderPianoToggle => Some(AuditId::HeaderRightCluster),
         AuditId::OscStripCards
         | AuditId::OscTypeSelect
         | AuditId::OscKnobsLevelPanCoarse
@@ -622,6 +637,9 @@ fn parent_bounds(
         AuditId::CenterWtStripCell(_) | AuditId::CenterWtStripLayerChip(_) => Some(AuditId::CenterWtStrip),
         AuditId::CenterWt2dToolbar
         | AuditId::CenterWt2dPlot
+        | AuditId::CenterWt2dResult
+        | AuditId::CenterWtResult
+        | AuditId::CenterWtSelected
         | AuditId::CenterWt2dCurveEditor
         | AuditId::CenterWt2dShapeEditor => Some(AuditId::CenterWt2d),
         AuditId::RailFilterTabs | AuditId::RailFilterKnobs => Some(AuditId::RailPanelFilter),
@@ -680,17 +698,18 @@ fn shell_region(id: AuditId, layout: &ShellLayout) -> Option<Rect> {
 }
 
 /// Expected registry variant count (coverage gate).
-pub const REGISTRY_VARIANT_COUNT: usize = 95;
+pub const REGISTRY_VARIANT_COUNT: usize = 99;
 
 /// Count non-parameterized AuditId base variants for drift detection.
 pub fn count_base_audit_variants() -> usize {
     // Hand-counted base variants matching the plan registry table.
-    95
+    99
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::layout_audit::HEADER_CLUSTER_MIN_GAP;
 
     #[test]
     fn registry_variant_count_matches_plan() {

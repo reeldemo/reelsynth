@@ -25,7 +25,9 @@ pub(super) fn draw_header(
     rect: Rect,
     state: &mut UiState,
     midi: &ShellMidiDevices<'_>,
+    audio: &ShellAudioDevices<'_>,
     actions: &mut ShellActions,
+    mut app_settings: Option<&mut ShellAppSettings>,
 ) {
     let tokens = Tokens::default();
     region(ui, rect, |ui| {
@@ -71,6 +73,7 @@ pub(super) fn draw_header(
                         button_toggle(ui, "Compose", state.shell_mode == ShellMode::Compose);
                     if compose_btn.clicked() {
                         state.shell_mode = ShellMode::Compose;
+                        state.compose.ensure_editable_clip();
                     }
                     record_used(ui.ctx(), AuditId::HeaderModeCompose, compose_btn.rect);
 
@@ -93,7 +96,7 @@ pub(super) fn draw_header(
                             ui.close_menu();
                         }
                         menu_divider(ui);
-                        menu_section_label(ui, "Factory banks");
+                        menu_section_label(ui, "Factory wavetables");
                         for entry in FACTORY_BANKS {
                             if menu_action(ui, entry.label).clicked() {
                                 actions.import_factory_wt = Some(entry.id.to_string());
@@ -118,7 +121,142 @@ pub(super) fn draw_header(
                     });
                     record_used(ui.ctx(), AuditId::HeaderWtMenu, wt_menu.response.rect);
 
-                    let left_cluster = ui.min_rect();
+                    if let Some(settings) = app_settings.as_deref_mut() {
+                        let settings_menu = ui.menu_button(header_menu_label("Settings"), |ui| {
+                            styled_menu_body(ui, |ui| {
+                                ui.set_min_width(220.0);
+                                menu_section_label(ui, "Overtone");
+                                let result = crate::overtone_rack::draw_overtone_chain_menu(
+                                    ui,
+                                    &mut state.overtone_slots,
+                                );
+                                if result.changed {
+                                    actions.params_changed = true;
+                                }
+                                menu_divider(ui);
+                                menu_section_label(ui, "Graphics");
+                                let backend_label = settings.backend_label();
+                                reel_combo(
+                                    ui,
+                                    "settings_graphics_backend",
+                                    select_value_text(backend_label),
+                                    180.0,
+                                    |ui| {
+                                        for (i, label) in
+                                            ShellAppSettings::BACKEND_LABELS.iter().enumerate()
+                                        {
+                                            if menu_selectable(
+                                                ui,
+                                                settings.graphics_backend_idx == i,
+                                                *label,
+                                            )
+                                            .clicked()
+                                            {
+                                                if settings.graphics_backend_idx != i {
+                                                    settings.graphics_backend_idx = i;
+                                                    settings.pending_backend_restart = true;
+                                                    settings.dirty = true;
+                                                }
+                                            }
+                                        }
+                                    },
+                                );
+                                if ui
+                                    .checkbox(&mut settings.gpu_waveforms, "GPU waveforms")
+                                    .changed()
+                                {
+                                    settings.dirty = true;
+                                }
+                                if settings.pending_backend_restart {
+                                    ui.label(
+                                        egui::RichText::new(
+                                            "Restart required for graphics backend",
+                                        )
+                                        .size(10.0)
+                                        .color(Color32::from_rgb(0xde, 0xa0, 0x4a)),
+                                    );
+                                }
+                                menu_divider(ui);
+                                menu_section_label(ui, "Input");
+                                if ui
+                                    .checkbox(
+                                        &mut settings.auto_midi_keyboard,
+                                        "Auto-connect MIDI keyboard",
+                                    )
+                                    .changed()
+                                {
+                                    settings.dirty = true;
+                                }
+                                if ui
+                                    .checkbox(
+                                        &mut settings.auto_audio_output,
+                                        "Auto-select new audio output",
+                                    )
+                                    .changed()
+                                {
+                                    settings.dirty = true;
+                                }
+                                let layout_label = settings.layout_label();
+                                reel_combo(
+                                    ui,
+                                    "settings_keyboard_layout",
+                                    select_value_text(layout_label),
+                                    180.0,
+                                    |ui| {
+                                        for (i, label) in
+                                            ShellAppSettings::LAYOUT_LABELS.iter().enumerate()
+                                        {
+                                            if menu_selectable(
+                                                ui,
+                                                settings.keyboard_layout_idx == i,
+                                                *label,
+                                            )
+                                            .clicked()
+                                            {
+                                                if settings.keyboard_layout_idx != i {
+                                                    settings.keyboard_layout_idx = i;
+                                                    settings.dirty = true;
+                                                }
+                                            }
+                                        }
+                                    },
+                                );
+                                ui.label(
+                                    egui::RichText::new(format!(
+                                        "Detected: {}",
+                                        settings.detected_keyboard_label
+                                    ))
+                                    .size(10.0)
+                                    .color(tokens.text_muted),
+                                );
+                            });
+                        });
+                        record_used(
+                            ui.ctx(),
+                            AuditId::HeaderSettingsMenu,
+                            settings_menu.response.rect,
+                        );
+                    } else {
+                        let overtone_menu = ui.menu_button(header_menu_label("Overtone"), |ui| {
+                            styled_menu_body(ui, |ui| {
+                                let result = crate::overtone_rack::draw_overtone_chain_menu(
+                                    ui,
+                                    &mut state.overtone_slots,
+                                );
+                                if result.changed {
+                                    actions.params_changed = true;
+                                }
+                            });
+                        });
+                        let _ = overtone_menu;
+                    }
+
+                    let left_cluster = {
+                        let r = ui.min_rect();
+                        // Cursor is past the last left control; prefer that over min_rect.max.x
+                        // so popups / wide child allocations don't inflate the cluster.
+                        Rect::from_min_max(r.min, egui::pos2(ui.cursor().min.x, r.max.y))
+                    };
                     ui.ctx().data_mut(|d| {
                         d.insert_temp(header_left_cluster_rect_id(), left_cluster);
                     });
@@ -130,7 +268,9 @@ pub(super) fn draw_header(
                     );
 
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        ui.set_width(ui.available_width());
+                        // Cap to remaining space but size the audit cluster to content,
+                        // not the full leftover strip (which falsely overlaps the left).
+                        ui.set_max_width(ui.available_width().max(0.0));
 
                         ui.horizontal(|ui| {
                             ui.spacing_mut().item_spacing.x = 6.0;
@@ -144,7 +284,7 @@ pub(super) fn draw_header(
                                 Color32::from_rgb(0x4a, 0xde, 0x80),
                             );
                             let _status = ui.label(
-                                egui::RichText::new(truncate_status(&state.status, 48))
+                                egui::RichText::new(truncate_status(&state.status, 32))
                                     .font(FontId::monospace(11.0))
                                     .color(tokens.text_muted),
                             );
@@ -161,19 +301,55 @@ pub(super) fn draw_header(
                             .get(midi.selected)
                             .map(String::as_str)
                             .unwrap_or("MIDI");
-                        let midi_before = ui.min_rect();
-                        reel_combo(ui, "s1_midi_device", select_value_text(midi_label), 148.0, |ui| {
-                            for (idx, name) in midi.names.iter().enumerate() {
-                                if menu_selectable(ui, midi.selected == idx, name).clicked() {
-                                    actions.midi_device_selected = Some(idx);
+                        let midi_resp = reel_combo(
+                            ui,
+                            "s1_midi_device",
+                            select_value_text(midi_label),
+                            120.0,
+                            |ui| {
+                                for (idx, name) in midi.names.iter().enumerate() {
+                                    if menu_selectable(ui, midi.selected == idx, name).clicked() {
+                                        actions.midi_device_selected = Some(idx);
+                                    }
                                 }
-                            }
-                        });
+                            },
+                        );
                         record_region(
                             ui.ctx(),
                             AuditId::HeaderMidiCombo,
-                            midi_before,
-                            ui.min_rect(),
+                            midi_resp.response.rect,
+                            midi_resp.response.rect,
+                        );
+
+                        let audio_label = audio
+                            .names
+                            .get(audio.selected)
+                            .map(String::as_str)
+                            .unwrap_or("Audio");
+                        let audio_resp = reel_combo(
+                            ui,
+                            "s1_audio_device",
+                            select_value_text(audio_label),
+                            120.0,
+                            |ui| {
+                                if audio.names.is_empty() {
+                                    let _ = menu_selectable(ui, true, "No output devices");
+                                } else {
+                                    for (idx, name) in audio.names.iter().enumerate() {
+                                        if menu_selectable(ui, audio.selected == idx, name)
+                                            .clicked()
+                                        {
+                                            actions.audio_device_selected = Some(idx);
+                                        }
+                                    }
+                                }
+                            },
+                        );
+                        record_region(
+                            ui.ctx(),
+                            AuditId::HeaderAudioCombo,
+                            audio_resp.response.rect,
+                            audio_resp.response.rect,
                         );
 
                         let right_cluster = ui.min_rect();
@@ -245,6 +421,7 @@ pub(super) fn sync_osc_position_from_wt(state: &mut UiState) {
 }
 
 /// Legacy alias — sync wt_position from active osc slots.
+#[allow(dead_code)]
 pub(super) fn sync_wt_position_from_osc(state: &mut UiState) {
     sync_wt_from_osc(state, 256);
 }

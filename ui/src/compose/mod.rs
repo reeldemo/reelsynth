@@ -7,14 +7,14 @@ mod scene_grid;
 mod track_list;
 mod transport_bar;
 
-pub use command_history::{CommandHistory, ComposeCommand};
+pub use command_history::CommandHistory;
 pub use piano_roll::PianoRollTool;
 pub use transport_bar::TransportBarActions;
 
 use egui::{Rect, Ui};
 use reelsynth_ui_theme::Tokens;
 
-use crate::audit_registry::{record_region, record_used, AuditId};
+use crate::audit_registry::{record_region, AuditId};
 use crate::layout::{GRID_UNIT, UiScale};
 use crate::region::region;
 use crate::state::{ShellActions, UiState};
@@ -76,17 +76,38 @@ pub struct ComposeUi {
     pub arp_dialog_open: bool,
     pub arp_generate_bars: f32,
     pub arp_replace_notes: bool,
+    /// Scenes panel collapsed by default (Layout A clip-editor shell).
+    pub scenes_collapsed: bool,
+    /// Clip strip (arrangement) collapsed by default — piano roll is the primary surface.
+    pub arrangement_collapsed: bool,
+    /// Rows scrolled down from MIDI pitch 108 (C8).
+    pub pitch_scroll: f32,
+    /// Beats scrolled from clip start.
+    pub beat_scroll: f32,
+    /// Horizontal zoom: 1.0 = fit clip; >1 zooms in.
+    pub beat_zoom: f32,
+    /// Pitch held by pointer on the key column (for note-off on release).
+    pub key_pointer_held: Option<u8>,
+    /// Deferred note-off for click audition (fires next frame).
+    pub pending_audition_off: Option<u8>,
 }
 
 impl Default for ComposeUi {
     fn default() -> Self {
+        let mut project = SequenceProject::default();
+        // Default clip so the roll is never empty on first Compose entry.
+        if let Some(track) = project.tracks.first_mut() {
+            if track.clips.is_empty() {
+                track.clips.push(Clip::new(0.0, 8.0));
+            }
+        }
         Self {
-            project: SequenceProject::default(),
+            project,
             transport: TransportUi::default(),
             snap_division: QuantizeDivision::Sixteenth,
             snap_enabled: true,
             selected_track: 0,
-            selected_clip: None,
+            selected_clip: Some(0),
             selected_notes: std::collections::HashSet::new(),
             piano_roll_tool: PianoRollTool::Pencil,
             piano_roll_focused: false,
@@ -99,6 +120,14 @@ impl Default for ComposeUi {
             arp_dialog_open: false,
             arp_generate_bars: 2.0,
             arp_replace_notes: true,
+            scenes_collapsed: true,
+            arrangement_collapsed: true,
+            // Start near middle-C window (C8=108 → scroll ~48 rows ≈ C4).
+            pitch_scroll: 48.0,
+            beat_scroll: 0.0,
+            beat_zoom: 1.0,
+            key_pointer_held: None,
+            pending_audition_off: None,
         }
     }
 }
@@ -114,6 +143,29 @@ impl ComposeUi {
         }
         let step = self.snap_division.beats_per_step();
         (beats / step).round() * step
+    }
+
+    /// Ensure the active track has a clip and `selected_clip` points at it so the
+    /// piano roll is immediately editable (no arrangement click required).
+    pub fn ensure_editable_clip(&mut self) {
+        if self.project.tracks.is_empty() {
+            self.project.tracks.push(Track::new("Track 1"));
+        }
+        if self.selected_track >= self.project.tracks.len() {
+            self.selected_track = 0;
+        }
+        let ti = self.selected_track;
+        if self.project.tracks[ti].clips.is_empty() {
+            self.project.tracks[ti].clips.push(Clip::new(0.0, 8.0));
+        }
+        let clip_count = self.project.tracks[ti].clips.len();
+        match self.selected_clip {
+            Some(ci) if ci < clip_count => {}
+            _ => {
+                self.selected_clip = Some(0);
+                self.selected_notes.clear();
+            }
+        }
     }
 }
 
@@ -175,6 +227,8 @@ pub fn draw_compose_shell(
         border,
     );
 
+    state.compose.ensure_editable_clip();
+
     let track_actions = draw_track_list(ui, track_rect, &mut state.compose);
     record_region(
         ui.ctx(),
@@ -186,22 +240,32 @@ pub fn draw_compose_shell(
         actions.sequence_changed = true;
     }
 
+    // Dominant piano roll; clip strip + scenes collapsed by default.
     let content_h = content.height();
-    let arrangement_h = content_h * 0.35;
-    let piano_h = content_h * 0.45;
-    let scene_h = content_h * 0.12;
+    let scene_h = if state.compose.scenes_collapsed {
+        22.0 * s
+    } else {
+        (content_h * 0.12).max(64.0 * s)
+    };
+    let arrangement_h = if state.compose.arrangement_collapsed {
+        22.0 * s
+    } else {
+        (content_h * 0.15).clamp(56.0 * s, 120.0 * s)
+    };
+    let gap = GRID_UNIT * 0.5 * s;
+    let piano_h = (content_h - arrangement_h - scene_h - gap * 2.0).max(120.0 * s);
 
     let mut y = content.min.y;
     let arrangement_rect = Rect::from_min_max(
         egui::pos2(content.min.x, y),
         egui::pos2(content.max.x, y + arrangement_h),
     );
-    y += arrangement_h + GRID_UNIT * 0.5 * s;
+    y += arrangement_h + gap;
     let piano_rect = Rect::from_min_max(
         egui::pos2(content.min.x, y),
         egui::pos2(content.max.x, y + piano_h),
     );
-    y += piano_h + GRID_UNIT * 0.5 * s;
+    y += piano_h + gap;
     let scene_rect = Rect::from_min_max(
         egui::pos2(content.min.x, y),
         egui::pos2(content.max.x, (y + scene_h).min(content.max.y)),
@@ -221,7 +285,7 @@ pub fn draw_compose_shell(
         actions.transport_seek = Some(state.compose.transport.playhead_beats);
     }
 
-    let roll_actions = draw_piano_roll(ui, piano_rect, &mut state.compose);
+    let roll_actions = draw_piano_roll(ui, piano_rect, &mut state.compose, &state.keys_down);
     record_region(
         ui.ctx(),
         AuditId::ComposePianoRoll,
@@ -241,6 +305,9 @@ pub fn draw_compose_shell(
         actions.note_on = Some(note);
         let _ = vel;
     }
+    if let Some(note) = roll_actions.audition_note_off {
+        actions.note_off = Some(note);
+    }
 
     let scene_actions = draw_scene_grid(ui, scene_rect, &mut state.compose);
     record_region(
@@ -251,5 +318,31 @@ pub fn draw_compose_shell(
     );
     if scene_actions.scene_launched.is_some() {
         actions.scene_launch = scene_actions.scene_launched;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ensure_editable_clip_creates_and_selects() {
+        let mut compose = ComposeUi::default();
+        compose.selected_clip = None;
+        compose.project.tracks[0].clips.clear();
+        compose.ensure_editable_clip();
+        assert_eq!(compose.selected_clip, Some(0));
+        assert!(!compose.project.tracks[0].clips.is_empty());
+    }
+
+    #[test]
+    fn ensure_editable_clip_on_other_track() {
+        let mut compose = ComposeUi::default();
+        compose.selected_track = 1;
+        compose.selected_clip = None;
+        compose.ensure_editable_clip();
+        assert_eq!(compose.selected_track, 1);
+        assert_eq!(compose.selected_clip, Some(0));
+        assert!(!compose.project.tracks[1].clips.is_empty());
     }
 }

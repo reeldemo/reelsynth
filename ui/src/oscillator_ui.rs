@@ -3,6 +3,9 @@
 use reelsynth::patch::{Oscillator, WaveLayer, WaveSlot};
 
 use crate::osc_column::{fm_algorithm_index, fm_source_index, osc_type_index, warp_mode_index};
+use crate::quant_interp::{
+    fill_segment_interps, resize_segment_interps, segment_count, WtQuantInterp,
+};
 
 pub const MIN_OSCILLATORS: usize = 1;
 
@@ -16,6 +19,14 @@ pub struct WaveLayerUi {
     pub phase: f32,
     pub enabled: bool,
     pub invert: bool,
+    /// Optional bank id for this layer (falls back to patch/osc primary bank).
+    pub wavetable_id: Option<String>,
+    /// UI-only: auto-created layer that absorbs Result quant edits.
+    pub residual: bool,
+    /// Curve-wide default interp; All·… writes this into every segment.
+    pub quant_interp: WtQuantInterp,
+    /// Per-segment modes (`len = max(0, slot_count−1)`). Segment `i` is knob `i → i+1`.
+    pub quant_segment_interps: Vec<WtQuantInterp>,
 }
 
 impl Default for WaveLayerUi {
@@ -29,6 +40,10 @@ impl Default for WaveLayerUi {
             phase: 0.0,
             enabled: true,
             invert: false,
+            wavetable_id: None,
+            residual: false,
+            quant_interp: WtQuantInterp::default(),
+            quant_segment_interps: Vec::new(),
         }
     }
 }
@@ -80,6 +95,14 @@ impl WaveLayerUi {
             phase: layer.phase,
             enabled: layer.level > 0.0,
             invert: layer.invert,
+            wavetable_id: layer.wavetable_id.clone(),
+            residual: false,
+            quant_interp: WtQuantInterp::from_patch_str(&layer.quant_interp),
+            quant_segment_interps: layer
+                .quant_segment_interps
+                .iter()
+                .map(|s| WtQuantInterp::from_patch_str(s))
+                .collect(),
         }
     }
 
@@ -91,9 +114,38 @@ impl WaveLayerUi {
             wt_position: self.wt_position,
             pulse_width: self.pulse_width,
             phase: self.phase,
-            wavetable_id: None,
+            wavetable_id: self.wavetable_id.clone(),
             invert: self.invert,
+            quant_interp: self.quant_interp.to_patch_str().into(),
+            quant_segment_interps: self
+                .quant_segment_interps
+                .iter()
+                .map(|m| m.to_patch_str().into())
+                .collect(),
         }
+    }
+
+    /// Ensure `quant_segment_interps.len() == max(0, slot_count−1)`.
+    pub fn ensure_segment_interps(&mut self, slot_count: usize) {
+        if self.quant_segment_interps.is_empty() && segment_count(slot_count) > 0 {
+            fill_segment_interps(
+                &mut self.quant_segment_interps,
+                slot_count,
+                self.quant_interp,
+            );
+        } else {
+            resize_segment_interps(
+                &mut self.quant_segment_interps,
+                slot_count,
+                self.quant_interp,
+            );
+        }
+    }
+
+    /// Set curve default and write it onto every segment.
+    pub fn apply_curve_interp_to_segments(&mut self, slot_count: usize, mode: WtQuantInterp) {
+        self.quant_interp = mode;
+        fill_segment_interps(&mut self.quant_segment_interps, slot_count, mode);
     }
 }
 
@@ -183,7 +235,7 @@ impl OscillatorUi {
     }
 
     pub fn from_patch(osc: &Oscillator) -> Self {
-        Self {
+        let mut out = Self {
             osc_type: osc_type_index(&osc.osc_type),
             level: osc.level,
             pan: osc.pan,
@@ -206,6 +258,59 @@ impl OscillatorUi {
             wave_slots: osc.wave_slots.clone(),
             wave_layers: osc.wave_layers.iter().map(WaveLayerUi::from_patch).collect(),
             stack_mode: osc.stack_mode.clone(),
+        };
+        out.ensure_layer_segment_interps();
+        out
+    }
+
+    /// Resize every layer's segment interp vec to match current Quant count.
+    pub fn ensure_layer_segment_interps(&mut self) {
+        let slots = if self.wave_quant == 255 {
+            256
+        } else if self.wave_quant > 0 {
+            self.wave_quant as usize
+        } else {
+            0
+        };
+        for layer in &mut self.wave_layers {
+            layer.ensure_segment_interps(slots);
         }
+    }
+}
+
+#[cfg(test)]
+mod layer_interp_tests {
+    use super::*;
+
+    #[test]
+    fn ui_layer_interp_roundtrips_through_patch() {
+        let mut layer = WaveLayerUi {
+            quant_interp: WtQuantInterp::Exponential,
+            quant_segment_interps: vec![
+                WtQuantInterp::Hold,
+                WtQuantInterp::Linear,
+                WtQuantInterp::Spline,
+            ],
+            ..WaveLayerUi::default()
+        };
+        layer.ensure_segment_interps(4);
+        assert_eq!(layer.quant_segment_interps.len(), 3);
+        let patch = layer.to_patch();
+        let back = WaveLayerUi::from_patch(&patch);
+        assert_eq!(back.quant_interp, WtQuantInterp::Exponential);
+        assert_eq!(back.quant_segment_interps.len(), 3);
+        assert_eq!(back.quant_segment_interps[1], WtQuantInterp::Linear);
+    }
+
+    #[test]
+    fn apply_curve_default_fills_segments() {
+        let mut layer = WaveLayerUi::default();
+        layer.apply_curve_interp_to_segments(8, WtQuantInterp::Polynomial);
+        assert_eq!(layer.quant_interp, WtQuantInterp::Polynomial);
+        assert_eq!(layer.quant_segment_interps.len(), 7);
+        assert!(layer
+            .quant_segment_interps
+            .iter()
+            .all(|&m| m == WtQuantInterp::Polynomial));
     }
 }

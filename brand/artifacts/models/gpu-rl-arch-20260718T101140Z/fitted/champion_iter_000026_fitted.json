@@ -1,0 +1,20 @@
+{
+  "architecture": {
+    "depth": 3,
+    "width": 4,
+    "act": "gelu",
+    "ops": [
+      "fade_pull"
+    ],
+    "wet": 0.3422032272466517,
+    "fir": [
+      0.24940523018701394,
+      0.5019848171088053,
+      0.4049587667009422
+    ],
+    "cell_kind": "gated"
+  },
+  "residual": 0.954989492893219,
+  "weights_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260718T101140Z\\fitted\\champion_iter_000026_fitted.pt",
+  "tag": "champion_iter_000026"
+}

@@ -1,0 +1,48 @@
+\section{Experiments}
+\label{sec:experiments}
+
+\paragraph{Protocol freeze.}
+Evaluation follows \texttt{paper/v5/EVAL\_PROTOCOL.md} (v1).
+Primary metric: prolonged $R$. Secondary: SNR, SDR, and wrap-jump on tiled audio.
+Holdout seed \texttt{20260719}. Search seed \texttt{1902771841}.
+We report the $5$k-gate freeze plus frozen holdout. We make no unfinished-budget claims. PESQ/STOI stay out of scope on non-speech cycles.
+
+\subsection{Dataset}
+\label{sec:dataset}
+
+\paragraph{Creation.}
+The paper-facing evaluation corpus is a frozen draw from the same synthetic generator used by the overnight CUDA runner (\texttt{make\_batch} in \texttt{overnight\_gpu\_rl\_arch.py}).
+Each cycle has length $L{=}256$.
+A two-harmonic sine is drawn with frequency $\sim\mathcal{U}(1,4)$ and phase $\sim\mathcal{U}(0,2\pi)$.
+An open-wrap seam cliff of amplitude $\pm\mathcal{U}(0.08,0.43)$ is applied over $\texttt{SEAM\_W}{=}8$ samples at both ends.
+Seam-boosted Gaussian noise (scale $0.02$ at the ends, $0.15\times$ in the mid-cycle) is added to form the engine input.
+The ideal withholds the cliff and is used only for residual scoring.
+Prolonged residual $R$ tiles each cycle $N{=}16$ times before the RMS ratio.
+The holdout seed is \texttt{20260719} (distinct from the overnight search seed \texttt{1902771841}).
+Overnight search draws fresh i.i.d.\ batches from this generator and does not train on the frozen holdout tensors.
+There is no supervised clean/noisy training split of studio audio.
+
+\paragraph{Multi-family diversity ($\ge 20$ waveforms).}
+Beyond the single sine{+}cliff holdout, Phase~3a scores methods on \textbf{20} generative draws: ten family variants (\texttt{sine\_cliff}, \texttt{harmonic\_fft}, \texttt{am\_fm}, \texttt{nonlinear}, \texttt{combo}, \texttt{triple\_mix}, \texttt{extreme\_overlay}, \texttt{open\_wrap\_bias}, \texttt{soft\_noise}, \texttt{wide\_seam}) $\times$ two seeds (\texttt{20260719} and \texttt{20260720}), batch 64 each.
+These Python generative variants stress harmonic / AM--FM / nonlinear / overlay / open-wrap behavior of \texttt{make\_batch} and remain the primary SOTA matrix.
+Separately, \texttt{export\_sound\_bench\_tiles} exports \textbf{20} Rust \texttt{sound\_bench} engine/ideal pairs (10 families $\times$ 2 seeds, $L{=}256$, byte-aligned with \texttt{generate\_sound} / \texttt{generate\_sound\_ideal}) scored under the same residual geometry as a secondary transfer block (Table~\ref{tab:rust-bench}).
+Every method sees the same tensors per waveform. DualCosine is the paired baseline for $\Delta R$ and Wilcoxon tests.
+
+\paragraph{Dataset metrics.}
+A metrics draw of $4{,}096$ cycles under the holdout seed yields mean ideal RMS $0.721\pm0.016$, mean engine residual RMS $0.021\pm0.013$, and mean absolute wrap jump $|x_0-x_{L-1}|$ of $0.913\pm0.634$.
+Identity (no bake) on that draw scores mean $R\approx0.971$.
+Method tables use a matched score batch of $64$ cycles from the same seed (tensors under \texttt{brand/artifacts/canonical\_eval\_dataset/}), five consecutive seeds for mean$\pm$std on the classical table, and the 20-waveform matrix for SOTA secondary metrics.
+Figure~\ref{fig:intro-sine} is the documented sine-wrap edge case: a high-$|wrap|$ holdout tile where cliff modulation is visible, scored with DualCosine and the top neural favorite under the same residual $R$ (tile $R\approx0.9917$, favorite batch mean $R\approx0.991$).
+
+\paragraph{Overnight hybrid campaign ($5$k clean gate).}
+A CUDA search tagged \texttt{PPO+GA+PBT+NAS+depth+MoE} runs with a large declared iteration budget (order $10^{5}$).
+At the reported freeze (run \texttt{gpu-rl-arch-20260719T083019Z}, $\approx 6{,}922$ clean iters / $\approx 7.9$\,h on RTX~3090) the champion residual is $R\approx 0.99093$ against DualCosine baseline $\approx 0.81658$ ($\Delta R\approx{+}0.174$).
+Overnight branch-best residuals at the freeze: GA $\approx 0.99016$, PBT $\approx 0.99012$, PPO $\approx 0.98924$, combo $\approx 0.98854$, NAS $\approx 0.98677$.
+Isolated short-budget re-runs (GA-only, PPO-only, GA{+}PPO, full, 150 iters, same search seed, plateau adapt off) are reported beside those freezes in Table~\ref{tab:ablation}.
+Figures in Section~\ref{sec:results} regenerate from \texttt{history.jsonl} near this gate.
+
+\paragraph{Inference, classical, and learned baselines.}
+High-$R$ fitted cells ($R\ge 0.98$) are timed on CUDA (batch 64, prolonged residual).
+Ten non-learnable bake denoisers share the frozen canonical holdout against the neural favorite (Table~\ref{tab:canonical-methods}).
+Fixed-arch MLP-on-$R$ and CNN/U-Net-lite-on-$R$ baselines (no outer NAS) are trained on $1{-}R$ with the same generator and scored in the SOTA matrix.
+Family-conditional hardness uses the separate Rust procedural $100{,}000$-cycle bench reported in Results.

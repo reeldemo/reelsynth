@@ -1,0 +1,2588 @@
+{
+  "n": 137,
+  "papers": [
+    {
+      "query": "meta-learning hyperparameter optimization neural networks survey",
+      "id": "W2954996726",
+      "doi": "10.1186/s40537-019-0197-0",
+      "title": "A survey on Image Data Augmentation for Deep Learning",
+      "year": 2019,
+      "authors": [
+        "Connor Shorten",
+        "Taghi M. Khoshgoftaar"
+      ],
+      "venue": "Journal Of Big Data",
+      "citation_count": 12595,
+      "url": "https://openalex.org/W2954996726",
+      "source": "openalex",
+      "oa_url": "https://journalofbigdata.springeropen.com/track/pdf/10.1186/s40537-019-0197-0"
+    },
+    {
+      "query": "meta-learning hyperparameter optimization neural networks survey",
+      "id": "W2995022099",
+      "doi": "10.1561/2200000083",
+      "title": "Advances and Open Problems in Federated Learning",
+      "year": 2020,
+      "authors": [
+        "Peter Kairouz",
+        "H. Brendan McMahan",
+        "Brendan Avent",
+        "Aur\u00e9lien Bellet",
+        "Mehdi Bennis",
+        "Arjun Nitin Bhagoji",
+        "Kallista Bonawitz",
+        "Zachary Charles",
+        "Graham Cormode",
+        "Rachel Cummings",
+        "Rafael G. L. D\u2019Oliveira",
+        "Hubert Eichner",
+        "Salim El Rouayheb",
+        "David Evans",
+        "Joshua Gardner",
+        "Zachary Garrett",
+        "Adri\u00e0 Gasc\u00f3n",
+        "Badih Ghazi",
+        "Phillip B. Gibbons",
+        "Marco Gruteser",
+        "Za\u00efd Harchaoui",
+        "Chaoyang He",
+        "Lingxiao He",
+        "Zhouyuan Huo",
+        "Ben Hutchinson",
+        "Justin Hsu",
+        "Martin Jaggi",
+        "Tara Javidi",
+        "Gauri Joshi",
+        "Mikhail Khodak",
+        "Jakub Kone\u010dn\u00fd",
+        "Aleksandra Korolova",
+        "Farinaz Koushanfar",
+        "Sanmi Koyejo",
+        "Tancr\u00e8de Lepoint",
+        "Yang Liu",
+        "Prateek Mittal",
+        "Mehryar Mohri",
+        "Richard Nock",
+        "Ayfer \u00d6zg\u00fcr",
+        "Rasmus Pagh",
+        "Hang Qi",
+        "Daniel Ramage",
+        "Ramesh Raskar",
+        "Mariana Raykova",
+        "Dawn Song",
+        "Weikang Song",
+        "Sebastian U. Stich",
+        "Ziteng Sun",
+        "Ananda Theertha Suresh",
+        "Florian Tram\u00e8r",
+        "Praneeth Vepakomma",
+        "Jianyu Wang",
+        "Li Xiong",
+        "Zheng Xu",
+        "Qiang Yang",
+        "Felix X. Yu",
+        "Han Yu",
+        "Sen Zhao"
+      ],
+      "venue": "Foundations and Trends\u00ae in Machine Learning",
+      "citation_count": 4911,
+      "url": "https://openalex.org/W2995022099",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/1912.04977"
+    },
+    {
+      "query": "meta-learning hyperparameter optimization neural networks survey",
+      "id": "W2936503027",
+      "doi": "10.1186/s40537-019-0192-5",
+      "title": "Survey on deep learning with class imbalance",
+      "year": 2019,
+      "authors": [
+        "Justin Johnson",
+        "Taghi M. Khoshgoftaar"
+      ],
+      "venue": "Journal Of Big Data",
+      "citation_count": 2873,
+      "url": "https://openalex.org/W2936503027",
+      "source": "openalex",
+      "oa_url": "https://journalofbigdata.springeropen.com/track/pdf/10.1186/s40537-019-0192-5"
+    },
+    {
+      "query": "meta-learning hyperparameter optimization neural networks survey",
+      "id": "W2984353870",
+      "doi": "10.1007/s10994-019-05855-6",
+      "title": "A survey on semi-supervised learning",
+      "year": 2019,
+      "authors": [
+        "Jesper E. van Engelen",
+        "Holger H. Hoos"
+      ],
+      "venue": "Machine Learning",
+      "citation_count": 2583,
+      "url": "https://openalex.org/W2984353870",
+      "source": "openalex",
+      "oa_url": "https://link.springer.com/content/pdf/10.1007/s10994-019-05855-6.pdf"
+    },
+    {
+      "query": "meta-learning hyperparameter optimization neural networks survey",
+      "id": "W4288039037",
+      "doi": "10.1007/s10915-022-01939-z",
+      "title": "Scientific Machine Learning Through Physics\u2013Informed Neural Networks: Where we are and What\u2019s Next",
+      "year": 2022,
+      "authors": [
+        "Salvatore Cuomo",
+        "Vincenzo Schiano Di Cola",
+        "Fabio Giampaolo",
+        "Gianluigi Rozza",
+        "Maziar Raissi",
+        "Francesco Piccialli"
+      ],
+      "venue": "Journal of Scientific Computing",
+      "citation_count": 2400,
+      "url": "https://openalex.org/W4288039037",
+      "source": "openalex",
+      "oa_url": "https://link.springer.com/content/pdf/10.1007/s10915-022-01939-z.pdf"
+    },
+    {
+      "query": "meta-learning hyperparameter optimization neural networks survey",
+      "id": "W2962727772",
+      "doi": null,
+      "title": "Automatic differentiation in machine learning: a survey",
+      "year": 2015,
+      "authors": [
+        "At\u0131l\u0131m G\u00fcne\u015f Baydin",
+        "Barak A. Pearlmutter",
+        "Alexey Radul",
+        "Jeffrey Mark Siskind"
+      ],
+      "venue": "Maynooth University ePrints and eTheses Archive (Maynooth University)",
+      "citation_count": 2097,
+      "url": "https://openalex.org/W2962727772",
+      "source": "openalex",
+      "oa_url": "http://eprints.maynoothuniversity.ie/8145/1/BP-Automatic-2015.pdf"
+    },
+    {
+      "query": "meta-learning hyperparameter optimization neural networks survey",
+      "id": "W2963043696",
+      "doi": "10.1609/aaai.v32i1.11596",
+      "title": "Learning to Generalize: Meta-Learning for Domain Generalization",
+      "year": 2018,
+      "authors": [
+        "Da Li",
+        "Yongxin Yang",
+        "Yi-Zhe Song",
+        "Timothy M. Hospedales"
+      ],
+      "venue": "Proceedings of the AAAI Conference on Artificial Intelligence",
+      "citation_count": 1237,
+      "url": "https://openalex.org/W2963043696",
+      "source": "openalex",
+      "oa_url": "https://doi.org/10.1609/aaai.v32i1.11596"
+    },
+    {
+      "query": "meta-learning hyperparameter optimization neural networks survey",
+      "id": "W3043426275",
+      "doi": "10.1109/mci.2022.3155327",
+      "title": "Hands-On Bayesian Neural Networks\u2014A Tutorial for Deep Learning Users",
+      "year": 2022,
+      "authors": [
+        "Laurent Valentin Jospin",
+        "Hamid Laga",
+        "Farid Boussa\u00efd",
+        "Wray Buntine",
+        "Mohammed Bennamoun"
+      ],
+      "venue": "IEEE Computational Intelligence Magazine",
+      "citation_count": 838,
+      "url": "https://openalex.org/W3043426275",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2007.06823"
+    },
+    {
+      "query": "meta-learning hyperparameter optimization neural networks survey",
+      "id": "W3179950556",
+      "doi": "10.1002/widm.1484",
+      "title": "Hyperparameter optimization: Foundations, algorithms, best practices, and open challenges",
+      "year": 2023,
+      "authors": [
+        "Bernd Bischl",
+        "Martin Binder",
+        "Michel Lang",
+        "Tobias Pielok",
+        "Jakob Richter",
+        "Stefan Coors",
+        "Janek Thomas",
+        "Theresa Ullmann",
+        "Marc Becker",
+        "Anne\u2010Laure Boulesteix",
+        "Difan Deng",
+        "Marius Lindauer"
+      ],
+      "venue": "Wiley Interdisciplinary Reviews Data Mining and Knowledge Discovery",
+      "citation_count": 833,
+      "url": "https://openalex.org/W3179950556",
+      "source": "openalex",
+      "oa_url": "https://onlinelibrary.wiley.com/doi/pdfdirect/10.1002/widm.1484"
+    },
+    {
+      "query": "meta-learning hyperparameter optimization neural networks survey",
+      "id": "W3015606043",
+      "doi": "10.1109/tpami.2021.3079209",
+      "title": "Meta-Learning in Neural Networks: A Survey",
+      "year": 2021,
+      "authors": [
+        "Timothy M. Hospedales",
+        "Antreas Antoniou",
+        "Paul Micaelli",
+        "Amos Storkey"
+      ],
+      "venue": "IEEE Transactions on Pattern Analysis and Machine Intelligence",
+      "citation_count": 257,
+      "url": "https://openalex.org/W3015606043",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/34/4359286/09428530.pdf"
+    },
+    {
+      "query": "Bayesian optimization hyperparameter tuning machine learning",
+      "id": "W2592929672",
+      "doi": "10.1016/j.media.2017.07.005",
+      "title": "A survey on deep learning in medical image analysis",
+      "year": 2017,
+      "authors": [
+        "Geert Litjens",
+        "Thijs Kooi",
+        "Babak Ehteshami Bejnordi",
+        "Arnaud A. A. Setio",
+        "Francesco Ciompi",
+        "Mohsen Ghafoorian",
+        "Jeroen van der Laak",
+        "Bram van Ginneken",
+        "Clara I. S\u00e1\u200enchez"
+      ],
+      "venue": "Medical Image Analysis",
+      "citation_count": 14588,
+      "url": "https://openalex.org/W2592929672",
+      "source": "openalex",
+      "oa_url": "https://ars.els-cdn.com/content/image/1-s2.0-S1361841517301135-fx1_lrg.jpg"
+    },
+    {
+      "query": "Bayesian optimization hyperparameter tuning machine learning",
+      "id": "W2131241448",
+      "doi": "10.48550/arxiv.1206.2944",
+      "title": "Practical Bayesian Optimization of Machine Learning Algorithms",
+      "year": 2012,
+      "authors": [
+        "Jasper Snoek",
+        "Hugo Larochelle",
+        "Ryan P. Adams"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 5674,
+      "url": "https://openalex.org/W2131241448",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/1206.2944"
+    },
+    {
+      "query": "Bayesian optimization hyperparameter tuning machine learning",
+      "id": "W3135028703",
+      "doi": "10.1007/s42979-021-00592-x",
+      "title": "Machine Learning: Algorithms, Real-World Applications and Research Directions",
+      "year": 2021,
+      "authors": [
+        "Iqbal H. Sarker"
+      ],
+      "venue": "SN Computer Science",
+      "citation_count": 5202,
+      "url": "https://openalex.org/W3135028703",
+      "source": "openalex",
+      "oa_url": "https://link.springer.com/content/pdf/10.1007/s42979-021-00592-x.pdf"
+    },
+    {
+      "query": "Bayesian optimization hyperparameter tuning machine learning",
+      "id": "W2151591509",
+      "doi": "10.3389/fninf.2014.00014",
+      "title": "Machine learning for neuroimaging with scikit-learn",
+      "year": 2014,
+      "authors": [
+        "Alexandre Abraham",
+        "Fabian Pedregosa",
+        "Michael Eickenberg",
+        "Philippe Gervais",
+        "Andreas Mueller",
+        "Jean Kossaifi",
+        "Alexandre Gramfort",
+        "Bertrand Thirion",
+        "Ga\u00ebl Varoquaux"
+      ],
+      "venue": "Frontiers in Neuroinformatics",
+      "citation_count": 2659,
+      "url": "https://openalex.org/W2151591509",
+      "source": "openalex",
+      "oa_url": "https://www.frontiersin.org/articles/10.3389/fninf.2014.00014/pdf"
+    },
+    {
+      "query": "Bayesian optimization hyperparameter tuning machine learning",
+      "id": "W2967663220",
+      "doi": "10.11989/jest.1674-862x.80904120",
+      "title": "Hyperparameter Optimization for Machine Learning Models Based on Bayesian Optimization",
+      "year": 2019,
+      "authors": [
+        "Jia Wu",
+        "Xiu Yun Chen",
+        "Hao Zhang",
+        "Li Dong Xiong",
+        "Hang Lei",
+        "Sihao Deng"
+      ],
+      "venue": "HAL (Le Centre pour la Communication Scientifique Directe)",
+      "citation_count": 1420,
+      "url": "https://openalex.org/W2967663220",
+      "source": "openalex",
+      "oa_url": "http://www.sciencedirect.com/science/article/pii/S1674862X19300047"
+    },
+    {
+      "query": "Bayesian optimization hyperparameter tuning machine learning",
+      "id": "W2950182411",
+      "doi": null,
+      "title": "Practical Bayesian Optimization of Machine Learning Algorithms",
+      "year": 2012,
+      "authors": [
+        "Jasper Snoek",
+        "Hugo Larochelle",
+        "Ryan P. Adams"
+      ],
+      "venue": "Digital Access to Scholarship at Harvard (DASH) (Harvard University)",
+      "citation_count": 995,
+      "url": "https://openalex.org/W2950182411",
+      "source": "openalex",
+      "oa_url": "http://nrs.harvard.edu/urn-3:HUL.InstRepos:11708816"
+    },
+    {
+      "query": "Bayesian optimization hyperparameter tuning machine learning",
+      "id": "W2189149359",
+      "doi": "10.25080/majora-8b375195-003",
+      "title": "Hyperopt: A Python Library for Optimizing the Hyperparameters of Machine Learning Algorithms",
+      "year": 2013,
+      "authors": [
+        "James Bergstra",
+        "Dan Yamins",
+        "David Cox"
+      ],
+      "venue": "Proceedings of the Python in Science Conferences",
+      "citation_count": 818,
+      "url": "https://openalex.org/W2189149359",
+      "source": "openalex",
+      "oa_url": "http://conference.scipy.org/proceedings/scipy2013/pdfs/bergstra_hyperopt.pdf"
+    },
+    {
+      "query": "Bayesian optimization hyperparameter tuning machine learning",
+      "id": "W3191950921",
+      "doi": "10.1109/cec45853.2021.9504761",
+      "title": "Hyperparameter Optimization: Comparing Genetic Algorithm against Grid Search and Bayesian Optimization",
+      "year": 2021,
+      "authors": [
+        "Hussain Alibrahim",
+        "Simone A. Ludwig"
+      ],
+      "venue": null,
+      "citation_count": 411,
+      "url": "https://openalex.org/W3191950921",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "Bayesian optimization hyperparameter tuning machine learning",
+      "id": "W3212135906",
+      "doi": "10.3390/informatics8040079",
+      "title": "Hyperparameter Tuning for Machine Learning Algorithms Used for Arabic Sentiment Analysis",
+      "year": 2021,
+      "authors": [
+        "Enas Elgeldawi",
+        "Awny Sayed",
+        "Ahmed R. Galal",
+        "Alaa M. Zaki"
+      ],
+      "venue": "Informatics",
+      "citation_count": 396,
+      "url": "https://openalex.org/W3212135906",
+      "source": "openalex",
+      "oa_url": "https://www.mdpi.com/2227-9709/8/4/79/pdf?version=1637204623"
+    },
+    {
+      "query": "Bayesian optimization hyperparameter tuning machine learning",
+      "id": "W3155731460",
+      "doi": "10.48550/arxiv.2104.10201",
+      "title": "Bayesian Optimization is Superior to Random Search for Machine Learning Hyperparameter Tuning: Analysis of the Black-Box Optimization Challenge 2020",
+      "year": 2021,
+      "authors": [
+        "Ryan Turner",
+        "David Eriksson",
+        "Michael McCourt",
+        "Juha Kiili",
+        "Eero Laaksonen",
+        "Zhen Xu",
+        "Isabelle Guyon"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 165,
+      "url": "https://openalex.org/W3155731460",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2104.10201"
+    },
+    {
+      "query": "population based training hyperparameter meta learning",
+      "id": "W2884430236",
+      "doi": "10.1038/s41586-018-0337-2",
+      "title": "Machine learning for molecular and materials science",
+      "year": 2018,
+      "authors": [
+        "Keith T. Butler",
+        "Daniel W. Davies",
+        "Hugh Cartwright",
+        "Olexandr Isayev",
+        "Aron Walsh"
+      ],
+      "venue": "Nature",
+      "citation_count": 4631,
+      "url": "https://openalex.org/W2884430236",
+      "source": "openalex",
+      "oa_url": "https://researchportal.bath.ac.uk/en/publications/03379e8b-3fe7-4813-9d45-b94c61ad9740"
+    },
+    {
+      "query": "population based training hyperparameter meta learning",
+      "id": "W2981679558",
+      "doi": "10.1371/journal.pone.0224365",
+      "title": "Machine learning algorithm validation with a limited sample size",
+      "year": 2019,
+      "authors": [
+        "Andrius Vabalas",
+        "Emma Gowen",
+        "Ellen Poliakoff",
+        "Alexander J. Casson"
+      ],
+      "venue": "PLoS ONE",
+      "citation_count": 1731,
+      "url": "https://openalex.org/W2981679558",
+      "source": "openalex",
+      "oa_url": "https://journals.plos.org/plosone/article/file?id=10.1371/journal.pone.0224365&type=printable"
+    },
+    {
+      "query": "population based training hyperparameter meta learning",
+      "id": "W3176923149",
+      "doi": "10.1186/s40537-021-00492-0",
+      "title": "Text Data Augmentation for Deep Learning",
+      "year": 2021,
+      "authors": [
+        "Connor Shorten",
+        "Taghi M. Khoshgoftaar",
+        "Borko Furht"
+      ],
+      "venue": "Journal Of Big Data",
+      "citation_count": 1684,
+      "url": "https://openalex.org/W3176923149",
+      "source": "openalex",
+      "oa_url": "https://journalofbigdata.springeropen.com/track/pdf/10.1186/s40537-021-00492-0"
+    },
+    {
+      "query": "population based training hyperparameter meta learning",
+      "id": "W4213308398",
+      "doi": "10.1007/978-3-030-05318-5",
+      "title": "Automated Machine Learning",
+      "year": 2019,
+      "authors": [
+        "Frank Hutter",
+        "Lars Kotthoff",
+        "Joaquin Vanschoren"
+      ],
+      "venue": "\u0098The \u009cSpringer series on challenges in machine learning",
+      "citation_count": 1422,
+      "url": "https://openalex.org/W4213308398",
+      "source": "openalex",
+      "oa_url": "https://doi.org/10.1007/978-3-030-05318-5"
+    },
+    {
+      "query": "population based training hyperparameter meta learning",
+      "id": "W2169968049",
+      "doi": "10.3389/fpsyg.2014.00603",
+      "title": "Mindfulness-based interventions in schools\u00e2\u20ac\u201da systematic review and meta-analysis",
+      "year": 2014,
+      "authors": [
+        "Charlotte Zenner",
+        "Solveig Herrnleben-Kurz",
+        "Harald Walach"
+      ],
+      "venue": "Frontiers in Psychology",
+      "citation_count": 978,
+      "url": "https://openalex.org/W2169968049",
+      "source": "openalex",
+      "oa_url": "https://www.frontiersin.org/articles/10.3389/fpsyg.2014.00603/pdf"
+    },
+    {
+      "query": "population based training hyperparameter meta learning",
+      "id": "W2906697496",
+      "doi": "10.1038/s42256-018-0006-z",
+      "title": "Designing neural networks through neuroevolution",
+      "year": 2018,
+      "authors": [
+        "Kenneth O. Stanley",
+        "Jeff Clune",
+        "Joel Lehman",
+        "Risto Miikkulainen"
+      ],
+      "venue": "Nature Machine Intelligence",
+      "citation_count": 692,
+      "url": "https://openalex.org/W2906697496",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "population based training hyperparameter meta learning",
+      "id": "W3090507198",
+      "doi": "10.1038/s41598-020-72685-1",
+      "title": "Machine learning prediction in cardiovascular diseases: a meta-analysis",
+      "year": 2020,
+      "authors": [
+        "Chayakrit Krittanawong",
+        "Hafeez Ul Hassan Virk",
+        "Sripal Bangalore",
+        "Zhen Wang",
+        "Kipp W. Johnson",
+        "Rachel Pinotti",
+        "HongJu Zhang",
+        "Scott Kaplin",
+        "Bharat Narasimhan",
+        "Takeshi Kitai",
+        "Usman Baber",
+        "Jonathan L. Halperin",
+        "W.H. Wilson Tang"
+      ],
+      "venue": "Scientific Reports",
+      "citation_count": 493,
+      "url": "https://openalex.org/W3090507198",
+      "source": "openalex",
+      "oa_url": "https://www.nature.com/articles/s41598-020-72685-1.pdf"
+    },
+    {
+      "query": "population based training hyperparameter meta learning",
+      "id": "W4317743691",
+      "doi": "10.3390/pr11020349",
+      "title": "Hyperparameter Search for Machine Learning Algorithms for Optimizing the Computational Complexity",
+      "year": 2023,
+      "authors": [
+        "Yasser A. Ali",
+        "Emad Mahrous Awwad",
+        "Muna Al\u2010Razgan",
+        "Ali Maarouf"
+      ],
+      "venue": "Processes",
+      "citation_count": 306,
+      "url": "https://openalex.org/W4317743691",
+      "source": "openalex",
+      "oa_url": "https://www.mdpi.com/2227-9717/11/2/349/pdf?version=1675065722"
+    },
+    {
+      "query": "AutoML neural architecture search audio",
+      "id": "W2950865323",
+      "doi": "10.1109/jproc.2019.2918951",
+      "title": "Edge Intelligence: Paving the Last Mile of Artificial Intelligence With Edge Computing",
+      "year": 2019,
+      "authors": [
+        "Zhi Zhou",
+        "Xu Chen",
+        "En Li",
+        "Liekang Zeng",
+        "Ke Luo",
+        "Junshan Zhang"
+      ],
+      "venue": "Proceedings of the IEEE",
+      "citation_count": 2212,
+      "url": "https://openalex.org/W2950865323",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/5/8789751/08736011.pdf"
+    },
+    {
+      "query": "AutoML neural architecture search audio",
+      "id": "W3137147200",
+      "doi": "10.1201/9781003162810-13",
+      "title": "A Survey of Quantization Methods for Efficient Neural Network Inference",
+      "year": 2022,
+      "authors": [
+        "Amir Gholami",
+        "Sehoon Kim",
+        "Zhen Dong",
+        "Zhewei Yao",
+        "Michael W. Mahoney",
+        "Kurt Keutzer"
+      ],
+      "venue": null,
+      "citation_count": 1062,
+      "url": "https://openalex.org/W3137147200",
+      "source": "openalex",
+      "oa_url": "https://api.taylorfrancis.com/content/chapters/edit/download?identifierName=doi&identifierValue=10.1201/9781003162810-13&type=chapterpdf"
+    },
+    {
+      "query": "AutoML neural architecture search audio",
+      "id": "W4401889742",
+      "doi": "10.3390/info15090517",
+      "title": "Recurrent Neural Networks: A Comprehensive Review of Architectures, Variants, and Applications",
+      "year": 2024,
+      "authors": [
+        "Ibomoiye Domor Mienye",
+        "Theo G. Swart",
+        "George Obaido"
+      ],
+      "venue": "Information",
+      "citation_count": 504,
+      "url": "https://openalex.org/W4401889742",
+      "source": "openalex",
+      "oa_url": "https://www.mdpi.com/2078-2489/15/9/517/pdf?version=1724574257"
+    },
+    {
+      "query": "AutoML neural architecture search audio",
+      "id": "W2899743487",
+      "doi": "10.1007/978-3-030-05318-5_10",
+      "title": "Analysis of the AutoML Challenge Series 2015\u20132018",
+      "year": 2019,
+      "authors": [
+        "Isabelle Guyon",
+        "Lisheng Sun-Hosoya",
+        "Marc Boull\u00e9",
+        "Hugo Jair Escalante",
+        "S\u00e9rgio Escalera",
+        "Zhengying Liu",
+        "Damir Jajetic",
+        "Bisakha Ray",
+        "Mehreen Saeed",
+        "Mich\u00e8le S\u00e9bag",
+        "Alexander Statnikov",
+        "Wei-Wei Tu",
+        "Evelyne Viegas"
+      ],
+      "venue": "\u0098The \u009cSpringer series on challenges in machine learning",
+      "citation_count": 128,
+      "url": "https://openalex.org/W2899743487",
+      "source": "openalex",
+      "oa_url": "https://link.springer.com/content/pdf/10.1007%2F978-3-030-05318-5_10.pdf"
+    },
+    {
+      "query": "AutoML neural architecture search audio",
+      "id": "W4312257891",
+      "doi": "10.1109/access.2022.3212767",
+      "title": "Neural Architecture Search for Transformers: A Survey",
+      "year": 2022,
+      "authors": [
+        "Krishna Teja Chitty-Venkata",
+        "Murali Emani",
+        "Venkatram Vishwanath",
+        "Arun K. Somani"
+      ],
+      "venue": "IEEE Access",
+      "citation_count": 102,
+      "url": "https://openalex.org/W4312257891",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6287639/6514899/09913476.pdf"
+    },
+    {
+      "query": "AutoML neural architecture search audio",
+      "id": "W3160033795",
+      "doi": "10.1145/3411764.3445306",
+      "title": "Whither AutoML? Understanding the Role of Automation in Machine Learning Workflows",
+      "year": 2021,
+      "authors": [
+        "Doris Xin",
+        "Eva Yiwei Wu",
+        "Doris Jung\u2010Lin Lee",
+        "Niloufar Salehi",
+        "Aditya Parameswaran"
+      ],
+      "venue": null,
+      "citation_count": 96,
+      "url": "https://openalex.org/W3160033795",
+      "source": "openalex",
+      "oa_url": "https://dl.acm.org/doi/pdf/10.1145/3411764.3445306"
+    },
+    {
+      "query": "AutoML neural architecture search audio",
+      "id": "W3215895897",
+      "doi": "10.3390/s21237990",
+      "title": "Neural Architecture Search for 1D CNNs\u2014Different Approaches Tests and Measurements",
+      "year": 2021,
+      "authors": [
+        "Jo\u00e3o Rala Cordeiro",
+        "Ant\u00f3nio Raimundo",
+        "Octavian Postolache",
+        "Pedro Sebasti\u00e3o"
+      ],
+      "venue": "Sensors",
+      "citation_count": 58,
+      "url": "https://openalex.org/W3215895897",
+      "source": "openalex",
+      "oa_url": "https://www.mdpi.com/1424-8220/21/23/7990/pdf?version=1638328624"
+    },
+    {
+      "query": "AutoML neural architecture search audio",
+      "id": "W4323644307",
+      "doi": "10.1109/access.2023.3253818",
+      "title": "Neural Architecture Search Benchmarks: Insights and Survey",
+      "year": 2023,
+      "authors": [
+        "Krishna Teja Chitty-Venkata",
+        "Murali Emani",
+        "Venkatram Vishwanath",
+        "Arun K. Somani"
+      ],
+      "venue": "IEEE Access",
+      "citation_count": 56,
+      "url": "https://openalex.org/W4323644307",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6287639/6514899/10063950.pdf"
+    },
+    {
+      "query": "AutoML neural architecture search audio",
+      "id": "W4285305827",
+      "doi": "10.1109/tc.2022.3177955",
+      "title": "Lightweight Neural Architecture Search for Temporal Convolutional Networks at the Edge",
+      "year": 2022,
+      "authors": [
+        "Matteo Risso",
+        "Alessio Burrello",
+        "Francesco Conti",
+        "Lorenzo Lamberti",
+        "Yukai Chen",
+        "Luca Benini",
+        "Enrico Macii",
+        "Massimo Poncino",
+        "Daniele Jahier Pagliari"
+      ],
+      "venue": "IEEE Transactions on Computers",
+      "citation_count": 47,
+      "url": "https://openalex.org/W4285305827",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2301.10281"
+    },
+    {
+      "query": "few-shot meta-learning signal processing",
+      "id": "W2116658855",
+      "doi": "10.1523/jneurosci.5587-06.2007",
+      "title": "Dissociable Intrinsic Connectivity Networks for Salience Processing and Executive Control",
+      "year": 2007,
+      "authors": [
+        "William W. Seeley",
+        "Vinod Menon",
+        "Alan F. Schatzberg",
+        "Jennifer Keller",
+        "Gary H. Glover",
+        "Heather A. Kenna",
+        "Allan L. Reiss",
+        "Michael D. Greicius"
+      ],
+      "venue": "Journal of Neuroscience",
+      "citation_count": 7566,
+      "url": "https://openalex.org/W2116658855",
+      "source": "openalex",
+      "oa_url": "https://www.jneurosci.org/content/jneuro/27/9/2349.full.pdf"
+    },
+    {
+      "query": "few-shot meta-learning signal processing",
+      "id": "W3185341429",
+      "doi": "10.1145/3560815",
+      "title": "Pre-train, Prompt, and Predict: A Systematic Survey of Prompting Methods in Natural Language Processing",
+      "year": 2022,
+      "authors": [
+        "Pengfei Liu",
+        "Weizhe Yuan",
+        "Jinlan Fu",
+        "Zhengbao Jiang",
+        "Hiroaki Hayashi",
+        "Graham Neubig"
+      ],
+      "venue": "ACM Computing Surveys",
+      "citation_count": 3663,
+      "url": "https://openalex.org/W3185341429",
+      "source": "openalex",
+      "oa_url": "https://dl.acm.org/doi/pdf/10.1145/3560815"
+    },
+    {
+      "query": "few-shot meta-learning signal processing",
+      "id": "W2988916019",
+      "doi": "10.1007/s11263-019-01247-4",
+      "title": "Deep Learning for Generic Object Detection: A Survey",
+      "year": 2019,
+      "authors": [
+        "Li Liu",
+        "Wanli Ouyang",
+        "Xiaogang Wang",
+        "Paul Fieguth",
+        "Jie Chen",
+        "Xinwang Liu",
+        "Matti Pietik\u00e4inen"
+      ],
+      "venue": "International Journal of Computer Vision",
+      "citation_count": 2797,
+      "url": "https://openalex.org/W2988916019",
+      "source": "openalex",
+      "oa_url": "https://link.springer.com/content/pdf/10.1007/s11263-019-01247-4.pdf"
+    },
+    {
+      "query": "few-shot meta-learning signal processing",
+      "id": "W3149839747",
+      "doi": "10.1016/j.engappai.2022.105151",
+      "title": "Ensemble deep learning: A review",
+      "year": 2022,
+      "authors": [
+        "M. A. Ganaie",
+        "Minghui Hu",
+        "A. K. Malik",
+        "M. Tanveer",
+        "Ponnuthurai Nagaratnam Suganthan"
+      ],
+      "venue": "Engineering Applications of Artificial Intelligence",
+      "citation_count": 2073,
+      "url": "https://openalex.org/W3149839747",
+      "source": "openalex",
+      "oa_url": "https://www.sciencedirect.com/science/article/pii/S095219762200269X"
+    },
+    {
+      "query": "few-shot meta-learning signal processing",
+      "id": "W3126446664",
+      "doi": "10.1016/j.neucom.2021.01.099",
+      "title": "Meta-learning for few-shot bearing fault diagnosis under complex working conditions",
+      "year": 2021,
+      "authors": [
+        "Chuanjiang Li",
+        "Shaobo Li",
+        "Ansi Zhang",
+        "Qiang He",
+        "Zihao Liao",
+        "Jianjun Hu"
+      ],
+      "venue": "Neurocomputing",
+      "citation_count": 267,
+      "url": "https://openalex.org/W3126446664",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "few-shot meta-learning signal processing",
+      "id": "W4318677150",
+      "doi": "10.1016/j.knosys.2023.110345",
+      "title": "Attention-based deep meta-transfer learning for few-shot fine-grained fault diagnosis",
+      "year": 2023,
+      "authors": [
+        "Chuanjiang Li",
+        "Shaobo Li",
+        "Huan Wang",
+        "Fengshou Gu",
+        "Andrew Ball"
+      ],
+      "venue": "Knowledge-Based Systems",
+      "citation_count": 196,
+      "url": "https://openalex.org/W4318677150",
+      "source": "openalex",
+      "oa_url": "https://pure.hud.ac.uk/ws/files/58584932/Accepted_manuscript.pdf"
+    },
+    {
+      "query": "MAML model-agnostic meta-learning",
+      "id": "W2976335444",
+      "doi": "10.48550/arxiv.1909.12488",
+      "title": "Improving Federated Learning Personalization via Model Agnostic Meta Learning",
+      "year": 2019,
+      "authors": [
+        "Yihan Jiang",
+        "Jakub Kone\u010dn\u00fd",
+        "Keith Rush",
+        "Sreeram Kannan"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 369,
+      "url": "https://openalex.org/W2976335444",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/1909.12488"
+    },
+    {
+      "query": "MAML model-agnostic meta-learning",
+      "id": "W3007345209",
+      "doi": "10.48550/arxiv.2002.07948",
+      "title": "Personalized Federated Learning: A Meta-Learning Approach",
+      "year": 2020,
+      "authors": [
+        "Alireza Fallah",
+        "Aryan Mokhtari",
+        "Asuman Ozdaglar"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 364,
+      "url": "https://openalex.org/W3007345209",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2002.07948"
+    },
+    {
+      "query": "MAML model-agnostic meta-learning",
+      "id": "W2946605054",
+      "doi": "10.48550/arxiv.1905.07435",
+      "title": "Alpha MAML: Adaptive Model-Agnostic Meta-Learning",
+      "year": 2019,
+      "authors": [
+        "Harkirat Singh Behl",
+        "At\u0131l\u0131m G\u00fcne\u015f Baydin",
+        "Philip H. S. Torr"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 54,
+      "url": "https://openalex.org/W2946605054",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/1905.07435"
+    },
+    {
+      "query": "MAML model-agnostic meta-learning",
+      "id": "W4399432515",
+      "doi": "10.3390/diagnostics14121213",
+      "title": "Few-Shot Learning for Medical Image Segmentation Using 3D U-Net and Model-Agnostic Meta-Learning (MAML)",
+      "year": 2024,
+      "authors": [
+        "A. Al-Saleh",
+        "Eid Albalawi",
+        "Abdulelah Algosaibi",
+        "Salman S. Albakheet",
+        "Surbhi Bhatia"
+      ],
+      "venue": "Diagnostics",
+      "citation_count": 35,
+      "url": "https://openalex.org/W4399432515",
+      "source": "openalex",
+      "oa_url": "https://www.mdpi.com/2075-4418/14/12/1213/pdf?version=1718618721"
+    },
+    {
+      "query": "MAML model-agnostic meta-learning",
+      "id": "W3137432794",
+      "doi": "10.1109/icassp39728.2021.9413446",
+      "title": "Robust Maml: Prioritization Task Buffer with Adaptive Learning Process for Model-Agnostic Meta-Learning",
+      "year": 2021,
+      "authors": [
+        "Thanh Nguyen",
+        "Tung M. Luu",
+        "Trung X. Pham",
+        "Sanzhar Rakhimkul",
+        "Chang D. Yoo"
+      ],
+      "venue": "ICASSP 2021 - 2021 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)",
+      "citation_count": 22,
+      "url": "https://openalex.org/W3137432794",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2103.08233"
+    },
+    {
+      "query": "MAML model-agnostic meta-learning",
+      "id": "W4407403550",
+      "doi": "10.1109/tsp.2025.3540018",
+      "title": "MAML-KalmanNet: A Neural Network-Assisted Kalman Filter Based on Model-Agnostic Meta-Learning",
+      "year": 2025,
+      "authors": [
+        "Shanli Chen",
+        "Yunfei Zheng",
+        "Dongyuan Lin",
+        "Peng Cai",
+        "Yingying Xiao",
+        "Shiyuan Wang"
+      ],
+      "venue": "IEEE Transactions on Signal Processing",
+      "citation_count": 21,
+      "url": "https://openalex.org/W4407403550",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "MAML model-agnostic meta-learning",
+      "id": "chemrxiv:10.26434/chemrxiv.11981622.v1",
+      "doi": "10.26434/chemrxiv.11981622.v1",
+      "title": "Meta-Learning Initializations for Low-Resource Drug Discovery",
+      "year": 2020,
+      "authors": [
+        "Cuong Q. Nguyen",
+        "Constantine Kreatsoulas",
+        "Kim M. Branson"
+      ],
+      "venue": "chemRxiv",
+      "citation_count": 15,
+      "url": "https://doi.org/10.26434/chemrxiv.11981622.v1",
+      "source": "chemrxiv",
+      "oa_url": null
+    },
+    {
+      "query": "MAML model-agnostic meta-learning",
+      "id": "W4409455823",
+      "doi": "10.3390/s25082487",
+      "title": "An Adaptive Framework for Intrusion Detection in IoT Security Using MAML (Model-Agnostic Meta-Learning)",
+      "year": 2025,
+      "authors": [
+        "Fatma S. Alrayes",
+        "Syed Umar Amin",
+        "Nada Ali Hakami"
+      ],
+      "venue": "Sensors",
+      "citation_count": 14,
+      "url": "https://openalex.org/W4409455823",
+      "source": "openalex",
+      "oa_url": "https://www.mdpi.com/1424-8220/25/8/2487/pdf?version=1744782180"
+    },
+    {
+      "query": "hyperparameter optimization Gaussian process",
+      "id": "W1522301498",
+      "doi": "10.48550/arxiv.1412.6980",
+      "title": "Adam: A Method for Stochastic Optimization",
+      "year": 2014,
+      "authors": [
+        "Diederik P. Kingma",
+        "Jimmy Ba"
+      ],
+      "venue": "UvA-DARE (University of Amsterdam)",
+      "citation_count": 84793,
+      "url": "https://openalex.org/W1522301498",
+      "source": "openalex",
+      "oa_url": "https://handle.uba.uva.nl/personal/pure/en/publications/adam-a-method-for-stochastic-optimization(a20791d3-1aff-464a-8544-268383c33a75).html"
+    },
+    {
+      "query": "hyperparameter optimization Gaussian process",
+      "id": "W2099768828",
+      "doi": null,
+      "title": "Sparse Gaussian Processes using Pseudo-inputs",
+      "year": 2005,
+      "authors": [
+        "Edward Snelson",
+        "Zoubin Ghahramani"
+      ],
+      "venue": null,
+      "citation_count": 1335,
+      "url": "https://openalex.org/W2099768828",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "hyperparameter optimization Gaussian process",
+      "id": "W2161767008",
+      "doi": null,
+      "title": "Gaussian Processes for Regression",
+      "year": 1995,
+      "authors": [
+        "Christopher K. I. Williams",
+        "Carl Edward Rasmussen"
+      ],
+      "venue": "Aston Publications Explorer (Aston University)",
+      "citation_count": 1147,
+      "url": "https://openalex.org/W2161767008",
+      "source": "openalex",
+      "oa_url": "https://hal.science/hal-03953027"
+    },
+    {
+      "query": "hyperparameter optimization Gaussian process",
+      "id": "W1437335841",
+      "doi": "10.1088/1749-4699/8/1/014008",
+      "title": "Hyperopt: a Python library for model selection and hyperparameter optimization",
+      "year": 2015,
+      "authors": [
+        "James Bergstra",
+        "Brent Komer",
+        "Chris Eliasmith",
+        "Dan Yamins",
+        "David Cox"
+      ],
+      "venue": "Computational Science & Discovery",
+      "citation_count": 1044,
+      "url": "https://openalex.org/W1437335841",
+      "source": "openalex",
+      "oa_url": "https://iopscience.iop.org/article/10.1088/1749-4699/8/1/014008/pdf"
+    },
+    {
+      "query": "hyperparameter optimization Gaussian process",
+      "id": "W2780562800",
+      "doi": "10.1007/s10994-017-5684-y",
+      "title": "Scalable Gaussian process-based transfer surrogates for hyperparameter optimization",
+      "year": 2017,
+      "authors": [
+        "Martin Wistuba",
+        "Nicolas Schilling",
+        "Lars Schmidt-Thieme"
+      ],
+      "venue": "Machine Learning",
+      "citation_count": 111,
+      "url": "https://openalex.org/W2780562800",
+      "source": "openalex",
+      "oa_url": "https://link.springer.com/content/pdf/10.1007/s10994-017-5684-y.pdf"
+    },
+    {
+      "query": "hyperparameter optimization Gaussian process",
+      "id": "W4402093399",
+      "doi": "10.1038/s41598-024-71027-9",
+      "title": "Optimizing Gaussian process regression (GPR) hyperparameters with three metaheuristic algorithms for viscosity prediction of suspensions containing microencapsulated PCMs",
+      "year": 2024,
+      "authors": [
+        "Tao Hai",
+        "Ali Basem",
+        "As\u2019ad Alizadeh",
+        "Kamal Sharma",
+        "Dheyaa J. Jasim",
+        "Husam Rajab",
+        "Mohsen Ahmed",
+        "Murizah Kassim",
+        "Narinderjit Singh Sawaran Singh",
+        "Hamid Maleki"
+      ],
+      "venue": "Scientific Reports",
+      "citation_count": 69,
+      "url": "https://openalex.org/W4402093399",
+      "source": "openalex",
+      "oa_url": "https://www.nature.com/articles/s41598-024-71027-9.pdf"
+    },
+    {
+      "query": "hyperparameter optimization Gaussian process",
+      "id": "W2400159152",
+      "doi": null,
+      "title": "Optimization of Gaussian Process Hyperparameters using Rprop",
+      "year": 2013,
+      "authors": [
+        "Manuel Blum",
+        "Martin Riedmiller"
+      ],
+      "venue": "The European Symposium on Artificial Neural Networks",
+      "citation_count": 63,
+      "url": "https://openalex.org/W2400159152",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "hyperparameter optimization Gaussian process",
+      "id": "W2510167369",
+      "doi": "10.1007/978-3-319-46128-1_3",
+      "title": "Scalable Hyperparameter Optimization with Products of Gaussian Process Experts",
+      "year": 2016,
+      "authors": [
+        "Nicolas Schilling",
+        "Martin Wistuba",
+        "Lars Schmidt-Thieme"
+      ],
+      "venue": "Lecture notes in computer science",
+      "citation_count": 32,
+      "url": "https://openalex.org/W2510167369",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "self-supervised audio denoising unpaired",
+      "id": "W3114632476",
+      "doi": "10.3390/technologies9010002",
+      "title": "A Survey on Contrastive Self-Supervised Learning",
+      "year": 2020,
+      "authors": [
+        "Ashish Jaiswal"
+      ],
+      "venue": "MDPI (MDPI AG)",
+      "citation_count": 1546,
+      "url": "https://openalex.org/W3114632476",
+      "source": "openalex",
+      "oa_url": "https://dx.doi.org/10.3390/technologies9010002"
+    },
+    {
+      "query": "self-supervised audio denoising unpaired",
+      "id": "W3212516020",
+      "doi": "10.1145/3528233.3530757",
+      "title": "Palette: Image-to-Image Diffusion Models",
+      "year": 2022,
+      "authors": [
+        "Chitwan Saharia",
+        "William Chan",
+        "Huiwen Chang",
+        "Chris Lee",
+        "Jonathan Ho",
+        "Tim Salimans",
+        "David J. Fleet",
+        "Mohammad Norouzi"
+      ],
+      "venue": null,
+      "citation_count": 1521,
+      "url": "https://openalex.org/W3212516020",
+      "source": "openalex",
+      "oa_url": "https://dl.acm.org/doi/pdf/10.1145/3528233.3530757"
+    },
+    {
+      "query": "self-supervised audio denoising unpaired",
+      "id": "W3096655658",
+      "doi": "10.1109/access.2020.3031549",
+      "title": "Contrastive Representation Learning: A Framework and Review",
+      "year": 2020,
+      "authors": [
+        "Phuc H. Le-Khac",
+        "Graham Healy",
+        "Alan F. Smeaton"
+      ],
+      "venue": "IEEE Access",
+      "citation_count": 829,
+      "url": "https://openalex.org/W3096655658",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6287639/8948470/09226466.pdf"
+    },
+    {
+      "query": "self-supervised audio denoising unpaired",
+      "id": "W4281492411",
+      "doi": "10.1109/jstsp.2022.3207050",
+      "title": "Self-Supervised Speech Representation Learning: A Review",
+      "year": 2022,
+      "authors": [
+        "Abdelrahman Mohamed",
+        "Hung-yi Lee",
+        "Lasse Borgholt",
+        "Jakob D. Havtorn",
+        "Joakim Edin",
+        "Christian Igel",
+        "Katrin Kirchhoff",
+        "Shang-Wen Li",
+        "Karen Livescu",
+        "Lars Maal\u00f8e",
+        "Tara N. Sainath",
+        "Shinji Watanabe"
+      ],
+      "venue": "IEEE Journal of Selected Topics in Signal Processing",
+      "citation_count": 353,
+      "url": "https://openalex.org/W4281492411",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2205.10643"
+    },
+    {
+      "query": "self-supervised audio denoising unpaired",
+      "id": "W3169320628",
+      "doi": "10.1109/taslp.2021.3122291",
+      "title": "HuBERT: Self-Supervised Speech Representation Learning by Masked Prediction of Hidden Units",
+      "year": 2021,
+      "authors": [
+        "Wei-Ning Hsu",
+        "Benjamin Bolte",
+        "Yao-Hung Hubert Tsai",
+        "Kushal Lakhotia",
+        "Ruslan Salakhutdinov",
+        "Abdelrahman Mohamed"
+      ],
+      "venue": "IEEE/ACM Transactions on Audio Speech and Language Processing",
+      "citation_count": 269,
+      "url": "https://openalex.org/W3169320628",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2106.07447"
+    },
+    {
+      "query": "self-supervised audio denoising unpaired",
+      "id": "W4377010269",
+      "doi": "10.1145/3592458",
+      "title": "Listen, Denoise, Action! Audio-Driven Motion Synthesis with Diffusion Models",
+      "year": 2023,
+      "authors": [
+        "Simon Alexanderson",
+        "Rajmund Nagy",
+        "Jonas Beskow",
+        "Gustav Eje Henter"
+      ],
+      "venue": "ACM Transactions on Graphics",
+      "citation_count": 173,
+      "url": "https://openalex.org/W4377010269",
+      "source": "openalex",
+      "oa_url": "https://dl.acm.org/doi/pdf/10.1145/3592458"
+    },
+    {
+      "query": "self-supervised audio denoising unpaired",
+      "id": "W4319299887",
+      "doi": "10.1109/wacv56688.2023.00077",
+      "title": "UVCGAN: UNet Vision Transformer cycle-consistent GAN for unpaired image-to-image translation",
+      "year": 2023,
+      "authors": [
+        "D. Torbunov",
+        "Yi Huang",
+        "H. Yu",
+        "Jin Huang",
+        "Shinjae Yoo",
+        "Meifeng Lin",
+        "Brett Viren",
+        "Yihui Ren"
+      ],
+      "venue": "2023 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV)",
+      "citation_count": 172,
+      "url": "https://openalex.org/W4319299887",
+      "source": "openalex",
+      "oa_url": "https://www.osti.gov/servlets/purl/1895074"
+    },
+    {
+      "query": "self-supervised audio denoising unpaired",
+      "id": "W4311137818",
+      "doi": "10.1016/j.patter.2022.100616",
+      "title": "Audio self-supervised learning: A survey",
+      "year": 2022,
+      "authors": [
+        "Shuo Liu",
+        "Adria Mallol-Ragolta",
+        "Emilia Parada\u2010Cabaleiro",
+        "Kun Qian",
+        "Xin Jing",
+        "Alexander Kathan",
+        "Bin Hu",
+        "Bj\u00f6rn W. Schuller"
+      ],
+      "venue": "Patterns",
+      "citation_count": 107,
+      "url": "https://openalex.org/W4311137818",
+      "source": "openalex",
+      "oa_url": "http://www.cell.com/article/S2666389922002410/pdf"
+    },
+    {
+      "query": "self-supervised audio denoising unpaired",
+      "id": "W4313984387",
+      "doi": "10.3389/fdata.2022.1001063",
+      "title": "Audio deepfakes: A survey",
+      "year": 2023,
+      "authors": [
+        "Zahra Khanjani",
+        "Gabrielle Watson",
+        "Vandana P. Janeja"
+      ],
+      "venue": "Frontiers in Big Data",
+      "citation_count": 104,
+      "url": "https://openalex.org/W4313984387",
+      "source": "openalex",
+      "oa_url": "https://www.frontiersin.org/articles/10.3389/fdata.2022.1001063/pdf"
+    },
+    {
+      "query": "self-supervised audio denoising unpaired",
+      "id": "W2997534433",
+      "doi": "10.1609/aaai.v34i07.6619",
+      "title": "Auto-GAN: Self-Supervised Collaborative Learning for Medical Image Synthesis",
+      "year": 2020,
+      "authors": [
+        "Bing Cao",
+        "Han Zhang",
+        "Nannan Wang",
+        "Xinbo Gao",
+        "Dinggang Shen"
+      ],
+      "venue": "Proceedings of the AAAI Conference on Artificial Intelligence",
+      "citation_count": 86,
+      "url": "https://openalex.org/W2997534433",
+      "source": "openalex",
+      "oa_url": "https://ojs.aaai.org/index.php/AAAI/article/download/6619/6473"
+    },
+    {
+      "query": "Noise2Noise unsupervised denoising",
+      "id": "W3093295276",
+      "doi": "10.1038/s41467-020-18952-1",
+      "title": "Topaz-Denoise: general deep denoising models for cryoEM and cryoET",
+      "year": 2020,
+      "authors": [
+        "Tristan Bepler",
+        "K. Kelley",
+        "Alex J. Noble",
+        "Bonnie Berger"
+      ],
+      "venue": "Nature Communications",
+      "citation_count": 619,
+      "url": "https://openalex.org/W3093295276",
+      "source": "openalex",
+      "oa_url": "https://www.nature.com/articles/s41467-020-18952-1.pdf"
+    },
+    {
+      "query": "Noise2Noise unsupervised denoising",
+      "id": "W3169893408",
+      "doi": "10.1007/s40747-021-00428-4",
+      "title": "Methods for image denoising using convolutional neural network: a review",
+      "year": 2021,
+      "authors": [
+        "Ademola E. Ilesanmi",
+        "Taiwo Ilesanmi"
+      ],
+      "venue": "Complex & Intelligent Systems",
+      "citation_count": 378,
+      "url": "https://openalex.org/W3169893408",
+      "source": "openalex",
+      "oa_url": "https://link.springer.com/content/pdf/10.1007/s40747-021-00428-4.pdf"
+    },
+    {
+      "query": "Noise2Noise unsupervised denoising",
+      "id": "10.1109/cvpr52729.2023.01347",
+      "doi": "10.1109/cvpr52729.2023.01347",
+      "title": "Zero-Shot Noise2Noise: Efficient Image Denoising without any Data",
+      "year": 2023,
+      "authors": [
+        "Youssef Mansour",
+        "Reinhard Heckel"
+      ],
+      "venue": "2023 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)",
+      "citation_count": 157,
+      "url": "https://doi.org/10.1109/cvpr52729.2023.01347",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "Noise2Noise unsupervised denoising",
+      "id": "W3080821159",
+      "doi": "10.1109/tci.2020.3019647",
+      "title": "Noise2Inverse: Self-Supervised Deep Convolutional Denoising for Tomography",
+      "year": 2020,
+      "authors": [
+        "Allard Adriaan Hendriksen",
+        "Daniel Maria Pelt",
+        "K. Joost Batenburg"
+      ],
+      "venue": "IEEE Transactions on Computational Imaging",
+      "citation_count": 141,
+      "url": "https://openalex.org/W3080821159",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2001.11801"
+    },
+    {
+      "query": "Noise2Noise unsupervised denoising",
+      "id": "W3093834713",
+      "doi": "10.1186/s42649-020-00041-8",
+      "title": "Noise2Atom: unsupervised denoising for scanning transmission electron microscopy images",
+      "year": 2020,
+      "authors": [
+        "Feng Wang",
+        "Trond R. Henninen",
+        "Debora Keller",
+        "Rolf Erni"
+      ],
+      "venue": "Han-guk hyeonmigyeong hakoeji/Applied microscopy",
+      "citation_count": 62,
+      "url": "https://openalex.org/W3093834713",
+      "source": "openalex",
+      "oa_url": "https://appmicro.springeropen.com/track/pdf/10.1186/s42649-020-00041-8"
+    },
+    {
+      "query": "Noise2Noise unsupervised denoising",
+      "id": "W3205522968",
+      "doi": "10.1088/1361-6560/ac30a0",
+      "title": "Noise2Void: unsupervised denoising of PET images",
+      "year": 2021,
+      "authors": [
+        "Tzu-An Song",
+        "Fan Yang",
+        "Joyita Dutta"
+      ],
+      "venue": "Physics in Medicine and Biology",
+      "citation_count": 56,
+      "url": "https://openalex.org/W3205522968",
+      "source": "openalex",
+      "oa_url": "https://www.ncbi.nlm.nih.gov/pmc/articles/8563445"
+    },
+    {
+      "query": "Noise2Noise unsupervised denoising",
+      "id": "W3167114847",
+      "doi": "10.3389/frai.2021.642731",
+      "title": "Evaluation of MRI Denoising Methods Using Unsupervised Learning",
+      "year": 2021,
+      "authors": [
+        "Marc Moreno L\u00f3pez",
+        "Joshua M. Frederick",
+        "Jonathan Ventura"
+      ],
+      "venue": "Frontiers in Artificial Intelligence",
+      "citation_count": 53,
+      "url": "https://openalex.org/W3167114847",
+      "source": "openalex",
+      "oa_url": "https://www.frontiersin.org/articles/10.3389/frai.2021.642731/pdf"
+    },
+    {
+      "query": "Noise2Noise unsupervised denoising",
+      "id": "10.21437/interspeech.2021-1130",
+      "doi": "10.21437/interspeech.2021-1130",
+      "title": "Speech Denoising Without Clean Training Data: A Noise2Noise Approach",
+      "year": 2021,
+      "authors": [
+        "Madhav Mahesh Kashyap",
+        "Anuj Tambwekar",
+        "Krishnamoorthy Manohara",
+        "S. Natarajan"
+      ],
+      "venue": "Interspeech 2021",
+      "citation_count": 38,
+      "url": "https://doi.org/10.21437/interspeech.2021-1130",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "Noise2Noise unsupervised denoising",
+      "id": "10.1109/cvprw53098.2021.00089",
+      "doi": "10.1109/cvprw53098.2021.00089",
+      "title": "Improved Noise2Noise Denoising with Limited Data",
+      "year": 2021,
+      "authors": [
+        "Adria Font Calvarons"
+      ],
+      "venue": "2021 IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops (CVPRW)",
+      "citation_count": 33,
+      "url": "https://doi.org/10.1109/cvprw53098.2021.00089",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "Noise2Noise unsupervised denoising",
+      "id": "W3188436466",
+      "doi": "10.1002/jbio.202100151",
+      "title": "Comparative study of deep neural networks with unsupervised <scp>Noise2Noise</scp> strategy for noise reduction of optical coherence tomography images",
+      "year": 2021,
+      "authors": [
+        "Bin Qiu",
+        "Shuang Zeng",
+        "Xiangxi Meng",
+        "Zhe Jiang",
+        "Yunfei You",
+        "Mufeng Geng",
+        "Ziyuan Li",
+        "Yicheng Hu",
+        "Zhiyu Huang",
+        "Chuanqing Zhou",
+        "Qiushi Ren",
+        "Yanye Lu"
+      ],
+      "venue": "Journal of Biophotonics",
+      "citation_count": 31,
+      "url": "https://openalex.org/W3188436466",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "deep learning audio restoration survey",
+      "id": "W1984020445",
+      "doi": "10.1109/access.2014.2325029",
+      "title": "Big Data Deep Learning: Challenges and Perspectives",
+      "year": 2014,
+      "authors": [
+        "Xuewen Chen",
+        "Xiaotong Lin"
+      ],
+      "venue": "IEEE Access",
+      "citation_count": 1260,
+      "url": "https://openalex.org/W1984020445",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6287639/6705689/06817512.pdf"
+    },
+    {
+      "query": "deep learning audio restoration survey",
+      "id": "W4366091323",
+      "doi": "10.1007/s10462-023-10466-8",
+      "title": "Deep learning modelling techniques: current progress, applications, advantages, and challenges",
+      "year": 2023,
+      "authors": [
+        "Shams Forruque Ahmed",
+        "Md. Sakib Bin Alam",
+        "Maruf Hassan",
+        "Mahtabin Rodela Rozbu",
+        "Taoseef Ishtiak",
+        "Nazifa Rafa",
+        "M. Mofijur",
+        "A. B. M. Shawkat Ali",
+        "Amir H. Gandomi"
+      ],
+      "venue": "Artificial Intelligence Review",
+      "citation_count": 989,
+      "url": "https://openalex.org/W4366091323",
+      "source": "openalex",
+      "oa_url": "https://link.springer.com/content/pdf/10.1007/s10462-023-10466-8.pdf"
+    },
+    {
+      "query": "deep learning audio restoration survey",
+      "id": "W4295122555",
+      "doi": "10.3390/app12188972",
+      "title": "Deep Residual Learning for Image Recognition: A Survey",
+      "year": 2022,
+      "authors": [
+        "Muhammad Shafiq",
+        "Zhaoquan Gu"
+      ],
+      "venue": "Applied Sciences",
+      "citation_count": 950,
+      "url": "https://openalex.org/W4295122555",
+      "source": "openalex",
+      "oa_url": "https://www.mdpi.com/2076-3417/12/18/8972/pdf?version=1662547655"
+    },
+    {
+      "query": "deep learning audio restoration survey",
+      "id": "W2910096450",
+      "doi": "10.1007/s10462-018-09679-z",
+      "title": "Machine Learning and Deep Learning frameworks and libraries for large-scale data mining: a survey",
+      "year": 2019,
+      "authors": [
+        "Giang Nguyen",
+        "\u0160tefan Dlugolinsk\u00fd",
+        "Martin Bob\u00e1k",
+        "Viet Tran",
+        "\u00c1lvaro L\u00f3pez Garc\u00eda",
+        "Ignacio Heredia",
+        "Peter Mal\u00edk",
+        "Ladislav Hluch\u00fd"
+      ],
+      "venue": "Artificial Intelligence Review",
+      "citation_count": 860,
+      "url": "https://openalex.org/W2910096450",
+      "source": "openalex",
+      "oa_url": "https://link.springer.com/content/pdf/10.1007/s10462-018-09679-z.pdf"
+    },
+    {
+      "query": "deep learning audio restoration survey",
+      "id": "W2911290743",
+      "doi": "10.1073/pnas.1907377117",
+      "title": "On instabilities of deep learning in image reconstruction and the potential costs of AI",
+      "year": 2020,
+      "authors": [
+        "Vegard Antun",
+        "Francesco Renna",
+        "Clarice Poon",
+        "Ben Adcock",
+        "Anders C. Hansen"
+      ],
+      "venue": "Proceedings of the National Academy of Sciences",
+      "citation_count": 765,
+      "url": "https://openalex.org/W2911290743",
+      "source": "openalex",
+      "oa_url": "https://www.pnas.org/doi/pdf/10.1073/pnas.1907377117"
+    },
+    {
+      "query": "deep learning audio restoration survey",
+      "id": "W2092766760",
+      "doi": "10.1016/j.automatica.2014.01.001",
+      "title": "Kernel methods in system identification, machine learning and function estimation: A survey",
+      "year": 2014,
+      "authors": [
+        "Gianluigi Pillonetto",
+        "Francesco Dinuzzo",
+        "Tianshi Chen",
+        "Giuseppe De Nicolao",
+        "Lennart Ljung"
+      ],
+      "venue": "Automatica",
+      "citation_count": 737,
+      "url": "https://openalex.org/W2092766760",
+      "source": "openalex",
+      "oa_url": "https://www.sciencedirect.com/science/article/pii/S000510981400020X"
+    },
+    {
+      "query": "deep learning audio restoration survey",
+      "id": "W2804532080",
+      "doi": "10.1002/widm.1264",
+      "title": "Deep learning for remote sensing image classification: A survey",
+      "year": 2018,
+      "authors": [
+        "Ying Li",
+        "Haokui Zhang",
+        "Xizhe Xue",
+        "Yenan Jiang",
+        "Qiang Shen"
+      ],
+      "venue": "Wiley Interdisciplinary Reviews Data Mining and Knowledge Discovery",
+      "citation_count": 458,
+      "url": "https://openalex.org/W2804532080",
+      "source": "openalex",
+      "oa_url": "https://onlinelibrary.wiley.com/doi/pdfdirect/10.1002/widm.1264"
+    },
+    {
+      "query": "deep learning audio restoration survey",
+      "id": "W3168463823",
+      "doi": "10.1007/s00371-021-02166-7",
+      "title": "A survey on deep multimodal learning for computer vision: advances, trends, applications, and datasets",
+      "year": 2021,
+      "authors": [
+        "Khaled Bayoudh",
+        "Raja Knani",
+        "Fay\u00e7al Hamdaoui",
+        "Abdellatif Mtibaa"
+      ],
+      "venue": "The Visual Computer",
+      "citation_count": 425,
+      "url": "https://openalex.org/W3168463823",
+      "source": "openalex",
+      "oa_url": "https://www.ncbi.nlm.nih.gov/pmc/articles/8192112"
+    },
+    {
+      "query": "deep learning audio restoration survey",
+      "id": "W3112787034",
+      "doi": "10.1109/access.2020.3045078",
+      "title": "Privacy and Security Issues in Deep Learning: A Survey",
+      "year": 2020,
+      "authors": [
+        "Ximeng Liu",
+        "Lehui Xie",
+        "Yaopeng Wang",
+        "Jian Zou",
+        "Jinbo Xiong",
+        "Zuobin Ying",
+        "Athanasios V. Vasilakos"
+      ],
+      "venue": "IEEE Access",
+      "citation_count": 278,
+      "url": "https://openalex.org/W3112787034",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6287639/9312710/09294026.pdf"
+    },
+    {
+      "query": "deep learning audio restoration survey",
+      "id": "10.1016/j.neucom.2022.02.046",
+      "doi": "10.1016/j.neucom.2022.02.046",
+      "title": "A survey of deep learning approaches to image restoration",
+      "year": 2022,
+      "authors": [
+        "Jingwen Su",
+        "Boyan Xu",
+        "Hujun Yin"
+      ],
+      "venue": "Neurocomputing",
+      "citation_count": 167,
+      "url": "https://doi.org/10.1016/j.neucom.2022.02.046",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "wavetable synthesis differentiable DDSP",
+      "id": "W4307977691",
+      "doi": "10.17743/jaes.2022.0025",
+      "title": "Style Transfer of Audio Effects with Differentiable Signal Processing",
+      "year": 2022,
+      "authors": [
+        "Christian J. Steinmetz",
+        "Nicholas J. Bryan",
+        "Joshua D. Reiss"
+      ],
+      "venue": "Journal of the Audio Engineering Society",
+      "citation_count": 30,
+      "url": "https://openalex.org/W4307977691",
+      "source": "openalex",
+      "oa_url": "http://www.aes.org/e-lib/download.cfm?ID=21883"
+    },
+    {
+      "query": "wavetable synthesis differentiable DDSP",
+      "id": "W4390745914",
+      "doi": "10.3389/frsip.2023.1284100",
+      "title": "A review of differentiable digital signal processing for music and speech synthesis",
+      "year": 2024,
+      "authors": [
+        "Ben Hayes",
+        "Jordie Shier",
+        "Gy\u00f6rgy Fazekas",
+        "Andrew McPherson",
+        "Charalampos Saitis"
+      ],
+      "venue": "Frontiers in Signal Processing",
+      "citation_count": 29,
+      "url": "https://openalex.org/W4390745914",
+      "source": "openalex",
+      "oa_url": "https://www.frontiersin.org/articles/10.3389/frsip.2023.1284100/pdf?isPublishedV2=False"
+    },
+    {
+      "query": "wavetable synthesis differentiable DDSP",
+      "id": "10.1109/icassp43922.2022.9746940",
+      "doi": "10.1109/icassp43922.2022.9746940",
+      "title": "Differentiable Wavetable Synthesis",
+      "year": 2022,
+      "authors": [
+        "Siyuan Shan",
+        "Lamtharn Hantrakul",
+        "Jitong Chen",
+        "Matt Avent",
+        "David Trevelyan"
+      ],
+      "venue": "ICASSP 2022 - 2022 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)",
+      "citation_count": 14,
+      "url": "https://doi.org/10.1109/icassp43922.2022.9746940",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "wavetable synthesis differentiable DDSP",
+      "id": "W4316660651",
+      "doi": "10.1109/taslp.2023.3237161",
+      "title": "Improving Semi-Supervised Differentiable Synthesizer Sound Matching for Practical Applications",
+      "year": 2023,
+      "authors": [
+        "Naotake Masuda",
+        "Daisuke Saito"
+      ],
+      "venue": "IEEE/ACM Transactions on Audio Speech and Language Processing",
+      "citation_count": 12,
+      "url": "https://openalex.org/W4316660651",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6570655/9970249/10017350.pdf"
+    },
+    {
+      "query": "wavetable synthesis differentiable DDSP",
+      "id": "W4386707775",
+      "doi": "10.17743/jaes.2022.0102",
+      "title": "DDSP-Piano: A Neural Sound Synthesizer Informed by Instrument Knowledge",
+      "year": 2023,
+      "authors": [
+        "Lenny Renault",
+        "R\u00e9mi Mignot",
+        "Axel R\u00f6ebel"
+      ],
+      "venue": "Journal of the Audio Engineering Society",
+      "citation_count": 6,
+      "url": "https://openalex.org/W4386707775",
+      "source": "openalex",
+      "oa_url": "http://www.aes.org/e-lib/download.cfm?ID=22231"
+    },
+    {
+      "query": "wavetable synthesis differentiable DDSP",
+      "id": "W4296302304",
+      "doi": "10.5281/zenodo.7092602",
+      "title": "Differentiable Piano Model for MIDI-to-Audio Performance Synthesis",
+      "year": 2022,
+      "authors": [
+        "Lenny Renault",
+        "R\u00e9mi Mignot",
+        "Axel R\u00f6ebel"
+      ],
+      "venue": "Zenodo (CERN European Organization for Nuclear Research)",
+      "citation_count": 6,
+      "url": "https://openalex.org/W4296302304",
+      "source": "openalex",
+      "oa_url": "https://zenodo.org/record/7092602"
+    },
+    {
+      "query": "wavetable synthesis differentiable DDSP",
+      "id": "10.1109/icassp.2013.6637605",
+      "doi": "10.1109/icassp.2013.6637605",
+      "title": "An ideal integrator for higher-order integrated wavetable synthesis",
+      "year": 2013,
+      "authors": [
+        "Andreas Franck",
+        "Vesa Valimaki"
+      ],
+      "venue": "2013 IEEE International Conference on Acoustics, Speech and Signal Processing",
+      "citation_count": 6,
+      "url": "https://doi.org/10.1109/icassp.2013.6637605",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "wavetable synthesis differentiable DDSP",
+      "id": "W4372259957",
+      "doi": "10.1109/icassp49357.2023.10095391",
+      "title": "Perceptual\u2013Neural\u2013Physical Sound Matching",
+      "year": 2023,
+      "authors": [
+        "Han Han",
+        "Vincent Lostanlen",
+        "Mathieu Lagrange"
+      ],
+      "venue": null,
+      "citation_count": 5,
+      "url": "https://openalex.org/W4372259957",
+      "source": "openalex",
+      "oa_url": "https://hal.science/hal-04027307v1/file/pnp_icassp_han.pdf"
+    },
+    {
+      "query": "wavetable synthesis differentiable DDSP",
+      "id": "W4405584712",
+      "doi": "10.5334/tismir.210",
+      "title": "GOLF: A Singing Voice Synthesiser with Glottal Flow Wavetables and LPC Filters",
+      "year": 2024,
+      "authors": [
+        "Chin-Yun Yu",
+        "Gy\u00f6rgy Fazekas"
+      ],
+      "venue": "Transactions of the International Society for Music Information Retrieval",
+      "citation_count": 3,
+      "url": "https://openalex.org/W4405584712",
+      "source": "openalex",
+      "oa_url": "https://transactions.ismir.net/articles/210/files/6763eb9d56f2b.pdf"
+    },
+    {
+      "query": "wavetable synthesis differentiable DDSP",
+      "id": "10.21437/interspeech.2022-763",
+      "doi": "10.21437/interspeech.2022-763",
+      "title": "DENT-DDSP: Data-efficient noisy speech generator using differentiable digital signal processors for explicit distortion modelling and noise-robust speech recognition",
+      "year": 2022,
+      "authors": [
+        "Zixun Guo",
+        "Chen Chen",
+        "Eng Siong Chng"
+      ],
+      "venue": "Interspeech 2022",
+      "citation_count": 3,
+      "url": "https://doi.org/10.21437/interspeech.2022-763",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "virtual analog synthesis BLEP bandlimited",
+      "id": "W2475100461",
+      "doi": "10.1109/tsp.2016.2585091",
+      "title": "Aliasing Reduction in Clipped Signals",
+      "year": 2016,
+      "authors": [
+        "Fabi\u00e1n Esqueda",
+        "Stefan Bilbao",
+        "Vesa V\u00e4lim\u00e4ki"
+      ],
+      "venue": "IEEE Transactions on Signal Processing",
+      "citation_count": 53,
+      "url": "https://openalex.org/W2475100461",
+      "source": "openalex",
+      "oa_url": "https://www.research.ed.ac.uk/files/26997332/07499828.pdf"
+    },
+    {
+      "query": "virtual analog synthesis BLEP bandlimited",
+      "id": "10.1162/comj.2006.30.2.19",
+      "doi": "10.1162/comj.2006.30.2.19",
+      "title": "Oscillator and Filter Algorithms for Virtual Analog Synthesis",
+      "year": 2006,
+      "authors": [
+        "Vesa V\u00e4lim\u00e4ki",
+        "Antti Huovilainen"
+      ],
+      "venue": "Computer Music Journal",
+      "citation_count": 32,
+      "url": "https://doi.org/10.1162/comj.2006.30.2.19",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "virtual analog synthesis BLEP bandlimited",
+      "id": "W3174326946",
+      "doi": "10.1109/tsp.2021.3092892",
+      "title": "Time Domain Sampling of the Radial Functions in Spherical Harmonics Expansions",
+      "year": 2021,
+      "authors": [
+        "Nara Hahn",
+        "Frank Schultz",
+        "Sascha Spors"
+      ],
+      "venue": "IEEE Transactions on Signal Processing",
+      "citation_count": 14,
+      "url": "https://openalex.org/W3174326946",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/78/9307529/09466448.pdf"
+    },
+    {
+      "query": "virtual analog synthesis BLEP bandlimited",
+      "id": "10.1162/comj.2010.34.1.28",
+      "doi": "10.1162/comj.2010.34.1.28",
+      "title": "New Perspectives on Distortion Synthesis for Virtual Analog Oscillators",
+      "year": 2010,
+      "authors": [
+        "Victor Lazzarini",
+        "Joseph Timoney"
+      ],
+      "venue": "Computer Music Journal",
+      "citation_count": 10,
+      "url": "https://doi.org/10.1162/comj.2010.34.1.28",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "virtual analog synthesis BLEP bandlimited",
+      "id": "W2432977695",
+      "doi": null,
+      "title": "Rounding corners with BLAMP",
+      "year": 2016,
+      "authors": [
+        "Fabi\u00e1n Esqueda",
+        "Vesa V\u00e4lim\u00e4ki",
+        "Stefan Bilbao"
+      ],
+      "venue": "Edinburgh Research Explorer (University of Edinburgh)",
+      "citation_count": 8,
+      "url": "https://openalex.org/W2432977695",
+      "source": "openalex",
+      "oa_url": "https://www.pure.ed.ac.uk/ws/files/28180097/18_DAFx_16_paper_33_PN.pdf"
+    },
+    {
+      "query": "virtual analog synthesis BLEP bandlimited",
+      "id": "10.1109/82.818900",
+      "doi": "10.1109/82.818900",
+      "title": "Stochastic formulation of bandlimited signal interpolation",
+      "year": 2000,
+      "authors": [
+        "Hyeokho Choi",
+        "D.C. Munson"
+      ],
+      "venue": "IEEE Transactions on Circuits and Systems II: Analog and Digital Signal Processing",
+      "citation_count": 8,
+      "url": "https://doi.org/10.1109/82.818900",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "virtual analog synthesis BLEP bandlimited",
+      "id": "W2094867896",
+      "doi": "10.1155/2011/785103",
+      "title": "Discrete-Time Modelling of the Moog Sawtooth Oscillator Waveform",
+      "year": 2011,
+      "authors": [
+        "Jussi Pekonen",
+        "Victor Lazzarini",
+        "Joseph Timoney",
+        "Jari Kleimola",
+        "Vesa V\u00e4lim\u00e4ki"
+      ],
+      "venue": "EURASIP Journal on Advances in Signal Processing",
+      "citation_count": 6,
+      "url": "https://openalex.org/W2094867896",
+      "source": "openalex",
+      "oa_url": "https://asp-eurasipjournals.springeropen.com/counter/pdf/10.1155/2011/785103"
+    },
+    {
+      "query": "virtual analog synthesis BLEP bandlimited",
+      "id": "W2599925973",
+      "doi": null,
+      "title": "Design of a Scalable Polyphony-MIDI Synthesizer for a Low Cost DSP",
+      "year": 2010,
+      "authors": [
+        "Antti Huovilainen"
+      ],
+      "venue": "Aaltodoc (Aalto University)",
+      "citation_count": 6,
+      "url": "https://openalex.org/W2599925973",
+      "source": "openalex",
+      "oa_url": "https://aaltodoc.aalto.fi/handle/123456789/3237"
+    },
+    {
+      "query": "virtual analog synthesis BLEP bandlimited",
+      "id": "chemrxiv:10.26434/chemrxiv-2021-mf3bs-v2",
+      "doi": "10.26434/chemrxiv-2021-mf3bs-v2",
+      "title": "Omniligase-1-mediated ligation for insulin analog synthesis in solu-tion and on phage surface",
+      "year": 2021,
+      "authors": [
+        "Nai-Pin Lin",
+        "Yi Zhang",
+        "Nicolas Szabo-Fresnais",
+        "Danny Hung-Chieh Chou"
+      ],
+      "venue": "chemRxiv",
+      "citation_count": 4,
+      "url": "https://doi.org/10.26434/chemrxiv-2021-mf3bs-v2",
+      "source": "chemrxiv",
+      "oa_url": null
+    },
+    {
+      "query": "virtual analog synthesis BLEP bandlimited",
+      "id": "chemrxiv:10.26434/chemrxiv-2022-9t2rj",
+      "doi": "10.26434/chemrxiv-2022-9t2rj",
+      "title": "ViSAS for Entering Chemical Space: Virtual Screening of Analog Series and Related Advances",
+      "year": 2022,
+      "authors": [
+        "Jos\u00e9 J. Naveja-Romero",
+        "Fernanda I. Sald\u00edvar-Gonz\u00e1lez",
+        "Diana L. Prado-Romero",
+        "Angel J. Ruiz-Moreno",
+        "Marco Velasco-Vel\u00e1zquez",
+        "Ram\u00f3n Alain Miranda-Quintana",
+        "Jos\u00e9 L. Medina-Franco"
+      ],
+      "venue": "chemRxiv",
+      "citation_count": 3,
+      "url": "https://doi.org/10.26434/chemrxiv-2022-9t2rj",
+      "source": "chemrxiv",
+      "oa_url": null
+    },
+    {
+      "query": "algorithm configuration racing SMAC irace",
+      "id": "10.1016/j.orp.2016.09.002",
+      "doi": "10.1016/j.orp.2016.09.002",
+      "title": "The irace package: Iterated racing for automatic algorithm configuration",
+      "year": 2016,
+      "authors": [
+        "Manuel L\u00f3pez-Ib\u00e1\u00f1ez",
+        "J\u00e9r\u00e9mie Dubois-Lacoste",
+        "Leslie P\u00e9rez C\u00e1ceres",
+        "Mauro Birattari",
+        "Thomas St\u00fctzle"
+      ],
+      "venue": "Operations Research Perspectives",
+      "citation_count": 967,
+      "url": "https://doi.org/10.1016/j.orp.2016.09.002",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "algorithm configuration racing SMAC irace",
+      "id": "W2961614712",
+      "doi": "10.1109/tevc.2019.2921598",
+      "title": "A Survey of Automatic Parameter Tuning Methods for Metaheuristics",
+      "year": 2019,
+      "authors": [
+        "Changwu Huang",
+        "Yuanxiang Li",
+        "Xin Yao"
+      ],
+      "venue": "IEEE Transactions on Evolutionary Computation",
+      "citation_count": 356,
+      "url": "https://openalex.org/W2961614712",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/4235/9051613/08733017.pdf"
+    },
+    {
+      "query": "algorithm configuration racing SMAC irace",
+      "id": "W2888315729",
+      "doi": "10.1007/s11047-020-09820-4",
+      "title": "A new taxonomy of global optimization algorithms",
+      "year": 2020,
+      "authors": [
+        "J\u00f6rg Stork",
+        "A. E. Eiben",
+        "Thomas Bartz\u2013Beielstein"
+      ],
+      "venue": "Natural Computing",
+      "citation_count": 117,
+      "url": "https://openalex.org/W2888315729",
+      "source": "openalex",
+      "oa_url": "https://link.springer.com/content/pdf/10.1007/s11047-020-09820-4.pdf"
+    },
+    {
+      "query": "algorithm configuration racing SMAC irace",
+      "id": "10.32614/cran.package.irace",
+      "doi": "10.32614/cran.package.irace",
+      "title": "irace: Iterated Racing for Automatic Algorithm Configuration",
+      "year": 2012,
+      "authors": [
+        "Manuel L\u00f3pez-Ib\u00e1\u00f1ez",
+        "J\u00e9r\u00e9mie Dubois-Lacoste",
+        "Leslie P\u00e9rez C\u00e1ceres",
+        "Thomas St\u00fctzle",
+        "Mauro Birattari"
+      ],
+      "venue": "CRAN: Contributed Packages",
+      "citation_count": 112,
+      "url": "https://doi.org/10.32614/cran.package.irace",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "algorithm configuration racing SMAC irace",
+      "id": "W2963248505",
+      "doi": "10.1609/aaai.v32i1.11532",
+      "title": "Warmstarting of Model-Based Algorithm Configuration",
+      "year": 2018,
+      "authors": [
+        "Marius Lindauer",
+        "Frank Hutter"
+      ],
+      "venue": "Proceedings of the AAAI Conference on Artificial Intelligence",
+      "citation_count": 48,
+      "url": "https://openalex.org/W2963248505",
+      "source": "openalex",
+      "oa_url": "https://ojs.aaai.org/index.php/AAAI/article/download/11532/11391"
+    },
+    {
+      "query": "algorithm configuration racing SMAC irace",
+      "id": "W4313395123",
+      "doi": "10.1613/jair.1.13922",
+      "title": "Automated Dynamic Algorithm Configuration",
+      "year": 2022,
+      "authors": [
+        "Steven Adri\u00e6nsen",
+        "Andr\u00e9 Biedenkapp",
+        "Gresa Shala",
+        "Noor H. Awad",
+        "Theresa Eimer",
+        "Marius Lindauer",
+        "Frank Hutter"
+      ],
+      "venue": "Journal of Artificial Intelligence Research",
+      "citation_count": 33,
+      "url": "https://openalex.org/W4313395123",
+      "source": "openalex",
+      "oa_url": "https://jair.org/index.php/jair/article/download/13922/26882"
+    },
+    {
+      "query": "algorithm configuration racing SMAC irace",
+      "id": "W2766935108",
+      "doi": "10.1007/978-3-319-69404-7_17",
+      "title": "An Experimental Study of Adaptive Capping in irace",
+      "year": 2017,
+      "authors": [
+        "Leslie P\u00e9rez C\u00e1ceres",
+        "Manuel L\u00f3pez\u2010Ib\u00e1\u00f1ez",
+        "Holger H. Hoos",
+        "Thomas St\u00fctzle"
+      ],
+      "venue": "Lecture notes in computer science",
+      "citation_count": 32,
+      "url": "https://openalex.org/W2766935108",
+      "source": "openalex",
+      "oa_url": "https://www.research.manchester.ac.uk/portal/en/publications/an-experimental-study-of-adaptive-capping-in-irace(67004034-9caf-4bed-9b8c-5f0848b282ee).html"
+    },
+    {
+      "query": "algorithm configuration racing SMAC irace",
+      "id": "W2997524296",
+      "doi": "10.1609/aaai.v34i03.5618",
+      "title": "On Performance Estimation in Automatic Algorithm Configuration",
+      "year": 2020,
+      "authors": [
+        "Shengcai Liu",
+        "Ke Tang",
+        "Yunwei Lei",
+        "Xin Yao"
+      ],
+      "venue": "Proceedings of the AAAI Conference on Artificial Intelligence",
+      "citation_count": 23,
+      "url": "https://openalex.org/W2997524296",
+      "source": "openalex",
+      "oa_url": "https://ojs.aaai.org/index.php/AAAI/article/download/5618/5474"
+    },
+    {
+      "query": "algorithm configuration racing SMAC irace",
+      "id": "W3153881645",
+      "doi": "10.1016/j.orp.2021.100186",
+      "title": "ACVIZ: A tool for the visual analysis of the configuration of algorithms with irace",
+      "year": 2021,
+      "authors": [
+        "Marcelo de Souza",
+        "Marcus Ritt",
+        "Manuel L\u00f3pez\u2010Ib\u00e1\u00f1ez",
+        "Leslie P\u00e9rez C\u00e1ceres"
+      ],
+      "venue": "Operations Research Perspectives",
+      "citation_count": 5,
+      "url": "https://openalex.org/W3153881645",
+      "source": "openalex",
+      "oa_url": "https://www.sciencedirect.com/science/article/pii/S2214716021000099?via%3Dihub"
+    },
+    {
+      "query": "evolutionary strategies continuous optimization",
+      "id": "W2061438946",
+      "doi": "10.1016/j.advengsoft.2013.12.007",
+      "title": "Grey Wolf Optimizer",
+      "year": 2014,
+      "authors": [
+        "Seyedali Mirjalili",
+        "Seyed Mohammad Mirjalili",
+        "Andrew Lewis",
+        "Seyed Mohammad Mirjalili",
+        "Andrew Lewis"
+      ],
+      "venue": "Advances in Engineering Software",
+      "citation_count": 18602,
+      "url": "https://openalex.org/W2061438946",
+      "source": "openalex",
+      "oa_url": "http://hdl.handle.net/10072/66188"
+    },
+    {
+      "query": "evolutionary strategies continuous optimization",
+      "id": "W2143381319",
+      "doi": "10.1109/tevc.2007.892759",
+      "title": "MOEA/D: A Multiobjective Evolutionary Algorithm Based on Decomposition",
+      "year": 2007,
+      "authors": [
+        "Qingfu Zhang",
+        "Hui Li"
+      ],
+      "venue": "IEEE Transactions on Evolutionary Computation",
+      "citation_count": 9645,
+      "url": "https://openalex.org/W2143381319",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "evolutionary strategies continuous optimization",
+      "id": "W2151339633",
+      "doi": "10.1109/4235.873238",
+      "title": "Stochastic ranking for constrained evolutionary optimization",
+      "year": 2000,
+      "authors": [
+        "Thomas Philip R\u00fanarsson",
+        "Xin Yao"
+      ],
+      "venue": "IEEE Transactions on Evolutionary Computation",
+      "citation_count": 1800,
+      "url": "https://openalex.org/W2151339633",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/1510.04409"
+    },
+    {
+      "query": "evolutionary strategies continuous optimization",
+      "id": "W2151019861",
+      "doi": "10.1109/5.949485",
+      "title": "Interactive evolutionary computation: fusion of the capabilities of EC optimization and human evaluation",
+      "year": 2001,
+      "authors": [
+        "Hideyuki Takagi"
+      ],
+      "venue": "Proceedings of the IEEE",
+      "citation_count": 1328,
+      "url": "https://openalex.org/W2151019861",
+      "source": "openalex",
+      "oa_url": "https://catalog.lib.kyushu-u.ac.jp/opac_download_md/1670053/ProcIEEE_3.pdf"
+    },
+    {
+      "query": "evolutionary strategies continuous optimization",
+      "id": "W2111180056",
+      "doi": "10.1080/10635150252899752",
+      "title": "Strategies to Protect Biological Diversity and the Evolutionary Processes That Sustain It",
+      "year": 2002,
+      "authors": [
+        "Craig Moritz"
+      ],
+      "venue": "Systematic Biology",
+      "citation_count": 1033,
+      "url": "https://openalex.org/W2111180056",
+      "source": "openalex",
+      "oa_url": "https://academic.oup.com/sysbio/article-pdf/51/2/238/19502780/51-2-238.pdf"
+    },
+    {
+      "query": "evolutionary strategies continuous optimization",
+      "id": "W2125281549",
+      "doi": "10.1109/tevc.2009.2011992",
+      "title": "Group Search Optimizer: An Optimization Algorithm Inspired by Animal Searching Behavior",
+      "year": 2009,
+      "authors": [
+        "Suining He",
+        "Qinghua Wu",
+        "J. R. Saunders"
+      ],
+      "venue": "IEEE Transactions on Evolutionary Computation",
+      "citation_count": 724,
+      "url": "https://openalex.org/W2125281549",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "evolutionary strategies continuous optimization",
+      "id": "W2807637204",
+      "doi": "10.1007/s11047-018-9685-y",
+      "title": "A tutorial on multiobjective optimization: fundamentals and evolutionary methods",
+      "year": 2018,
+      "authors": [
+        "Michael Emmerich",
+        "Andr\u00e9 Deutz"
+      ],
+      "venue": "Natural Computing",
+      "citation_count": 709,
+      "url": "https://openalex.org/W2807637204",
+      "source": "openalex",
+      "oa_url": "https://link.springer.com/content/pdf/10.1007/s11047-018-9685-y.pdf"
+    },
+    {
+      "query": "evolutionary strategies continuous optimization",
+      "id": "W2891186800",
+      "doi": "10.1109/tevc.2018.2869001",
+      "title": "Data-Driven Evolutionary Optimization: An Overview and Case Studies",
+      "year": 2018,
+      "authors": [
+        "Yaochu Jin",
+        "Handing Wang",
+        "Tinkle Chugh",
+        "Dan Guo",
+        "Kaisa Miettinen"
+      ],
+      "venue": "IEEE Transactions on Evolutionary Computation",
+      "citation_count": 661,
+      "url": "https://openalex.org/W2891186800",
+      "source": "openalex",
+      "oa_url": "https://jyx.jyu.fi/bitstreams/7acbf002-eb9c-440b-ad7f-9866a8eef33b/download"
+    },
+    {
+      "query": "evolutionary strategies continuous optimization",
+      "id": "W1968173975",
+      "doi": "10.1109/tcyb.2013.2245892",
+      "title": "A Population Prediction Strategy for Evolutionary Dynamic Multiobjective Optimization",
+      "year": 2013,
+      "authors": [
+        "Aimin Zhou",
+        "Yaochu Jin",
+        "Qingfu Zhang"
+      ],
+      "venue": "IEEE Transactions on Cybernetics",
+      "citation_count": 535,
+      "url": "https://openalex.org/W1968173975",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "evolutionary strategies continuous optimization",
+      "id": "W3184980526",
+      "doi": "10.1007/s10462-021-10042-y",
+      "title": "A survey on evolutionary computation for complex continuous optimization",
+      "year": 2021,
+      "authors": [
+        "Zhi\u2010Hui Zhan",
+        "Lin Shi",
+        "Kay Chen Tan",
+        "Jun Zhang"
+      ],
+      "venue": "Artificial Intelligence Review",
+      "citation_count": 397,
+      "url": "https://openalex.org/W3184980526",
+      "source": "openalex",
+      "oa_url": "https://link.springer.com/content/pdf/10.1007/s10462-021-10042-y.pdf"
+    },
+    {
+      "query": "multi-objective hyperparameter optimization Pareto",
+      "id": "W4224300633",
+      "doi": "10.1007/s11831-021-09694-4",
+      "title": "Particle Swarm Optimization Algorithm and Its Applications: A Systematic Review",
+      "year": 2022,
+      "authors": [
+        "Ahmed G. Gad"
+      ],
+      "venue": "Archives of Computational Methods in Engineering",
+      "citation_count": 1772,
+      "url": "https://openalex.org/W4224300633",
+      "source": "openalex",
+      "oa_url": "https://link.springer.com/content/pdf/10.1007/s11831-021-09694-4.pdf"
+    },
+    {
+      "query": "multi-objective hyperparameter optimization Pareto",
+      "id": "W4287266177",
+      "doi": "10.1007/s10458-022-09552-y",
+      "title": "A practical guide to multi-objective reinforcement learning and planning",
+      "year": 2022,
+      "authors": [
+        "Conor F. Hayes",
+        "Roxana R\u0103dulescu",
+        "Eugenio Bargiacchi",
+        "Johan K\u00e4llstr\u00f6m",
+        "Matthew D Macfarlane",
+        "Mathieu Reymond",
+        "Timothy Verstraeten",
+        "Luisa Zintgraf",
+        "Richard Dazeley",
+        "Fredrik Heintz",
+        "Enda Howley",
+        "Athirai A. Irissappane",
+        "Patrick Mannion",
+        "Ann Now\u00e9",
+        "Gabriel de Oliveira Ramos",
+        "Marcello Restelli",
+        "Peter Vamplew",
+        "Diederik M. Roijers"
+      ],
+      "venue": "VUBIR (Vrije Universiteit Brussel)",
+      "citation_count": 345,
+      "url": "https://openalex.org/W4287266177",
+      "source": "openalex",
+      "oa_url": "https://hdl.handle.net/11311/1231792"
+    },
+    {
+      "query": "multi-objective hyperparameter optimization Pareto",
+      "id": "W2029959045",
+      "doi": "10.1007/s10898-013-0118-2",
+      "title": "Fast calculation of multiobjective probability of improvement and expected improvement criteria for Pareto optimization",
+      "year": 2013,
+      "authors": [
+        "Ivo Couckuyt",
+        "Dirk Deschrijver",
+        "Tom Dhaene"
+      ],
+      "venue": "Journal of Global Optimization",
+      "citation_count": 253,
+      "url": "https://openalex.org/W2029959045",
+      "source": "openalex",
+      "oa_url": "https://biblio.ugent.be/publication/5736891/file/5736893.pdf"
+    },
+    {
+      "query": "multi-objective hyperparameter optimization Pareto",
+      "id": "W3216755252",
+      "doi": "10.1007/s10462-022-10359-2",
+      "title": "A survey on multi-objective hyperparameter optimization algorithms for machine learning",
+      "year": 2022,
+      "authors": [
+        "Alejandro Morales-Hern\u00e1ndez",
+        "Inneke Van Nieuwenhuyse",
+        "Sebastian Rojas Gonzalez"
+      ],
+      "venue": "Artificial Intelligence Review",
+      "citation_count": 185,
+      "url": "https://openalex.org/W3216755252",
+      "source": "openalex",
+      "oa_url": "https://link.springer.com/content/pdf/10.1007/s10462-022-10359-2.pdf"
+    },
+    {
+      "query": "multi-objective hyperparameter optimization Pareto",
+      "id": "W4225926344",
+      "doi": "10.1109/tnse.2022.3169117",
+      "title": "Federated Learning Meets Multi-Objective Optimization",
+      "year": 2022,
+      "authors": [
+        "Zeou Hu",
+        "Kiarash Shaloudegi",
+        "Guojun Zhang",
+        "Yaoliang Yu"
+      ],
+      "venue": "IEEE Transactions on Network Science and Engineering",
+      "citation_count": 149,
+      "url": "https://openalex.org/W4225926344",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "multi-objective hyperparameter optimization Pareto",
+      "id": "W4225282955",
+      "doi": "10.1016/j.jclepro.2022.131978",
+      "title": "An integrated framework for multi-objective optimization of building performance: Carbon emissions, thermal comfort, and global cost",
+      "year": 2022,
+      "authors": [
+        "Ruijun Chen",
+        "Yaw-Shyan Tsay",
+        "Shiwen Ni"
+      ],
+      "venue": "Journal of Cleaner Production",
+      "citation_count": 100,
+      "url": "https://openalex.org/W4225282955",
+      "source": "openalex",
+      "oa_url": "https://doi.org/10.1016/j.jclepro.2022.131978"
+    },
+    {
+      "query": "multi-objective hyperparameter optimization Pareto",
+      "id": "W4386443196",
+      "doi": "10.1145/3610536",
+      "title": "Multi-Objective Hyperparameter Optimization in Machine Learning\u2014An Overview",
+      "year": 2023,
+      "authors": [
+        "Florian Karl",
+        "Tobias Pielok",
+        "Julia Moosbauer",
+        "Florian Pfisterer",
+        "Stefan Coors",
+        "Martin Binder",
+        "Lennart Schneider",
+        "Janek Thomas",
+        "Jakob Richter",
+        "Michel Lang",
+        "Eduardo C. Garrido\u2010Merch\u00e1n",
+        "Juergen Branke",
+        "Bernd Bischl"
+      ],
+      "venue": "ACM Transactions on Evolutionary Learning and Optimization",
+      "citation_count": 92,
+      "url": "https://openalex.org/W4386443196",
+      "source": "openalex",
+      "oa_url": "https://dl.acm.org/doi/pdf/10.1145/3610536"
+    },
+    {
+      "query": "multi-objective hyperparameter optimization Pareto",
+      "id": "W4288046523",
+      "doi": "10.1016/j.compchemeng.2022.107945",
+      "title": "Machine learning aided multi-objective optimization and multi-criteria decision making: Framework and two applications in chemical engineering",
+      "year": 2022,
+      "authors": [
+        "Zhiyuan Wang",
+        "Jie Li",
+        "Gade Pandu Rangaiah",
+        "Zhe Wu"
+      ],
+      "venue": "Computers & Chemical Engineering",
+      "citation_count": 79,
+      "url": "https://openalex.org/W4288046523",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "multi-objective hyperparameter optimization Pareto",
+      "id": "W2964148549",
+      "doi": "10.1145/3321707.3321735",
+      "title": "Evolving deep neural networks by multi-objective particle swarm optimization for image classification",
+      "year": 2019,
+      "authors": [
+        "Bin Wang",
+        "Yanan Sun",
+        "Bing Xue",
+        "Mengjie Zhang"
+      ],
+      "venue": "Proceedings of the Genetic and Evolutionary Computation Conference",
+      "citation_count": 72,
+      "url": "https://openalex.org/W2964148549",
+      "source": "openalex",
+      "oa_url": "https://dl.acm.org/action/downloadSupplement?doi=10.1145%2F3321707.3321735&file=p490-wang_suppl.pdf&download=true"
+    }
+  ]
+}

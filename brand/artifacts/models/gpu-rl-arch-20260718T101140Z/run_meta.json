@@ -1,0 +1,10 @@
+{
+  "run_id": "gpu-rl-arch-20260718T101140Z",
+  "device": "cuda",
+  "gpu": "NVIDIA GeForce RTX 3090",
+  "torch": "2.6.0+cu124",
+  "cuda_available": true,
+  "dual_cosine_baseline": 0.8203155994415283,
+  "pid": 5068,
+  "started_at": "20260718T101140Z"
+}

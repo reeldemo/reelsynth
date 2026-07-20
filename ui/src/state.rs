@@ -4,10 +4,15 @@ use reelsynth::{Patch, ScopeLiveTaps, WavetableBank};
 
 use crate::compose::ComposeUi;
 use crate::fx_rack::{effect_slots_from_patch, EffectSlotUi};
+use crate::overtone_rack::OvertoneFilterSlotUi;
+use crate::filter_rack::FilterSlotUi;
 use crate::mod_matrix::{default_mod_slots, ModSlotUi};
 use crate::oscillator_ui::{OscillatorUi, MIN_OSCILLATORS};
 use crate::scope_strip::ScopeStripState;
-use crate::wt::{morph_amount_for_position, position_from_osc_ui, WtEditTool, WtQuantInterp};
+use crate::wt::{
+    morph_amount_for_position, position_from_osc_ui, QuantSeamMode, WtCurveViewTransform, WtEditTool,
+};
+use crate::quant_interp::WtQuantInterp;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum WtView3dMode {
@@ -32,6 +37,55 @@ pub struct ShellConfig {
     pub show_fx_rack: bool,
 }
 
+/// App-level settings shown in the header **Settings** dropdown (not a modal).
+#[derive(Debug, Clone)]
+pub struct ShellAppSettings {
+    pub graphics_backend_idx: usize,
+    pub gpu_waveforms: bool,
+    pub auto_midi_keyboard: bool,
+    pub auto_audio_output: bool,
+    pub keyboard_layout_idx: usize,
+    pub pending_backend_restart: bool,
+    /// Display-only label for detected computer keyboard layout.
+    pub detected_keyboard_label: String,
+    /// Set by the Settings menu when any control changes.
+    pub dirty: bool,
+}
+
+impl Default for ShellAppSettings {
+    fn default() -> Self {
+        Self {
+            graphics_backend_idx: 0,
+            gpu_waveforms: true,
+            auto_midi_keyboard: true,
+            auto_audio_output: true,
+            keyboard_layout_idx: 0,
+            pending_backend_restart: false,
+            detected_keyboard_label: "QWERTY".into(),
+            dirty: false,
+        }
+    }
+}
+
+impl ShellAppSettings {
+    pub const BACKEND_LABELS: [&'static str; 3] = ["Auto", "GPU (WGPU)", "OpenGL (Glow)"];
+    pub const LAYOUT_LABELS: [&'static str; 4] = ["Auto", "QWERTY", "AZERTY", "QWERTZ"];
+
+    pub fn backend_label(&self) -> &'static str {
+        Self::BACKEND_LABELS
+            .get(self.graphics_backend_idx)
+            .copied()
+            .unwrap_or("Auto")
+    }
+
+    pub fn layout_label(&self) -> &'static str {
+        Self::LAYOUT_LABELS
+            .get(self.keyboard_layout_idx)
+            .copied()
+            .unwrap_or("Auto")
+    }
+}
+
 #[derive(Default)]
 pub struct ShellActions {
     pub params_changed: bool,
@@ -47,6 +101,7 @@ pub struct ShellActions {
     pub import_serum_fxp: bool,
     pub frame_edited: bool,
     pub midi_device_selected: Option<usize>,
+    pub audio_device_selected: Option<usize>,
     pub chord_degree_on: Option<usize>,
     pub chord_degree_off: Option<usize>,
     /// Compose transport — wired to sequencer engine when backend lands.
@@ -64,6 +119,11 @@ pub struct ShellActions {
 }
 
 pub struct ShellMidiDevices<'a> {
+    pub names: &'a [String],
+    pub selected: usize,
+}
+
+pub struct ShellAudioDevices<'a> {
     pub names: &'a [String],
     pub selected: usize,
 }
@@ -89,8 +149,16 @@ pub struct UiState {
     pub wt_bank_name: String,
     pub wt_edit_tool: WtEditTool,
     pub wt_quant_interp: WtQuantInterp,
+    /// Wrap-seam reduction after Quant rebuilds (Off / Soft / Adaptive).
+    pub wt_quant_seam: QuantSeamMode,
+    /// Artistic crackle 0..1 (0 = eliminate / clean default). Synced to patch.crackle.
+    pub patch_crackle: f32,
+    /// Selected Quant knob on the active layer (for per-segment interp UI).
+    pub selected_quant_slot: Option<usize>,
     pub wt_view_3d_mode: WtView3dMode,
     pub selected_layer_idx: Option<usize>,
+    /// Shared zoom/pan for Design WT curve previews (Result / Layers / Selected).
+    pub wt_curve_view: WtCurveViewTransform,
     pub analyze_dialog_open: bool,
     pub analyze_harmonics: usize,
     pub analyze_min_mag: f32,
@@ -114,6 +182,8 @@ pub struct UiState {
     pub filter2_mode: usize,
     pub filter2_drive: f32,
     pub filter_mode: usize,
+    /// Musical voice filter chain (right rail). Empty = bypass.
+    pub filter_slots: Vec<FilterSlotUi>,
     pub env_attack: f32,
     pub env_decay: f32,
     pub env_sustain: f32,
@@ -132,6 +202,8 @@ pub struct UiState {
     pub fx_rack_open: bool,
     pub mod_routes: Vec<ModSlotUi>,
     pub fx_slots: Vec<EffectSlotUi>,
+    /// Session-only master anti-crackle chain (empty = Off). Not in `.reelpreset`.
+    pub overtone_slots: Vec<OvertoneFilterSlotUi>,
     pub mod_route_total: usize,
     pub keys_down: HashSet<u8>,
     pub piano_visible: bool,
@@ -207,8 +279,12 @@ impl Default for UiState {
             wt_bank_name: "Saw Morph".into(),
             wt_edit_tool: WtEditTool::Select,
             wt_quant_interp: WtQuantInterp::default(),
+            wt_quant_seam: QuantSeamMode::Adaptive,
+            patch_crackle: 0.0,
+            selected_quant_slot: None,
             wt_view_3d_mode: WtView3dMode::Stack,
             selected_layer_idx: Some(0),
+            wt_curve_view: WtCurveViewTransform::default(),
             analyze_dialog_open: false,
             analyze_harmonics: 16,
             analyze_min_mag: 0.01,
@@ -232,6 +308,11 @@ impl Default for UiState {
             filter2_mode: 1,
             filter2_drive: lead.filter2.drive,
             filter_mode: 0,
+            filter_slots: crate::filter_rack::filter_slots_from_patch(
+                &lead.filter,
+                &lead.filter2,
+                &lead.filters,
+            ),
             env_attack: lead.envelope.attack,
             env_decay: lead.envelope.decay,
             env_sustain: lead.envelope.sustain,
@@ -250,6 +331,7 @@ impl Default for UiState {
             fx_rack_open: true,
             mod_routes: default_mod_slots(),
             fx_slots: effect_slots_from_patch(&lead.effects),
+            overtone_slots: Vec::new(),
             mod_route_total: 24,
             keys_down: HashSet::new(),
             piano_visible: true,

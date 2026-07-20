@@ -37,17 +37,38 @@ impl Patch {
                     .or_insert(Value::String(t));
             }
         }
+        if let Some(f) = v.get_mut("filter2") {
+            let ty = f.get("type").and_then(|t| t.as_str()).map(str::to_string);
+            if let Some(t) = ty {
+                f.as_object_mut()
+                    .unwrap()
+                    .entry("filter_type")
+                    .or_insert(Value::String(t));
+            }
+        }
+        if let Some(arr) = v.get_mut("filters").and_then(|a| a.as_array_mut()) {
+            for slot in arr {
+                let ty = slot.get("type").and_then(|t| t.as_str()).map(str::to_string);
+                if let Some(t) = ty {
+                    if let Some(obj) = slot.as_object_mut() {
+                        obj.entry("filter_type").or_insert(Value::String(t));
+                    }
+                }
+            }
+        }
         let mut patch: Patch = serde_json::from_value(v).map_err(|e| e.to_string())?;
         if patch.schema.is_empty() || patch.schema == SCHEMA_V1 {
             patch.schema = SCHEMA_V2.into();
         }
         migrate_fx_bypass(&mut patch);
+        patch.sync_legacy_filters_from_chain();
         Ok(patch)
     }
 
     pub fn to_json(&self) -> Result<String, String> {
         let mut patch = self.clone();
         patch.schema = SCHEMA_V2.into();
+        patch.sync_legacy_filters_from_chain();
         serde_json::to_string_pretty(&patch).map_err(|e| e.to_string())
     }
 
@@ -82,6 +103,7 @@ impl Patch {
             }],
             filter: Filter::default(),
             filter2: default_filter2(),
+            filters: None,
             envelope: Envelope::default(),
             filter_envelope: default_filter_envelope(),
             lfo: Lfo::default(),
@@ -95,6 +117,7 @@ impl Patch {
             unison_stereo_spread: default_unison_spread(),
             performance: PerformanceSettings::default(),
             sequence: SequenceProject::default_template(),
+            crackle: 0.0,
         }
     }
 
@@ -156,6 +179,47 @@ impl Patch {
             }
         }
         ids
+    }
+
+    /// Effective musical filter chain for DSP.
+    /// `None` → legacy dual (`filter` then `filter2`). `Some([])` → bypass.
+    pub fn effective_filter_slots(&self) -> std::borrow::Cow<'_, [FilterSlot]> {
+        match &self.filters {
+            Some(slots) => std::borrow::Cow::Borrowed(slots.as_slice()),
+            None => std::borrow::Cow::Owned(legacy_filter_slots(&self.filter, &self.filter2)),
+        }
+    }
+
+    /// Mirror chain slots 0/1 into legacy `filter` / `filter2` for modulators and older tools.
+    pub fn sync_legacy_filters_from_chain(&mut self) {
+        let Some(slots) = &self.filters else {
+            return;
+        };
+        if let Some(s0) = slots.first() {
+            self.filter = s0.to_filter();
+        }
+        if let Some(s1) = slots.get(1) {
+            self.filter2 = s1.to_filter();
+        } else if slots.is_empty() {
+            // Keep last legacy values; chain bypass does not wipe them.
+        } else {
+            // Single-slot chain: keep filter2 as a mild default twin of slot 0.
+            self.filter2 = self.filter.clone();
+            self.filter2.cutoff = (self.filter.cutoff * 1.5).min(12000.0);
+        }
+    }
+
+    /// Keep `filters[0]` in sync when legacy cutoff/res setters or smoothers run.
+    pub fn sync_chain_slot0_from_legacy(&mut self) {
+        if let Some(slots) = &mut self.filters {
+            if let Some(slot) = slots.first_mut() {
+                slot.cutoff = self.filter.cutoff;
+                slot.resonance = self.filter.resonance;
+                slot.key_tracking = self.filter.key_tracking;
+                slot.drive = self.filter.drive;
+                slot.filter_type = self.filter.filter_type.clone();
+            }
+        }
     }
 }
 

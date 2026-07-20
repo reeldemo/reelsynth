@@ -11,3 +11,9 @@ __pycache__/
 .venv/
 docs-images-staging/
 docs-images.zip
+.cursor/compile-clean.stamp
+.cursor/mcp.json
+
+.superpowers/
+
+.venv_gpu/

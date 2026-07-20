@@ -6,6 +6,7 @@ use reelsynth::sequence::{ClipRef, TransportState};
 use reelsynth::{Envelope, Macro, ModSlot, Patch, SequenceProject, SynthEngine, WavetableBank};
 use std::sync::{Arc, RwLock};
 
+#[allow(dead_code)] // many Set* variants are matched for DSP but constructed via SetPatch paths
 pub(crate) enum AudioCmd {
     Midi(MidiEvent),
     TransportPlay,
@@ -69,6 +70,7 @@ pub(crate) enum AudioCmd {
     SetNoiseLevel(f32),
     SetModMatrix(Vec<ModSlot>),
     SetEffects(Vec<reelsynth::EffectSlot>),
+    SetOvertoneSlots(Vec<reelsynth::OvertoneFilterSlot>),
     SetPatch(Patch),
     LoadPreset {
         patch: Patch,
@@ -206,6 +208,7 @@ pub(crate) fn drain_commands(
             Ok(AudioCmd::SetNoiseLevel(l)) => engine.set_noise_level(l),
             Ok(AudioCmd::SetModMatrix(slots)) => engine.set_mod_matrix(slots),
             Ok(AudioCmd::SetEffects(effects)) => engine.set_effects(effects),
+            Ok(AudioCmd::SetOvertoneSlots(slots)) => engine.set_overtone_slots(slots),
             Ok(AudioCmd::SetPatch(patch)) => engine.apply_patch_hot(patch),
             Ok(AudioCmd::LoadPreset { patch, bank }) => {
                 engine.load_preset(bank.clone(), patch);

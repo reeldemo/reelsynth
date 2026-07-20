@@ -9,9 +9,11 @@ pub struct MidiDevices {
     port_ids: Vec<String>,
 }
 
+pub const MIDI_NONE_LABEL: &str = "No MIDI";
+
 impl MidiDevices {
     pub fn enumerate() -> Self {
-        let mut names = vec!["None".into()];
+        let mut names = vec![MIDI_NONE_LABEL.into()];
         let mut port_ids = vec![String::new()];
         if let Ok(midi_in) = MidiInput::new("reelsynth-ui-enumerate") {
             for port in midi_in.ports() {
@@ -163,7 +165,7 @@ mod tests {
     fn keyboard_like_prefers_named_port() {
         let devices = MidiDevices {
             names: vec![
-                "None".into(),
+                MIDI_NONE_LABEL.into(),
                 "Arturia KeyLab 61".into(),
                 "Generic MIDI".into(),
             ],

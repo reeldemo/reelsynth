@@ -8,7 +8,7 @@ use crate::audit_registry::{record_region, record_used, AuditId};
 use crate::layout::{UiScale, GRID_UNIT, RADIUS_SM, sidebar_panel_chrome_height};
 use crate::region::region;
 use crate::widgets::{
-    button_ghost, button_toggle, card_stroke, collapsible_panel, sidebar_panel,
+    button_ghost, button_toggle, card_stroke, collapsible_panel,
     sidebar_panel_audit,
 };
 
@@ -16,6 +16,7 @@ const POLARITY_POSITIVE: Color32 = Color32::from_rgb(0x4a, 0xde, 0x80);
 const POLARITY_NEGATIVE: Color32 = Color32::from_rgb(0xf8, 0x71, 0x71);
 
 pub const MOD_ROW_HEIGHT: f32 = 22.0;
+#[allow(dead_code)] // reserved for sidebar chrome height parity with FX
 pub const MOD_SECTION_HEADER: f32 = 24.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -422,7 +423,7 @@ fn draw_mod_row_inner(ui: &mut Ui, route: &mut ModSlotUi, row_h: f32, row_idx: u
             tokens.text_muted
         };
 
-        ui.allocate_ui_at_rect(rect.shrink2(egui::vec2(GRID_UNIT, 2.0)), |ui| {
+        region(ui, rect.shrink2(egui::vec2(GRID_UNIT, 2.0)), |ui| {
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = 6.0;
                 let source = ui.label(

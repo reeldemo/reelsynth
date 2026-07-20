@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "reelsynth": {
+      "command": "cargo",
+      "args": ["run", "-q", "-p", "reelsynth-mcp", "--bin", "reelsynth-mcp"],
+      "cwd": "${workspaceFolder}"
+    },
+    "klaut-research": {
+      "command": "uv",
+      "args": ["run", "klaut-research-mcp"],
+      "cwd": "C:/Users/Julian/Documents/Programming/github/klaut-pro/klaut-research-gateway",
+      "env": {
+        "KLAUT_RESEARCH_MODE": "local",
+        "KLAUT_RESEARCH_URL": "https://research.klaut.pro",
+        "KLAUT_API_KEY": "<optional-when-using-hosted>",
+        "OPENALEX_MAILTO": "you@example.com",
+        "CROSSREF_MAILTO": "you@example.com",
+        "RESEARCH_DEFAULT_SOURCES": "openalex,crossref,arxiv,semantic_scholar,europe_pmc"
+      }
+    }
+  }
+}

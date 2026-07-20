@@ -1,0 +1,143 @@
+{
+  "device": "cuda",
+  "batch": 64,
+  "canonical_eval_seed": 20260719,
+  "results": [
+    {
+      "name": "identity",
+      "kind": "non_ai",
+      "residual": 0.9717606902122498,
+      "ms_per_batch": 0.3068925001571188,
+      "ms_per_sample": 0.004795195314954981,
+      "n_params": 0,
+      "eval_seed": 20260719,
+      "R_mean_multiseed": 0.9726044297218323,
+      "R_std_multiseed": 0.0020547732409553756
+    },
+    {
+      "name": "classic_quadratic",
+      "kind": "non_ai",
+      "residual": 0.8448915481567383,
+      "ms_per_batch": 1.594815000134986,
+      "ms_per_sample": 0.024918984377109155,
+      "n_params": 0,
+      "eval_seed": 20260719,
+      "R_mean_multiseed": 0.8452812194824219,
+      "R_std_multiseed": 0.01168853945918661
+    },
+    {
+      "name": "cosine_fade",
+      "kind": "non_ai",
+      "residual": 0.8248767852783203,
+      "ms_per_batch": 1.5945499999361346,
+      "ms_per_sample": 0.024914843749002102,
+      "n_params": 0,
+      "eval_seed": 20260719,
+      "R_mean_multiseed": 0.8257672667503357,
+      "R_std_multiseed": 0.01365821849148019
+    },
+    {
+      "name": "dual_cosine",
+      "kind": "non_ai",
+      "residual": 0.8248767852783203,
+      "ms_per_batch": 1.34570000009262,
+      "ms_per_sample": 0.021026562501447188,
+      "n_params": 0,
+      "eval_seed": 20260719,
+      "R_mean_multiseed": 0.8257672667503357,
+      "R_std_multiseed": 0.01365821849148019
+    },
+    {
+      "name": "soft_wide_fade",
+      "kind": "non_ai",
+      "residual": 0.7431874871253967,
+      "ms_per_batch": 2.6351900000008754,
+      "ms_per_sample": 0.04117484375001368,
+      "n_params": 0,
+      "eval_seed": 20260719,
+      "R_mean_multiseed": 0.7377992153167725,
+      "R_std_multiseed": 0.017122827775705556
+    },
+    {
+      "name": "detrend",
+      "kind": "non_ai",
+      "residual": 0.40794822573661804,
+      "ms_per_batch": 0.3601849999540718,
+      "ms_per_sample": 0.005627890624282372,
+      "n_params": 0,
+      "eval_seed": 20260719,
+      "R_mean_multiseed": 0.40910319685935975,
+      "R_std_multiseed": 0.03863159324370911
+    },
+    {
+      "name": "crossfade",
+      "kind": "non_ai",
+      "residual": 0.8115774989128113,
+      "ms_per_batch": 1.5049024998006644,
+      "ms_per_sample": 0.02351410155938538,
+      "n_params": 0,
+      "eval_seed": 20260719,
+      "R_mean_multiseed": 0.8129824757575989,
+      "R_std_multiseed": 0.01449366907989955
+    },
+    {
+      "name": "hann_blend",
+      "kind": "non_ai",
+      "residual": 0.8047966957092285,
+      "ms_per_batch": 0.541657500070869,
+      "ms_per_sample": 0.008463398438607328,
+      "n_params": 0,
+      "eval_seed": 20260719,
+      "R_mean_multiseed": 0.805998432636261,
+      "R_std_multiseed": 0.015557421071392363
+    },
+    {
+      "name": "seam_fir3",
+      "kind": "non_ai",
+      "residual": 0.9610013961791992,
+      "ms_per_batch": 0.6682749997708015,
+      "ms_per_sample": 0.010441796871418774,
+      "n_params": 0,
+      "eval_seed": 20260719,
+      "R_mean_multiseed": 0.9615767121315002,
+      "R_std_multiseed": 0.001923152028896591
+    },
+    {
+      "name": "ensemble_detrend_dc_fir",
+      "kind": "non_ai",
+      "residual": 0.4023715853691101,
+      "ms_per_batch": 1.5616724998835707,
+      "ms_per_sample": 0.024401132810680792,
+      "n_params": 0,
+      "eval_seed": 20260719,
+      "R_mean_multiseed": 0.402651846408844,
+      "R_std_multiseed": 0.03867818063339462
+    },
+    {
+      "name": "neural_favorite_meta",
+      "kind": "ai",
+      "residual": 0.9910600185394287,
+      "ms_per_batch": 2.5635774996771943,
+      "ms_per_sample": 0.04005589843245616,
+      "n_params": 37489,
+      "eval_seed": 20260719,
+      "tag": "champion_iter_000235_fitted",
+      "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T061909Z\\fitted\\champion_iter_000235_fitted.pt",
+      "residual_saved": 0.9909982681274414,
+      "R_mean_multiseed": 0.9912270665168762,
+      "R_std_multiseed": 0.0001868340524399009
+    }
+  ],
+  "summary": {
+    "best_classical": "seam_fir3",
+    "best_classical_R": 0.9610013961791992,
+    "dual_cosine_R": 0.8248767852783203,
+    "ai_favorite_R": 0.9910600185394287,
+    "delta_R_ai_minus_best_classical": 0.030058622360229492,
+    "delta_R_ai_minus_dual_cosine": 0.1661832332611084,
+    "ai_ms_per_batch": 2.5635774996771943,
+    "best_classical_ms_per_batch": 0.6682749997708015,
+    "dual_cosine_ms_per_batch": 1.34570000009262
+  },
+  "source": "canonical_eval_dataset"
+}

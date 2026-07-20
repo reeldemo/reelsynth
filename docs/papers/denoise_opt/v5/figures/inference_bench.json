@@ -1,0 +1,367 @@
+{
+  "device": "cuda",
+  "batch": 64,
+  "favorite": {
+    "tag": "champion_iter_000235_fitted",
+    "run": "gpu-rl-arch-20260719T061909Z",
+    "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T061909Z\\fitted\\champion_iter_000235_fitted.pt",
+    "residual_saved": 0.9909982681274414,
+    "residual_live": 0.9915407299995422,
+    "ms_per_batch": 3.147600000083912,
+    "ms_per_sample": 0.04918125000131113,
+    "depth": 12,
+    "width": 40,
+    "cell_kind": "tf_split",
+    "blocks": [
+      "tf_split",
+      "unet"
+    ],
+    "n_params": 37489
+  },
+  "results": [
+    {
+      "tag": "champion_iter_000157_fitted",
+      "run": "gpu-rl-arch-20260719T014756Z",
+      "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T014756Z\\fitted\\champion_iter_000157_fitted.pt",
+      "residual_saved": 0.9913939833641052,
+      "residual_live": 0.9912684559822083,
+      "ms_per_batch": 7.175529999949504,
+      "ms_per_sample": 0.112117656249211,
+      "depth": 12,
+      "width": 32,
+      "cell_kind": "tf_split",
+      "blocks": [
+        "tf_split",
+        "unet",
+        "moe_mix",
+        "residual",
+        "noise_cond",
+        "mlp"
+      ],
+      "n_params": 104484
+    },
+    {
+      "tag": "champion_iter_000205_fitted",
+      "run": "gpu-rl-arch-20260719T014136Z",
+      "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T014136Z\\fitted\\champion_iter_000205_fitted.pt",
+      "residual_saved": 0.991140604019165,
+      "residual_live": 0.9907317161560059,
+      "ms_per_batch": 7.286039999744389,
+      "ms_per_sample": 0.11384437499600608,
+      "depth": 12,
+      "width": 24,
+      "cell_kind": "tf_split",
+      "blocks": [
+        "tf_split",
+        "unet",
+        "moe_mix",
+        "residual",
+        "noise_cond",
+        "mlp"
+      ],
+      "n_params": 70562
+    },
+    {
+      "tag": "champion_iter_000193_fitted",
+      "run": "gpu-rl-arch-20260719T020816Z",
+      "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T020816Z\\fitted\\champion_iter_000193_fitted.pt",
+      "residual_saved": 0.991042971611023,
+      "residual_live": 0.9906086325645447,
+      "ms_per_batch": 6.664354000240564,
+      "ms_per_sample": 0.10413053125375882,
+      "depth": 12,
+      "width": 32,
+      "cell_kind": "tf_split",
+      "blocks": [
+        "tf_split",
+        "unet",
+        "moe_mix",
+        "residual",
+        "noise_cond",
+        "mlp"
+      ],
+      "n_params": 104484
+    },
+    {
+      "tag": "champion_iter_000235_fitted",
+      "run": "gpu-rl-arch-20260719T061909Z",
+      "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T061909Z\\fitted\\champion_iter_000235_fitted.pt",
+      "residual_saved": 0.9909982681274414,
+      "residual_live": 0.9915407299995422,
+      "ms_per_batch": 3.147600000083912,
+      "ms_per_sample": 0.04918125000131113,
+      "depth": 12,
+      "width": 40,
+      "cell_kind": "tf_split",
+      "blocks": [
+        "tf_split",
+        "unet"
+      ],
+      "n_params": 37489
+    },
+    {
+      "tag": "champion_iter_000397_fitted",
+      "run": "gpu-rl-arch-20260718T230833Z",
+      "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260718T230833Z\\fitted\\champion_iter_000397_fitted.pt",
+      "residual_saved": 0.9909655749797821,
+      "residual_live": 0.9907490611076355,
+      "ms_per_batch": 6.79928600002313,
+      "ms_per_sample": 0.10623884375036141,
+      "depth": 12,
+      "width": 31,
+      "cell_kind": "tf_split",
+      "blocks": [
+        "tf_split",
+        "unet",
+        "moe_mix",
+        "residual",
+        "noise_cond",
+        "mlp"
+      ],
+      "n_params": 97262
+    },
+    {
+      "tag": "champion_iter_000145_fitted",
+      "run": "gpu-rl-arch-20260719T013516Z",
+      "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T013516Z\\fitted\\champion_iter_000145_fitted.pt",
+      "residual_saved": 0.9909222722053528,
+      "residual_live": 0.9897075295448303,
+      "ms_per_batch": 7.142339999845717,
+      "ms_per_sample": 0.11159906249758933,
+      "depth": 12,
+      "width": 32,
+      "cell_kind": "tf_split",
+      "blocks": [
+        "tf_split",
+        "unet",
+        "moe_mix",
+        "residual",
+        "noise_cond",
+        "mlp"
+      ],
+      "n_params": 104484
+    },
+    {
+      "tag": "champion_iter_000229_fitted",
+      "run": "gpu-rl-arch-20260718T232454Z",
+      "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260718T232454Z\\fitted\\champion_iter_000229_fitted.pt",
+      "residual_saved": 0.9909184277057648,
+      "residual_live": 0.9901650547981262,
+      "ms_per_batch": 6.668796000012662,
+      "ms_per_sample": 0.10419993750019785,
+      "depth": 11,
+      "width": 32,
+      "cell_kind": "tf_split",
+      "blocks": [
+        "tf_split",
+        "unet",
+        "moe_mix",
+        "residual",
+        "noise_cond",
+        "mlp"
+      ],
+      "n_params": 100500
+    },
+    {
+      "tag": "champion_iter_000565_fitted",
+      "run": "gpu-rl-arch-20260719T005014Z",
+      "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T005014Z\\fitted\\champion_iter_000565_fitted.pt",
+      "residual_saved": 0.9908609986305237,
+      "residual_live": 0.9906789064407349,
+      "ms_per_batch": 4.109020000032615,
+      "ms_per_sample": 0.06420343750050961,
+      "depth": 12,
+      "width": 32,
+      "cell_kind": "tf_split",
+      "blocks": [
+        "tf_split",
+        "unet",
+        "moe_mix"
+      ],
+      "n_params": 53933
+    },
+    {
+      "tag": "champion_iter_000133_fitted",
+      "run": "gpu-rl-arch-20260719T030218Z",
+      "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T030218Z\\fitted\\champion_iter_000133_fitted.pt",
+      "residual_saved": 0.9908363223075867,
+      "residual_live": 0.991060733795166,
+      "ms_per_batch": 6.801651999994647,
+      "ms_per_sample": 0.10627581249991636,
+      "depth": 12,
+      "width": 32,
+      "cell_kind": "mlp",
+      "blocks": [
+        "tf_split",
+        "unet",
+        "moe_mix",
+        "residual",
+        "noise_cond",
+        "mlp"
+      ],
+      "n_params": 104484
+    },
+    {
+      "tag": "champion_iter_000188_fitted",
+      "run": "gpu-rl-arch-20260719T060704Z",
+      "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T060704Z\\fitted\\champion_iter_000188_fitted.pt",
+      "residual_saved": 0.9908271729946136,
+      "residual_live": 0.9907236099243164,
+      "ms_per_batch": 6.585634000075515,
+      "ms_per_sample": 0.10290053125117993,
+      "depth": 12,
+      "width": 36,
+      "cell_kind": "tf_split",
+      "blocks": [
+        "tf_split",
+        "unet",
+        "moe_mix",
+        "residual",
+        "noise_cond",
+        "mlp"
+      ],
+      "n_params": 121665
+    },
+    {
+      "tag": "champion_iter_000168_fitted",
+      "run": "gpu-rl-arch-20260719T033739Z",
+      "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T033739Z\\fitted\\champion_iter_000168_fitted.pt",
+      "residual_saved": 0.9907706379890442,
+      "residual_live": 0.9907386302947998,
+      "ms_per_batch": 6.682117999880575,
+      "ms_per_sample": 0.10440809374813398,
+      "depth": 12,
+      "width": 37,
+      "cell_kind": "tf_split",
+      "blocks": [
+        "tf_split",
+        "unet",
+        "moe_mix",
+        "residual",
+        "noise_cond",
+        "mlp"
+      ],
+      "n_params": 123984
+    },
+    {
+      "tag": "champion_iter_000140_fitted",
+      "run": "gpu-rl-arch-20260719T024957Z",
+      "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T024957Z\\fitted\\champion_iter_000140_fitted.pt",
+      "residual_saved": 0.9906185567378998,
+      "residual_live": 0.991376519203186,
+      "ms_per_batch": 6.689294000098016,
+      "ms_per_sample": 0.1045202187515315,
+      "depth": 12,
+      "width": 32,
+      "cell_kind": "tf_split",
+      "blocks": [
+        "tf_split",
+        "unet",
+        "moe_mix",
+        "residual",
+        "noise_cond",
+        "mlp"
+      ],
+      "n_params": 104484
+    },
+    {
+      "tag": "champion_iter_000265_fitted",
+      "run": "gpu-rl-arch-20260719T031718Z",
+      "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T031718Z\\fitted\\champion_iter_000265_fitted.pt",
+      "residual_saved": 0.990587443113327,
+      "residual_live": 0.9907702207565308,
+      "ms_per_batch": 6.720651999930851,
+      "ms_per_sample": 0.10501018749891955,
+      "depth": 11,
+      "width": 31,
+      "cell_kind": "tf_split",
+      "blocks": [
+        "tf_split",
+        "unet",
+        "moe_mix",
+        "residual",
+        "noise_cond",
+        "mlp"
+      ],
+      "n_params": 93566
+    },
+    {
+      "tag": "champion_iter_000170_fitted",
+      "run": "gpu-rl-arch-20260719T021857Z",
+      "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T021857Z\\fitted\\champion_iter_000170_fitted.pt",
+      "residual_saved": 0.9905102252960205,
+      "residual_live": 0.9905556440353394,
+      "ms_per_batch": 7.452766000060365,
+      "ms_per_sample": 0.1164494687509432,
+      "depth": 12,
+      "width": 32,
+      "cell_kind": "tf_split",
+      "blocks": [
+        "tf_split",
+        "unet",
+        "moe_mix",
+        "residual",
+        "noise_cond",
+        "mlp"
+      ],
+      "n_params": 104484
+    },
+    {
+      "tag": "champion_iter_000192_fitted",
+      "run": "gpu-rl-arch-20260719T014136Z",
+      "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T014136Z\\fitted\\champion_iter_000192_fitted.pt",
+      "residual_saved": 0.9904938340187073,
+      "residual_live": 0.989422082901001,
+      "ms_per_batch": 3.9782640000339597,
+      "ms_per_sample": 0.06216037500053062,
+      "depth": 12,
+      "width": 32,
+      "cell_kind": "tf_split",
+      "blocks": [
+        "tf_split",
+        "moe_mix",
+        "unet"
+      ],
+      "n_params": 49804
+    }
+  ],
+  "favorite_same_score_fastest": {
+    "tag": "champion_iter_000235_fitted",
+    "run": "gpu-rl-arch-20260719T061909Z",
+    "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T061909Z\\fitted\\champion_iter_000235_fitted.pt",
+    "residual_saved": 0.9909982681274414,
+    "residual_live": 0.9915407299995422,
+    "ms_per_batch": 3.147600000083912,
+    "ms_per_sample": 0.04918125000131113,
+    "depth": 12,
+    "width": 40,
+    "cell_kind": "tf_split",
+    "blocks": [
+      "tf_split",
+      "unet"
+    ],
+    "n_params": 37489
+  },
+  "selection_rule": "among R >= maxR-0.0005, minimize ms_per_batch (score-first, then latency)",
+  "max_residual_model": {
+    "tag": "champion_iter_000157_fitted",
+    "run": "gpu-rl-arch-20260719T014756Z",
+    "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T014756Z\\fitted\\champion_iter_000157_fitted.pt",
+    "residual_saved": 0.9913939833641052,
+    "residual_live": 0.9912684559822083,
+    "ms_per_batch": 7.175529999949504,
+    "ms_per_sample": 0.112117656249211,
+    "depth": 12,
+    "width": 32,
+    "cell_kind": "tf_split",
+    "blocks": [
+      "tf_split",
+      "unet",
+      "moe_mix",
+      "residual",
+      "noise_cond",
+      "mlp"
+    ],
+    "n_params": 104484
+  }
+}

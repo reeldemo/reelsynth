@@ -1,0 +1,11 @@
+{
+  "run_id": "smoke2-gpu",
+  "iters_done": 30,
+  "champion_residual": 0.8567303121089935,
+  "dual_cosine_baseline": 0.8203155994415283,
+  "delta": 0.03641471266746521,
+  "gpu": "NVIDIA GeForce RTX 3090",
+  "elapsed_sec": 1.8055510520935059,
+  "run_dir": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\smoke2-gpu",
+  "log_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\overnight_gpu_rl_arch_smoke2-gpu.log"
+}

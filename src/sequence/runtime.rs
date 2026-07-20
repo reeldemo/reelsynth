@@ -9,6 +9,7 @@ use super::transport::TransportState;
 use std::collections::HashMap;
 
 /// Callback trait for scheduled MIDI into the synth engine (extension point).
+#[allow(dead_code)]
 pub trait SequencerEngineSink {
     fn seq_note_on(&mut self, channel: u8, note: u8, velocity: f32);
     fn seq_note_off(&mut self, channel: u8, note: u8);

@@ -1,0 +1,23 @@
+{
+  "architecture": {
+    "depth": 2,
+    "width": 13,
+    "act": "gelu",
+    "ops": [
+      "mlp_seam",
+      "classic",
+      "fade_pull",
+      "fir3"
+    ],
+    "wet": 0.34979519487625715,
+    "fir": [
+      0.1384575374819345,
+      0.08506036177539313,
+      0.09876698963261929
+    ],
+    "cell_kind": "residual"
+  },
+  "residual": 0.8567303121089935,
+  "weights_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\smoke2-gpu\\fitted\\ckpt_iter_000030_fitted.pt",
+  "tag": "ckpt_iter_000030"
+}

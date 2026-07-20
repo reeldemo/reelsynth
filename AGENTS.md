@@ -29,7 +29,7 @@ Index: [docs/README.md](docs/README.md)
 
 ## Hard constraints (do not mislead users)
 
-1. **Compose mode** — in-app MIDI clip editing and recording; full transport playback requires the sequence engine (in progress).
+1. **Compose mode** — in-app MIDI clip editing, recording, and transport playback of scheduled clip notes through the synth.
 2. **Export `daw/midi/melody.mid`** — demo note until full `SequenceProject` SMF export lands.
 3. **Plugin is UI-only** — no host audio/MIDI I/O until S7.
 4. **Exports to Vital/Serum/Ableton are lossy** — cite [docs/INTEROP.md](docs/INTEROP.md).

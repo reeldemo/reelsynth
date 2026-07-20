@@ -16,7 +16,7 @@ cd reelsynth
 cargo run -p reelsynth-app --bin reelsynth-app
 ```
 
-You should hear audio when you play notes. If audio fails, the UI still runs (status shows the error).
+You should hear audio when you play notes. If audio fails, the UI still runs (status shows the error). Pick the output device in the header **Audio** combo (speakers, headphones, or a newly plugged DI / interface). With **Auto-select new audio output** enabled in Settings (default), freshly connected outputs are selected automatically.
 
 ![ReelSynth main window](https://github.com/reeldemo/reelsynth/releases/download/v0.1.0/01-full-window.png)
 
@@ -43,6 +43,15 @@ Three ways to trigger notes:
 5. Play — notes route to the synth engine.
 
 Supported MIDI: Note On/Off, pitch bend, channel pressure, poly aftertouch, control change (CC1 = mod wheel).
+
+### Select an audio output
+
+1. Open the **Audio** combo in the header (next to MIDI).
+2. Pick speakers, headphones, or an interface / DI box.
+3. Status shows `Audio: <device name>`.
+4. Plug in a new device with **Auto-select new audio output** on (Settings) — ReelSynth switches to the newly appeared device and updates the status line.
+
+The last selected device name is remembered in app settings. If that device is missing at launch, ReelSynth falls back to the system default (or UI-only if no outputs exist).
 
 ## Shape a basic sound
 

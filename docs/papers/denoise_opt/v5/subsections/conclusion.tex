@@ -1,0 +1,8 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+DenoiseOpt casts wavetable wrap discontinuity as cycle-local seam repair under a prolonged residual $R$, with a hybrid GA--PPO(+PBT) outer loop over bake cells.
+At the overnight freeze the champion reaches $R\approx 0.9909$ versus DualCosine $\approx 0.8166$.
+On the frozen holdout a compact favorite reaches $R\approx 0.991$ versus DualCosine $R\approx 0.825$; across twenty multi-family draws, mean $\Delta R\approx{+}0.162$ (Wilcoxon $p\approx 8.9{\times}10^{-5}$).
+Scope remains wavetable seam restoration.
+Code: \url{https://github.com/reeldemo/reelsynth}, \url{https://github.com/reeldemo/denoise-opt-meta}.

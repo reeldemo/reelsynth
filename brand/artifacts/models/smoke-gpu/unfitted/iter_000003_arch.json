@@ -1,0 +1,20 @@
+{
+  "architecture": {
+    "depth": 3,
+    "width": 6,
+    "act": "tanh",
+    "ops": [
+      "fade_pull",
+      "soft_seam",
+      "classic"
+    ],
+    "wet": 0.8449003447315657,
+    "fir": [
+      0.322415282473646,
+      0.4749845491936119,
+      0.18652184382372106
+    ],
+    "cell_kind": "gated"
+  },
+  "tag": "iter_000003"
+}

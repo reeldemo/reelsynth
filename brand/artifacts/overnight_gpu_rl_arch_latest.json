@@ -1,0 +1,120 @@
+{
+  "iter": 5925,
+  "champion_residual": 0.9909298121929169,
+  "champion_arch": {
+    "depth": 12,
+    "width": 32,
+    "act": "tanh",
+    "ops": [
+      "fade_pull",
+      "cycle_net",
+      "pin",
+      "polish"
+    ],
+    "wet": 0.35803397376880397,
+    "fir": [
+      0.3950197019145801,
+      0.14073575049532427,
+      0.08086248693948381,
+      0.2856828273745021,
+      0.3519787272029927
+    ],
+    "cell_kind": "tf_split",
+    "soft_logits": [
+      -0.31502168282469356,
+      0.0658169176398726,
+      0.8897794697384308,
+      -0.5133884392950538,
+      0.00851310819845541,
+      -0.6129687232221473,
+      0.3707782126379053,
+      0.8003997150851934,
+      0.7773708935975852,
+      -0.3521208139978142,
+      0.7593335991095684,
+      -0.31982483479339247,
+      0.27475451056683264,
+      -0.2700338759041371,
+      -0.9417014267813949
+    ],
+    "blocks": [
+      "tf_split",
+      "unet",
+      "moe_mix",
+      "residual",
+      "noise_cond",
+      "mlp"
+    ],
+    "use_adv_aux": false,
+    "moe_mode": "sequential"
+  },
+  "champion_hp": {
+    "lr": 0.02916585124808002,
+    "fit_steps": 64,
+    "batch": 64,
+    "entropy_coef": 0.03227557100757319,
+    "ppo_clip": 0.2,
+    "adv_coef": 0.04727302341599679
+  },
+  "baseline_dual_cosine": 0.8165849447250366,
+  "branch_best": {
+    "ppo": 0.989242434501648,
+    "nas": 0.9867673516273499,
+    "pbt": 0.9901182353496552,
+    "ga": 0.9901606440544128,
+    "combo": 0.9885384738445282
+  },
+  "iters_since_improve": 5925,
+  "pop_diversity": 0.33861616161616165,
+  "entropy": 2.7508015036582947,
+  "algorithms": [
+    "PPO",
+    "GA_crossover_mutate",
+    "ERL_inspired_interleave",
+    "PBT",
+    "discrete_NAS",
+    "depth_bias",
+    "MoE_softgate_parallel",
+    "composed_arch_graph",
+    "lit_blocks_unet_dilated_attn_dualpath",
+    "plateau_adapt_deepen"
+  ],
+  "elapsed_sec": 23379.481457710266,
+  "iters_per_sec": 0.2534273487081985,
+  "target_plan": {
+    "retarget": 250000,
+    "reason": "complex_arch_slower_than_1M_feasible",
+    "eta_hours_1M": 1096.08
+  },
+  "gpu": "NVIDIA GeForce RTX 3090",
+  "pid": 81392,
+  "seed": 1902771841,
+  "history_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T083019Z\\history.jsonl",
+  "blocks": [
+    "mlp",
+    "residual",
+    "dense",
+    "gated",
+    "bottleneck",
+    "unet",
+    "conv1d",
+    "dilated",
+    "attn",
+    "dual_path",
+    "tf_split",
+    "noise_cond",
+    "soft_mix",
+    "moe_mix"
+  ],
+  "max_search_depth": 20,
+  "max_graph_len": 8,
+  "max_width": 56,
+  "plateau_level": 4,
+  "plateau_adapt_every": 1000,
+  "ga_every": 40,
+  "algo_tag": "PPO+GA+PBT+NAS+depth+MoE",
+  "log_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\overnight_gpu_rl_arch_gpu-rl-arch-20260719T083019Z.log",
+  "run_dir": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T083019Z",
+  "unfitted_dir": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T083019Z\\unfitted",
+  "fitted_dir": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T083019Z\\fitted"
+}

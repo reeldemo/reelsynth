@@ -1,0 +1,19 @@
+﻿{
+    "gate":  "5k_clean",
+    "run_dir":  "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T083019Z",
+    "branch_best":  {
+                        "ppo":  0.989242434501648,
+                        "nas":  0.9867673516273499,
+                        "pbt":  0.9901182353496552,
+                        "ga":  0.9901606440544128,
+                        "combo":  0.9885384738445282
+                    },
+    "champion_residual":  0.9909298121929169,
+    "frozen_at":  "2026-07-19T14:54:20.2902922Z",
+    "note":  "Frozen at \u003e=5000 clean iterations for paper figures/tables. Declared campaign budget continues; not final mean-R.",
+    "baseline_dual_cosine":  0.8165849447250366,
+    "algo_tag":  "PPO+GA+PBT+NAS+depth+MoE",
+    "gpu":  "NVIDIA GeForce RTX 3090",
+    "delta":  0.1743448674678803,
+    "iter":  5850
+}

@@ -1,0 +1,17 @@
+\section{Limitations}
+\label{sec:limitations}
+
+\begin{itemize}
+  \item Residual uses a procedural ideal (no-cliff sibling), not a perceptual MOS or listening panel.
+  \item Bake metrics are not a substitute for formal audio quality tests.
+  \item The overnight GPU loop currently scores random sine+harmonic seam cliffs. Family-conditional hardness is measured on the separate Rust procedural bench. Aligning both evaluators is left to follow-up work.
+  \item Per-trial architecture width is capped for overnight throughput. Full Demucs-/diffusion-scale stacks were screened out.
+  \item The $5$k-gate freeze reports measured champion and branch residuals. Declared long-horizon mean-$R$ still requires the completed budget and frozen seeds.
+  \item Classical VA/BLEP anchors use OA author or proceedings PDFs (\texttt{stilson1996}, \texttt{nam2009polyblep}, \texttt{esqueda2016blamp}).
+\end{itemize}
+
+\section{Outlook: follow-up publication}
+\label{sec:outlook}
+
+A self-contained follow-up can treat \emph{which sounds fail} as the primary object of study: stratified residual heatmaps over the ten procedural families, cliff-size conditioning, and family-specialist or mixture-of-experts denoisers selected by the same RL--GA outer loop.
+That paper would cite the present mean-$R$ hybrid protocol as the baseline and ask whether beating $R>0.999$ is mainly an architecture problem or a coverage problem over hard families.

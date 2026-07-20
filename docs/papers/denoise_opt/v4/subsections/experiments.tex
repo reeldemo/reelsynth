@@ -1,0 +1,36 @@
+\section{Experiments}
+\label{sec:experiments}
+
+\subsection{Dataset}
+\label{sec:dataset}
+
+\paragraph{Creation.}
+The paper-facing evaluation corpus is a frozen draw from the same synthetic generator used by the overnight CUDA runner (\texttt{make\_batch} in \texttt{overnight\_gpu\_rl\_arch.py}).
+Each cycle has length $L{=}256$.
+A two-harmonic sine is drawn with frequency $\sim\mathcal{U}(1,4)$ and phase $\sim\mathcal{U}(0,2\pi)$.
+An open-wrap seam cliff of amplitude $\pm\mathcal{U}(0.08,0.43)$ is applied over $\texttt{SEAM\_W}{=}8$ samples at both ends.
+Seam-boosted Gaussian noise (scale $0.02$ at the ends, $0.15\times$ in the mid-cycle) is added to form the engine input.
+The ideal withholds the cliff and is used only for residual scoring.
+Prolonged residual $R$ tiles each cycle $N{=}16$ times before the RMS ratio.
+The holdout seed is $20{,}260{,}719$ (distinct from the overnight search seed $1{,}902{,}771{,}841$).
+Overnight search draws fresh i.i.d.\ batches from this generator and does not train on the frozen holdout tensors.
+There is no supervised clean/noisy training split of studio audio.
+Family labels are absent: this corpus is a single sine{+}cliff family (Rust \texttt{sound\_bench} families remain a separate hardness probe in Results).
+
+\paragraph{Dataset metrics.}
+A metrics draw of $4{,}096$ cycles under the holdout seed yields mean ideal RMS $0.721\pm0.016$, mean engine residual RMS $0.021\pm0.013$, and mean absolute wrap jump $|x_0-x_{L-1}|$ of $0.913\pm0.634$.
+Identity (no bake) on that draw scores mean $R\approx0.971$.
+Method tables below use a matched score batch of $64$ cycles from the same seed (tensors persisted under \texttt{brand/artifacts/canonical\_eval\_dataset/}), plus five consecutive seeds for mean$\pm$std.
+Figure~\ref{fig:intro-sine} is the documented sine-wrap edge case: the maximum-$|wrap|$ tile in that score batch, used for illustration and scored with DualCosine and the neural favorite under the same residual $R$.
+
+\paragraph{Overnight hybrid campaign ($5$k clean gate).}
+A CUDA search tagged \texttt{PPO+GA+PBT+NAS} (depth and MoE biases) runs with a large declared iteration budget (order $10^{5}$).
+At the $5{,}000$-iteration clean gate the live job reports champion residual $R\approx 0.99093$ against DualCosine baseline $\approx 0.81658$ on the same runner geometry ($\Delta R\approx{+}0.174$).
+Branch-best residuals at the freeze: GA $\approx 0.99016$, PBT $\approx 0.99012$, PPO $\approx 0.98924$, combo $\approx 0.98854$, NAS $\approx 0.98677$.
+Figures in Section~\ref{sec:results} regenerate from \texttt{history.jsonl} at this gate.
+Declared long-horizon mean-$R$ is \emph{not} claimed here. The GPU job continues past the gate.
+
+\paragraph{Inference and classical matched benches.}
+High-$R$ fitted cells ($R\ge 0.98$) are timed on CUDA (batch 64, prolonged residual).
+Ten non-learnable bake denoisers share the frozen canonical holdout against the neural favorite (Table~\ref{tab:canonical-methods}).
+Family-conditional hardness uses the separate Rust procedural $100{,}000$-cycle bench reported in Results.

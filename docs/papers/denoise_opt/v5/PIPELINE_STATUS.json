@@ -1,0 +1,28 @@
+{
+    "overnight":  {
+                      "algo_tag":  "PPO+GA+PBT+NAS+depth+MoE",
+                      "frozen_iters":  5850,
+                      "champion_residual":  0.99092981219291687,
+                      "note":  "5k clean gate frozen for figures/tables.",
+                      "dual_cosine_baseline":  0.81658494472503662,
+                      "do_not_stop":  true,
+                      "gate_5k_passed":  true
+                  },
+    "literature_count_bib":  39,
+    "sections_complete":  [
+                              "introduction",
+                              "related_work",
+                              "methods",
+                              "experiments",
+                              "results",
+                              "discussion",
+                              "tooling",
+                              "limitations",
+                              "conclusion"
+                          ],
+    "title_primary":  "Unsupervised Deep Audio Denoising Algorithms via Hybrid Reinforcement Learning and Genetic Algorithm Meta-Learning",
+    "oa_only":  true,
+    "oa_pdfs_downloaded":  39,
+    "updated_at":  "2026-07-19T15:46:09.7098296Z",
+    "paper_version":  "v5"
+}

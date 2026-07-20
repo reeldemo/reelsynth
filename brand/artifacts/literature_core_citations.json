@@ -1,0 +1,613 @@
+{
+  "n": 38,
+  "papers": [
+    {
+      "query": "Population Based Training of Neural Networks Jaderberg",
+      "title": "Speeding up Convolutional Neural Networks with Low Rank Expansions",
+      "year": 2014,
+      "doi": "10.5244/c.28.88",
+      "citation_count": 725,
+      "authors": [
+        "Max Jaderberg",
+        "Andrea Vedaldi",
+        "Andrew Zisserman"
+      ],
+      "url": "https://doi.org/10.5244/c.28.88",
+      "source": "crossref"
+    },
+    {
+      "query": "Population Based Training of Neural Networks Jaderberg",
+      "title": "Weakly-supervised convolutional neural networks for multimodal image registration",
+      "year": 2018,
+      "doi": "10.1016/j.media.2018.07.002",
+      "citation_count": 463,
+      "authors": [
+        "Yipeng Hu",
+        "Marc Modat",
+        "Eli Gibson",
+        "Wenqi Li",
+        "Nooshin Ghavami",
+        "Ester Bonmati",
+        "Guotai Wang",
+        "Steven Bandula",
+        "Caroline M. Moore",
+        "Mark Emberton",
+        "S\u00e9bastien Ourselin",
+        "J. Alison Noble",
+        "Dean C. Barratt",
+        "Tom Vercauteren"
+      ],
+      "url": "https://openalex.org/W2816936748",
+      "source": "openalex"
+    },
+    {
+      "query": "Population Based Training of Neural Networks Jaderberg",
+      "title": "Protein structure prediction using multiple deep neural networks in the 13th Critical Assessment of Protein Structure Prediction (CASP13)",
+      "year": 2019,
+      "doi": "10.1002/prot.25834",
+      "citation_count": 372,
+      "authors": [
+        "Andrew Senior",
+        "Richard Evans",
+        "John Jumper",
+        "James Kirkpatrick",
+        "Laurent Sifre",
+        "Tim Green",
+        "Chongli Qin",
+        "Augustin \u017d\u00eddek",
+        "Alexander Nelson",
+        "Alex Bridgland",
+        "Hugo Penedones",
+        "Stig Petersen",
+        "Karen Simonyan",
+        "Steve Crossan",
+        "Pushmeet Kohli",
+        "David T. Jones",
+        "David Silver",
+        "Koray Kavukcuoglu",
+        "Demis Hassabis"
+      ],
+      "url": "https://openalex.org/W2980272550",
+      "source": "openalex"
+    },
+    {
+      "query": "Population Based Training of Neural Networks Jaderberg",
+      "title": "Streamflow prediction using an integrated methodology based on convolutional neural network and long short-term memory networks",
+      "year": 2021,
+      "doi": "10.1038/s41598-021-96751-4",
+      "citation_count": 282,
+      "authors": [
+        "Sujan Ghimire",
+        "Zaher Mundher Yaseen\u202c\u202c\u202c\u202c\u202c\u202c\u202c\u202c\u202c\u202c\u202c\u202c\u202c\u202c\u202c\u202c",
+        "Aitazaz A. Farooque",
+        "Ravinesh C. Deo",
+        "Ji Zhang",
+        "Xiaohui Tao"
+      ],
+      "url": "https://openalex.org/W3196897376",
+      "source": "openalex"
+    },
+    {
+      "query": "Population Based Training of Neural Networks Jaderberg",
+      "title": "Model Compression for Deep Neural Networks: A Survey",
+      "year": 2023,
+      "doi": "10.3390/computers12030060",
+      "citation_count": 260,
+      "authors": [
+        "Zhuo Li",
+        "Hengyi Li",
+        "Lin Meng"
+      ],
+      "url": "https://openalex.org/W4324057834",
+      "source": "openalex"
+    },
+    {
+      "query": "Model-Agnostic Meta-Learning Finn MAML",
+      "title": "Learning to Generalize: Meta-Learning for Domain Generalization",
+      "year": 2018,
+      "doi": "10.1609/aaai.v32i1.11596",
+      "citation_count": 1237,
+      "authors": [
+        "Da Li",
+        "Yongxin Yang",
+        "Yi-Zhe Song",
+        "Timothy M. Hospedales"
+      ],
+      "url": "https://openalex.org/W2963043696",
+      "source": "openalex"
+    },
+    {
+      "query": "Model-Agnostic Meta-Learning Finn MAML",
+      "title": "A survey of deep meta-learning",
+      "year": 2021,
+      "doi": "10.1007/s10462-021-10004-4",
+      "citation_count": 362,
+      "authors": [
+        "Mike Huisman",
+        "Jan N. van Rijn",
+        "Aske Plaat"
+      ],
+      "url": "https://openalex.org/W3092053846",
+      "source": "openalex"
+    },
+    {
+      "query": "Model-Agnostic Meta-Learning Finn MAML",
+      "title": "Meta-Learning for Low-Resource Neural Machine Translation",
+      "year": 2018,
+      "doi": "10.18653/v1/d18-1398",
+      "citation_count": 323,
+      "authors": [
+        "Jiatao Gu",
+        "Yong Wang",
+        "Yun Chen",
+        "Victor O. K. Li",
+        "Kyunghyun Cho"
+      ],
+      "url": "https://openalex.org/W2888541716",
+      "source": "openalex"
+    },
+    {
+      "query": "Model-Agnostic Meta-Learning Finn MAML",
+      "title": "Recasting Gradient-Based Meta-Learning as Hierarchical Bayes",
+      "year": 2018,
+      "doi": "10.48550/arxiv.1801.08930",
+      "citation_count": 167,
+      "authors": [
+        "Erin Grant",
+        "Chelsea Finn",
+        "Sergey Levine",
+        "Trevor Darrell",
+        "Thomas L. Griffiths"
+      ],
+      "url": "https://openalex.org/W2784596339",
+      "source": "openalex"
+    },
+    {
+      "query": "Model-Agnostic Meta-Learning Finn MAML",
+      "title": "Alpha MAML: Adaptive Model-Agnostic Meta-Learning",
+      "year": 2019,
+      "doi": "10.48550/arxiv.1905.07435",
+      "citation_count": 54,
+      "authors": [
+        "Harkirat Singh Behl",
+        "At\u0131l\u0131m G\u00fcne\u015f Baydin",
+        "Philip H. S. Torr"
+      ],
+      "url": "https://openalex.org/W2946605054",
+      "source": "openalex"
+    },
+    {
+      "query": "Noise2Noise Learning Image Restoration without Clean Data",
+      "title": "Instant neural graphics primitives with a multiresolution hash encoding",
+      "year": 2022,
+      "doi": "10.1145/3528223.3530127",
+      "citation_count": 3751,
+      "authors": [
+        "Thomas M\u00fcller",
+        "Alex Evans",
+        "Christoph Schied",
+        "Alexander Keller"
+      ],
+      "url": "https://openalex.org/W4221151978",
+      "source": "openalex"
+    },
+    {
+      "query": "Noise2Noise Learning Image Restoration without Clean Data",
+      "title": "Non-uniform refinement: adaptive regularization improves single-particle cryo-EM reconstruction",
+      "year": 2020,
+      "doi": "10.1038/s41592-020-00990-8",
+      "citation_count": 1874,
+      "authors": [
+        "Ali Punjani",
+        "Haowei Zhang",
+        "David J. Fleet"
+      ],
+      "url": "https://openalex.org/W3108495343",
+      "source": "openalex"
+    },
+    {
+      "query": "Noise2Noise Learning Image Restoration without Clean Data",
+      "title": "Noise2Noise: Learning Image Restoration without Clean Data",
+      "year": 2018,
+      "doi": "10.48550/arxiv.1803.04189",
+      "citation_count": 988,
+      "authors": [
+        "Jaakko Lehtinen",
+        "Jacob Munkberg",
+        "Jon Hasselgren",
+        "Samuli Laine",
+        "Tero Karras",
+        "Miika Aittala",
+        "Timo Aila"
+      ],
+      "url": "https://openalex.org/W2793146153",
+      "source": "openalex"
+    },
+    {
+      "query": "Noise2Noise Learning Image Restoration without Clean Data",
+      "title": "Noise2Noise: Learning image restoration without clean data",
+      "year": 2018,
+      "doi": null,
+      "citation_count": 442,
+      "authors": [
+        "Jaakko Lehtinen",
+        "Jacob Munkberg",
+        "Jon Hasselgren",
+        "Samuli Laine",
+        "Tero Karras",
+        "Miika Aittala",
+        "Timo Aila"
+      ],
+      "url": "https://openalex.org/W2964204553",
+      "source": "openalex"
+    },
+    {
+      "query": "Noise2Noise Learning Image Restoration without Clean Data",
+      "title": "A Review of the Deep Learning Methods for Medical Images Super Resolution Problems",
+      "year": 2020,
+      "doi": "10.1016/j.irbm.2020.08.004",
+      "citation_count": 277,
+      "authors": [
+        "Y. Li",
+        "Bruno Sixou",
+        "Fran\u00e7oise Peyrin"
+      ],
+      "url": "https://openalex.org/W3069245681",
+      "source": "openalex"
+    },
+    {
+      "query": "Hyperband hyperparameter optimization Li",
+      "title": "Hyperparameter optimization: Foundations, algorithms, best practices, and open challenges",
+      "year": 2023,
+      "doi": "10.1002/widm.1484",
+      "citation_count": 833,
+      "authors": [
+        "Bernd Bischl",
+        "Martin Binder",
+        "Michel Lang",
+        "Tobias Pielok",
+        "Jakob Richter",
+        "Stefan Coors",
+        "Janek Thomas",
+        "Theresa Ullmann",
+        "Marc Becker",
+        "Anne\u2010Laure Boulesteix",
+        "Difan Deng",
+        "Marius Lindauer"
+      ],
+      "url": "https://openalex.org/W3179950556",
+      "source": "openalex"
+    },
+    {
+      "query": "Hyperband hyperparameter optimization Li",
+      "title": "Hyperparameter Search for Machine Learning Algorithms for Optimizing the Computational Complexity",
+      "year": 2023,
+      "doi": "10.3390/pr11020349",
+      "citation_count": 306,
+      "authors": [
+        "Yasser A. Ali",
+        "Emad Mahrous Awwad",
+        "Muna Al\u2010Razgan",
+        "Ali Maarouf"
+      ],
+      "url": "https://openalex.org/W4317743691",
+      "source": "openalex"
+    },
+    {
+      "query": "Hyperband hyperparameter optimization Li",
+      "title": "Basic Enhancement Strategies When Using Bayesian Optimization for Hyperparameter Tuning of Deep Neural Networks",
+      "year": 2020,
+      "doi": "10.1109/access.2020.2981072",
+      "citation_count": 276,
+      "authors": [
+        "Hyunghun Cho",
+        "Yong-Jin Kim",
+        "Eunjung Lee",
+        "Daeyoung Choi",
+        "Yongjae Lee",
+        "Wonjong Rhee"
+      ],
+      "url": "https://openalex.org/W3011974631",
+      "source": "openalex"
+    },
+    {
+      "query": "Hyperband hyperparameter optimization Li",
+      "title": "Advanced hyperparameter optimization of deep learning models for wind power prediction",
+      "year": 2023,
+      "doi": "10.1016/j.renene.2023.119700",
+      "citation_count": 215,
+      "authors": [
+        "Shahram Hanifi",
+        "Andrea Cammarono",
+        "Hossein Zare\u2010Behtash"
+      ],
+      "url": "https://openalex.org/W4389259745",
+      "source": "openalex"
+    },
+    {
+      "query": "Hyperband hyperparameter optimization Li",
+      "title": "Hyperparameter Optimization for Tracking with Continuous Deep Q-Learning",
+      "year": 2018,
+      "doi": "10.1109/cvpr.2018.00061",
+      "citation_count": 171,
+      "authors": [
+        "Xingping Dong",
+        "Jianbing Shen",
+        "Wenguan Wang",
+        "Yu Liu",
+        "Ling Shao",
+        "Fatih Porikli"
+      ],
+      "url": "https://openalex.org/W2798520605",
+      "source": "openalex"
+    },
+    {
+      "query": "SMAC sequential model-based algorithm configuration",
+      "title": "Hyperopt: a Python library for model selection and hyperparameter optimization",
+      "year": 2015,
+      "doi": "10.1088/1749-4699/8/1/014008",
+      "citation_count": 1044,
+      "authors": [
+        "James Bergstra",
+        "Brent Komer",
+        "Chris Eliasmith",
+        "Dan Yamins",
+        "David Cox"
+      ],
+      "url": "https://openalex.org/W1437335841",
+      "source": "openalex"
+    },
+    {
+      "query": "SMAC sequential model-based algorithm configuration",
+      "title": "Hyperopt: A Python Library for Optimizing the Hyperparameters of Machine Learning Algorithms",
+      "year": 2013,
+      "doi": "10.25080/majora-8b375195-003",
+      "citation_count": 818,
+      "authors": [
+        "James Bergstra",
+        "Dan Yamins",
+        "David Cox"
+      ],
+      "url": "https://openalex.org/W2189149359",
+      "source": "openalex"
+    },
+    {
+      "query": "SMAC sequential model-based algorithm configuration",
+      "title": "Initializing Bayesian Hyperparameter Optimization via Meta-Learning",
+      "year": 2015,
+      "doi": "10.1609/aaai.v29i1.9354",
+      "citation_count": 400,
+      "authors": [
+        "Matthias Feurer",
+        "Jost Tobias Springenberg",
+        "Frank Hutter"
+      ],
+      "url": "https://openalex.org/W2200000192",
+      "source": "openalex"
+    },
+    {
+      "query": "SMAC sequential model-based algorithm configuration",
+      "title": "MO-SMAC: Multiobjective Sequential Model-Based Algorithm Configuration",
+      "year": 2025,
+      "doi": "10.1162/evco_a_00371",
+      "citation_count": 3,
+      "authors": [
+        "Jeroen Rook",
+        "Carolin Benjamins",
+        "Jakob Bossek",
+        "Heike Trautmann",
+        "Holger H. Hoos",
+        "Marius Lindauer"
+      ],
+      "url": "https://openalex.org/W4408508783",
+      "source": "openalex"
+    },
+    {
+      "query": "irace iterated racing automatic algorithm configuration",
+      "title": "The irace package: Iterated racing for automatic algorithm configuration",
+      "year": 2016,
+      "doi": "10.1016/J.ORP.2016.09.002",
+      "citation_count": 1797,
+      "authors": [
+        "Manuel L\u00f3pez-Ib\u00e1\u00f1ez",
+        "J\u00e9r\u00e9mie Dubois-Lacoste",
+        "Leslie P\u00e9rez C\u00e1ceres",
+        "M. Birattari",
+        "T. St\u00fctzle"
+      ],
+      "url": "https://www.semanticscholar.org/paper/04cb619be916953fc40ae7415f891fe03a14b221",
+      "source": "semantic_scholar"
+    },
+    {
+      "query": "irace iterated racing automatic algorithm configuration",
+      "title": "A Survey of Automatic Parameter Tuning Methods for Metaheuristics",
+      "year": 2019,
+      "doi": "10.1109/tevc.2019.2921598",
+      "citation_count": 356,
+      "authors": [
+        "Changwu Huang",
+        "Yuanxiang Li",
+        "Xin Yao"
+      ],
+      "url": "https://openalex.org/W2961614712",
+      "source": "openalex"
+    },
+    {
+      "query": "irace iterated racing automatic algorithm configuration",
+      "title": "The irace Package: Iterated Race for Automatic Algorithm Configuration",
+      "year": 2011,
+      "doi": null,
+      "citation_count": 130,
+      "authors": [
+        "M. L",
+        "T. St\u00fctzle",
+        "M. Birattari",
+        "Manuel L\u00f3pez-Ib\u00e1\u00f1ez",
+        "J\u00e9r\u00e9mie Dubois-Lacoste"
+      ],
+      "url": "https://www.semanticscholar.org/paper/471966725a211d3c93c6508e3117656c0681f7e1",
+      "source": "semantic_scholar"
+    },
+    {
+      "query": "irace iterated racing automatic algorithm configuration",
+      "title": "irace: Iterated Racing for Automatic Algorithm Configuration",
+      "year": 2012,
+      "doi": "10.32614/cran.package.irace",
+      "citation_count": 112,
+      "authors": [
+        "Manuel L\u00f3pez\u2010Ib\u00e1\u00f1ez",
+        "J\u00e9r\u00e9mie Dubois-Lacoste",
+        "Leslie P\u00e9rez C\u00e1ceres",
+        "Thomas St\u00fctzle",
+        "Mauro Birattari"
+      ],
+      "url": "https://openalex.org/W4399591511",
+      "source": "openalex"
+    },
+    {
+      "query": "Differentiable Digital Signal Processing Engel DDSP",
+      "title": "Audio Signal Processing in the 21st Century: The important outcomes of the past 25 years",
+      "year": 2023,
+      "doi": "10.1109/msp.2023.3276171",
+      "citation_count": 36,
+      "authors": [
+        "Ga\u00ebl Richard",
+        "Paris Smaragdis",
+        "Sharon Gannot",
+        "Patrick A. Naylor",
+        "Shoji Makino",
+        "Walter Kellermann",
+        "Akihiko Sugiyama"
+      ],
+      "url": "https://openalex.org/W4384831944",
+      "source": "openalex"
+    },
+    {
+      "query": "Differentiable Digital Signal Processing Engel DDSP",
+      "title": "A review of differentiable digital signal processing for music and speech synthesis",
+      "year": 2024,
+      "doi": "10.3389/frsip.2023.1284100",
+      "citation_count": 32,
+      "authors": [
+        "Ben Hayes",
+        "Jordie Shier",
+        "Gy\u00f6rgy Fazekas",
+        "Andrew McPherson",
+        "Charalampos Saitis"
+      ],
+      "url": "https://openalex.org/W4390745914",
+      "source": "openalex"
+    },
+    {
+      "query": "Differentiable Digital Signal Processing Engel DDSP",
+      "title": "Style Transfer of Audio Effects with Differentiable Signal Processing",
+      "year": 2022,
+      "doi": "10.17743/jaes.2022.0025",
+      "citation_count": 30,
+      "authors": [
+        "Christian J. Steinmetz",
+        "Nicholas J. Bryan",
+        "Joshua D. Reiss"
+      ],
+      "url": "https://openalex.org/W4307977691",
+      "source": "openalex"
+    },
+    {
+      "query": "Differentiable Digital Signal Processing Engel DDSP",
+      "title": "A Review in Advanced Digital Signal Processing Systems",
+      "year": 2021,
+      "doi": "10.6084/m9.figshare.14330879",
+      "citation_count": 14,
+      "authors": [
+        "Roza Dastres",
+        "Mohsen Soori"
+      ],
+      "url": "https://openalex.org/W3153820601",
+      "source": "openalex"
+    },
+    {
+      "query": "Differentiable Digital Signal Processing Engel DDSP",
+      "title": "DENT-DDSP: Data-efficient noisy speech generator using differentiable digital signal processors for explicit distortion modelling and noise-robust speech recognition",
+      "year": 2022,
+      "doi": "10.21437/interspeech.2022-763",
+      "citation_count": 3,
+      "authors": [
+        "Zixun Guo",
+        "Chen Chen",
+        "Eng Siong Chng"
+      ],
+      "url": "https://doi.org/10.21437/interspeech.2022-763",
+      "source": "crossref"
+    },
+    {
+      "query": "polyBLEP oscillator V\u00e4lim\u00e4ki",
+      "title": "Oscillator and Filter Algorithms for Virtual Analog Synthesis",
+      "year": 2006,
+      "doi": "10.1162/comj.2006.30.2.19",
+      "citation_count": 68,
+      "authors": [
+        "V. V\u00e4lim\u00e4ki",
+        "Antti Huovilainen"
+      ],
+      "url": "https://www.semanticscholar.org/paper/75f474c6dd6b3bd9afbfdafb5cdd1084cec20120",
+      "source": "semantic_scholar"
+    },
+    {
+      "query": "polyBLEP oscillator V\u00e4lim\u00e4ki",
+      "title": "Antialiasing Oscillators in Subtractive Synthesis",
+      "year": 2007,
+      "doi": "10.1109/MSP.2007.323276",
+      "citation_count": 64,
+      "authors": [
+        "V. V\u00e4lim\u00e4ki",
+        "Antti Huovilainen"
+      ],
+      "url": "https://www.semanticscholar.org/paper/004933a53fdcecc6ac843f5160dbf937ced26e91",
+      "source": "semantic_scholar"
+    },
+    {
+      "query": "polyBLEP oscillator V\u00e4lim\u00e4ki",
+      "title": "Audibility of aliasing distortion in sawtooth signals and its implications for oscillator algorithm design.",
+      "year": 2012,
+      "doi": "10.1121/1.4748964",
+      "citation_count": 20,
+      "authors": [
+        "Heidi-Maria Lehtonen",
+        "Jussi Pekonen",
+        "V. V\u00e4lim\u00e4ki"
+      ],
+      "url": "https://www.semanticscholar.org/paper/f41963e8adcfbc3049e915956f39dc8fa42ee4e5",
+      "source": "semantic_scholar"
+    },
+    {
+      "query": "polyBLEP oscillator V\u00e4lim\u00e4ki",
+      "title": "Phaseshaping oscillator algorithms for musical sound synthesis",
+      "year": 2010,
+      "doi": null,
+      "citation_count": 6,
+      "authors": [
+        "J. Kleimola",
+        "Victor Lazzarini",
+        "J. Timoney",
+        "V. V\u00e4lim\u00e4ki"
+      ],
+      "url": "https://www.semanticscholar.org/paper/9459018ea7a67fd1922efa7231506867125cdb17",
+      "source": "semantic_scholar"
+    },
+    {
+      "query": "polyBLEP oscillator V\u00e4lim\u00e4ki",
+      "title": "A nonlinear second-order digital oscillator for Virtual Acoustic Feedback",
+      "year": 2014,
+      "doi": "10.1109/ICASSP.2014.6855055",
+      "citation_count": 4,
+      "authors": [
+        "L. Gabrielli",
+        "M. Giobbi",
+        "S. Squartini",
+        "V. V\u00e4lim\u00e4ki"
+      ],
+      "url": "https://www.semanticscholar.org/paper/1fc6f9e3637d5339fe88b7970da39923dc551c51",
+      "source": "semantic_scholar"
+    }
+  ]
+}

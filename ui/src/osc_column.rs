@@ -2,17 +2,17 @@
 
 use egui::{Color32, Pos2, Shape, Ui};
 use reelsynth::{
-    render_combined_osc_cycle, render_osc_cycle_at_index, Patch, WavetableBank,
+    render_combined_osc_cycle, render_osc_cycle_at_index, Patch,
 };
 use reelsynth_ui_theme::Tokens;
 
-use crate::audit_registry::{record_region, record_used, AuditId};
+use crate::audit_registry::{record_region, AuditId};
 use crate::layout::{CENTER_GAP, GRID_UNIT, SPACE_SM};
-use crate::oscillator_ui::{OscillatorUi, WaveLayerUi, MIN_OSCILLATORS};
+use crate::oscillator_ui::{OscillatorUi, MIN_OSCILLATORS};
 use crate::state::OscStripContext;
 use crate::widgets::{
     format_coarse, format_pan, format_unison, knob_value_label, labeled_select, Knob, KnobSize,
-    KnobStyle, panel, panel_audit,
+    KnobStyle, panel_audit,
 };
 use crate::wt::{sync_slot_from_position, wave_quant_from_index, wave_quant_index, effective_quant_count, WAVE_QUANT_LABELS};
 use crate::wt::waveform_points;
@@ -22,7 +22,7 @@ const WARP_MODES: [&str; 3] = ["None", "Sync", "Bend"];
 const FM_ALGORITHMS: [&str; 4] = ["Off", "2→1", "3→1", "2+3→1"];
 const FM_SOURCES: [&str; 5] = ["None", "Osc 2", "Osc 3", "2+3→1", "Feedback"];
 const STACK_LAYER_TYPES: [&str; 6] = ["Saw", "Sine", "Square", "Triangle", "Pulse", "Wavetable"];
-const STACK_MODES: [&str; 3] = ["Add", "Avg", "Avg Equal"];
+pub(crate) const STACK_MODES: [&str; 3] = ["Add", "Avg", "Avg Equal"];
 
 pub fn stack_mode_index(mode: &str) -> usize {
     match mode.to_ascii_lowercase().as_str() {
@@ -46,6 +46,11 @@ pub fn stack_mode_tooltip(mode: &str) -> &'static str {
         "avg_equal" | "avgequal" | "avg equal" => "Each layer counts equally (1/N)",
         _ => "Signed sum of all layers",
     }
+}
+
+/// User-facing stack mode label (never raw patch tokens like `none`).
+pub fn stack_mode_label(mode: &str) -> &'static str {
+    STACK_MODES[stack_mode_index(mode)]
 }
 
 pub fn stack_layer_type_index(ty: &str) -> usize {
@@ -287,6 +292,7 @@ pub fn draw_osc_column(
                             osc.wave_slot_fine = 0.0;
                             sync_slot_from_position(osc, 256);
                         }
+                        osc.ensure_layer_segment_interps();
                         changed = true;
                     }
                     record_row(ui.ctx(), AuditId::OscWtQuant, ui, quant_start);
@@ -909,7 +915,6 @@ mod bridge_tests {
 
 #[cfg(test)]
 mod osc_count_tests {
-    use super::*;
     use crate::OscillatorUi;
 
     #[test]

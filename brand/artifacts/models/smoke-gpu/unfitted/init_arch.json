@@ -1,0 +1,19 @@
+{
+  "architecture": {
+    "depth": 1,
+    "width": 4,
+    "act": "relu",
+    "ops": [
+      "mlp_seam",
+      "dual_cosine"
+    ],
+    "wet": 0.55,
+    "fir": [
+      0.25,
+      0.5,
+      0.25
+    ],
+    "cell_kind": "mlp"
+  },
+  "tag": "init"
+}

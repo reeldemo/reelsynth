@@ -2,12 +2,13 @@
 
 use reelsynth::patch::{Envelope, Oscillator, Patch};
 use crate::{
-    effect_slots_from_patch, effect_slots_to_patch, factory_label, fm_source_from_index,
-    mod_slots_from_patch, mod_slots_to_patch, osc_type_from_index, OscillatorUi, UiState,
-    warp_mode_from_index,
+    effect_slots_from_patch, effect_slots_to_patch, factory_label, filter_slots_from_patch,
+    filter_slots_to_patch, fm_source_from_index, mod_slots_from_patch, mod_slots_to_patch,
+    osc_type_from_index, OscillatorUi, UiState, warp_mode_from_index,
 };
 use crate::oscillator_ui::{ensure_wave_layers, WaveLayerUi};
 use crate::wt::position_from_osc_ui;
+use crate::osc_column::osc_type_index;
 
 pub fn lfo_shape_from_index(idx: usize) -> &'static str {
     match idx {
@@ -45,6 +46,22 @@ pub fn filter_type_from_mode(mode: usize) -> &'static str {
     }
 }
 
+fn sync_flat_filters_from_slots(state: &mut UiState) {
+    if let Some(s0) = state.filter_slots.first() {
+        state.filter_cutoff = s0.cutoff;
+        state.filter_resonance = s0.resonance;
+        state.filter_key_tracking = s0.key_tracking;
+        state.filter_drive = s0.drive;
+        state.filter_mode = filter_mode_from_type(&s0.filter_type);
+    }
+    if let Some(s1) = state.filter_slots.get(1) {
+        state.filter2_cutoff = s1.cutoff;
+        state.filter2_resonance = s1.resonance;
+        state.filter2_drive = s1.drive;
+        state.filter2_mode = filter_mode_from_type(&s1.filter_type);
+    }
+}
+
 fn preset_category_label(patch: &Patch) -> String {
     let wt = patch
         .wavetable_id
@@ -55,6 +72,11 @@ fn preset_category_label(patch: &Patch) -> String {
 }
 
 fn osc_ui_to_patch(osc: &OscillatorUi) -> Oscillator {
+    let layer_wt_id = osc
+        .wave_layers
+        .iter()
+        .find(|l| l.is_wavetable())
+        .and_then(|l| l.wavetable_id.clone());
     let mut out = Oscillator {
         osc_type: osc_type_from_index(osc.osc_type).into(),
         level: osc.level,
@@ -77,6 +99,7 @@ fn osc_ui_to_patch(osc: &OscillatorUi) -> Oscillator {
         wave_slots: osc.wave_slots.clone(),
         wave_layers: osc.wave_layers.iter().map(WaveLayerUi::to_patch).collect(),
         stack_mode: osc.stack_mode.clone(),
+        wavetable_id: layer_wt_id,
         ..Oscillator::default_va()
     };
     if osc.morph_amount > 0.0 {
@@ -138,11 +161,8 @@ pub fn sync_state_from_patch(state: &mut UiState, patch: &Patch) {
     state.osc_tab = state.osc_tab.min(state.oscillators.len().saturating_sub(1));
 
     state.unison_stereo_spread = patch.unison_stereo_spread;
-    state.filter_drive = patch.filter.drive;
-    state.filter2_cutoff = patch.filter2.cutoff;
-    state.filter2_resonance = patch.filter2.resonance;
-    state.filter2_mode = filter_mode_from_type(&patch.filter2.filter_type);
-    state.filter2_drive = patch.filter2.drive;
+    state.filter_slots = filter_slots_from_patch(&patch.filter, &patch.filter2, &patch.filters);
+    sync_flat_filters_from_slots(state);
 
     let idx = state.active_osc_index();
     let active = &state.oscillators[idx];
@@ -152,10 +172,6 @@ pub fn sync_state_from_patch(state: &mut UiState, patch: &Patch) {
 
     state.sub_level = patch.sub_level;
     state.noise_level = patch.noise_level;
-    state.filter_cutoff = patch.filter.cutoff;
-    state.filter_resonance = patch.filter.resonance;
-    state.filter_key_tracking = patch.filter.key_tracking;
-    state.filter_mode = filter_mode_from_type(&patch.filter.filter_type);
     state.env_attack = patch.envelope.attack;
     state.env_decay = patch.envelope.decay;
     state.env_sustain = patch.envelope.sustain;
@@ -177,6 +193,7 @@ pub fn sync_state_from_patch(state: &mut UiState, patch: &Patch) {
     state.mod_route_total = state.mod_routes.len().max(24);
     state.fx_slots = effect_slots_from_patch(&patch.effects);
     state.performance = crate::performance::PerformanceUi::from_settings(&patch.performance);
+    state.patch_crackle = patch.crackle.clamp(0.0, 1.0);
     sync_compose_from_patch(state, patch);
 }
 
@@ -193,6 +210,55 @@ pub fn compose_to_patch_sequence(compose: &crate::compose::ComposeUi) -> reelsyn
     seq
 }
 
+/// After loading a wavetable bank (factory / file / import), make Design audio match the editor.
+///
+/// Design tone is driven by `wave_layers`. VA layers ignore the bank, so a bare bank swap
+/// only updates previews. This promotes a wavetable layer to the audible primary, ducks
+/// sibling VA layers, and selects that layer for Quant / Shape editing.
+pub fn apply_loaded_bank_to_design(
+    state: &mut UiState,
+    bank_id: Option<&str>,
+    num_frames: usize,
+) -> usize {
+    let osc_idx = state.active_osc_index();
+    let osc = &mut state.oscillators[osc_idx];
+    ensure_wave_layers(osc);
+
+    let max_pos = (num_frames.saturating_sub(1)).max(1) as f32;
+    let preferred = state
+        .selected_layer_idx
+        .unwrap_or(0)
+        .min(osc.wave_layers.len().saturating_sub(1));
+
+    let wt_idx = osc
+        .wave_layers
+        .iter()
+        .position(|l| l.is_wavetable())
+        .unwrap_or(preferred);
+
+    if !osc.wave_layers[wt_idx].is_wavetable() {
+        osc.wave_layers[wt_idx].source_type = "wavetable".into();
+    }
+
+    for (i, layer) in osc.wave_layers.iter_mut().enumerate() {
+        if i == wt_idx {
+            layer.source_type = "wavetable".into();
+            layer.enabled = true;
+            layer.level = layer.level.max(0.9);
+            layer.wt_position = layer.wt_position.clamp(0.0, max_pos);
+            layer.wavetable_id = bank_id.map(str::to_string);
+        } else if layer.is_va() && layer.enabled {
+            // Keep VA colour in the stack, but let the loaded bank dominate the tone.
+            layer.level = (layer.level * 0.4).min(0.22);
+        }
+    }
+
+    osc.osc_type = osc_type_index("wavetable");
+    state.selected_layer_idx = Some(wt_idx);
+    state.wt_position = osc.wave_layers[wt_idx].wt_position;
+    wt_idx
+}
+
 pub fn patch_from_state(state: &UiState, base: &Patch) -> Patch {
     let mut patch = base.clone();
     patch.name = state.preset_name.clone();
@@ -200,15 +266,15 @@ pub fn patch_from_state(state: &UiState, base: &Patch) -> Patch {
     if patch.oscillators.is_empty() {
         patch.ensure_oscillators(1);
     }
-    patch.filter.cutoff = state.filter_cutoff;
-    patch.filter.resonance = state.filter_resonance;
-    patch.filter.key_tracking = state.filter_key_tracking;
-    patch.filter.drive = state.filter_drive;
-    patch.filter.filter_type = filter_type_from_mode(state.filter_mode).into();
-    patch.filter2.cutoff = state.filter2_cutoff;
-    patch.filter2.resonance = state.filter2_resonance;
-    patch.filter2.drive = state.filter2_drive;
-    patch.filter2.filter_type = filter_type_from_mode(state.filter2_mode).into();
+    patch.filters = filter_slots_to_patch(&state.filter_slots);
+    patch.sync_legacy_filters_from_chain();
+    // Mirror slot0 into flat fields used by smoother / footer when chain is non-empty.
+    if let Some(s0) = state.filter_slots.first() {
+        patch.filter = s0.to_slot().to_filter();
+    }
+    if let Some(s1) = state.filter_slots.get(1) {
+        patch.filter2 = s1.to_slot().to_filter();
+    }
     patch.unison_stereo_spread = state.unison_stereo_spread;
     patch.envelope = Envelope {
         attack: state.env_attack,
@@ -237,6 +303,7 @@ pub fn patch_from_state(state: &UiState, base: &Patch) -> Patch {
     patch.effects = effect_slots_to_patch(&state.fx_slots);
     patch.performance = state.performance.to_settings();
     patch.sequence = compose_to_patch_sequence(&state.compose);
+    patch.crackle = state.patch_crackle.clamp(0.0, 1.0);
     patch
 }
 
@@ -256,6 +323,18 @@ mod tests {
         assert_eq!(state.oscillators[0].wave_layers[1].source_type, "sine");
         assert_eq!(state.oscillators[0].wave_layers[2].source_type, "square");
         assert_eq!(state.selected_layer_idx, Some(0));
+    }
+
+    #[test]
+    fn crackle_amount_roundtrip() {
+        let mut original = Patch::factory_lead();
+        original.crackle = 0.42;
+        let mut state = UiState::default();
+        sync_state_from_patch(&mut state, &original);
+        assert!((state.patch_crackle - 0.42).abs() < 1e-6);
+        state.patch_crackle = 0.75;
+        let patch = patch_from_state(&state, &original);
+        assert!((patch.crackle - 0.75).abs() < 1e-6);
     }
 
     #[test]
@@ -321,6 +400,73 @@ mod tests {
         assert_eq!(restored.oscillators[0].wave_layers.len(), 3);
         assert_eq!(restored.oscillators[0].stack_mode, "avg");
         assert!((restored.oscillators[0].wave_layers[2].wt_position - 108.0).abs() < 0.01);
+        assert_eq!(
+            restored.oscillators[0].wave_layers[2].wavetable_id.as_deref(),
+            Some("saw_morph")
+        );
+    }
+
+    #[test]
+    fn apply_loaded_bank_promotes_wavetable_layer() {
+        let mut state = UiState::default();
+        state.oscillators[0].wave_layers = vec![
+            WaveLayerUi {
+                source_type: "saw".into(),
+                level: 0.55,
+                enabled: true,
+                ..WaveLayerUi::default()
+            },
+            WaveLayerUi {
+                source_type: "sine".into(),
+                level: 0.30,
+                enabled: true,
+                ..WaveLayerUi::default()
+            },
+        ];
+        state.selected_layer_idx = Some(0);
+
+        let wt_idx = apply_loaded_bank_to_design(&mut state, Some("metallic"), 256);
+        assert_eq!(wt_idx, 0);
+        assert_eq!(state.selected_layer_idx, Some(0));
+        let osc = &state.oscillators[0];
+        assert!(osc.wave_layers[0].is_wavetable());
+        assert!((osc.wave_layers[0].level - 0.9).abs() < 1e-4);
+        assert_eq!(osc.wave_layers[0].wavetable_id.as_deref(), Some("metallic"));
+        assert!(osc.wave_layers[1].level <= 0.22);
+        assert_eq!(osc_type_from_index(osc.osc_type), "wavetable");
+
+        let patch = patch_from_state(&state, &Patch::default_mono());
+        assert_eq!(
+            patch.oscillators[0].wave_layers[0].wavetable_id.as_deref(),
+            Some("metallic")
+        );
+        assert_eq!(patch.oscillators[0].wavetable_id.as_deref(), Some("metallic"));
+    }
+
+    #[test]
+    fn apply_loaded_bank_selects_existing_wt_layer() {
+        let mut state = UiState::default();
+        state.oscillators[0].wave_layers = vec![
+            WaveLayerUi {
+                source_type: "saw".into(),
+                level: 0.55,
+                enabled: true,
+                ..WaveLayerUi::default()
+            },
+            WaveLayerUi {
+                source_type: "wavetable".into(),
+                level: 0.18,
+                enabled: true,
+                wt_position: 108.0,
+                ..WaveLayerUi::default()
+            },
+        ];
+        state.selected_layer_idx = Some(0);
+        let wt_idx = apply_loaded_bank_to_design(&mut state, Some("formant"), 256);
+        assert_eq!(wt_idx, 1);
+        assert_eq!(state.selected_layer_idx, Some(1));
+        assert!((state.oscillators[0].wave_layers[1].level - 0.9).abs() < 1e-4);
+        assert!(state.oscillators[0].wave_layers[0].level <= 0.22);
     }
 
     #[test]

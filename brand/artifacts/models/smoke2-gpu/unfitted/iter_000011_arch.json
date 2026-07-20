@@ -1,0 +1,21 @@
+{
+  "architecture": {
+    "depth": 2,
+    "width": 12,
+    "act": "gelu",
+    "ops": [
+      "mlp_seam",
+      "classic",
+      "fade_pull",
+      "fir3"
+    ],
+    "wet": 0.34979519487625715,
+    "fir": [
+      0.2799687534667426,
+      0.27513463064385,
+      0.29062326433688557
+    ],
+    "cell_kind": "residual"
+  },
+  "tag": "iter_000011"
+}

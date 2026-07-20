@@ -1,0 +1,11 @@
+{
+  "eval_seed": 20260719,
+  "tile_index": 21,
+  "wrap_abs": 2.2893970012664795,
+  "R_engine": 0.93118816614151,
+  "R_dual_cosine": 0.639761209487915,
+  "R_neural_favorite": 0.9863044023513794,
+  "periods_shown": 3,
+  "cycle_length": 256,
+  "note": "Same holdout_batch.pt tile; DualCosine + neural favorite via overnight bake path."
+}

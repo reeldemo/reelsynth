@@ -1,0 +1,23 @@
+{
+  "architecture": {
+    "depth": 2,
+    "width": 4,
+    "act": "tanh",
+    "ops": [
+      "soft_seam",
+      "pin",
+      "polish",
+      "dual_cosine"
+    ],
+    "wet": 0.16622292890774085,
+    "fir": [
+      0.10034141283141036,
+      0.5420108793666536,
+      0.3974317861535281
+    ],
+    "cell_kind": "mlp"
+  },
+  "residual": 0.8345701396465302,
+  "weights_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260718T101140Z\\fitted\\champion_iter_000003_fitted.pt",
+  "tag": "champion_iter_000003"
+}

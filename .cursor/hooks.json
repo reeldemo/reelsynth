@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": "node .cursor/hooks/verify-compile-stamp.js",
+        "matcher": "(?:^|[;&]\\s*)git(?:\\.exe)?(?:\\s+-C\\s+\\S+)?\\s+push\\b",
+        "failClosed": false
+      }
+    ]
+  }
+}

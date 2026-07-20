@@ -1,0 +1,60 @@
+{
+  "protocol": "EVAL_PROTOCOL v1 / Phase 3c isolated short-budget",
+  "note": "True isolated branch configs (GA-only, PPO-only, GA+PPO, full) on the same search seed 1902771841. Short budget (150 iters, plateau adapt off). Not interchangeable with multi-hour overnight branch-best freezes; report both.",
+  "iters": 150,
+  "seed": 1902771841,
+  "pop_size": 12,
+  "batch": 48,
+  "fit_steps": 24,
+  "wall_hours_total": 0.3224062567287021,
+  "results": [
+    {
+      "config": "GA-only (isolated short)",
+      "branches": "ga",
+      "run_id": "ablate-ga-only-150it-1902771841",
+      "iters_budget": 150,
+      "final_iter": 150,
+      "champ_R": 0.9806169271469116,
+      "dual_cosine_baseline": 0.8165849447250366,
+      "elapsed_sec": 382.434861,
+      "source": "isolated_short_budget_rerun",
+      "seed": 1902771841
+    },
+    {
+      "config": "PPO-only (isolated short)",
+      "branches": "ppo",
+      "run_id": "ablate-ppo-only-150it-1902771841",
+      "iters_budget": 150,
+      "final_iter": 150,
+      "champ_R": 0.9793209135532379,
+      "dual_cosine_baseline": 0.8165849447250366,
+      "elapsed_sec": 376.605191,
+      "source": "isolated_short_budget_rerun",
+      "seed": 1902771841
+    },
+    {
+      "config": "GA+PPO (isolated short)",
+      "branches": "ga,ppo",
+      "run_id": "ablate-ga-ppo-150it-1902771841",
+      "iters_budget": 150,
+      "final_iter": 150,
+      "champ_R": 0.9800712764263153,
+      "dual_cosine_baseline": 0.8165849447250366,
+      "elapsed_sec": 468.507442,
+      "source": "isolated_short_budget_rerun",
+      "seed": 1902771841
+    },
+    {
+      "config": "Full hybrid (isolated short)",
+      "branches": "ppo,nas,pbt,ga,combo",
+      "run_id": "ablate-full-150it-1902771841",
+      "iters_budget": 150,
+      "final_iter": 150,
+      "champ_R": 0.9811286330223083,
+      "dual_cosine_baseline": 0.8165849447250366,
+      "elapsed_sec": 306.410415,
+      "source": "isolated_short_budget_rerun",
+      "seed": 1902771841
+    }
+  ]
+}

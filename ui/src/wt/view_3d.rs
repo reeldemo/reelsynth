@@ -2,7 +2,7 @@ use egui::{Color32, CursorIcon, Pos2, Rect, Sense, Shape, Ui, Vec2};
 use reelsynth::WavetableBank;
 use reelsynth_ui_theme::{ACCENT_UI, Tokens};
 
-use crate::audit_registry::{record_region, record_used, AuditId};
+use crate::audit_registry::{record_region, AuditId};
 use crate::layout::RADIUS_SM;
 
 use crate::state::WtView3dMode;

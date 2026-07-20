@@ -1,0 +1,1092 @@
+{
+  "n": 61,
+  "papers": [
+    {
+      "query": "BLEP bandlimited step oscillator virtual analog",
+      "id": "W2475100461",
+      "doi": "10.1109/tsp.2016.2585091",
+      "title": "Aliasing Reduction in Clipped Signals",
+      "year": 2016,
+      "authors": [
+        "Fabi\u00e1n Esqueda",
+        "Stefan Bilbao",
+        "Vesa V\u00e4lim\u00e4ki"
+      ],
+      "venue": "IEEE Transactions on Signal Processing",
+      "citation_count": 53,
+      "url": "https://openalex.org/W2475100461",
+      "source": "openalex",
+      "oa_url": "https://www.research.ed.ac.uk/files/26997332/07499828.pdf"
+    },
+    {
+      "query": "BLEP bandlimited step oscillator virtual analog",
+      "id": "10.1162/comj.2006.30.2.19",
+      "doi": "10.1162/comj.2006.30.2.19",
+      "title": "Oscillator and Filter Algorithms for Virtual Analog Synthesis",
+      "year": 2006,
+      "authors": [
+        "Vesa V\u00e4lim\u00e4ki",
+        "Antti Huovilainen"
+      ],
+      "venue": "Computer Music Journal",
+      "citation_count": 32,
+      "url": "https://doi.org/10.1162/comj.2006.30.2.19",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "BLEP bandlimited step oscillator virtual analog",
+      "id": "W3174326946",
+      "doi": "10.1109/tsp.2021.3092892",
+      "title": "Time Domain Sampling of the Radial Functions in Spherical Harmonics Expansions",
+      "year": 2021,
+      "authors": [
+        "Nara Hahn",
+        "Frank Schultz",
+        "Sascha Spors"
+      ],
+      "venue": "IEEE Transactions on Signal Processing",
+      "citation_count": 14,
+      "url": "https://openalex.org/W3174326946",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/78/9307529/09466448.pdf"
+    },
+    {
+      "query": "BLEP bandlimited step oscillator virtual analog",
+      "id": "W2432977695",
+      "doi": null,
+      "title": "Rounding corners with BLAMP",
+      "year": 2016,
+      "authors": [
+        "Fabi\u00e1n Esqueda",
+        "Vesa V\u00e4lim\u00e4ki",
+        "Stefan Bilbao"
+      ],
+      "venue": "Edinburgh Research Explorer (University of Edinburgh)",
+      "citation_count": 8,
+      "url": "https://openalex.org/W2432977695",
+      "source": "openalex",
+      "oa_url": "https://www.pure.ed.ac.uk/ws/files/28180097/18_DAFx_16_paper_33_PN.pdf"
+    },
+    {
+      "query": "BLEP bandlimited step oscillator virtual analog",
+      "id": "W2094867896",
+      "doi": "10.1155/2011/785103",
+      "title": "Discrete-Time Modelling of the Moog Sawtooth Oscillator Waveform",
+      "year": 2011,
+      "authors": [
+        "Jussi Pekonen",
+        "Victor Lazzarini",
+        "Joseph Timoney",
+        "Jari Kleimola",
+        "Vesa V\u00e4lim\u00e4ki"
+      ],
+      "venue": "EURASIP Journal on Advances in Signal Processing",
+      "citation_count": 6,
+      "url": "https://openalex.org/W2094867896",
+      "source": "openalex",
+      "oa_url": "https://asp-eurasipjournals.springeropen.com/counter/pdf/10.1155/2011/785103"
+    },
+    {
+      "query": "BLEP bandlimited step oscillator virtual analog",
+      "id": "W2599925973",
+      "doi": null,
+      "title": "Design of a Scalable Polyphony-MIDI Synthesizer for a Low Cost DSP",
+      "year": 2010,
+      "authors": [
+        "Antti Huovilainen"
+      ],
+      "venue": "Aaltodoc (Aalto University)",
+      "citation_count": 6,
+      "url": "https://openalex.org/W2599925973",
+      "source": "openalex",
+      "oa_url": "https://aaltodoc.aalto.fi/handle/123456789/3237"
+    },
+    {
+      "query": "BLEP bandlimited step oscillator virtual analog",
+      "id": "10.1007/s10470-013-0032-z",
+      "doi": "10.1007/s10470-013-0032-z",
+      "title": "On modified Wien-bridge oscillator and astable oscillator",
+      "year": 2013,
+      "authors": [
+        "Herminio Mart\u00ednez-Garc\u00eda"
+      ],
+      "venue": "Analog Integrated Circuits and Signal Processing",
+      "citation_count": 5,
+      "url": "https://doi.org/10.1007/s10470-013-0032-z",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "BLEP bandlimited step oscillator virtual analog",
+      "id": "10.3991/ijoe.v12i08.5911",
+      "doi": "10.3991/ijoe.v12i08.5911",
+      "title": "Virtual Labs of Analog Oscillator",
+      "year": 2016,
+      "authors": [
+        "Syifaul Fuada",
+        "Amy Hamidah Salman"
+      ],
+      "venue": "International Journal of Online and Biomedical Engineering (iJOE)",
+      "citation_count": 4,
+      "url": "https://doi.org/10.3991/ijoe.v12i08.5911",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "wavetable synthesis periodic waveform interpolation",
+      "id": "W4390745914",
+      "doi": "10.3389/frsip.2023.1284100",
+      "title": "A review of differentiable digital signal processing for music and speech synthesis",
+      "year": 2024,
+      "authors": [
+        "Ben Hayes",
+        "Jordie Shier",
+        "Gy\u00f6rgy Fazekas",
+        "Andrew McPherson",
+        "Charalampos Saitis"
+      ],
+      "venue": "Frontiers in Signal Processing",
+      "citation_count": 29,
+      "url": "https://openalex.org/W4390745914",
+      "source": "openalex",
+      "oa_url": "https://www.frontiersin.org/articles/10.3389/frsip.2023.1284100/pdf?isPublishedV2=False"
+    },
+    {
+      "query": "wavetable synthesis periodic waveform interpolation",
+      "id": "W2162137589",
+      "doi": "10.1186/1687-6180-2013-103",
+      "title": "A digital waveguide-based approach for Clavinet modeling and synthesis",
+      "year": 2013,
+      "authors": [
+        "Leonardo Gabrielli",
+        "Vesa V\u00e4lim\u00e4ki",
+        "Henri Penttinen",
+        "Stefano Squartini",
+        "Stefan Bilbao"
+      ],
+      "venue": "EURASIP Journal on Advances in Signal Processing",
+      "citation_count": 12,
+      "url": "https://openalex.org/W2162137589",
+      "source": "openalex",
+      "oa_url": "https://asp-eurasipjournals.springeropen.com/counter/pdf/10.1186/1687-6180-2013-103"
+    },
+    {
+      "query": "wavetable synthesis periodic waveform interpolation",
+      "id": "W2945864325",
+      "doi": null,
+      "title": "Audible Aliasing Distortion in Digital Audio Synthesis",
+      "year": 2012,
+      "authors": [
+        "Ji\u0159\u00ed Schimmel"
+      ],
+      "venue": "Brno University of Technology Digital Library (Brno University of Technology)",
+      "citation_count": 8,
+      "url": "https://openalex.org/W2945864325",
+      "source": "openalex",
+      "oa_url": "http://hdl.handle.net/11012/37012"
+    },
+    {
+      "query": "wavetable synthesis periodic waveform interpolation",
+      "id": "10.21437/interspeech.2010-180",
+      "doi": "10.21437/interspeech.2010-180",
+      "title": "Excitation modeling based on waveform interpolation for HMM-based speech synthesis",
+      "year": 2010,
+      "authors": [
+        "June Sig Sung",
+        "Doo Hwa Hong",
+        "Kyung Hwan Oh",
+        "Nam Soo Kim"
+      ],
+      "venue": "Interspeech 2010",
+      "citation_count": 7,
+      "url": "https://doi.org/10.21437/interspeech.2010-180",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "wavetable synthesis periodic waveform interpolation",
+      "id": "W2029733930",
+      "doi": "10.1109/icassp.2013.6637605",
+      "title": "An ideal integrator for higher-order integrated wavetable synthesis",
+      "year": 2013,
+      "authors": [
+        "Andreas Franck",
+        "Vesa V\u00e4lim\u00e4ki"
+      ],
+      "venue": null,
+      "citation_count": 6,
+      "url": "https://openalex.org/W2029733930",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "wavetable synthesis periodic waveform interpolation",
+      "id": "W4405584712",
+      "doi": "10.5334/tismir.210",
+      "title": "GOLF: A Singing Voice Synthesiser with Glottal Flow Wavetables and LPC Filters",
+      "year": 2024,
+      "authors": [
+        "Chin-Yun Yu",
+        "Gy\u00f6rgy Fazekas"
+      ],
+      "venue": "Transactions of the International Society for Music Information Retrieval",
+      "citation_count": 3,
+      "url": "https://openalex.org/W4405584712",
+      "source": "openalex",
+      "oa_url": "https://transactions.ismir.net/articles/210/files/6763eb9d56f2b.pdf"
+    },
+    {
+      "query": "wavetable synthesis periodic waveform interpolation",
+      "id": "W4281287975",
+      "doi": "10.5281/zenodo.6573045",
+      "title": "Deep Convolutional Oscillator: Synthesizing Waveforms from Timbral Descriptors",
+      "year": 2022,
+      "authors": [
+        "Gordan Krekovi\u0107"
+      ],
+      "venue": "Zenodo (CERN European Organization for Nuclear Research)",
+      "citation_count": 2,
+      "url": "https://openalex.org/W4281287975",
+      "source": "openalex",
+      "oa_url": "https://zenodo.org/record/6573045"
+    },
+    {
+      "query": "wavetable synthesis periodic waveform interpolation",
+      "id": "W4226309310",
+      "doi": "10.48550/arxiv.2111.10003",
+      "title": "Differentiable Wavetable Synthesis",
+      "year": 2021,
+      "authors": [
+        "Siyuan Shan",
+        "Lamtharn Hantrakul",
+        "Jitong Chen",
+        "Matt Avent",
+        "David Trevelyan"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 2,
+      "url": "https://openalex.org/W4226309310",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2111.10003"
+    },
+    {
+      "query": "audio denoising unsupervised deep learning without paired data",
+      "id": "W3035060554",
+      "doi": "10.48550/arxiv.2006.07733",
+      "title": "Bootstrap your own latent: A new approach to self-supervised Learning",
+      "year": 2020,
+      "authors": [
+        "Jean-Bastien Grill",
+        "Florian Strub",
+        "Florent Altch\u00e9",
+        "Corentin Tallec",
+        "Pierre H. Richemond",
+        "Elena Buchatskaya",
+        "Carl Doersch",
+        "Bernardo \u00c1vila Pires",
+        "Zhaohan Daniel Guo",
+        "Mohammad Gheshlaghi Azar",
+        "Bilal Piot",
+        "Koray Kavukcuoglu",
+        "R\u00e9mi Munos",
+        "Michal Valko"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 3449,
+      "url": "https://openalex.org/W3035060554",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2006.07733"
+    },
+    {
+      "query": "audio denoising unsupervised deep learning without paired data",
+      "id": "W2984353870",
+      "doi": "10.1007/s10994-019-05855-6",
+      "title": "A survey on semi-supervised learning",
+      "year": 2019,
+      "authors": [
+        "Jesper E. van Engelen",
+        "Holger H. Hoos"
+      ],
+      "venue": "Machine Learning",
+      "citation_count": 2583,
+      "url": "https://openalex.org/W2984353870",
+      "source": "openalex",
+      "oa_url": "https://link.springer.com/content/pdf/10.1007/s10994-019-05855-6.pdf"
+    },
+    {
+      "query": "audio denoising unsupervised deep learning without paired data",
+      "id": "W3176923149",
+      "doi": "10.1186/s40537-021-00492-0",
+      "title": "Text Data Augmentation for Deep Learning",
+      "year": 2021,
+      "authors": [
+        "Connor Shorten",
+        "Taghi M. Khoshgoftaar",
+        "Borko Furht"
+      ],
+      "venue": "Journal Of Big Data",
+      "citation_count": 1684,
+      "url": "https://openalex.org/W3176923149",
+      "source": "openalex",
+      "oa_url": "https://journalofbigdata.springeropen.com/track/pdf/10.1186/s40537-021-00492-0"
+    },
+    {
+      "query": "audio denoising unsupervised deep learning without paired data",
+      "id": "W2502949459",
+      "doi": "10.15252/msb.20156651",
+      "title": "Deep learning for computational biology",
+      "year": 2016,
+      "authors": [
+        "Christof Angermueller",
+        "Tanel P\u00e4rnamaa",
+        "Leopold Parts",
+        "Oliver Stegle"
+      ],
+      "venue": "Molecular Systems Biology",
+      "citation_count": 1542,
+      "url": "https://openalex.org/W2502949459",
+      "source": "openalex",
+      "oa_url": "https://onlinelibrary.wiley.com/doi/pdfdirect/10.15252/msb.20156651"
+    },
+    {
+      "query": "audio denoising unsupervised deep learning without paired data",
+      "id": "W2576683119",
+      "doi": "10.1016/j.neucom.2017.01.026",
+      "title": "Machine learning on big data: Opportunities and challenges",
+      "year": 2017,
+      "authors": [
+        "Lina Zhou",
+        "Shimei Pan",
+        "Jianwu Wang",
+        "Athanasios V. Vasilakos"
+      ],
+      "venue": "Neurocomputing",
+      "citation_count": 1205,
+      "url": "https://openalex.org/W2576683119",
+      "source": "openalex",
+      "oa_url": "https://www.sciencedirect.com/science/article/am/pii/S0925231217300577?via%3Dihub"
+    },
+    {
+      "query": "audio denoising unsupervised deep learning without paired data",
+      "id": "W4295122555",
+      "doi": "10.3390/app12188972",
+      "title": "Deep Residual Learning for Image Recognition: A Survey",
+      "year": 2022,
+      "authors": [
+        "Muhammad Shafiq",
+        "Zhaoquan Gu"
+      ],
+      "venue": "Applied Sciences",
+      "citation_count": 950,
+      "url": "https://openalex.org/W4295122555",
+      "source": "openalex",
+      "oa_url": "https://www.mdpi.com/2076-3417/12/18/8972/pdf?version=1662547655"
+    },
+    {
+      "query": "audio denoising unsupervised deep learning without paired data",
+      "id": "W2931364255",
+      "doi": "10.1109/jstsp.2019.2908700",
+      "title": "Deep Learning for Audio Signal Processing",
+      "year": 2019,
+      "authors": [
+        "H.\u2010G. Purwins",
+        "Bo Li",
+        "Tuomas Virtanen",
+        "Jan Schl\u00fcter",
+        "Shuo-Yiin Chang",
+        "Tara N. Sainath"
+      ],
+      "venue": "IEEE Journal of Selected Topics in Signal Processing",
+      "citation_count": 839,
+      "url": "https://openalex.org/W2931364255",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/1905.00078"
+    },
+    {
+      "query": "audio denoising unsupervised deep learning without paired data",
+      "id": "W2076462394",
+      "doi": "10.1007/s10489-014-0629-7",
+      "title": "Audio-visual speech recognition using deep learning",
+      "year": 2014,
+      "authors": [
+        "Kuniaki Noda",
+        "Yuki Yamaguchi",
+        "Kazuhiro Nakadai",
+        "Hiroshi G. Okuno",
+        "Tetsuya Ogata"
+      ],
+      "venue": "Applied Intelligence",
+      "citation_count": 590,
+      "url": "https://openalex.org/W2076462394",
+      "source": "openalex",
+      "oa_url": "https://link.springer.com/content/pdf/10.1007/s10489-014-0629-7.pdf"
+    },
+    {
+      "query": "cycle periodization seam discontinuity audio",
+      "id": "W4321099465",
+      "doi": "10.3390/s23042204",
+      "title": "A Systematic Review of Advanced Sensor Technologies for Non-Destructive Testing and Structural Health Monitoring",
+      "year": 2023,
+      "authors": [
+        "Sahar Hassani",
+        "Ulrike Dackermann"
+      ],
+      "venue": "Sensors",
+      "citation_count": 438,
+      "url": "https://openalex.org/W4321099465",
+      "source": "openalex",
+      "oa_url": "https://www.mdpi.com/1424-8220/23/4/2204/pdf?version=1677141796"
+    },
+    {
+      "query": "cycle periodization seam discontinuity audio",
+      "id": "W3005713856",
+      "doi": null,
+      "title": "Sonic Agency: Sound and Emergent Forms of Resistance",
+      "year": 2018,
+      "authors": [
+        "Brandon LaBelle"
+      ],
+      "venue": "Research Online (Goldsmiths University of London)",
+      "citation_count": 157,
+      "url": "https://openalex.org/W3005713856",
+      "source": "openalex",
+      "oa_url": "https://research.gold.ac.uk/id/eprint/26808/1/Sonic%20Agency%20-%20Accepted%20Manuscript.pdf"
+    },
+    {
+      "query": "cycle periodization seam discontinuity audio",
+      "id": "W68537754",
+      "doi": "10.3133/ofr95831",
+      "title": "Preliminary compilation of descriptive geoenvironmental mineral deposit models",
+      "year": 1995,
+      "authors": [
+        "Edward A. du Bray"
+      ],
+      "venue": "Antarctica A Keystone in a Changing World",
+      "citation_count": 139,
+      "url": "https://openalex.org/W68537754",
+      "source": "openalex",
+      "oa_url": "https://pubs.usgs.gov/of/1995/0831/report.pdf"
+    },
+    {
+      "query": "cycle periodization seam discontinuity audio",
+      "id": "W2085500061",
+      "doi": "10.1088/0034-4885/77/11/115901",
+      "title": "The acoustics of the violin: a review",
+      "year": 2014,
+      "authors": [
+        "J. Woodhouse"
+      ],
+      "venue": "Reports on Progress in Physics",
+      "citation_count": 85,
+      "url": "https://openalex.org/W2085500061",
+      "source": "openalex",
+      "oa_url": "https://www.repository.cam.ac.uk/handle/1810/245817"
+    },
+    {
+      "query": "cycle periodization seam discontinuity audio",
+      "id": "W1500496891",
+      "doi": null,
+      "title": "Modeling and validating distributed embedded real-time control systems",
+      "year": 2009,
+      "authors": [
+        "Marcel Verhoef"
+      ],
+      "venue": "Radboud Repository (Radboud University)",
+      "citation_count": 81,
+      "url": "https://openalex.org/W1500496891",
+      "source": "openalex",
+      "oa_url": "http://hdl.handle.net/2066/65551"
+    },
+    {
+      "query": "cycle periodization seam discontinuity audio",
+      "id": "W3047297468",
+      "doi": "10.1109/access.2020.3013669",
+      "title": "IEEE 1588 for Clock Synchronization in Industrial IoT and Related Applications: A Review on Contributing Technologies, Protocols and Enhancement Methodologies",
+      "year": 2020,
+      "authors": [
+        "Zeba Idrees",
+        "Jos\u00e9 Granados",
+        "Yang Sun",
+        "Shahid Latif",
+        "Li Gong",
+        "Zhuo Zou",
+        "Li\u2010Rong Zheng"
+      ],
+      "venue": "IEEE Access",
+      "citation_count": 75,
+      "url": "https://openalex.org/W3047297468",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6287639/8948470/09154372.pdf"
+    },
+    {
+      "query": "cycle periodization seam discontinuity audio",
+      "id": "W2182578244",
+      "doi": "10.32657/10356/59272",
+      "title": "Sound event recognition in unstructured environments using spectrogram image processing",
+      "year": 2014,
+      "authors": [
+        "Jonathan Dennis"
+      ],
+      "venue": null,
+      "citation_count": 52,
+      "url": "https://openalex.org/W2182578244",
+      "source": "openalex",
+      "oa_url": "https://dr.ntu.edu.sg/bitstream/10356/59272/1/phd_thesis_NTU_print.pdf"
+    },
+    {
+      "query": "cycle periodization seam discontinuity audio",
+      "id": "W3179671563",
+      "doi": "10.1007/s10921-021-00795-5",
+      "title": "Portable Generator to Detect Cracks on Large Steel Structures: An Application of Inductive Thermography",
+      "year": 2021,
+      "authors": [
+        "Paul Dario Toasa Caiza",
+        "R\u00fcdiger Schwendemann",
+        "Paola Calero",
+        "Thomas Ummenhofer"
+      ],
+      "venue": "Journal of Nondestructive Evaluation",
+      "citation_count": 7,
+      "url": "https://openalex.org/W3179671563",
+      "source": "openalex",
+      "oa_url": "https://link.springer.com/content/pdf/10.1007/s10921-021-00795-5.pdf"
+    },
+    {
+      "query": "meta-learning hyperparameter optimization audio DSP",
+      "id": "W4206484811",
+      "doi": "10.1109/access.2021.3140175",
+      "title": "A Metaverse: Taxonomy, Components, Applications, and Open Challenges",
+      "year": 2022,
+      "authors": [
+        "Sangmin Park",
+        "Young\u2010Gab Kim"
+      ],
+      "venue": "IEEE Access",
+      "citation_count": 1780,
+      "url": "https://openalex.org/W4206484811",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6287639/9668973/09667507.pdf"
+    },
+    {
+      "query": "meta-learning hyperparameter optimization audio DSP",
+      "id": "W4391759599",
+      "doi": "10.1109/access.2024.3365349",
+      "title": "A Machine Learning-Oriented Survey on Tiny Machine Learning",
+      "year": 2024,
+      "authors": [
+        "Luigi Capogrosso",
+        "Federico Cunico",
+        "Dong Seon Cheng",
+        "Franco Fummi",
+        "Marco Cristani"
+      ],
+      "venue": "IEEE Access",
+      "citation_count": 128,
+      "url": "https://openalex.org/W4391759599",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6287639/6514899/10433185.pdf"
+    },
+    {
+      "query": "meta-learning hyperparameter optimization audio DSP",
+      "id": "W4220868051",
+      "doi": "10.1109/access.2022.3157651",
+      "title": "Machine Learning Approaches for Reconfigurable Intelligent Surfaces: A Survey",
+      "year": 2022,
+      "authors": [
+        "K. M. Faisal",
+        "Wooyeol Choi"
+      ],
+      "venue": "IEEE Access",
+      "citation_count": 97,
+      "url": "https://openalex.org/W4220868051",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6287639/9668973/09729826.pdf"
+    },
+    {
+      "query": "meta-learning hyperparameter optimization audio DSP",
+      "id": "W4394699026",
+      "doi": "10.1109/jlt.2024.3386886",
+      "title": "Computational Complexity Optimization of Neural Network-Based Equalizers in Digital Signal Processing: A Comprehensive Approach",
+      "year": 2024,
+      "authors": [
+        "Pedro J. Freire",
+        "Sasipim Srivallapanondh",
+        "Bernhard Spinnler",
+        "Antonio Napoli",
+        "Nelson Costa",
+        "Jaroslaw E. Prilepsky",
+        "Sergei K. Turitsyn"
+      ],
+      "venue": "Journal of Lightwave Technology",
+      "citation_count": 77,
+      "url": "https://openalex.org/W4394699026",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/50/4357488/10496171.pdf"
+    },
+    {
+      "query": "meta-learning hyperparameter optimization audio DSP",
+      "id": "W4391899594",
+      "doi": "10.1016/j.heliyon.2024.e26218",
+      "title": "RETRACTED: Lung disease recognition methods using audio-based analysis with machine learning",
+      "year": 2024,
+      "authors": [
+        "Ahmad H. Sabry",
+        "Omar I. Dallal Bashi",
+        "N. H. Nik Ali",
+        "Yasir Mahmood Al Kubaisi"
+      ],
+      "venue": "Heliyon",
+      "citation_count": 54,
+      "url": "https://openalex.org/W4391899594",
+      "source": "openalex",
+      "oa_url": "http://www.cell.com/article/S2405844024022497/pdf"
+    },
+    {
+      "query": "meta-learning hyperparameter optimization audio DSP",
+      "id": "W4313169467",
+      "doi": "10.1109/access.2022.3229043",
+      "title": "Review of Machine Learning Applications to the Modeling and Design Optimization of Switched Reluctance Motors",
+      "year": 2022,
+      "authors": [
+        "Mohamed Omar",
+        "Ehab Sayed",
+        "Mohamed Abdalmagid",
+        "Berker Bilgin",
+        "Mohamed H. Bakr",
+        "Ali Emadi"
+      ],
+      "venue": "IEEE Access",
+      "citation_count": 42,
+      "url": "https://openalex.org/W4313169467",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6287639/9668973/09985459.pdf"
+    },
+    {
+      "query": "meta-learning hyperparameter optimization audio DSP",
+      "id": "W4311187170",
+      "doi": "10.1109/taslp.2022.3224288",
+      "title": "Meta-AF: Meta-Learning for Adaptive Filters",
+      "year": 2022,
+      "authors": [
+        "Jonah Casebeer",
+        "Nicholas J. Bryan",
+        "Paris Smaragdis"
+      ],
+      "venue": "IEEE/ACM Transactions on Audio Speech and Language Processing",
+      "citation_count": 33,
+      "url": "https://openalex.org/W4311187170",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6570655/9970249/09961879.pdf"
+    },
+    {
+      "query": "meta-learning hyperparameter optimization audio DSP",
+      "id": "10.1007/978-1-4842-6579-6_2",
+      "doi": "10.1007/978-1-4842-6579-6_2",
+      "title": "Hyperparameter Optimization Using Scikit-Learn",
+      "year": 2020,
+      "authors": [
+        "Tanay Agrawal"
+      ],
+      "venue": "Hyperparameter Optimization in Machine Learning",
+      "citation_count": 32,
+      "url": "https://doi.org/10.1007/978-1-4842-6579-6_2",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "differentiable digital signal processing DDSP synthesis",
+      "id": "W2995233853",
+      "doi": "10.48550/arxiv.2001.04643",
+      "title": "DDSP: Differentiable Digital Signal Processing",
+      "year": 2020,
+      "authors": [
+        "Jesse Engel",
+        "Lamtharn Hantrakul",
+        "Chenjie Gu",
+        "Adam P. Roberts"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 78,
+      "url": "https://openalex.org/W2995233853",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2001.04643"
+    },
+    {
+      "query": "differentiable digital signal processing DDSP synthesis",
+      "id": "W4307977691",
+      "doi": "10.17743/jaes.2022.0025",
+      "title": "Style Transfer of Audio Effects with Differentiable Signal Processing",
+      "year": 2022,
+      "authors": [
+        "Christian J. Steinmetz",
+        "Nicholas J. Bryan",
+        "Joshua D. Reiss"
+      ],
+      "venue": "Journal of the Audio Engineering Society",
+      "citation_count": 30,
+      "url": "https://openalex.org/W4307977691",
+      "source": "openalex",
+      "oa_url": "http://www.aes.org/e-lib/download.cfm?ID=21883"
+    },
+    {
+      "query": "differentiable digital signal processing DDSP synthesis",
+      "id": "41799923",
+      "doi": "10.1038/s42256-024-00824-8",
+      "title": "A neural speech decoding framework leveraging deep learning and speech synthesis.",
+      "year": 2024,
+      "authors": [
+        "Chen X",
+        "Wang R",
+        "Khalilian-Gourtani A",
+        "Yu L",
+        "Dugan P",
+        "Friedman D",
+        "Doyle W",
+        "Devinsky O",
+        "Wang Y",
+        "Flinker A."
+      ],
+      "venue": null,
+      "citation_count": 22,
+      "url": "https://europepmc.org/article/MED/41799923",
+      "source": "europe_pmc",
+      "oa_url": null
+    },
+    {
+      "query": "differentiable digital signal processing DDSP synthesis",
+      "id": "W4291960990",
+      "doi": "10.48550/arxiv.2208.06169",
+      "title": "DDX7: Differentiable FM Synthesis of Musical Instrument Sounds",
+      "year": 2022,
+      "authors": [
+        "Franco Caspe",
+        "Andrew McPherson",
+        "M. Sandler"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 12,
+      "url": "https://openalex.org/W4291960990",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2208.06169"
+    },
+    {
+      "query": "differentiable digital signal processing DDSP synthesis",
+      "id": "W4225300994",
+      "doi": "10.1109/icassp43922.2022.9746399",
+      "title": "Differentiable Digital Signal Processing Mixture Model for Synthesis Parameter Extraction from Mixture of Harmonic Sounds",
+      "year": 2022,
+      "authors": [
+        "Masaya Kawamura",
+        "Tomohiko Nakamura",
+        "Daichi Kitamura",
+        "Hiroshi Saruwatari",
+        "Yu Takahashi",
+        "Kazunobu Kondo"
+      ],
+      "venue": "ICASSP 2022 - 2022 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)",
+      "citation_count": 10,
+      "url": "https://openalex.org/W4225300994",
+      "source": "openalex",
+      "oa_url": null
+    },
+    {
+      "query": "differentiable digital signal processing DDSP synthesis",
+      "id": "W4225716783",
+      "doi": "10.48550/arxiv.2112.09312",
+      "title": "MIDI-DDSP: Detailed Control of Musical Performance via Hierarchical Modeling",
+      "year": 2021,
+      "authors": [
+        "Yusong Wu",
+        "Ethan Manilow",
+        "Yi Deng",
+        "Rigel Swavely",
+        "Kyle Kastner",
+        "Tim Cooijmans",
+        "Aaron Courville",
+        "Cheng-Zhi Anna Huang",
+        "Jesse Engel"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 10,
+      "url": "https://openalex.org/W4225716783",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2112.09312"
+    },
+    {
+      "query": "differentiable digital signal processing DDSP synthesis",
+      "id": "36466774",
+      "doi": "10.1007/s10489-022-04278-6",
+      "title": "Front-end deep learning web apps development and deployment: a review.",
+      "year": 2023,
+      "authors": [
+        "Goh HA",
+        "Ho CK",
+        "Abas FS."
+      ],
+      "venue": null,
+      "citation_count": 8,
+      "url": "https://europepmc.org/article/MED/36466774",
+      "source": "europe_pmc",
+      "oa_url": null
+    },
+    {
+      "query": "polyBLEP oscillator aliasing reduction",
+      "id": "10.1117/12.213590",
+      "doi": "10.1117/12.213590",
+      "title": "Aliasing reduction in staring infrared imagers utilizing subpixel techniques",
+      "year": 1995,
+      "authors": [
+        "Joseph C. Gillette"
+      ],
+      "venue": "Optical Engineering",
+      "citation_count": 61,
+      "url": "https://doi.org/10.1117/12.213590",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "polyBLEP oscillator aliasing reduction",
+      "id": "10.1109/cvpr.2014.425",
+      "doi": "10.1109/cvpr.2014.425",
+      "title": "Aliasing Detection and Reduction in Plenoptic Imaging",
+      "year": 2014,
+      "authors": [
+        "Zhaolin Xiao",
+        "Qing Wang",
+        "Guoqing Zhou",
+        "Jingyi Yu"
+      ],
+      "venue": "2014 IEEE Conference on Computer Vision and Pattern Recognition",
+      "citation_count": 10,
+      "url": "https://doi.org/10.1109/cvpr.2014.425",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "polyBLEP oscillator aliasing reduction",
+      "id": "10.1117/1.1768536",
+      "doi": "10.1117/1.1768536",
+      "title": "Aliasing and scintillation reduction in real-time computer graphics",
+      "year": 2004,
+      "authors": [
+        "Timothy G. Sills"
+      ],
+      "venue": "Optical Engineering",
+      "citation_count": 5,
+      "url": "https://doi.org/10.1117/1.1768536",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "polyBLEP oscillator aliasing reduction",
+      "id": "10.1109/eusipco.2015.7362737",
+      "doi": "10.1109/eusipco.2015.7362737",
+      "title": "Aliasing reduction in soft-clipping algorithms",
+      "year": 2015,
+      "authors": [
+        "Fabian Esqueda",
+        "Vesa Valimaki",
+        "Stefan Bilbao"
+      ],
+      "venue": "2015 23rd European Signal Processing Conference (EUSIPCO)",
+      "citation_count": 3,
+      "url": "https://doi.org/10.1109/eusipco.2015.7362737",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "polyBLEP oscillator aliasing reduction",
+      "id": "chemrxiv:10.26434/chemrxiv-2024-c2545",
+      "doi": "10.26434/chemrxiv-2024-c2545",
+      "title": "VibHam: A Classroom Tool for Predicting the Rovibrational Spectra of Diatomic Molecule Beyond the Harmonic Oscillator Approximation",
+      "year": 2024,
+      "authors": [
+        "Gavin McCarver",
+        "Robert Hinde"
+      ],
+      "venue": "chemRxiv",
+      "citation_count": 1,
+      "url": "https://doi.org/10.26434/chemrxiv-2024-c2545",
+      "source": "chemrxiv",
+      "oa_url": null
+    },
+    {
+      "query": "polyBLEP oscillator aliasing reduction",
+      "id": "10.1109/cce.2006.350804",
+      "doi": "10.1109/cce.2006.350804",
+      "title": "Aliasing Reduction for Gain Control with Critically Sampled Filter Banks",
+      "year": 2006,
+      "authors": [
+        "Bernd Edler"
+      ],
+      "venue": "2006 First International Conference on Communications and Electronics",
+      "citation_count": 1,
+      "url": "https://doi.org/10.1109/cce.2006.350804",
+      "source": "crossref",
+      "oa_url": null
+    },
+    {
+      "query": "self-supervised audio restoration",
+      "id": "W3212516020",
+      "doi": "10.1145/3528233.3530757",
+      "title": "Palette: Image-to-Image Diffusion Models",
+      "year": 2022,
+      "authors": [
+        "Chitwan Saharia",
+        "William Chan",
+        "Huiwen Chang",
+        "Chris Lee",
+        "Jonathan Ho",
+        "Tim Salimans",
+        "David J. Fleet",
+        "Mohammad Norouzi"
+      ],
+      "venue": null,
+      "citation_count": 1521,
+      "url": "https://openalex.org/W3212516020",
+      "source": "openalex",
+      "oa_url": "https://dl.acm.org/doi/pdf/10.1145/3528233.3530757"
+    },
+    {
+      "query": "self-supervised audio restoration",
+      "id": "W2953139536",
+      "doi": null,
+      "title": "Supervised Dictionary Learning",
+      "year": 2008,
+      "authors": [
+        "Julien Mairal",
+        "Francis Bach",
+        "Jean Ponce",
+        "Guillermo Sapiro",
+        "Andrew Zisserman"
+      ],
+      "venue": "University of Minnesota Digital Conservancy (University of Minnesota)",
+      "citation_count": 770,
+      "url": "https://openalex.org/W2953139536",
+      "source": "openalex",
+      "oa_url": "http://hdl.handle.net/11299/179965"
+    },
+    {
+      "query": "self-supervised audio restoration",
+      "id": "W3207924272",
+      "doi": "10.1109/msp.2021.3134634",
+      "title": "Self-Supervised Representation Learning: Introduction, advances, and challenges",
+      "year": 2022,
+      "authors": [
+        "Linus Ericsson",
+        "Henry Gouk",
+        "Chen Change Loy",
+        "Timothy M. Hospedales"
+      ],
+      "venue": "IEEE Signal Processing Magazine",
+      "citation_count": 411,
+      "url": "https://openalex.org/W3207924272",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2110.09327"
+    },
+    {
+      "query": "self-supervised audio restoration",
+      "id": "W4317542939",
+      "doi": "10.1007/s11831-023-09884-2",
+      "title": "Self-supervised Learning: A Succinct Review",
+      "year": 2023,
+      "authors": [
+        "Veenu Rani",
+        "Syed Tufael Nabi",
+        "Munish Kumar",
+        "Ajay Mittal",
+        "Krishan Kumar"
+      ],
+      "venue": "Archives of Computational Methods in Engineering",
+      "citation_count": 267,
+      "url": "https://openalex.org/W4317542939",
+      "source": "openalex",
+      "oa_url": "https://link.springer.com/content/pdf/10.1007/s11831-023-09884-2.pdf"
+    },
+    {
+      "query": "self-supervised audio restoration",
+      "id": "W4367000428",
+      "doi": "10.48550/arxiv.2304.12210",
+      "title": "A Cookbook of Self-Supervised Learning",
+      "year": 2023,
+      "authors": [
+        "Randall Balestriero",
+        "Mark Ibrahim",
+        "Vlad Sobal",
+        "Ari S. Morcos",
+        "Shashank Shekhar",
+        "Tom Goldstein",
+        "Florian Bordes",
+        "Adrien Bardes",
+        "Gregoire Mialon",
+        "Yuandong Tian",
+        "Avi Schwarzschild",
+        "Andrew Gordon Wilson",
+        "Jonas Geiping",
+        "Quentin Garrido",
+        "Pierre Fernandez",
+        "Amir Bar",
+        "Hamed Pirsiavash",
+        "Yann LeCun",
+        "Micah Goldblum"
+      ],
+      "venue": "arXiv (Cornell University)",
+      "citation_count": 164,
+      "url": "https://openalex.org/W4367000428",
+      "source": "openalex",
+      "oa_url": "https://arxiv.org/pdf/2304.12210"
+    },
+    {
+      "query": "self-supervised audio restoration",
+      "id": "W4223948957",
+      "doi": "10.3390/e24040551",
+      "title": "Survey on Self-Supervised Learning: Auxiliary Pretext Tasks and Contrastive Learning Methods in Imaging",
+      "year": 2022,
+      "authors": [
+        "Saleh Albelwi"
+      ],
+      "venue": "Entropy",
+      "citation_count": 143,
+      "url": "https://openalex.org/W4223948957",
+      "source": "openalex",
+      "oa_url": "https://www.mdpi.com/1099-4300/24/4/551/pdf?version=1650008388"
+    },
+    {
+      "query": "self-supervised audio restoration",
+      "id": "W3083438180",
+      "doi": "10.1109/access.2020.3026579",
+      "title": "Silent Speech Interfaces for Speech Restoration: A Review",
+      "year": 2020,
+      "authors": [
+        "Jos\u00e9 A. Gonz\u00e1lez",
+        "Alejandro Gomez-Alanis",
+        "Juan M. Mart\u00edn-Do\u00f1as",
+        "Jos\u00e9 L. P\u00e9rez-C\u00f3rdoba",
+        "\u00c1ngel M. G\u00f3mez"
+      ],
+      "venue": "IEEE Access",
+      "citation_count": 139,
+      "url": "https://openalex.org/W3083438180",
+      "source": "openalex",
+      "oa_url": "https://ieeexplore.ieee.org/ielx7/6287639/8948470/09205294.pdf"
+    },
+    {
+      "query": "self-supervised audio restoration",
+      "id": "10.21437/interspeech.2022-99",
+      "doi": "10.21437/interspeech.2022-99",
+      "title": "Robust Self-Supervised Audio-Visual Speech Recognition",
+      "year": 2022,
+      "authors": [
+        "Bowen Shi",
+        "Wei-Ning Hsu",
+        "Abdelrahman Mohamed"
+      ],
+      "venue": "Interspeech 2022",
+      "citation_count": 85,
+      "url": "https://doi.org/10.21437/interspeech.2022-99",
+      "source": "crossref",
+      "oa_url": null
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "protocol": "champion_forward_plus_fitcell_replay",
+  "note": "Overnight history.jsonl did not log peak VRAM. This measures nvidia-smi memory.used during favorite/champion forward + FitCell search-step replay on the same RTX 3090 geometry (batch/fit_steps matching overnight defaults). Labeled as replay proxy, not a byte-log of the multi-hour overnight process.",
+  "fitted_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T061909Z\\fitted\\champion_iter_000235_fitted.pt",
+  "residual_saved": 0.9909982681274414,
+  "arch": {
+    "depth": 12,
+    "width": 40,
+    "act": "tanh",
+    "ops": [
+      "pin",
+      "cycle_net"
+    ],
+    "wet": 0.06311731851818528,
+    "fir": [
+      0.24673340143755124,
+      0.2608172865613034,
+      0.18873825763300772,
+      0.13206301469714482,
+      0.16324611442971038
+    ],
+    "cell_kind": "tf_split",
+    "soft_logits": [
+      -0.41385913458376694,
+      0.10714998278695481,
+      0.95998542880337,
+      -0.7069478374675822,
+      0.02381148698037225,
+      -0.842660655428126,
+      0.4106825053513263,
+      0.9746966972774075,
+      0.9553387257352564,
+      -0.11338762654284817,
+      0.5400027686318964,
+      -0.47895220142130435,
+      0.5957919079770738,
+      -0.21349342235852486,
+      -1.071941914381325
+    ],
+    "blocks": [
+      "tf_split",
+      "unet"
+    ],
+    "use_adv_aux": true,
+    "moe_mode": "sequential"
+  },
+  "batch": 48,
+  "fit_steps": 24,
+  "search_iters": 12,
+  "gpu": "NVIDIA GeForce RTX 3090",
+  "elapsed_sec": 17.850456714630127,
+  "nvidia_smi_idle_peak_MiB": 2960,
+  "nvidia_smi_peak_MiB": 3248,
+  "nvidia_smi_peak_GiB": 3.171875,
+  "torch_max_memory_allocated_GiB": 0.11564111709594727,
+  "fit_cell_residual": 0.9920235872268677
+}

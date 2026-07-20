@@ -1,0 +1,31 @@
+{
+  "iter": 20,
+  "champion_residual": 0.8567303121089935,
+  "champion_arch": {
+    "depth": 2,
+    "width": 13,
+    "act": "gelu",
+    "ops": [
+      "mlp_seam",
+      "classic",
+      "fade_pull",
+      "fir3"
+    ],
+    "wet": 0.34979519487625715,
+    "fir": [
+      0.1384575374819345,
+      0.08506036177539313,
+      0.09876698963261929
+    ],
+    "cell_kind": "residual"
+  },
+  "baseline_dual_cosine": 0.8203155994415283,
+  "branch_best": {
+    "rl": 0.8506249189376831,
+    "nas": 0.8501619100570679,
+    "combo": 0.8567303121089935
+  },
+  "elapsed_sec": 1.2439029216766357,
+  "gpu": "NVIDIA GeForce RTX 3090",
+  "pid": 14364
+}

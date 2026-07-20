@@ -120,6 +120,182 @@ use crate::wavetable::WavetableBank;
     }
 
     #[test]
+    fn empty_filter_chain_bypasses_svf() {
+        use crate::patch::FilterSlot;
+        let bank = WavetableBank::factory_sine();
+        let mut open = Patch::default_mono();
+        open.filter.cutoff = 80.0;
+        open.filter.key_tracking = 0.0;
+        open.filter_envelope.sustain = 0.0;
+        open.filter_envelope.attack = 0.001;
+        open.filter_envelope.decay = 0.001;
+        open.filters = None; // legacy dual still filters
+
+        let mut bypass = open.clone();
+        bypass.filters = Some(Vec::<FilterSlot>::new());
+
+        let mut dark = open.clone();
+        dark.filters = Some(vec![FilterSlot {
+            filter_type: "lowpass".into(),
+            cutoff: 80.0,
+            resonance: 0.2,
+            key_tracking: 0.0,
+            drive: 0.0,
+            bypassed: false,
+        }]);
+
+        let dt = 1.0 / 44100.0;
+        let n = 8000usize;
+        let mut rms_bypass = 0.0f32;
+        let mut rms_dark = 0.0f32;
+        let mut vb = VoiceState::new(&bypass);
+        let mut vd = VoiceState::new(&dark);
+        for i in 0..n {
+            let t = i as f32 * dt;
+            let [lb, _] = process_sample(
+                &mut vb,
+                &single_bank_ctx(&bank, &bypass, 880.0, true, 1.0, t, dt),
+            );
+            let [ld, _] = process_sample(
+                &mut vd,
+                &single_bank_ctx(&bank, &dark, 880.0, true, 1.0, t, dt),
+            );
+            if i > 2000 {
+                rms_bypass += lb * lb;
+                rms_dark += ld * ld;
+            }
+        }
+        rms_bypass = (rms_bypass / (n - 2000) as f32).sqrt();
+        rms_dark = (rms_dark / (n - 2000) as f32).sqrt();
+        assert!(
+            rms_bypass > rms_dark * 1.5,
+            "empty chain should bypass LP: bypass={rms_bypass} dark={rms_dark}"
+        );
+    }
+
+    #[test]
+    fn filter_chain_series_stacks_and_drive_order() {
+        use crate::patch::FilterSlot;
+        let bank = WavetableBank::factory_saw_morph();
+        let lp = |cutoff: f32, drive: f32| FilterSlot {
+            filter_type: "lowpass".into(),
+            cutoff,
+            resonance: 0.15,
+            key_tracking: 0.0,
+            drive,
+            bypassed: false,
+        };
+        let mut one = Patch::default_mono();
+        one.filters = Some(vec![lp(400.0, 0.0)]);
+        one.filter_envelope.sustain = 0.0;
+        one.filter_envelope.decay = 0.001;
+        let mut two = Patch::default_mono();
+        two.filters = Some(vec![lp(400.0, 0.0), lp(400.0, 0.0)]);
+        two.filter_envelope.sustain = 0.0;
+        two.filter_envelope.decay = 0.001;
+
+        let mut drive_first = Patch::default_mono();
+        drive_first.filters = Some(vec![
+            FilterSlot {
+                filter_type: "lowpass".into(),
+                cutoff: 12000.0,
+                resonance: 0.0,
+                key_tracking: 0.0,
+                drive: 0.95,
+                bypassed: false,
+            },
+            lp(400.0, 0.0),
+        ]);
+        drive_first.filter_envelope.sustain = 0.0;
+        drive_first.filter_envelope.decay = 0.001;
+        let mut drive_second = Patch::default_mono();
+        drive_second.filters = Some(vec![
+            lp(400.0, 0.0),
+            FilterSlot {
+                filter_type: "lowpass".into(),
+                cutoff: 12000.0,
+                resonance: 0.0,
+                key_tracking: 0.0,
+                drive: 0.95,
+                bypassed: false,
+            },
+        ]);
+        drive_second.filter_envelope.sustain = 0.0;
+        drive_second.filter_envelope.decay = 0.001;
+
+        let dt = 1.0 / 44100.0;
+        let n = 6000usize;
+        let render = |patch: &Patch| {
+            let mut v = VoiceState::new(patch);
+            let mut out = Vec::with_capacity(n);
+            for i in 0..n {
+                let t = i as f32 * dt;
+                let [s, _] = process_sample(
+                    &mut v,
+                    &single_bank_ctx(&bank, patch, 220.0, true, 1.0, t, dt),
+                );
+                out.push(s);
+            }
+            out
+        };
+        let a = render(&one);
+        let b = render(&two);
+        let max_diff = a
+            .iter()
+            .zip(b.iter())
+            .skip(1500)
+            .map(|(x, y)| (x - y).abs())
+            .fold(0.0f32, f32::max);
+        assert!(
+            max_diff > 0.01,
+            "two series LPs must differ from one: max_diff={max_diff}"
+        );
+
+        let d1 = render(&drive_first);
+        let d2 = render(&drive_second);
+        let drive_diff = d1
+            .iter()
+            .zip(d2.iter())
+            .skip(1500)
+            .map(|(x, y)| (x - y).abs())
+            .fold(0.0f32, f32::max);
+        assert!(
+            drive_diff > 0.01,
+            "drive→LP vs LP→drive must differ: max_diff={drive_diff}"
+        );
+    }
+
+    /// Diagnostic: held sine after soft-start should not have near-full-scale steps.
+    #[test]
+    fn held_sine_period_step_bounded() {
+        let bank = WavetableBank::factory_sine();
+        let mut patch = Patch::default_mono();
+        patch.filters = Some(vec![]); // bypass musical filters
+        patch.effects.clear();
+        patch.lfo.depth = 0.0;
+        patch.lfo2.depth = 0.0;
+        let mut voice = VoiceState::new(&patch);
+        let dt = 1.0 / 44100.0;
+        let mut prev = 0.0f32;
+        let mut max_step = 0.0f32;
+        for i in 0..8000 {
+            let t = i as f32 * dt;
+            let [s, _] = process_sample(
+                &mut voice,
+                &single_bank_ctx(&bank, &patch, 440.0, true, 1.0, t, dt),
+            );
+            if i > 2000 {
+                max_step = max_step.max((s - prev).abs());
+            }
+            prev = s;
+        }
+        assert!(
+            max_step < 0.12,
+            "clean sine sustain step={max_step} (voice path discontinuity)"
+        );
+    }
+
+    #[test]
     fn unison_spread_widens_stereo() {
         let bank = WavetableBank::factory_sine();
         let mut narrow = Patch::default_mono();
@@ -256,7 +432,7 @@ use crate::wavetable::WavetableBank;
         let mut diff = 0.0f32;
         for i in 0..4410 {
             let t = i as f32 * dt;
-            let mut ctx_c = single_bank_ctx(&bank, &patch, 440.0, true, 1.0, t, dt);
+            let ctx_c = single_bank_ctx(&bank, &patch, 440.0, true, 1.0, t, dt);
             let mut ctx_b = single_bank_ctx(&bank, &patch, 440.0, true, 1.0, t, dt);
             ctx_b.mpe.pitch_bend = 0.5;
             let [l_c, _] = process_sample(&mut center, &ctx_c);

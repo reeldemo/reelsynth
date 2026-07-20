@@ -1,0 +1,95 @@
+﻿{
+    "title":  "CPU overnight multi-branch FINAL snapshot (NOT GPU)",
+    "gpu":  false,
+    "device_used":  "CPU",
+    "device_present_unused":  "NVIDIA GeForce RTX 3090",
+    "framework":  "Rust release binary bench_denoise_meta (no CUDA)",
+    "pid":  2640,
+    "process_stopped":  true,
+    "stopped_at_local":  "2026-07-18T11:39:46.4990321+02:00",
+    "stopped_reason":  "Paused/stopped to avoid duplicate overnight chaos; sibling .venv_gpu PyTorch CUDA job being set up on RTX 3090",
+    "target_iters":  273000,
+    "iters_completed_logged":  300,
+    "best_residual_logged":  0.9336,
+    "last_progress_line":  "overnight progress 300/273000 branch=combo best_residual=0.9336 rl_base=0.845",
+    "last_logged_branch":  "combo",
+    "rl_baseline_logged":  0.845,
+    "checkpoint_note":  "273k run never reached first 1000-iter JSON ckpt; progress from stderr logs only",
+    "champion_so_far":  {
+                            "lambda":  0.8523051738739014,
+                            "branch":  "arch_search",
+                            "residual_smoke80_refined":  0.91924983263015758,
+                            "describe":  "ops=[fir3,mlp_seam] mlp=d1w4a0 fir=[0.04,0.92,-0.01] wet=0.68 lit=arch_only rp=true pbt=false race=false",
+                            "theta":  [
+                                          0.6478886008262634,
+                                          0.3449696898460388,
+                                          0.7667717337608337,
+                                          0.17295315861701965,
+                                          0.6358080506324768,
+                                          0.406578004360199,
+                                          0.1882159262895584,
+                                          0.0,
+                                          0.40461254119873047,
+                                          0.6092233657836914,
+                                          0.3301566243171692,
+                                          0.3164602518081665
+                                      ],
+                            "vs_prior_lit_combo_0_903":  "live best 0.9336 and smoke 0.9192498326301575 both beat 0.903",
+                            "residual_live_273k_log":  0.9336,
+                            "arch":  {
+                                         "describe":  "ops=[fir3,mlp_seam] mlp=d1w4a0 fir=[0.04,0.92,-0.01] wet=0.68 lit=arch_only rp=true pbt=false race=false",
+                                         "fir":  [
+                                                     0.0446600615978241,
+                                                     0.920928418636322,
+                                                     -0.00572938472032547
+                                                 ],
+                                         "lambda":  0.8523051738739014,
+                                         "lit_family":  "arch_only",
+                                         "mlp_act":  "relu",
+                                         "mlp_depth":  1,
+                                         "mlp_n_params":  148,
+                                         "mlp_width":  4,
+                                         "ops":  [
+                                                     "fir3",
+                                                     "mlp_seam"
+                                                 ],
+                                         "residual_primary":  true,
+                                         "theta":  [
+                                                       0.6478886008262634,
+                                                       0.3449696898460388,
+                                                       0.7667717337608337,
+                                                       0.17295315861701965,
+                                                       0.6358080506324768,
+                                                       0.406578004360199,
+                                                       0.1882159262895584,
+                                                       0.0,
+                                                       0.40461254119873047,
+                                                       0.6092233657836914,
+                                                       0.3301566243171692,
+                                                       0.3164602518081665
+                                                   ],
+                                         "use_pbt":  false,
+                                         "use_racing":  false,
+                                         "wet":  0.679999828338623
+                                     },
+                            "name":  "arch_search_30_ops=[fir3,mlp_seam] mlp=d1w4a0 fir=[0.04,0.92,-0.01] wet=0.68 lit=arch_only rp=true pbt=false race=false",
+                            "residual":  0.9336
+                        },
+    "sibling_gpu_at_stop":  {
+                                "venv_gpu_processes":  [
+                                                           "\"C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\.venv_gpu\\Scripts\\pip.exe\" install torch --index-url https://download.pytorch.org/whl/cu124",
+                                                           "\"C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\.venv_gpu\\Scripts\\python.exe\"  \"C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\.venv_gpu\\Scripts\\p",
+                                                           "\"C:\\Users\\Julian\\AppData\\Local\\Programs\\Python\\Python312\\python.exe\" \"C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\.venv_gpu\\Scripts\\pip.exe\" install torch --ind"
+                                                       ],
+                                "nvidia_python_compute_apps":  [
+
+                                                               ],
+                                "note":  "Sibling was installing/setting up torch cu124; this Rust job was never on GPU"
+                            },
+    "artifact_paths":  {
+                           "run_err":  "brand/artifacts/denoise_opt_meta_overnight_273k_err.txt",
+                           "ckpts_smoke":  "brand/artifacts/denoise_opt_meta_overnight_ckpts/",
+                           "this_snapshot":  "brand/artifacts/denoise_opt_meta_cpu_overnight_snapshot.json",
+                           "sanity":  "brand/artifacts/denoise_opt_meta_overnight_sanity.json"
+                       }
+}

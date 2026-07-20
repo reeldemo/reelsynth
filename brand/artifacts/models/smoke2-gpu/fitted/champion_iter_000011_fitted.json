@@ -1,0 +1,23 @@
+{
+  "architecture": {
+    "depth": 2,
+    "width": 12,
+    "act": "gelu",
+    "ops": [
+      "mlp_seam",
+      "classic",
+      "fade_pull",
+      "fir3"
+    ],
+    "wet": 0.34979519487625715,
+    "fir": [
+      0.2799687534667426,
+      0.27513463064385,
+      0.29062326433688557
+    ],
+    "cell_kind": "residual"
+  },
+  "residual": 0.8509321808815002,
+  "weights_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\smoke2-gpu\\fitted\\champion_iter_000011_fitted.pt",
+  "tag": "champion_iter_000011"
+}

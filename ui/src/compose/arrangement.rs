@@ -4,15 +4,16 @@ use egui::{Pos2, Rect, Sense, Ui, Vec2};
 use reelsynth::{Clip, SequenceProject};
 use reelsynth_ui_theme::{ACCENT_UI, Tokens};
 
-use crate::audit_registry::{record_region, record_used, AuditId};
+use crate::audit_registry::{record_region, AuditId};
 use crate::layout::GRID_UNIT;
 use crate::region::region;
 
 use super::ComposeUi;
 
 const BEATS_VISIBLE: f32 = 32.0;
-const TRACK_ROW_H: f32 = 28.0;
-const RULER_H: f32 = 18.0;
+/// Slim clip-strip row height (Layout A).
+const TRACK_ROW_H: f32 = 20.0;
+const RULER_H: f32 = 14.0;
 
 pub struct ArrangementActions {
     pub clip_selected: bool,
@@ -41,110 +42,159 @@ pub fn draw_arrangement(
     let mut actions = ArrangementActions::default();
 
     region(ui, rect, |ui| {
-        let (response, _painter) = ui.allocate_painter(rect.size(), Sense::click_and_drag());
-        let rect = response.rect;
-        if !ui.is_rect_visible(rect) {
-            return;
-        }
-
-        let painter = ui.painter_at(rect);
-        painter.rect_filled(rect, 0.0, tokens.bg_muted);
-
-        let track_count = compose.project.tracks.len();
-        let content_top = rect.min.y + RULER_H;
-        let beat_w = (rect.width() - GRID_UNIT) / BEATS_VISIBLE;
-
-        paint_ruler(&painter, rect, beat_w, &compose.project, &tokens);
-        paint_grid(
-            &painter,
-            Rect::from_min_max(Pos2::new(rect.min.x, content_top), rect.max),
-            beat_w,
-            track_count,
-            &tokens,
-        );
-
-        for (ti, track) in compose.project.tracks.iter().enumerate() {
-            let row_y = content_top + ti as f32 * TRACK_ROW_H;
-            let row_rect = Rect::from_min_max(
-                Pos2::new(rect.min.x, row_y),
-                Pos2::new(rect.max.x, row_y + TRACK_ROW_H),
-            );
-            for (ci, clip) in track.clips.iter().enumerate() {
-                let clip_rect = clip_block_rect(row_rect, clip, beat_w);
-                paint_clip(
-                    &painter,
-                    row_rect,
-                    clip,
-                    beat_w,
-                    ti == compose.selected_track && compose.selected_clip == Some(ci),
-                    &tokens,
-                );
-                record_region(
-                    ui.ctx(),
-                    AuditId::ComposeArrangementClip(ci),
-                    clip_rect,
-                    clip_rect,
-                );
-            }
-        }
-
-        let playhead_x = rect.min.x + compose.transport.playhead_beats * beat_w;
-        painter.line_segment(
-            [
-                Pos2::new(playhead_x, rect.min.y),
-                Pos2::new(playhead_x, rect.max.y),
-            ],
-            egui::Stroke::new(2.0_f32, ACCENT_UI),
-        );
-
-        if response.clicked() {
-            if let Some(pos) = response.interact_pointer_pos() {
-                if pos.y < content_top {
-                    let beats = ((pos.x - rect.min.x) / beat_w).clamp(0.0, BEATS_VISIBLE);
-                    compose.transport.playhead_beats = beats;
-                    actions.playhead_scrubbed = true;
-                } else if response.double_clicked() {
-                    let track_idx = ((pos.y - content_top) / TRACK_ROW_H).floor() as usize;
-                    if track_idx < track_count {
-                        let beat = compose.snap_beats((pos.x - rect.min.x) / beat_w);
-                        let clip = Clip::new(beat, 4.0);
-                        compose.project.tracks[track_idx].clips.push(clip);
-                        compose.selected_track = track_idx;
-                        compose.selected_clip =
-                            Some(compose.project.tracks[track_idx].clips.len() - 1);
-                        compose.selected_notes.clear();
-                        actions.clip_created = true;
-                        actions.sequence_changed = true;
+        egui::Frame::none()
+            .inner_margin(egui::Margin::symmetric(GRID_UNIT, GRID_UNIT * 0.5))
+            .show(ui, |ui| {
+                ui.horizontal(|ui| {
+                    let arrow = if compose.arrangement_collapsed {
+                        "▸"
+                    } else {
+                        "▾"
+                    };
+                    if ui
+                        .add(
+                            egui::Button::new(
+                                egui::RichText::new(format!("Clips {arrow}"))
+                                    .size(10.0)
+                                    .color(tokens.text_muted),
+                            )
+                            .frame(false),
+                        )
+                        .clicked()
+                    {
+                        compose.arrangement_collapsed = !compose.arrangement_collapsed;
                     }
-                } else {
-                    let track_idx = ((pos.y - content_top) / TRACK_ROW_H).floor() as usize;
-                    if track_idx < track_count {
-                        let beat = (pos.x - rect.min.x) / beat_w;
-                        if let Some(ci) =
-                            hit_clip(&compose.project.tracks[track_idx].clips, beat)
-                        {
-                            compose.selected_track = track_idx;
-                            compose.selected_clip = Some(ci);
-                            compose.selected_notes.clear();
-                            actions.clip_selected = true;
-                        }
+                    if compose.arrangement_collapsed {
+                        ui.label(
+                            egui::RichText::new("hidden — expand for timeline / multi-clip")
+                                .size(9.0)
+                                .color(tokens.text_muted),
+                        );
                     }
-                }
-            }
-        }
+                });
 
-        if response.dragged() {
-            if let Some(pos) = response.interact_pointer_pos() {
-                if pos.y < content_top + track_count as f32 * TRACK_ROW_H {
-                    let beats = ((pos.x - rect.min.x) / beat_w).clamp(0.0, BEATS_VISIBLE);
-                    compose.transport.playhead_beats = beats;
-                    actions.playhead_scrubbed = true;
+                if compose.arrangement_collapsed {
+                    return;
                 }
-            }
-        }
+
+                ui.add_space(GRID_UNIT * 0.25);
+                let available = ui.available_rect_before_wrap();
+                let strip_h = available.height().max(TRACK_ROW_H + RULER_H);
+                let strip_rect =
+                    Rect::from_min_size(available.min, Vec2::new(available.width(), strip_h));
+                draw_clip_strip(ui, strip_rect, compose, &tokens, &mut actions);
+            });
     });
 
     actions
+}
+
+fn draw_clip_strip(
+    ui: &mut Ui,
+    rect: Rect,
+    compose: &mut ComposeUi,
+    tokens: &Tokens,
+    actions: &mut ArrangementActions,
+) {
+    let (response, _painter) = ui.allocate_painter(rect.size(), Sense::click_and_drag());
+    let rect = response.rect;
+    if !ui.is_rect_visible(rect) {
+        return;
+    }
+
+    let painter = ui.painter_at(rect);
+    painter.rect_filled(rect, 0.0, tokens.bg_muted);
+
+    let track_count = compose.project.tracks.len();
+    let content_top = rect.min.y + RULER_H;
+    let beat_w = (rect.width() - GRID_UNIT) / BEATS_VISIBLE;
+
+    paint_ruler(&painter, rect, beat_w, &compose.project, tokens);
+    paint_grid(
+        &painter,
+        Rect::from_min_max(Pos2::new(rect.min.x, content_top), rect.max),
+        beat_w,
+        track_count,
+        tokens,
+    );
+
+    for (ti, track) in compose.project.tracks.iter().enumerate() {
+        let row_y = content_top + ti as f32 * TRACK_ROW_H;
+        let row_rect = Rect::from_min_max(
+            Pos2::new(rect.min.x, row_y),
+            Pos2::new(rect.max.x, row_y + TRACK_ROW_H),
+        );
+        for (ci, clip) in track.clips.iter().enumerate() {
+            let clip_rect = clip_block_rect(row_rect, clip, beat_w);
+            paint_clip(
+                &painter,
+                row_rect,
+                clip,
+                beat_w,
+                ti == compose.selected_track && compose.selected_clip == Some(ci),
+                tokens,
+            );
+            record_region(
+                ui.ctx(),
+                AuditId::ComposeArrangementClip(ci),
+                clip_rect,
+                clip_rect,
+            );
+        }
+    }
+
+    let playhead_x = rect.min.x + compose.transport.playhead_beats * beat_w;
+    painter.line_segment(
+        [
+            Pos2::new(playhead_x, rect.min.y),
+            Pos2::new(playhead_x, rect.max.y),
+        ],
+        egui::Stroke::new(2.0_f32, ACCENT_UI),
+    );
+
+    if response.clicked() {
+        if let Some(pos) = response.interact_pointer_pos() {
+            if pos.y < content_top {
+                let beats = ((pos.x - rect.min.x) / beat_w).clamp(0.0, BEATS_VISIBLE);
+                compose.transport.playhead_beats = beats;
+                actions.playhead_scrubbed = true;
+            } else if response.double_clicked() {
+                let track_idx = ((pos.y - content_top) / TRACK_ROW_H).floor() as usize;
+                if track_idx < track_count {
+                    let beat = compose.snap_beats((pos.x - rect.min.x) / beat_w);
+                    let clip = Clip::new(beat, 4.0);
+                    compose.project.tracks[track_idx].clips.push(clip);
+                    compose.selected_track = track_idx;
+                    compose.selected_clip =
+                        Some(compose.project.tracks[track_idx].clips.len() - 1);
+                    compose.selected_notes.clear();
+                    actions.clip_created = true;
+                    actions.sequence_changed = true;
+                }
+            } else {
+                let track_idx = ((pos.y - content_top) / TRACK_ROW_H).floor() as usize;
+                if track_idx < track_count {
+                    let beat = (pos.x - rect.min.x) / beat_w;
+                    if let Some(ci) = hit_clip(&compose.project.tracks[track_idx].clips, beat) {
+                        compose.selected_track = track_idx;
+                        compose.selected_clip = Some(ci);
+                        compose.selected_notes.clear();
+                        actions.clip_selected = true;
+                    }
+                }
+            }
+        }
+    }
+
+    if response.dragged() {
+        if let Some(pos) = response.interact_pointer_pos() {
+            if pos.y < content_top + track_count as f32 * TRACK_ROW_H {
+                let beats = ((pos.x - rect.min.x) / beat_w).clamp(0.0, BEATS_VISIBLE);
+                compose.transport.playhead_beats = beats;
+                actions.playhead_scrubbed = true;
+            }
+        }
+    }
 }
 
 fn paint_ruler(
@@ -220,6 +270,7 @@ fn paint_grid(
 fn clip_block_rect(row: Rect, clip: &Clip, beat_w: f32) -> Rect {
     let x0 = row.min.x + clip.start_beats * beat_w;
     let w = clip.length_beats * beat_w;
+    let _ = (x0, w);
     Rect::from_min_max(
         Pos2::new(x0 + 1.0, row.min.y + 2.0),
         Pos2::new(x0 + w - 1.0, row.max.y - 2.0),
@@ -234,9 +285,6 @@ fn paint_clip(
     selected: bool,
     tokens: &Tokens,
 ) {
-    let x0 = row.min.x + clip.start_beats * beat_w;
-    let w = clip.length_beats * beat_w;
-    let _ = (x0, w);
     let clip_rect = clip_block_rect(row, clip, beat_w);
     if clip_rect.width() < 2.0 {
         return;
@@ -271,7 +319,7 @@ fn paint_clip(
 }
 
 fn hit_clip(clips: &[Clip], beat: f32) -> Option<usize> {
-    clips.iter().position(|c| {
-        beat >= c.start_beats && beat < c.start_beats + c.length_beats
-    })
+    clips
+        .iter()
+        .position(|c| beat >= c.start_beats && beat < c.start_beats + c.length_beats)
 }

@@ -14,7 +14,7 @@ use reelsynth_ui::{
     audit_center, audit_header_clusters, audit_osc_sidebar_stacks, audit_panel_utilization,
     audit_shell, audit_theme_tokens, audit_id_rect, compute_center_regions, count_base_audit_variants,
     default_effect_slots, draw_shell, embed_piano_in_center, osc_type_index, record_region,
-    record_used, AuditId, REGISTRY_VARIANT_COUNT, ShellLayout, ShellLayoutOptions, ShellMidiDevices,
+    record_used, AuditId, REGISTRY_VARIANT_COUNT, ShellAudioDevices, ShellLayout, ShellLayoutOptions, ShellMidiDevices,
     ShellMode, WtView3dMode,
     center_morph_used_rect_id, center_scope_used_rect_id,
     center_strip_used_rect_id, center_used_rect_id, center_views_used_rect_id, footer_used_rect_id,
@@ -104,6 +104,10 @@ fn compact_mode_collapses_sections() {
         names: &["None".to_string()],
         selected: 0,
     };
+    let audio = ShellAudioDevices {
+        names: &["Speakers".to_string()],
+        selected: 0,
+    };
     let preview = Patch::default_mono();
     let mut harness = Harness::builder()
         .with_size([1280.0, 720.0])
@@ -124,7 +128,9 @@ fn compact_mode_collapses_sections() {
                         None,
                         &preview,
                         &midi,
+                        &audio,
                         &config,
+                        None,
                         None,
                         None,
                     );
@@ -176,6 +182,10 @@ fn full_shell_min_window_no_layout_overlap() {
         names: &["None".to_string()],
         selected: 0,
     };
+    let audio = ShellAudioDevices {
+        names: &["Speakers".to_string()],
+        selected: 0,
+    };
     let preview = Patch::default_mono();
     let mut harness = Harness::builder()
         .with_size([APP_MIN_WIDTH, APP_HEIGHT_FULL])
@@ -196,7 +206,9 @@ fn full_shell_min_window_no_layout_overlap() {
                         None,
                         &preview,
                         &midi,
+                        &audio,
                         &config,
+                        None,
                         None,
                         None,
                     );
@@ -242,6 +254,10 @@ fn rail_widgets_within_rail_bounds_min_window() {
         names: &["None".to_string()],
         selected: 0,
     };
+    let audio = ShellAudioDevices {
+        names: &["Speakers".to_string()],
+        selected: 0,
+    };
     let preview = Patch::default_mono();
 
     let mut harness = Harness::builder()
@@ -262,7 +278,9 @@ fn rail_widgets_within_rail_bounds_min_window() {
                         None,
                         &preview,
                         &midi,
+                        &audio,
                         &config,
+                        None,
                         None,
                         None,
                     );
@@ -344,6 +362,10 @@ fn interface_used_rects_within_allocated_min_window() {
         names: &["None".to_string()],
         selected: 0,
     };
+    let audio = ShellAudioDevices {
+        names: &["Speakers".to_string()],
+        selected: 0,
+    };
     let preview = Patch::default_mono();
 
     let mut harness = Harness::builder()
@@ -364,7 +386,9 @@ fn interface_used_rects_within_allocated_min_window() {
                         None,
                         &preview,
                         &midi,
+                        &audio,
                         &config,
+                        None,
                         None,
                         None,
                     );
@@ -490,6 +514,10 @@ fn panel_whitespace_utilization_at_1280x880() {
         names: &["None".to_string()],
         selected: 0,
     };
+    let audio = ShellAudioDevices {
+        names: &["Speakers".to_string()],
+        selected: 0,
+    };
     let preview = Patch::default_mono();
 
     let mut harness = Harness::builder()
@@ -510,7 +538,9 @@ fn panel_whitespace_utilization_at_1280x880() {
                         None,
                         &preview,
                         &midi,
+                        &audio,
                         &config,
+                        None,
                         None,
                         None,
                     );
@@ -602,6 +632,10 @@ fn run_header_cluster_audit(test: ShellHarnessTest) {
         names: &["None".to_string(), "Virtual MIDI".to_string()],
         selected: 0,
     };
+    let audio = ShellAudioDevices {
+        names: &["Speakers".to_string()],
+        selected: 0,
+    };
     let preview = Patch::default_mono();
 
     let mut harness = Harness::builder()
@@ -622,7 +656,9 @@ fn run_header_cluster_audit(test: ShellHarnessTest) {
                         None,
                         &preview,
                         &midi,
+                        &audio,
                         &config,
+                        None,
                         None,
                         None,
                     );
@@ -663,6 +699,16 @@ fn design_shell_geometry() {
 fn design_header_subelement() {
     let run = run_shell_audit(ShellAuditScenario::default());
     audit_header_clusters(&run.ctx, run.layout.header);
+}
+
+#[test]
+fn design_header_settings_dropdown() {
+    let run = run_shell_audit(ShellAuditScenario::default());
+    let settings = audit_id_rect(&run.ctx, AuditId::HeaderSettingsMenu);
+    assert!(
+        settings.is_some(),
+        "Settings should be a header navbar dropdown, not a modal"
+    );
 }
 
 #[test]
@@ -752,9 +798,9 @@ fn design_wt_strip_morph() {
 }
 
 #[test]
-fn design_wt_tool_curve() {
+fn design_wt_tool_select() {
     let mut scenario = ShellAuditScenario::default();
-    scenario.state.wt_edit_tool = reelsynth_ui::wt::WtEditTool::Curve;
+    scenario.state.wt_edit_tool = reelsynth_ui::wt::WtEditTool::Select;
     scenario.state.oscillators[0].wave_quant = 64;
     let run = run_shell_audit(scenario);
     assert_full_ui_audit(&run, &default_audit_options());
@@ -865,6 +911,34 @@ fn design_strip_layer_chips_with_layers() {
         audit_id_rect(&run.ctx, AuditId::CenterWtStripCell(0)).is_none(),
         "no frame cells on layer-first strip"
     );
+}
+
+#[test]
+fn design_wt_three_columns() {
+    let run = run_shell_audit(ShellAuditScenario::default());
+    let result = audit_id_rect(&run.ctx, AuditId::CenterWtResult);
+    let layers = audit_id_rect(&run.ctx, AuditId::CenterWt3dStack);
+    let selected = audit_id_rect(&run.ctx, AuditId::CenterWtSelected);
+    assert!(result.is_some(), "Col1 Result pane recorded");
+    assert!(layers.is_some(), "Col2 Layers pane recorded");
+    assert!(selected.is_some(), "Col3 Selected pane recorded");
+    let views = audit_id_rect(&run.ctx, AuditId::CenterWtViews);
+    assert!(views.is_some(), "wt views region should be recorded");
+    assert_full_ui_audit(&run, &default_audit_options());
+}
+
+#[test]
+fn design_left_pane_records_result_curve() {
+    let run = run_shell_audit(ShellAuditScenario::default());
+    let result = audit_id_rect(&run.ctx, AuditId::CenterWt2dResult);
+    assert!(
+        result.is_some(),
+        "Result column should record composite curve (CenterWt2dResult)"
+    );
+    let stack = audit_id_rect(&run.ctx, AuditId::CenterWt3dStack);
+    assert!(stack.is_some(), "Layers column still present");
+    let selected = audit_id_rect(&run.ctx, AuditId::CenterWtSelected);
+    assert!(selected.is_some(), "Selected column present");
 }
 
 #[test]
@@ -988,6 +1062,19 @@ fn compose_piano_roll_pencil() {
     scenario.state.compose.selected_clip = Some(0);
     let run = run_shell_audit(scenario);
     assert_full_ui_audit(&run, &default_audit_options());
+}
+
+#[test]
+fn compose_piano_roll_keys_region() {
+    let mut scenario = ShellAuditScenario::default().compose_mode();
+    scenario.state.compose.selected_clip = Some(0);
+    scenario.state.keys_down.insert(60);
+    let run = run_shell_audit(scenario);
+    assert_full_ui_audit(&run, &default_audit_options());
+    assert!(
+        audit_id_rect(&run.ctx, AuditId::ComposeRollKeys).is_some(),
+        "playable key column should register ComposeRollKeys"
+    );
 }
 
 #[test]

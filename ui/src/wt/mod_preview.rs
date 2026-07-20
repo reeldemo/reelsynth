@@ -40,6 +40,7 @@ pub fn preview_position_mod(
 }
 
 /// Whether the patch has active routes that modulate WT position (for repaint).
+#[cfg_attr(not(test), allow(dead_code))]
 pub fn has_position_mod_routes(patch: &Patch) -> bool {
     patch.mod_matrix.iter().any(|slot| {
         slot.enabled

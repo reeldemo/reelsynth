@@ -1,0 +1,175 @@
+%% arxiv-twocolumn.sty
+%% Lean double-column preprint style for arXiv / pdflatex.
+%%
+%% Approach: standard LaTeX \documentclass[twocolumn]{article} geometry,
+%% with typography inspired by the widely used kourgeorge/arxiv-style
+%% (MIT; https://github.com/kourgeorge/arxiv-style) and the myst-templates
+%% arxiv_two_column / Brenhin Keller preprint lineage (MIT), but WITHOUT
+%% exotic packages (no background crop marks, no TikZ ORCID glyphs).
+%% Uses only TeX Live / MiKTeX packages that arXiv supports.
+%%
+%% Usage:
+%%   \documentclass[10pt,twocolumn,letterpaper]{article}
+%%   \usepackage{arxiv-twocolumn}
+%%
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{arxiv-twocolumn}[2026/07/18 Lean arXiv two-column preprint]
+
+\ProcessOptions\relax
+
+% Times-like text (standard PostScript fonts; arXiv-safe)
+\RequirePackage{times}
+\RequirePackage{mathptmx}
+
+% Page geometry tuned for two-column letter paper
+\RequirePackage[
+  letterpaper,
+  twoside=false,
+  top=0.85in,
+  bottom=0.95in,
+  left=0.70in,
+  right=0.70in,
+  columnsep=0.28in
+]{geometry}
+
+\RequirePackage{fancyhdr}
+\fancyhf{}
+\pagestyle{fancy}
+\renewcommand{\headrulewidth}{0.3pt}
+\fancyheadoffset{0pt}
+\lhead{\scshape\footnotesize A Preprint}
+\rhead{\scshape\footnotesize\shorttitle}
+\cfoot{\thepage}
+
+\newcommand{\headeright}{A Preprint}
+\newcommand{\undertitle}{A Preprint}
+\newcommand{\shorttitle}{%
+  \ifdefined\papershorttitle\papershorttitle\else\@title\fi
+}
+
+\widowpenalty=10000
+\clubpenalty=10000
+\flushbottom
+\sloppy
+
+% Compact sectioning (NeurIPS / arxiv-style feel)
+\providecommand{\section}{}
+\renewcommand{\section}{%
+  \@startsection{section}{1}{\z@}%
+  {-1.8ex \@plus -0.5ex \@minus -0.2ex}%
+  {1.0ex \@plus 0.2ex}%
+  {\normalsize\bfseries\raggedright}%
+}
+\providecommand{\subsection}{}
+\renewcommand{\subsection}{%
+  \@startsection{subsection}{2}{\z@}%
+  {-1.5ex \@plus -0.4ex \@minus -0.2ex}%
+  {0.6ex \@plus 0.1ex}%
+  {\normalsize\bfseries\raggedright}%
+}
+\providecommand{\subsubsection}{}
+\renewcommand{\subsubsection}{%
+  \@startsection{subsubsection}{3}{\z@}%
+  {-1.2ex \@plus -0.3ex \@minus -0.2ex}%
+  {0.4ex \@plus 0.1ex}%
+  {\normalsize\itshape\raggedright}%
+}
+\providecommand{\paragraph}{}
+\renewcommand{\paragraph}{%
+  \@startsection{paragraph}{4}{\z@}%
+  {1.2ex \@plus 0.4ex \@minus 0.2ex}%
+  {-1em}%
+  {\normalsize\bfseries}%
+}
+
+% Generous float placement for column figures
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.5}
+\renewcommand{\textfraction}{0.08}
+\renewcommand{\floatpagefraction}{0.75}
+\renewcommand{\dbltopfraction}{0.9}
+\renewcommand{\dblfloatpagefraction}{0.75}
+\setcounter{topnumber}{3}
+\setcounter{dbltopnumber}{2}
+
+\setlength{\abovecaptionskip}{6\p@}
+\setlength{\belowcaptionskip}{2\p@}
+\setlength{\floatsep}{8\p@ \@plus 2\p@ \@minus 2\p@}
+\setlength{\textfloatsep}{10\p@ \@plus 2\p@ \@minus 2\p@}
+\setlength{\intextsep}{8\p@ \@plus 2\p@ \@minus 2\p@}
+\setlength{\dblfloatsep}{10\p@ \@plus 2\p@ \@minus 2\p@}
+\setlength{\dbltextfloatsep}{12\p@ \@plus 2\p@ \@minus 2\p@}
+
+% Keywords helper
+\newcommand{\keywordname}{\textbf{\emph{Keywords}}}
+\newcommand{\keywords}[1]{%
+  \par\addvspace\medskipamount
+  \noindent\keywordname\enspace\ignorespaces#1\par
+}
+
+% Title block: thick rules, small-caps title (arxiv-style look)
+\providecommand{\maketitle}{}
+\renewcommand{\maketitle}{%
+  \par
+  \begingroup
+    \renewcommand{\thefootnote}{\fnsymbol{footnote}}
+    \long\def\@makefntext##1{%
+      \parindent 1em\noindent
+      \hbox to 1.8em{\hss$\m@th^{\@thefnmark}$}##1%
+    }
+    \thispagestyle{empty}
+    \@maketitle
+    \@thanks
+  \endgroup
+  \let\maketitle\relax
+  \let\thanks\relax
+}
+
+\newcommand{\@toptitlebar}{%
+  \hrule height 1.5\p@
+  \vskip 0.18in
+  \vskip -\parskip
+}
+\newcommand{\@bottomtitlebar}{%
+  \vskip 0.16in
+  \vskip -\parskip
+  \hrule height 1.5\p@
+  \vskip 0.08in
+}
+
+\providecommand{\@maketitle}{}
+\renewcommand{\@maketitle}{%
+  \vbox{%
+    \hsize\textwidth
+    \linewidth\hsize
+    \vskip 0.05in
+    \@toptitlebar
+    \centering
+    {\LARGE\bfseries\@title\par}
+    \@bottomtitlebar
+    {\scshape\undertitle\par}
+    \vskip 0.12in
+    \def\And{%
+      \end{tabular}\hfil\linebreak[0]\hfil
+      \begin{tabular}[t]{c}\bfseries\rule{\z@}{18\p@}\ignorespaces
+    }
+    \def\AND{%
+      \end{tabular}\hfil\linebreak[4]\hfil
+      \begin{tabular}[t]{c}\bfseries\rule{\z@}{18\p@}\ignorespaces
+    }
+    \begin{tabular}[t]{c}\bfseries\rule{\z@}{18\p@}\@author\end{tabular}%
+    \vskip 0.14in
+    {\small\@date\par}
+    \vskip 0.10in
+  }%
+}
+
+% Abstract: centered small-caps header inside quote
+\renewenvironment{abstract}{%
+  \centerline{\large\bfseries\scshape Abstract}%
+  \begin{quote}\small
+}{%
+  \end{quote}
+}
+
+\endinput
