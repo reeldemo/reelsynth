@@ -49,6 +49,30 @@ CMA_DIM = 10 + len(BLOCKS) + len(_OP_KEYS)
 RECURRENT_BLOCKS = ("lstm", "xlstm")
 
 
+def _tb_writer(out_dir: Path):
+    """Optional TensorBoard writer (torch.utils.tensorboard)."""
+    try:
+        from torch.utils.tensorboard import SummaryWriter
+
+        tb_dir = out_dir / "tb"
+        tb_dir.mkdir(parents=True, exist_ok=True)
+        return SummaryWriter(log_dir=str(tb_dir))
+    except Exception:
+        return None
+
+
+def tb_log(writer, approach: str, it: int, *, champ: float, residual: float, wall_s: float) -> None:
+    if writer is None:
+        return
+    try:
+        writer.add_scalar(f"{approach}/champ_R", champ, it)
+        writer.add_scalar(f"{approach}/trial_R", residual, it)
+        writer.add_scalar(f"{approach}/wall_h", wall_s / 3600.0, it)
+        writer.flush()
+    except Exception:
+        pass
+
+
 def utc_now() -> str:
     return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
@@ -567,6 +591,7 @@ def run_approach(
             pid=os.getpid(),
         )
 
+    tb = _tb_writer(out_dir)
     rng = random.Random(seed + sum(ord(c) for c in name))
     torch.manual_seed(seed + len(name))
     if device.type == "cuda":
@@ -934,6 +959,14 @@ def run_approach(
             "hp": trial_hp.to_dict(),
         }
         append_hist(hist_path, row)
+        tb_log(
+            tb,
+            name,
+            it,
+            champ=champ_raw if champ_raw >= 0 else champ_r,
+            residual=r_raw,
+            wall_s=elapsed_prev + (time.time() - t0),
+        )
 
         if it % ckpt_every == 0 or it == iters:
             payload: dict[str, Any] = {
@@ -1001,6 +1034,11 @@ def run_approach(
         f"lstm={champ_lstm} xlstm={champ_xlstm}"
     )
     refresh_status("approach_done", iters)
+    if tb is not None:
+        try:
+            tb.close()
+        except Exception:
+            pass
     return summary
 
 
