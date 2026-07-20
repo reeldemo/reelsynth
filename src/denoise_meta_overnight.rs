@@ -656,6 +656,7 @@ const ACTION_NAMES: [&str; N_RL_ACTIONS] = [
 
 #[derive(Clone)]
 struct TrialRecord {
+    #[allow(dead_code)]
     idx: usize,
     branch: String,
     meta: f32,

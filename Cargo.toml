@@ -4,7 +4,7 @@ resolver = "2"
 
 [package]
 name = "reelsynth"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "Open-source wavetable synthesizer engine for Reeldemo"
 license = "MIT"
@@ -38,6 +38,11 @@ required-features = []
 [[bin]]
 name = "export_sound_bench_tiles"
 path = "src/bin/export_sound_bench_tiles.rs"
+required-features = []
+
+[[bin]]
+name = "export_reelsynth_wt_cycles"
+path = "src/bin/export_reelsynth_wt_cycles.rs"
 required-features = []
 
 [lib]

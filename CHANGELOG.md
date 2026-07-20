@@ -6,6 +6,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-20
+
 ### Added
 
 - **DenoiseOpt lit-combo meta (500)** — combinatorial hybrids of lit families (bayes/PBT/irace/MOEA·D/evo/N2N/bilevel + bake DualCosine/Classic/Soft/Ensemble*/Crossfade); each trial **fits until convergence** (rel improve `<1e-4` for 3 sweeps, max 16). Release wall clock **157.990 s** (157989 ms) for 500 outer iters (`BENCH_N=256`, prolong=16; AMD Ryzen 9 7950X3D). Champion `pbt_exploit+residual_primary` residual **≈0.903** vs naive DualCosine **≈0.705**. Artifact: `brand/artifacts/denoise_opt_meta_lit_combo_500.json`. Run: `cargo run -p reelsynth --release --bin bench_denoise_meta -- 500`.
@@ -86,5 +88,6 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Python PyO3 bindings for render and export
 - Plugin UI shell (CLAP entry stub, no host I/O)
 
-[Unreleased]: https://github.com/reeldemo/reelsynth/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/reeldemo/reelsynth/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/reeldemo/reelsynth/releases/tag/v0.2.0
 [0.1.0]: https://github.com/reeldemo/reelsynth/releases/tag/v0.1.0
