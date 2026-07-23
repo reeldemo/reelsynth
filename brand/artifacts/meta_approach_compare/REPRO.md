@@ -20,6 +20,7 @@
 | `fig_meta_approach_compare.png` | Learning curves |
 | `meta_approach_bars.png` / `.pdf` | Bar chart (champ $R$ + $\Delta R$) |
 | `fig_meta_heal_samples.png` / `.pdf` / `.json` | Healed wrap-seam eval |
+| `hear_samples/` | Audible WAV demos (5 holdout tiles × nobake / DualCosine / Ours) |
 
 ## Rebuild figures without re-running search
 
@@ -28,6 +29,7 @@ From reelsynth root (GPU venv):
 ```bash
 .venv_gpu/Scripts/python.exe scripts/bench_meta_approaches_5k.py --aggregate-only
 .venv_gpu/Scripts/python.exe scripts/plot_meta_heal_samples.py --approach hybrid_lstm
+.venv_gpu/Scripts/python.exe scripts/export_meta_hear_samples.py --approach hybrid_lstm
 ```
 
 ## Relaunch clean publishable run (destructive)
