@@ -2,6 +2,8 @@
 
 Canonical versioned paper: **[reeldemo/denoise-opt-meta](https://github.com/reeldemo/denoise-opt-meta)** → `paper/v5/`.
 
+**Application lit survey:** [SIGNAL_HEALING_APPLICATIONS_LIT.md](SIGNAL_HEALING_APPLICATIONS_LIT.md) — where wrap/seam/periodize repair could transfer (wavetable, granular, PSOLA, graphics seams, ECG, …).
+
 ## Meta objective (residual)
 
 \[
