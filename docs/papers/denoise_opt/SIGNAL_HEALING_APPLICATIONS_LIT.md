@@ -25,7 +25,7 @@ DenoiseOpt’s core mathematical object is a **single (quasi-)period 1D cycle** 
 
 **Speculative / weak force-fits:** climate seasonality (nonstationary harmonics, not wrap cliffs — though year-boundary spline artifacts exist, §10); cyclic voltammetry iR-drop (not a period seam); seam carving (retargeting, not cycle wrap); generic Cycle-GAN for audio (domain translation ≠ wrap protocol); radar *range* PRI ambiguity (aliasing ≠ seam heal).
 
-**Sci/eng deep-dive:** §10 ranks natural-science and engineering transfers with verified citations and concrete non-audio experiments.
+**Sci/eng deep-dive:** §10 ranks natural-science and engineering transfers with verified citations and concrete non-audio experiments. **Public datasets for pilots:** §11 (+ companion [`SIGNAL_HEALING_DATASETS.md`](SIGNAL_HEALING_DATASETS.md)).
 
 **Prior-art gap:** Classical (a) periodize/fade/BLEP is abundant. Learning-based (b) *wrap-aware* methods exist mainly as LoopGen (inference circular attention) and DWTS (hard continuity constraint on tables). **NAS / meta-search over repair graphs scored by prolonged residual \(R\)** — DenoiseOpt’s distinctive (c) — appears largely **unoccupied** outside the DenoiseOpt line of work.
 
@@ -735,3 +735,63 @@ CP + optional CS + TX/RX windows exist specifically to manage **circularity and 
 **Best bets:** (1) angle-domain machinery COT, (2) CNC closed-contour continuity, (3) ECG/PPG beat-template seams, (4) synchrophasor/PQ window periodization, (5) NMR FID apodization search as a cheap physics probe.  
 **Handle with care:** OFDM CP (protocol twin), radar Doppler windows (yes) vs PRI range ambiguity (no), climate year-wrap (statistical), fatigue residue concat (damage, not waveform).  
 **Reject as wrap prior art:** cyclic voltammetry iR-drop, generic medical “healing,” seam carving, musical LoopGen (out of this section’s scope but still the closest *audio* neighbor).
+
+---
+
+## 11. Public datasets for sci/eng transfer experiments
+
+**Status:** dataset inventory addendum (2026-07-23). Companion one-pager: [`SIGNAL_HEALING_DATASETS.md`](SIGNAL_HEALING_DATASETS.md).  
+**Rule:** only datasets verified via official landing pages / DOI / PhysioNet / NASA / Zenodo / Mendeley / IEEE DataPort OA. No invented collections. Licenses as stated by hosts (always re-check before redistribution).
+
+### 11.1 How to construct wrap cliffs (shared recipes)
+
+| Domain | Period \(L\) | Cliff construction | Ideal sibling |
+|--------|--------------|--------------------|---------------|
+| Bearings / COT | One shaft rev (from RPM metadata, Hall pulse, or synthetic tach) | Resample \(v(t)\!\to\!v(\theta)\) with **degraded** COT (1 ppr tach, linear interp, constant-accel assumption); seam = \(\theta=0\!\leftrightarrow\!2\pi\) | Same run with high-rate encoder / cubic interp / many ppr; or withhold last \(N\) revs as clean loop |
+| CNC contour | Closed toolpath loop \(s\in[0,1]\), \(\mathbf{r}(0)=\mathbf{r}(1)\) | Dense G01 export of CAD; leave G0/G1 corners; optional resample feed along path | Analytic G2/G3 blend (Beudaert-style) or NURBS path from same CAD; accel residual on repeated loops |
+| ECG / PPG | Beat between R–R (or systolic peaks) | Segment → length-normalize → **concatenate**; cliff at join | SBMM-modulated template (Agostinelli) or cardiologist-clean beat; multi-beat tiled residual |
+| PQ / PMU | Nominal 50/60 Hz AC cycle or DFT window | Non-integer cycles / off-nominal \(f\) / abrupt window; leakage = analysis wrap | IpDFT / Taylor–Fourier / Hann sibling on same synthetic IEEE 1159 / C37.118.1 traces |
+| NMR FID | Truncated FID length \(N\) | Hard cutoff (rect window) before FT → sinc wiggles | Full-length acquisition or exponential apodization matched to \(T_2^*\); residual vs long sibling spectrum |
+| Climate year | Day-of-year \(1..365\) | Unconstrained monthly→daily spline without periodic BC | NOAA constrained harmonic normals (Arguez & Applequist lineage) |
+
+### 11.2 Ranked public datasets
+
+| Rank | Dataset | Domain | URL | License (host) | Size / rate / ch | Why wrap/seam | Ideal-sibling idea | Download | Citation |
+|------|---------|--------|-----|----------------|------------------|---------------|--------------------|----------|----------|
+| **1** | **CWRU Bearing Data Center** | Rotating / vibration | https://engineering.case.edu/bearingdatacenter | Academic open download (no formal CC on site; cite CWRU; re-check terms) | MATLAB `.mat`; **12 kHz** & **48 kHz** DE; FE @ 12 kHz; DE/FE/(BA); RPM in files; loads 0–3 HP (~1797–1720 RPM) | Constant-speed → one-rev tables; invent COT cliff via coarse tach resample | Fine interp / 48 kHz vs degraded 12 kHz COT on same fault class; do not erase BPFO/BPFI | **Easy** (direct `.mat` links) | CWRU Bearing Data Center; widely used seeded-fault benchmark |
+| **2** | **Paderborn KAt Bearing DataCenter** | Rotating / vib + current | https://mb.uni-paderborn.de/en/kat/research/bearing-datacenter | **CC BY-NC 4.0** (commercial needs author OK) | Vib + motor currents @ **64 kHz**; speed/torque/load/temp @ lower rate; 4 s × 20 reps × 4 op. conditions; 32 bearing codes | Sync speed → angle domain; high SR for order spectra under multi-rev tile | High-tach / fine-interp sibling vs 1-ppr synthetic tach cliff | **Easy–medium** (uni download + cite) | Lessmeier et al., *PHM Europe* 2016, doi:10.36001/phme.2016.v3i1.1577 |
+| **3** | **MFPT Fault Data Sets** | Rotating / vibration | https://www.mfpt.org/fault-data-sets/ (GitHub mirror: mathworks/RollingElementBearingFaultDiagnosis-Data) | Academic CBM use (mirror often **CC BY-NC-SA** — check mirror) | Rig: **97 656** sps (6 s) & **48 828** sps (3 s); 1-ch \(g\); shaft **25 Hz**; loads 0–300 lb + 3 real-world files | Known shaft rate → exact \(L\) samples/rev; wrap after COT | Baseline vs fault under same rate; degraded vs cubic COT | **Easy** | Bechhoefer, *Condition Based Maintenance Fault Database…*, MFPT, 2013 |
+| **4** | **MIT-BIH Arrhythmia (mitdb)** | ECG beats | https://physionet.org/content/mitdb/1.0.0/ | **ODC-By 1.0** | 48 × ~30 min; **2 ch**; **360 Hz**; ~110k beat annotations | R-peak segments → length-norm → stitch; join cliff | Neighbor normal beats / SBMM; hold out VEB/SVEB | **Easy** (wget / AWS open) | Moody & Mark, *IEEE Eng. Med. Biol.* 2001; PhysioNet |
+| **5** | **PTB-XL** | ECG clinical | https://physionet.org/content/ptb-xl/1.0.3/ | **CC BY 4.0** | 21 799 × 10 s; **12 leads**; **500 Hz** (also 100 Hz) | Dense beats for template banks; stitch seams | Clean sinus subset vs arrhythmia; multi-beat \(R\) | **Easy** | Wagner et al., *Sci. Data* 2020, doi:10.1038/s41597-020-0495-6 |
+| **6** | **UORED-VAFCLS (Ottawa)** | Rotating / vib + acoustic + Hall | https://data.mendeley.com/datasets/y2px5tg92h | **CC BY 4.0** | 60 sets × 10 s; **42 kHz**; accel + mic + Hall speed + load + temp | Hall speed enables true angle periodization | Healthy vs developing vs faulty; fine vs coarse tach | **Easy** (Mendeley) | Sehri & Dumond, *Data in Brief* 2023, doi:10.1016/j.dib.2023.109327 |
+| **7** | **NASA IMS / Cincinnati bearings** | Rotating / run-to-failure | https://phm-datasets.s3.amazonaws.com/NASA/4.+Bearings.zip · https://data.nasa.gov/dataset/ims-bearings | **U.S. Government work** (public) | 3 run-to-fail; 1 s snaps × **20 480** pts @ **20 kHz**; 4–8 ch; ~2000 RPM | Constant RPM → rev tables; prognostics cliffs over life | Early healthy snap as sibling for later degraded wrap | **Easy** (S3 zip) | Lee, Qiu, Yu, Lin & Rexnord (2007), NASA PCoE; Qiu et al., *JSV* 2006 |
+| **8** | **PPG-DaLiA** | PPG (+ ECG GT) | https://archive.ics.uci.edu/dataset/495/ppg-dalia | **CC BY 4.0** | 15 subjects; wrist BVP **64 Hz**; chest ECG **700 Hz**; accel | Systolic-peak cycles; motion-corrupt seams | ECG-aligned clean beats vs motion-corrupted wrist PPG | **Easy–medium** (~2.8 GB) | Reiss et al., *Sensors* 2019, doi:10.3390/s19143079 |
+| **9** | **KIT multimodal CNC milling** | CNC / G-code + sensors | https://doi.org/10.35097/hvvwn1kfwf7qt48z | **CC BY 4.0** | ~6 h; controller **500 Hz**; force/accel **10 kHz**; NC + CAD (.stp); 33 trials | Closed contours from NC/CAD; G01 corner discontinuities; loop residual = repeated toolpath vib | Analytic blend of same contour; sync force/accel on loop | **Medium** (RADAR4KIT) | Ströbel et al., 2025, doi:10.35097/hvvwn1kfwf7qt48z; *Data in Brief* / KIT |
+| **10** | **Bosch CNC Machining** | CNC vib monitoring | https://github.com/boschresearch/CNC_Machining | Data **CC BY 4.0**; code BSD-3 | 3 machines × 15 ops; triax **2 kHz**; good/bad labels | Weak for *geometric* contour wrap; use as process-loop vib tile only | “Good” process cycle as sibling for “bad” | **Easy** (Git LFS/h5) | Tnani, Feil, Diepold, *Procedia CIRP* 2022, doi:10.1016/j.procir.2022.04.022 |
+| **11** | **IEEE 39-bus PMU (OA DataPort)** | Synchrophasor | https://ieee-dataport.org/open-access/pmu-measurements-ieee-39-bus-power-system-model | IEEE DataPort **Open Access** (free IEEE account) | 10 gen PMUs; ~86.6 s; **5197** frames/gen; V/I mag∠, \(f\), ROCOF | Streaming window periodization / off-nominal leakage on derived AC | IpDFT sibling; synthetic IEEE C37.118.1 waveforms preferred for raw-cycle cliffs | **Easy** (login) | RTDS + GTNET PMU; IEEE DataPort record |
+| **12** | **IEEE PES ISS capacitor PQ essays** | Power quality waveforms | https://site.ieee.org/pes-iss/data-sets/ | Academic / non-commercial (PES ISS terms) | 1380 files; V/I/P lab essays under harmonic voltages | Real harmonic AC cycles; DFT window mismatch | Windowed vs IpDFT on same essay | **Easy** (zip) | Spavieri et al., *Appl. Soft Comput.* 2017, doi:10.1016/j.asoc.2017.02.017 |
+| **13** | **BMRB / Metabolomics Workbench FIDs** | NMR FID | https://bmrb.io/ · e.g. MW ST000892 https://www.metabolomicsworkbench.org/ | Open academic archives (cite entry + NIH MW terms) | Bruker `fid` / nmrML; study-dependent \(N\), complex | Truncate FID → sinc; apodization Θ search | Full FID sibling; matched exponential window | **Medium** (rsync / study zip) | Ulrich et al. BMRB; MW study DOIs (e.g. 10.21228/M8D97C) |
+| **14** | **NOAA U.S. Daily Climate Normals 1991–2020** | Seasonal year-wrap | https://www.ncei.noaa.gov/products/land-based-station/us-climate-normals | Public U.S. gov data | Daily T/P normals; ~15k stations; CSV/netCDF | Dec↔Jan continuity of annual cycle | Constrained harmonic normals vs naive spline | **Easy** | Arguez & Applequist, *JTECH* 2013; NCEI C01621 |
+| **—** | **CV Zenodo dumps** (bonus / negative control) | Cyclic voltammetry | e.g. https://doi.org/10.5281/zenodo.11230180 | Usually CC BY | Small \(I\!-\!V\) loops | **Do not** treat as wrap cliffs (iR-drop ≠ seam) | N/A — anti-dataset | Easy | Elgrishi et al. 2018 framing; Zenodo CV deposits |
+
+**CNC honesty note:** No widely used public set is labeled “closed toolpath seam residual.” **KIT** is the best obtainable proxy (NC + CAD + synced accel). Prefer **synthetic G01 cliffs from CAD** scored against Beudaert-style blends for a clean DenoiseOpt pilot; use KIT to show transfer to real machine signals.
+
+**PMU honesty note:** Many DataPort PMU sets are **already phasors**. For waveform wrap cliffs, synthesize IEEE 1159 / C37.118.1 test signals; use OA PMU sets for streaming estimator Θ / TVE scores.
+
+### 11.3 Top 3 starter packs (download tomorrow)
+
+1. **Machinery wrap pilot (highest ROI):** CWRU (12/48 kHz) **+** MFPT (known 25 Hz shaft) **+** optional Paderborn (64 kHz, CC BY-NC). Build one-rev tables; inject COT cliffs; score multi-rev order residual vs fine-interp sibling; report BPFO/BPFI preservation.  
+2. **Beat-seam biomedical pilot:** MIT-BIH (annotations, ODC-By) **+** PTB-XL (12-lead scale, CC BY) **+** optional PPG-DaLiA. Segment → normalize → stitch; score join RMSE + multi-beat tiled \(R\); arrhythmia hold-out.  
+3. **Physics / manufacturing probe:** KIT CNC (NC+CAD+10 kHz sensors) **or** synthetic G01 contours **+** one NMR FID study (MW/BMRB truncate→apodize) **+** NOAA daily normals year-wrap as cheap statistical control.
+
+### 11.4 Search log (datasets)
+
+| Query theme | Verified finds |
+|-------------|----------------|
+| Bearings | CWRU, Paderborn/Lessmeier 2016, MFPT/Bechhoefer 2013, NASA IMS, UORED-VAFCLS |
+| CNC | KIT multimodal (RADAR CC BY), Bosch CNC (CC BY), Zenodo i-CNC chatter (vib-only, weaker) |
+| ECG/PPG | MIT-BIH, PTB-XL, PPG-DaLiA; MIMIC-Ext-PPG = credentialed (skipped for “tomorrow”) |
+| PMU/PQ | IEEE 39-bus OA DataPort; PES ISS Spavieri capacitors; many PQ sets request-only → deprioritized |
+| NMR | BMRB timedomain rsync; Metabolomics Workbench FID studies |
+| Climate | NOAA Daily Normals 1991–2020 |
+| CV | Zenodo CV deposits kept as **negative control** only |
