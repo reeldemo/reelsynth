@@ -1,39 +1,12 @@
-[20260723T195204Z] hybrid_lstm domain start iters=250 seed=1902771841 baseline_dual=0.2042 nobake=0.6448 n_cycles=256 L=256
-[20260723T195205Z] it=1/250 branch=ppo R=0.8686 champ=0.8686 dR_vs_Dual=+0.6645
-[20260723T195209Z] it=3/250 branch=pbt R=0.8708 champ=0.8708 dR_vs_Dual=+0.6666
-[20260723T195308Z] it=10/250 branch=combo R=0.8693 champ=0.8708 dR_vs_Dual=+0.6666
-[20260723T195342Z] it=19/250 branch=nas R=0.8753 champ=0.8753 dR_vs_Dual=+0.6711
-[20260723T195344Z] it=20/250 branch=combo R=0.8685 champ=0.8753 dR_vs_Dual=+0.6711
-[20260723T195444Z] it=30/250 branch=combo R=0.0000 champ=0.8753 dR_vs_Dual=+0.6711
-[20260723T195502Z] it=33/250 branch=pbt R=0.8762 champ=0.8762 dR_vs_Dual=+0.6720
-[20260723T195531Z] it=40/250 branch=combo R=0.6954 champ=0.8762 dR_vs_Dual=+0.6720
-[20260723T195537Z] it=43/250 branch=pbt R=0.8773 champ=0.8773 dR_vs_Dual=+0.6732
-[20260723T195552Z] it=50/250 branch=combo R=0.8749 champ=0.8773 dR_vs_Dual=+0.6732
-[20260723T195555Z] it=52/250 branch=ga R=0.8804 champ=0.8804 dR_vs_Dual=+0.6762
-[20260723T195618Z] it=60/250 branch=combo R=0.8592 champ=0.8804 dR_vs_Dual=+0.6762
-[20260723T195700Z] it=68/250 branch=pbt R=0.8824 champ=0.8824 dR_vs_Dual=+0.6783
-[20260723T195703Z] it=70/250 branch=combo R=0.8671 champ=0.8824 dR_vs_Dual=+0.6783
-[20260723T195721Z] it=80/250 branch=combo R=0.8375 champ=0.8824 dR_vs_Dual=+0.6783
-[20260723T195833Z] it=90/250 branch=combo R=0.0000 champ=0.8824 dR_vs_Dual=+0.6783
-[20260723T195956Z] it=100/250 branch=combo R=0.8644 champ=0.8824 dR_vs_Dual=+0.6783
-[20260723T200029Z] plateau level -> 1
-[20260723T200106Z] it=110/250 branch=combo R=0.8676 champ=0.8824 dR_vs_Dual=+0.6783
-[20260723T200139Z] it=118/250 branch=pbt R=0.8832 champ=0.8832 dR_vs_Dual=+0.6791
-[20260723T200212Z] it=120/250 branch=combo R=0.8040 champ=0.8832 dR_vs_Dual=+0.6791
-[20260723T200303Z] it=130/250 branch=combo R=0.8343 champ=0.8832 dR_vs_Dual=+0.6791
-[20260723T200422Z] it=140/250 branch=combo R=0.8709 champ=0.8832 dR_vs_Dual=+0.6791
-[20260723T200448Z] it=150/250 branch=combo R=0.8738 champ=0.8832 dR_vs_Dual=+0.6791
-[20260723T200557Z] plateau level -> 2
-[20260723T200610Z] it=160/250 branch=combo R=0.8569 champ=0.8832 dR_vs_Dual=+0.6791
-[20260723T200703Z] it=170/250 branch=combo R=0.0000 champ=0.8832 dR_vs_Dual=+0.6791
-[20260723T200756Z] it=180/250 branch=combo R=0.8676 champ=0.8832 dR_vs_Dual=+0.6791
-[20260723T200911Z] it=190/250 branch=combo R=0.8720 champ=0.8832 dR_vs_Dual=+0.6791
-[20260723T200944Z] plateau level -> 3
-[20260723T200956Z] it=200/250 branch=combo R=0.8444 champ=0.8832 dR_vs_Dual=+0.6791
-[20260723T201122Z] it=210/250 branch=combo R=0.8755 champ=0.8832 dR_vs_Dual=+0.6791
-[20260723T201244Z] it=220/250 branch=combo R=0.8749 champ=0.8832 dR_vs_Dual=+0.6791
-[20260723T201310Z] it=230/250 branch=combo R=0.8748 champ=0.8832 dR_vs_Dual=+0.6791
-[20260723T201339Z] plateau level -> 4
-[20260723T201356Z] it=240/250 branch=combo R=0.4593 champ=0.8832 dR_vs_Dual=+0.6791
-[20260723T201443Z] it=250/250 branch=combo R=0.8690 champ=0.8832 dR_vs_Dual=+0.6791
-[20260723T201443Z] done champ_raw=0.8832 wall_s=1359.2
+[20260725T111252Z] hybrid_lstm domain start iters=250 seed=1902771841 baseline_dual=0.4153 nobake=0.7518 n_cycles=256 L=256 metric=r_blend objective=J
+[20260725T111254Z] it=1/250 branch=ppo R_seam=0.9700 t_ms=3.314 J=0.9626 best_J=0.9642 dR_vs_Dual=+0.5547
+[20260725T111650Z] plateau level -> 1
+[20260725T111723Z] it=50/250 branch=combo R_seam=0.2920 t_ms=7.101 J=0.2813 best_J=0.9642 dR_vs_Dual=+0.5547
+[20260725T112055Z] it=100/250 branch=combo R_seam=0.9384 t_ms=67.414 J=0.9169 best_J=0.9700 dR_vs_Dual=+0.5594
+[20260725T112337Z] plateau level -> 2
+[20260725T112511Z] it=150/250 branch=combo R_seam=0.0000 t_ms=5.411 J=-0.0095 best_J=0.9700 dR_vs_Dual=+0.5594
+[20260725T112711Z] plateau level -> 3
+[20260725T112903Z] it=200/250 branch=combo R_seam=0.0000 t_ms=8.711 J=-0.0116 best_J=0.9700 dR_vs_Dual=+0.5594
+[20260725T113037Z] plateau level -> 4
+[20260725T113455Z] it=250/250 branch=combo R_seam=0.9451 t_ms=11.231 J=0.9324 best_J=0.9700 dR_vs_Dual=+0.5594
+[20260725T113455Z] done champ_r_seam=0.9747 champ_j=0.9700 wall_s=1322.5

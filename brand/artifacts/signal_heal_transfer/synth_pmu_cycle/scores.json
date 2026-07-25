@@ -1,10 +1,10 @@
 {
-  "no_bake": 0.9562694430351257,
-  "dual_cosine": 0.9393190145492554,
-  "soft_periodize_hann": 0.9360737800598145,
-  "linear_fade": 0.9414891004562378,
-  "endpoint_pin_mean": 0.9605169296264648,
-  "seam_fir3": 0.9477394819259644,
-  "spline_join": 0.9205054640769958,
-  "ours_hybrid_lstm": 0.9682239294052124
+  "no_bake": 0.9355524778366089,
+  "dual_cosine": 0.827151894569397,
+  "soft_periodize_hann": 0.8105502128601074,
+  "linear_fade": 0.837405800819397,
+  "endpoint_pin_mean": 0.9441877603530884,
+  "seam_fir3": 0.9118894338607788,
+  "spline_join": 0.8315402865409851,
+  "ours_hybrid_lstm": 0.9915037155151367
 }

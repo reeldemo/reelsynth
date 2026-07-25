@@ -1,11 +1,11 @@
 {
-  "no_bake": 0.8777574300765991,
-  "dual_cosine": 0.7760615348815918,
-  "soft_periodize_hann": 0.7584093809127808,
-  "linear_fade": 0.785477340221405,
-  "endpoint_pin_mean": 0.7932640910148621,
-  "seam_fir3": 0.8054651021957397,
-  "cot_linear_periodize": 0.8777574300765991,
-  "cot_cubic_then_dualcosine": 0.7760615348815918,
-  "ours_hybrid_lstm": 0.8841551542282104
+  "no_bake": 0.8657405376434326,
+  "dual_cosine": 0.4829549193382263,
+  "soft_periodize_hann": 0.4404827356338501,
+  "linear_fade": 0.4989875257015228,
+  "endpoint_pin_mean": 0.5445723533630371,
+  "seam_fir3": 0.5726280808448792,
+  "cot_linear_periodize": 0.8657405376434326,
+  "cot_cubic_then_dualcosine": 0.4829549193382263,
+  "ours_hybrid_lstm": 0.9411238431930542
 }

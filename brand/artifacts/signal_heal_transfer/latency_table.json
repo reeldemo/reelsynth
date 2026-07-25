@@ -1,10 +1,10 @@
 {
-  "finished_at": "20260725T071627Z",
+  "finished_at": "20260725T123824Z",
   "config": {
     "batch": 64,
     "warmup": 20,
     "repeats": 100,
-    "device": "cpu",
+    "device": "cuda",
     "gpu_busy_hint": null,
     "metric_timed": "forward + prolonged residual_score (same as wavetable benches)",
     "n2n_policy": "wavetable n2n_corrupt_corrupt.pt zero-shot on L=256 domains; null if ckpt missing; no domain-trained N2N"
@@ -12,34 +12,34 @@
   "table": {
     "cwru_bearings": {
       "no_bake": {
-        "ms_per_batch": 0.1864590001059696,
-        "ms_per_period": 0.002913421876655775,
+        "ms_per_batch": 0.26031199959106743,
+        "ms_per_period": 0.004067374993610429,
         "residual_live": 0.8679422736167908,
         "n_params": 0,
         "kind": "classical"
       },
       "dual_cosine": {
-        "ms_per_batch": 0.561514999717474,
-        "ms_per_period": 0.008773671870585531,
-        "residual_live": 0.7834904789924622,
+        "ms_per_batch": 1.0995909996563569,
+        "ms_per_period": 0.017181109369630576,
+        "residual_live": 0.7834904193878174,
         "n_params": 0,
         "kind": "classical"
       },
       "ours_hybrid_lstm": {
-        "ms_per_batch": 38.432521000504494,
-        "ms_per_period": 0.6005081406328827,
-        "residual_live": 0.8742991089820862,
-        "n_params": 223093,
+        "ms_per_batch": 3.9196819998323917,
+        "ms_per_period": 0.06124503124738112,
+        "residual_live": 0.8745499849319458,
+        "n_params": 66862,
         "kind": "ours",
-        "champ_raw": 0.8872717916965485,
-        "iters_done": 850,
-        "partial": true,
+        "champ_raw": 0.9595887362957001,
+        "iters_done": 250,
+        "partial": false,
         "weights": "champ_cell.pt"
       },
       "n2n_corrupt_corrupt": {
-        "ms_per_batch": 3.853073999634944,
-        "ms_per_period": 0.060204281244296,
-        "residual_live": 0.21336127817630768,
+        "ms_per_batch": 0.9469509997870773,
+        "ms_per_period": 0.014796109371673083,
+        "residual_live": 0.2611197233200073,
         "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\n2n_seam_baselines\\n2n_corrupt_corrupt.pt",
         "source": "wavetable_n2n_corrupt_corrupt_zero_shot",
         "n_params": 53506,
@@ -48,34 +48,34 @@
     },
     "mfpt_bearings": {
       "no_bake": {
-        "ms_per_batch": 0.13223899994045496,
-        "ms_per_period": 0.0020662343740696087,
-        "residual_live": 0.8784815073013306,
+        "ms_per_batch": 0.2591310004936531,
+        "ms_per_period": 0.00404892188271333,
+        "residual_live": 0.8821794986724854,
         "n_params": 0,
         "kind": "classical"
       },
       "dual_cosine": {
-        "ms_per_batch": 0.5776140000671148,
-        "ms_per_period": 0.00902521875104867,
-        "residual_live": 0.7662346363067627,
+        "ms_per_batch": 1.1102250003023073,
+        "ms_per_period": 0.01734726562972355,
+        "residual_live": 0.7912628054618835,
         "n_params": 0,
         "kind": "classical"
       },
       "ours_hybrid_lstm": {
-        "ms_per_batch": 40.249949999852106,
-        "ms_per_period": 0.6289054687476892,
-        "residual_live": 0.8849500417709351,
-        "n_params": 116826,
+        "ms_per_batch": 6.606895999866538,
+        "ms_per_period": 0.10323274999791465,
+        "residual_live": 0.8817005157470703,
+        "n_params": 124915,
         "kind": "ours",
-        "champ_raw": 0.8903567790985107,
-        "iters_done": 200,
+        "champ_raw": 0.942652016878128,
+        "iters_done": 250,
         "partial": false,
         "weights": "champ_cell.pt"
       },
       "n2n_corrupt_corrupt": {
-        "ms_per_batch": 3.4823569998843595,
-        "ms_per_period": 0.05441182812319312,
-        "residual_live": 0.18645648658275604,
+        "ms_per_batch": 0.9862989996327087,
+        "ms_per_period": 0.015410921869261074,
+        "residual_live": 0.18809495866298676,
         "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\n2n_seam_baselines\\n2n_corrupt_corrupt.pt",
         "source": "wavetable_n2n_corrupt_corrupt_zero_shot",
         "n_params": 53506,
@@ -84,34 +84,34 @@
     },
     "mitbih_ecg": {
       "no_bake": {
-        "ms_per_batch": 0.2162280003540218,
-        "ms_per_period": 0.0033785625055315904,
+        "ms_per_batch": 0.26564500003587455,
+        "ms_per_period": 0.00415070312556054,
         "residual_live": 0.6447737812995911,
         "n_params": 0,
         "kind": "classical"
       },
       "dual_cosine": {
-        "ms_per_batch": 0.7038789999205619,
-        "ms_per_period": 0.01099810937375878,
+        "ms_per_batch": 1.12047899980098,
+        "ms_per_period": 0.017507484371890314,
         "residual_live": 0.20415443181991577,
         "n_params": 0,
         "kind": "classical"
       },
       "ours_hybrid_lstm": {
-        "ms_per_batch": 6.620447000022978,
-        "ms_per_period": 0.10344448437535902,
-        "residual_live": 0.8817200064659119,
-        "n_params": 308959,
+        "ms_per_batch": 2.865040000178851,
+        "ms_per_period": 0.04476625000279455,
+        "residual_live": 0.8815383315086365,
+        "n_params": 42566,
         "kind": "ours",
-        "champ_raw": 0.8832423090934753,
+        "champ_raw": 0.9746841490268707,
         "iters_done": 250,
         "partial": false,
         "weights": "champ_cell.pt"
       },
       "n2n_corrupt_corrupt": {
-        "ms_per_batch": 3.862476999638602,
-        "ms_per_period": 0.06035120311935316,
-        "residual_live": 0.5426170825958252,
+        "ms_per_batch": 0.9820499998750165,
+        "ms_per_period": 0.015344531248047133,
+        "residual_live": 0.5607929229736328,
         "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\n2n_seam_baselines\\n2n_corrupt_corrupt.pt",
         "source": "wavetable_n2n_corrupt_corrupt_zero_shot",
         "n_params": 53506,
@@ -120,34 +120,34 @@
     },
     "ptbxl_ecg": {
       "no_bake": {
-        "ms_per_batch": 0.19241900008637458,
-        "ms_per_period": 0.003006546876349603,
+        "ms_per_batch": 0.2713240002049133,
+        "ms_per_period": 0.004239437503201771,
         "residual_live": 0.559010922908783,
         "n_params": 0,
         "kind": "classical"
       },
       "dual_cosine": {
-        "ms_per_batch": 0.6032929994398728,
-        "ms_per_period": 0.009426453116248013,
-        "residual_live": 0.2588982880115509,
+        "ms_per_batch": 1.1429270001826808,
+        "ms_per_period": 0.017858234377854387,
+        "residual_live": 0.2588982582092285,
         "n_params": 0,
         "kind": "classical"
       },
       "ours_hybrid_lstm": {
-        "ms_per_batch": 6.815715000266209,
-        "ms_per_period": 0.10649554687915952,
-        "residual_live": 0.6401631832122803,
-        "n_params": 20362,
+        "ms_per_batch": 1.6695169999729842,
+        "ms_per_period": 0.026086203124577878,
+        "residual_live": 0.6793181896209717,
+        "n_params": 32975,
         "kind": "ours",
-        "champ_raw": 0.6863193511962891,
-        "iters_done": 150,
+        "champ_raw": 0.9432091116905212,
+        "iters_done": 250,
         "partial": false,
         "weights": "champ_cell.pt"
       },
       "n2n_corrupt_corrupt": {
-        "ms_per_batch": 3.799278999795206,
-        "ms_per_period": 0.05936373437180009,
-        "residual_live": 0.507878303527832,
+        "ms_per_batch": 0.9684810001635924,
+        "ms_per_period": 0.015132515627556131,
+        "residual_live": 0.48152613639831543,
         "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\n2n_seam_baselines\\n2n_corrupt_corrupt.pt",
         "source": "wavetable_n2n_corrupt_corrupt_zero_shot",
         "n_params": 53506,
@@ -156,34 +156,34 @@
     },
     "synth_cnc_g01": {
       "no_bake": {
-        "ms_per_batch": 0.28758400003425777,
-        "ms_per_period": 0.004493500000535278,
+        "ms_per_batch": 0.2770749997580424,
+        "ms_per_period": 0.004329296871219412,
         "residual_live": 0.4075140953063965,
         "n_params": 0,
         "kind": "classical"
       },
       "dual_cosine": {
-        "ms_per_batch": 0.6463269999949262,
-        "ms_per_period": 0.010098859374920721,
-        "residual_live": 0.41362863779067993,
+        "ms_per_batch": 1.1452109995298088,
+        "ms_per_period": 0.017893921867653262,
+        "residual_live": 0.41362860798835754,
         "n_params": 0,
         "kind": "classical"
       },
       "ours_hybrid_lstm": {
-        "ms_per_batch": 26.2464260001434,
-        "ms_per_period": 0.41010040625224065,
-        "residual_live": 0.4677596390247345,
-        "n_params": 26008,
+        "ms_per_batch": 1.6882059996714815,
+        "ms_per_period": 0.0263782187448669,
+        "residual_live": 0.44818729162216187,
+        "n_params": 17567,
         "kind": "ours",
-        "champ_raw": 0.4677353501319885,
-        "iters_done": 150,
+        "champ_raw": 0.9913659393787384,
+        "iters_done": 250,
         "partial": false,
         "weights": "champ_cell.pt"
       },
       "n2n_corrupt_corrupt": {
-        "ms_per_batch": 3.1404759996803477,
-        "ms_per_period": 0.04906993749500543,
-        "residual_live": 0.47069787979125977,
+        "ms_per_batch": 0.9772249998059124,
+        "ms_per_period": 0.01526914062196738,
+        "residual_live": 0.44631415605545044,
         "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\n2n_seam_baselines\\n2n_corrupt_corrupt.pt",
         "source": "wavetable_n2n_corrupt_corrupt_zero_shot",
         "n_params": 53506,
@@ -192,34 +192,34 @@
     },
     "synth_pmu_cycle": {
       "no_bake": {
-        "ms_per_batch": 0.19610100018326193,
-        "ms_per_period": 0.0030640781278634677,
+        "ms_per_batch": 0.26103399985004216,
+        "ms_per_period": 0.004078656247656909,
         "residual_live": 0.9540901184082031,
         "n_params": 0,
         "kind": "classical"
       },
       "dual_cosine": {
-        "ms_per_batch": 0.6258149998029694,
-        "ms_per_period": 0.009778359371921397,
-        "residual_live": 0.9387091398239136,
+        "ms_per_batch": 1.1407510004937649,
+        "ms_per_period": 0.017824234382715076,
+        "residual_live": 0.9387091994285583,
         "n_params": 0,
         "kind": "classical"
       },
       "ours_hybrid_lstm": {
-        "ms_per_batch": 1.6401899995980784,
-        "ms_per_period": 0.025627968743719975,
-        "residual_live": 0.9654329419136047,
+        "ms_per_batch": 1.6683940001530573,
+        "ms_per_period": 0.02606865625239152,
+        "residual_live": 0.9652866125106812,
         "n_params": 32975,
         "kind": "ours",
-        "champ_raw": 0.9750369191169739,
-        "iters_done": 150,
+        "champ_raw": 0.9918926358222961,
+        "iters_done": 250,
         "partial": false,
         "weights": "champ_cell.pt"
       },
       "n2n_corrupt_corrupt": {
-        "ms_per_batch": 3.161854000063613,
-        "ms_per_period": 0.049403968750993954,
-        "residual_live": 0.9562978148460388,
+        "ms_per_batch": 0.9727640001801774,
+        "ms_per_period": 0.015199437502815272,
+        "residual_live": 0.9451127052307129,
         "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\n2n_seam_baselines\\n2n_corrupt_corrupt.pt",
         "source": "wavetable_n2n_corrupt_corrupt_zero_shot",
         "n_params": 53506,
@@ -249,14 +249,15 @@
     "mfpt_bearings": {
       "meta": {
         "domain": "bearings",
-        "n": 128,
+        "n": 256,
         "period_l": 256,
         "wrap": "MFPT shaft-rate periods; cubic ideal vs linear+cliff engine.",
         "citation": "MFPT Fault Data Sets (Society for Machinery Failure Prevention Technology)",
         "seed": 1902771841,
-        "label": "classical_board_plus_bad_cot \u2014 not a published deep SOTA reimplementation"
+        "label": "classical_board_plus_bad_cot \u2014 not a published deep SOTA reimplementation",
+        "requested_n": 256
       },
-      "n_cycles": 128
+      "n_cycles": 256
     },
     "mitbih_ecg": {
       "meta": {

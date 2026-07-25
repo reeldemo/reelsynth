@@ -1,0 +1,8 @@
+protocol: paper_v10.1 R_blend
+alpha: 0.7
+formula: R_blend = 0.7*R_seam(ideal,out) + 0.3*R_body(eng,out)
+J: R_blend - 0.02*latency_norm
+started: 2026-07-25T10:32:36.6133676+02:00
+approaches: hybrid_lstm
+iters: 1200
+force_fresh: true (metric change)

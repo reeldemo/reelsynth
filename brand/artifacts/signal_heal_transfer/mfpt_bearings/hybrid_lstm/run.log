@@ -1,0 +1,11 @@
+[20260725T104736Z] hybrid_lstm domain start iters=250 seed=1902771841 baseline_dual=0.4893 nobake=0.8675 n_cycles=256 L=256 metric=r_blend objective=J
+[20260725T104737Z] it=1/250 branch=ppo R_seam=0.9149 t_ms=2.318 J=0.9087 best_J=0.9104 dR_vs_Dual=+0.4256
+[20260725T105214Z] plateau level -> 1
+[20260725T105310Z] it=50/250 branch=combo R_seam=0.8230 t_ms=6.447 J=0.8128 best_J=0.9104 dR_vs_Dual=+0.4256
+[20260725T105912Z] it=100/250 branch=combo R_seam=0.9266 t_ms=8.144 J=0.9153 best_J=0.9255 dR_vs_Dual=+0.4435
+[20260725T110340Z] it=150/250 branch=combo R_seam=0.9346 t_ms=8.497 J=0.9232 best_J=0.9329 dR_vs_Dual=+0.4520
+[20260725T110606Z] plateau level -> 2
+[20260725T110728Z] it=200/250 branch=combo R_seam=0.9074 t_ms=3.309 J=0.8999 best_J=0.9329 dR_vs_Dual=+0.4520
+[20260725T111158Z] plateau level -> 3
+[20260725T111242Z] it=250/250 branch=combo R_seam=0.9205 t_ms=67.520 J=0.8990 best_J=0.9342 dR_vs_Dual=+0.4534
+[20260725T111242Z] done champ_r_seam=0.9427 champ_j=0.9342 wall_s=1506.2

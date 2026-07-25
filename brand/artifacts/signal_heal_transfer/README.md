@@ -1,6 +1,6 @@
 # Signal-heal transfer pilot
 
-Generated: `20260725T043542Z`
+Generated: `20260725T123816Z`
 
 ## Method under test
 
@@ -30,14 +30,13 @@ Generated: `20260725T043542Z`
 
 ### Skipped optional
 
-- **mfpt_bearings:** MFPT zip URL returned HTML (login/wall); skipped
-- **kit_cnc:** skipped — KIT CNC DOI needs browser/login flow; synthetic_cnc_wrap used as proxy
-- **ieee_pmu:** skipped — IEEE DataPort free-account wall; synthetic_power_wrap used as proxy
-- **bmrb_nmr:** skipped — BMRB FID deferred
 - **kit_cnc_real:** skipped — KIT CNC DOI needs browser/login; ran synth_cnc_g01 instead
 - **ieee_pmu_real:** skipped — IEEE DataPort free-account wall; ran synth_pmu_cycle instead
-- **paderborn_kat:** skipped — Paderborn KAt registration / no anonymous OA mirror in this session
+- **paderborn_kat:** downloaded K001.rar (OA mirror) but extraction blocked — no CLI UnRAR; SFX installer GUI hung; scores not claimed
+- **bmrb_nmr:** skipped — BMRB FID deferred
 - **deep_sota_cyclegan_beatdiff:** not executed — no trained Cycle-GAN / BeatDiff weights under residual protocol
+- **kit_cnc:** skipped — KIT CNC DOI needs browser/login flow; synthetic_cnc_wrap used as proxy
+- **ieee_pmu:** skipped — IEEE DataPort free-account wall; synthetic_power_wrap used as proxy
 
 ## Results table
 

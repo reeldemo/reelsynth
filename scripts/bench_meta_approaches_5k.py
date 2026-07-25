@@ -176,10 +176,28 @@ def append_hist(path: Path, row: dict[str, Any]) -> None:
 
 
 def save_ckpt(path: Path, payload: dict[str, Any]) -> None:
+    """Atomic-ish JSON write with Windows-friendly retries (AV/indexer locks)."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-    tmp.replace(path)
+    text = json.dumps(payload, indent=2)
+    tmp = path.with_name(f"{path.stem}.{os.getpid()}.tmp")
+    tmp.write_text(text, encoding="utf-8")
+    last_err: Exception | None = None
+    for attempt in range(12):
+        try:
+            os.replace(str(tmp), str(path))
+            return
+        except PermissionError as exc:
+            last_err = exc
+            time.sleep(0.05 * (attempt + 1))
+        except OSError as exc:
+            last_err = exc
+            time.sleep(0.05 * (attempt + 1))
+    # Last resort: non-atomic overwrite so the search does not die mid-run.
+    try:
+        path.write_text(text, encoding="utf-8")
+        tmp.unlink(missing_ok=True)
+    except Exception as exc:  # noqa: BLE001
+        raise last_err or exc
 
 
 def load_ckpt(path: Path) -> dict[str, Any] | None:

@@ -1,39 +1,9 @@
-[20260723T190914Z] hybrid_lstm domain start iters=3 seed=1902771841 baseline_dual=0.7612 nobake=0.8603 n_cycles=128 L=256
-[20260723T190924Z] hybrid_lstm domain start iters=3 seed=1902771841 baseline_dual=0.7612 nobake=0.8603 n_cycles=128 L=256
-[20260723T190925Z] it=1/3 branch=ppo R=0.8647 champ=0.8647 dR_vs_Dual=+0.1034
-[20260723T190926Z] it=2/3 branch=ga R=0.8655 champ=0.8655 dR_vs_Dual=+0.1043
-[20260723T190929Z] it=3/3 branch=pbt R=0.8662 champ=0.8662 dR_vs_Dual=+0.1050
-[20260723T190929Z] done champ_raw=0.8662 wall_s=4.8
-[20260723T190949Z] hybrid_lstm domain start iters=250 seed=1902771841 baseline_dual=0.7835 nobake=0.8679 n_cycles=256 L=256
-[20260723T190950Z] it=1/250 branch=ppo R=0.8754 champ=0.8754 dR_vs_Dual=+0.0919
-[20260723T191034Z] it=7/250 branch=ga R=0.8794 champ=0.8794 dR_vs_Dual=+0.0959
-[20260723T191057Z] it=10/250 branch=combo R=0.8721 champ=0.8794 dR_vs_Dual=+0.0959
-[20260723T191132Z] it=15/250 branch=combo R=0.8845 champ=0.8845 dR_vs_Dual=+0.1010
-[20260723T191151Z] it=20/250 branch=combo R=0.8054 champ=0.8845 dR_vs_Dual=+0.1010
-[20260723T191309Z] it=30/250 branch=combo R=0.8777 champ=0.8845 dR_vs_Dual=+0.1010
-[20260723T191353Z] it=40/250 branch=combo R=0.8682 champ=0.8845 dR_vs_Dual=+0.1010
-[20260723T191423Z] it=50/250 branch=combo R=0.8780 champ=0.8845 dR_vs_Dual=+0.1010
-[20260723T191513Z] plateau level -> 1
-[20260723T191602Z] it=60/250 branch=combo R=0.8732 champ=0.8845 dR_vs_Dual=+0.1010
-[20260723T191646Z] it=66/250 branch=ppo R=0.8857 champ=0.8857 dR_vs_Dual=+0.1022
-[20260723T191713Z] it=70/250 branch=combo R=0.8172 champ=0.8857 dR_vs_Dual=+0.1022
-[20260723T191801Z] it=80/250 branch=combo R=0.8779 champ=0.8857 dR_vs_Dual=+0.1022
-[20260723T191919Z] it=90/250 branch=combo R=0.8808 champ=0.8857 dR_vs_Dual=+0.1022
-[20260723T192020Z] it=100/250 branch=combo R=0.8795 champ=0.8857 dR_vs_Dual=+0.1022
-[20260723T192029Z] plateau level -> 2
-[20260723T192051Z] it=110/250 branch=combo R=0.7810 champ=0.8857 dR_vs_Dual=+0.1022
-[20260723T192108Z] it=120/250 branch=combo R=0.8760 champ=0.8857 dR_vs_Dual=+0.1022
-[20260723T192134Z] it=130/250 branch=combo R=0.8869 champ=0.8869 dR_vs_Dual=+0.1034
-[20260723T192230Z] it=140/250 branch=combo R=0.7065 champ=0.8869 dR_vs_Dual=+0.1034
-[20260723T192353Z] it=150/250 branch=combo R=0.8723 champ=0.8869 dR_vs_Dual=+0.1034
-[20260723T192444Z] it=160/250 branch=combo R=0.8785 champ=0.8869 dR_vs_Dual=+0.1034
-[20260723T192606Z] plateau level -> 3
-[20260723T192606Z] it=170/250 branch=combo R=0.8808 champ=0.8869 dR_vs_Dual=+0.1034
-[20260723T192704Z] it=180/250 branch=combo R=0.7580 champ=0.8869 dR_vs_Dual=+0.1034
-[20260723T192752Z] it=190/250 branch=combo R=0.8807 champ=0.8869 dR_vs_Dual=+0.1034
-[20260723T192853Z] it=200/250 branch=combo R=0.8529 champ=0.8869 dR_vs_Dual=+0.1034
-[20260723T192953Z] plateau level -> 4
-[20260723T192953Z] it=210/250 branch=combo R=0.8785 champ=0.8869 dR_vs_Dual=+0.1034
-[20260723T193021Z] it=220/250 branch=combo R=0.8871 champ=0.8871 dR_vs_Dual=+0.1036
-[20260723T193113Z] it=230/250 branch=combo R=0.8751 champ=0.8871 dR_vs_Dual=+0.1036
-[20260723T193215Z] it=240/250 branch=combo R=0.8768 champ=0.8871 dR_vs_Dual=+0.1036
+[20260725T102749Z] hybrid_lstm domain start iters=250 seed=1902771841 baseline_dual=0.4679 nobake=0.8418 n_cycles=256 L=256 metric=r_blend objective=J
+[20260725T102750Z] it=1/250 branch=ppo R_seam=0.9242 t_ms=2.430 J=0.9179 best_J=0.9196 dR_vs_Dual=+0.4563
+[20260725T103100Z] it=50/250 branch=combo R_seam=0.9479 t_ms=8.961 J=0.9362 best_J=0.9456 dR_vs_Dual=+0.4838
+[20260725T103510Z] it=100/250 branch=combo R_seam=0.9031 t_ms=6.790 J=0.8927 best_J=0.9486 dR_vs_Dual=+0.4879
+[20260725T103827Z] plateau level -> 1
+[20260725T103836Z] it=150/250 branch=combo R_seam=0.8754 t_ms=10.437 J=0.8630 best_J=0.9510 dR_vs_Dual=+0.4894
+[20260725T104241Z] it=200/250 branch=combo R_seam=0.7466 t_ms=4.445 J=0.7379 best_J=0.9522 dR_vs_Dual=+0.4911
+[20260725T104727Z] it=250/250 branch=combo R_seam=0.9426 t_ms=80.503 J=0.9202 best_J=0.9532 dR_vs_Dual=+0.4917
+[20260725T104727Z] done champ_r_seam=0.9596 champ_j=0.9532 wall_s=1178.6

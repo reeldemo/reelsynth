@@ -4,9 +4,9 @@
   "cycle_length_N": 256,
   "prolong_tiles": 16,
   "seam_width": 8,
-  "wrap_jump_p75": 1.3781352043151855,
-  "wrap_jump_p90": 1.804182767868042,
+  "wrap_jump_p75": 1.397344708442688,
+  "wrap_jump_p90": 1.8262945413589478,
   "hard_top10pct_n": 410,
-  "hard_top10pct_identity_R_mean": 0.9669341444969177,
+  "hard_top10pct_identity_R_mean": 0.9672549366950989,
   "figure": "fig_dataset_distributions.png"
 }
