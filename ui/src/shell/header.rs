@@ -271,9 +271,10 @@ pub(super) fn draw_header(
                     );
 
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        // Cap to remaining space but size the audit cluster to content,
+                        // Cap to remaining space; measure the audit cluster from content,
                         // not the full leftover strip (which falsely overlaps the left).
                         ui.set_max_width(ui.available_width().max(0.0));
+                        let mut right_content_min_x = f32::MAX;
 
                         ui.horizontal(|ui| {
                             ui.spacing_mut().item_spacing.x = 6.0;
@@ -284,11 +285,14 @@ pub(super) fn draw_header(
                                 3.0,
                                 Color32::from_rgb(0x4a, 0xde, 0x80),
                             );
-                            let _status = ui.label(
-                                egui::RichText::new(truncate_status(&state.status, 32))
+                            let status = ui.label(
+                                egui::RichText::new(truncate_status(&state.status, 18))
                                     .font(FontId::monospace(11.0))
                                     .color(tokens.text_muted),
                             );
+                            right_content_min_x = right_content_min_x
+                                .min(dot_rect.min.x)
+                                .min(status.rect.min.x);
                         });
 
                         let toggle = button_toggle(ui, "Piano", state.piano_visible);
@@ -296,13 +300,14 @@ pub(super) fn draw_header(
                             state.piano_visible = !state.piano_visible;
                         }
                         record_used(ui.ctx(), AuditId::HeaderPianoToggle, toggle.rect);
+                        right_content_min_x = right_content_min_x.min(toggle.rect.min.x);
 
                         let seam_label = state.wt_quant_seam.result_label();
                         let seam_combo = reel_combo(
                             ui,
                             "header_result_heal",
                             select_value_text(&seam_label),
-                            128.0,
+                            108.0,
                             |ui| {
                                 use crate::wt::QuantSeamMode;
                                 for (idx, _) in QuantSeamMode::LABELS.iter().enumerate() {
@@ -330,6 +335,7 @@ pub(super) fn draw_header(
                              Per-layer heal lives on the Selected toolbar.",
                         );
                         record_used(ui.ctx(), AuditId::HeaderAiSeamToggle, seam_combo.rect);
+                        right_content_min_x = right_content_min_x.min(seam_combo.rect.min.x);
 
                         let midi_label = midi
                             .names
@@ -340,7 +346,7 @@ pub(super) fn draw_header(
                             ui,
                             "s1_midi_device",
                             select_value_text(midi_label),
-                            120.0,
+                            96.0,
                             |ui| {
                                 for (idx, name) in midi.names.iter().enumerate() {
                                     if menu_selectable(ui, midi.selected == idx, name).clicked() {
@@ -355,6 +361,8 @@ pub(super) fn draw_header(
                             midi_resp.response.rect,
                             midi_resp.response.rect,
                         );
+                        right_content_min_x =
+                            right_content_min_x.min(midi_resp.response.rect.min.x);
 
                         let audio_label = audio
                             .names
@@ -365,7 +373,7 @@ pub(super) fn draw_header(
                             ui,
                             "s1_audio_device",
                             select_value_text(audio_label),
-                            120.0,
+                            96.0,
                             |ui| {
                                 if audio.names.is_empty() {
                                     let _ = menu_selectable(ui, true, "No output devices");
@@ -386,8 +394,17 @@ pub(super) fn draw_header(
                             audio_resp.response.rect,
                             audio_resp.response.rect,
                         );
+                        right_content_min_x =
+                            right_content_min_x.min(audio_resp.response.rect.min.x);
 
-                        let right_cluster = ui.min_rect();
+                        let right_cluster = if right_content_min_x.is_finite() {
+                            Rect::from_min_max(
+                                egui::pos2(right_content_min_x, ui.min_rect().min.y),
+                                egui::pos2(ui.max_rect().max.x, ui.min_rect().max.y),
+                            )
+                        } else {
+                            ui.min_rect()
+                        };
                         ui.ctx().data_mut(|d| {
                             d.insert_temp(header_right_cluster_rect_id(), right_cluster);
                         });

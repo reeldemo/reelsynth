@@ -58,8 +58,7 @@ A default empty clip is auto-selected on the active track so you can draw immedi
 | **Layer heal** | Selected toolbar (**Layer·…**): same methods, applied only to the **selected layer’s frame**. One oscillator can mix modes across layers (e.g. L1 DualCosine, L2 ReelAI). Persisted on each layer in `.reelpreset`. |
 | **Fit ends** | Selected toolbar one-shot DualCosine on the **selected layer frame** only. |
 | **Piano** | Show/hide on-screen keyboard |
-| **Key / Scale / Layout** | Performance input: root key, scale mode, piano vs scale-fold vs chord row. **Piano** layout is chromatic (black keys play); **Scale** folds/snaps to the scale |
-| **Oct − / +** | Persisted ±3-octave shift for hardware MIDI and the chromatic computer-keyboard play row; on-screen piano keys keep their labeled pitches |
+| **Perf** combo | Performance input: root key, scale, piano vs scale-fold vs chord row, and **input octave** (±3). **Piano** layout is chromatic (black keys play); **Scale** folds/snaps to the scale. Non-zero octave shows as `· Oct ±N` on the combo. MIDI + computer keyboard shift; on-screen piano pitches stay fixed. |
 | **Arp** (footer) | Toggle arpeggiator; input mode, style, rate, octaves, gate, latch |
 | **MIDI** combo | Select hardware MIDI input device |
 | **Audio** combo | Select CPAL output device (speakers, headphones, DI / interface) |
