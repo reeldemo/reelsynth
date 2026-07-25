@@ -54,7 +54,7 @@ A default empty clip is auto-selected on the active track so you can draw immedi
 | **Save** | Write current patch as `.reelpreset` |
 | **Design** / **Compose** | Switch shell mode — sound design vs mini-DAW |
 | **WT** menu | Open/Save `.reelwt`, **factory wavetables** (applies bank to the Design wave stack — promotes a wavetable layer so sound matches the editor), Vital/WAV/Serum import |
-| **AI seam** | Toggle DenoiseOpt v10 discontinuity-local seam heal (`R_blend` freeze) on the loaded wavetable (A/B vs classical DualCosine). Keeps mid-cycle body; session-only. Same path as Selected toolbar **Seam·Opt**. |
+| **ReelAI** | Seam-heal dropdown: Seam·Off / Soft / Adapt, DualCosine, Noise2Noise, or **ReelAI** (DenoiseOpt v10 `R_blend`). Bakes all wavetable frames before playback for A/B. Session-only. Same options as Selected toolbar seam combo. |
 | **Piano** | Show/hide on-screen keyboard |
 | **Key / Scale / Layout** | Performance input: root key, scale mode, piano vs scale-fold vs chord row |
 | **Arp** (footer) | Toggle arpeggiator; input mode, style, rate, octaves, gate, latch |

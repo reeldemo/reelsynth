@@ -296,23 +296,35 @@ pub(super) fn draw_header(
                         }
                         record_used(ui.ctx(), AuditId::HeaderPianoToggle, toggle.rect);
 
-                        let ai_seam = button_toggle(ui, "AI seam", state.ai_seam_enabled)
-                            .on_hover_text(
-                                "v10 discontinuity-local seam heal (DenoiseOpt / R_blend) — \
-                                 closes wrap clicks while keeping mid-cycle body. Toggle to A/B \
-                                 vs classical DualCosine bake.",
-                            );
-                        if ai_seam.clicked() {
-                            state.ai_seam_enabled = !state.ai_seam_enabled;
-                            state.wt_quant_seam = if state.ai_seam_enabled {
-                                crate::wt::QuantSeamMode::Opt
-                            } else {
-                                crate::wt::QuantSeamMode::Adaptive
-                            };
-                            crate::wt::set_quant_seam_mode(state.wt_quant_seam);
-                            actions.ai_seam_changed = true;
-                        }
-                        record_used(ui.ctx(), AuditId::HeaderAiSeamToggle, ai_seam.rect);
+                        let seam_label = state.wt_quant_seam.label();
+                        let seam_combo = reel_combo(
+                            ui,
+                            "header_reelai_seam",
+                            select_value_text(seam_label),
+                            118.0,
+                            |ui| {
+                                use crate::wt::QuantSeamMode;
+                                for (idx, &label) in QuantSeamMode::LABELS.iter().enumerate() {
+                                    let mode = QuantSeamMode::from_index(idx);
+                                    if menu_selectable(ui, state.wt_quant_seam == mode, label)
+                                        .on_hover_text(mode.tooltip())
+                                        .clicked()
+                                        && state.wt_quant_seam != mode
+                                    {
+                                        state.wt_quant_seam = mode;
+                                        state.ai_seam_enabled = mode.needs_snapshot_bake();
+                                        crate::wt::set_quant_seam_mode(mode);
+                                        actions.ai_seam_changed = true;
+                                    }
+                                }
+                            },
+                        )
+                        .response
+                        .on_hover_text(
+                            "ReelAI seam bake — Off / Soft / Adapt, DualCosine, Noise2Noise, \
+                             or ReelAI (DenoiseOpt v10). Bakes all frames before playback.",
+                        );
+                        record_used(ui.ctx(), AuditId::HeaderAiSeamToggle, seam_combo.rect);
 
                         let midi_label = midi
                             .names

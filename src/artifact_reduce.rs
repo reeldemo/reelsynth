@@ -34,8 +34,10 @@ pub enum PeriodizeAlgo {
     EnsembleV2,
     /// Final: ensemble v2 + light seam lowpass (3-tap) in fade zone.
     EnsembleV3,
-    /// Unsupervised DenoiseOpt (v10 R_blend freeze) — frozen θ, inference only.
+    /// Unsupervised DenoiseOpt / ReelAI (v10 R_blend freeze) — frozen θ, inference only.
     DenoiseOpt,
+    /// Embedded Noise2Noise U-Net-lite (`n2n_seam`).
+    Noise2Noise,
 }
 
 impl PeriodizeAlgo {
@@ -69,6 +71,7 @@ impl PeriodizeAlgo {
         PeriodizeAlgo::EnsembleV2,
         PeriodizeAlgo::EnsembleV3,
         PeriodizeAlgo::DenoiseOpt,
+        PeriodizeAlgo::Noise2Noise,
     ];
 
     pub fn label(self) -> &'static str {
@@ -86,6 +89,7 @@ impl PeriodizeAlgo {
             PeriodizeAlgo::EnsembleV2 => "ensemble_v2",
             PeriodizeAlgo::EnsembleV3 => "ensemble_v3",
             PeriodizeAlgo::DenoiseOpt => "denoise_opt",
+            PeriodizeAlgo::Noise2Noise => "noise2noise",
         }
     }
 
@@ -330,6 +334,9 @@ pub fn periodize_with_algo(frame: &mut [f32], crackle: f32, style: SeamStyle, al
         }
         PeriodizeAlgo::DenoiseOpt => {
             crate::denoise_opt::apply_denoise_opt(frame, crackle);
+        }
+        PeriodizeAlgo::Noise2Noise => {
+            crate::n2n_seam::apply_n2n_seam(frame);
         }
     }
 }

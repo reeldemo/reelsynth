@@ -8,11 +8,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- **AI seam header toggle** — navbar **AI seam** enables in-engine DenoiseOpt bake (`PeriodizeAlgo::DenoiseOpt` / embedded `FROZEN_THETA`) on every wavetable frame for audible A/B vs classical DualCosine (`PeriodizeAlgo::BEST`). Synced with Selected toolbar **Seam·Opt**. Session-only (not in app settings / presets). Snapshot restore on toggle-off; edits while AI is on invalidate the snapshot (off → DualCosine rebake).
+- **ReelAI seam dropdown** — header + Selected toolbar choose Seam·Off / Soft / Adapt, classical **DualCosine**, embedded **Noise2Noise**, or branded **ReelAI** (DenoiseOpt v10 `R_blend` freeze). Snapshot full-bank bake for DualCosine / Noise2Noise / ReelAI; Off restores the pre-bake bank. Session-only (not in app settings / presets).
 
 ### Changed
 
-- **AI seam / DenoiseOpt v10 freeze** — `FROZEN_THETA` re-locked under the v10.1 **R_blend** objective (α=0.7 discontinuity-local seam heal + mid-cycle body identity), constrained to still pass the harsh-catalog denoise+shape quality gate vs DualCosine. Holdout: R_blend ≈0.807 vs prior frozen ≈0.694 and DualCosine ≈0.478 (`brand/artifacts/denoise_opt_v10_r_blend_freeze.json`; `bench_denoise_opt -- --r-blend`). Neural hybrid_lstm FitCell remains research-only; product path stays the in-engine bake. UI copy (header AI seam, Seam·Opt, status) mentions v10 discontinuity-local heal.
+- **AI seam / DenoiseOpt v10 freeze** — `FROZEN_THETA` re-locked under the v10.1 **R_blend** objective (α=0.7 discontinuity-local seam heal + mid-cycle body identity), constrained to still pass the harsh-catalog denoise+shape quality gate vs DualCosine. Holdout: R_blend ≈0.807 vs prior frozen ≈0.694 and DualCosine ≈0.478 (`brand/artifacts/denoise_opt_v10_r_blend_freeze.json`; `bench_denoise_opt -- --r-blend`). Neural hybrid_lstm FitCell remains research-only; product path is the in-engine **ReelAI** bake.
 
 ## [0.2.0] - 2026-07-20
 

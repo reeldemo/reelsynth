@@ -100,7 +100,7 @@ pub struct ShellActions {
     pub import_wav_folder: bool,
     pub import_serum_fxp: bool,
     pub frame_edited: bool,
-    /// Header **AI seam** toggle flipped — app rebakes the wavetable bank.
+    /// Header / toolbar seam mode changed — app rebakes the wavetable bank.
     pub ai_seam_changed: bool,
     pub midi_device_selected: Option<usize>,
     pub audio_device_selected: Option<usize>,
@@ -151,9 +151,9 @@ pub struct UiState {
     pub wt_bank_name: String,
     pub wt_edit_tool: WtEditTool,
     pub wt_quant_interp: WtQuantInterp,
-    /// Wrap-seam reduction after Quant rebuilds (Off / Soft / Adaptive / Opt).
+    /// Wrap-seam bake after Quant rebuilds (Off / Soft / Adapt / DualCosine / Noise2Noise / ReelAI).
     pub wt_quant_seam: QuantSeamMode,
-    /// Header **AI seam** toggle — when true, bank bake uses DenoiseOpt (Seam·Opt).
+    /// True when DualCosine / Noise2Noise / ReelAI is selected (snapshot full-bank bake).
     /// Session-only (not in app settings / `.reelpreset`).
     pub ai_seam_enabled: bool,
     /// Artistic crackle 0..1 (0 = eliminate / clean default). Synced to patch.crackle.

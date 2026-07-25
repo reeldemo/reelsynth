@@ -9,6 +9,7 @@ pub mod crackle_diag;
 pub mod crackle_eam;
 pub mod artifact_reduce;
 pub mod denoise_opt;
+pub mod n2n_seam;
 pub mod denoise_meta;
 pub mod denoise_meta_overnight;
 pub mod sound_bench;

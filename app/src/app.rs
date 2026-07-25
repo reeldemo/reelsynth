@@ -59,7 +59,7 @@ pub struct ReelSynthApp {
     audio: Option<Arc<AudioHandle>>,
     /// Wavetable used for scope previews and the WT editor when audio is unavailable.
     ui_bank: WavetableBank,
-    /// Snapshot taken when **AI seam** turns on — restored on toggle off for clean A/B.
+    /// Snapshot taken when entering DualCosine / Noise2Noise / ReelAI — restored on Seam·Off.
     ui_bank_pre_ai: Option<WavetableBank>,
     state: UiState,
     current_patch: Patch,
@@ -905,12 +905,13 @@ impl ReelSynthApp {
         let wt_idx = apply_loaded_bank_to_design(&mut self.state, wt_id.as_deref(), num_frames);
         self.ui_bank_pre_ai = None;
         let mut bank = bank;
-        if self.state.ai_seam_enabled {
+        let mode = self.state.wt_quant_seam;
+        self.state.ai_seam_enabled = mode.needs_snapshot_bake();
+        if mode.needs_snapshot_bake() {
             set_crackle_amount(self.state.patch_crackle);
             self.ui_bank_pre_ai = Some(bank.clone());
-            bake_bank_seams(&mut bank, QuantSeamMode::Opt);
-            self.state.wt_quant_seam = QuantSeamMode::Opt;
-            set_quant_seam_mode(QuantSeamMode::Opt);
+            bake_bank_seams(&mut bank, mode);
+            set_quant_seam_mode(mode);
         }
         self.ui_bank = bank.clone();
         if let Some(a) = &self.audio {
@@ -928,14 +929,16 @@ impl ReelSynthApp {
         );
     }
 
-    /// Apply or clear DenoiseOpt bake for the header **AI seam** toggle (audible A/B).
+    /// Apply selected seam mode bake (header ReelAI dropdown / Selected toolbar).
     fn apply_ai_seam_toggle(&mut self) {
         set_crackle_amount(self.state.patch_crackle);
-        set_quant_seam_mode(self.state.wt_quant_seam);
+        let mode = self.state.wt_quant_seam;
+        set_quant_seam_mode(mode);
+        self.state.ai_seam_enabled = mode.needs_snapshot_bake();
 
         let mut bank = self.bank_for_ui().unwrap_or_else(|| self.ui_bank.clone());
 
-        if self.state.ai_seam_enabled {
+        if mode.needs_snapshot_bake() {
             if self.ui_bank_pre_ai.is_none() {
                 self.ui_bank_pre_ai = Some(bank.clone());
             }
@@ -944,34 +947,32 @@ impl ReelSynthApp {
                 .as_ref()
                 .cloned()
                 .unwrap_or_else(|| bank.clone());
-            bake_bank_seams(&mut baked, QuantSeamMode::Opt);
+            bake_bank_seams(&mut baked, mode);
             bank = baked;
-            self.state.wt_quant_seam = QuantSeamMode::Opt;
-            set_quant_seam_mode(QuantSeamMode::Opt);
-            self.state.status =
-                "AI seam on — DenoiseOpt v10 discontinuity-local heal (frozen θ)".into();
+            self.state.status = match mode {
+                QuantSeamMode::ReelAi => {
+                    "ReelAI on — DenoiseOpt v10 discontinuity-local heal (frozen θ)".into()
+                }
+                QuantSeamMode::Noise2Noise => {
+                    "Noise2Noise on — embedded U-Net-lite seam restore".into()
+                }
+                QuantSeamMode::DualCosine => {
+                    "DualCosine on — classical periodize bake".into()
+                }
+                _ => format!("{} — baked all frames", mode.label()),
+            };
         } else if let Some(src) = self.ui_bank_pre_ai.take() {
             bank = src;
-            // Header off → Adaptive; toolbar may have Soft/Off — don't clobber.
-            if self.state.wt_quant_seam == QuantSeamMode::Opt {
-                self.state.wt_quant_seam = QuantSeamMode::Adaptive;
+            if mode == QuantSeamMode::Soft || mode == QuantSeamMode::Adaptive {
+                bake_bank_seams(&mut bank, mode);
             }
-            set_quant_seam_mode(self.state.wt_quant_seam);
-            self.state.status = "AI seam off — classical DualCosine bake".into();
+            self.state.status = format!("{} — restored pre-bake bank", mode.label());
         } else {
-            // Edited while AI was on (snapshot invalidated) — best-effort classical rebake.
-            let mode = if self.state.wt_quant_seam == QuantSeamMode::Opt {
-                QuantSeamMode::Adaptive
-            } else {
-                self.state.wt_quant_seam
-            };
+            // Edited while a snapshot bake was on (snapshot invalidated).
             if mode == QuantSeamMode::Adaptive || mode == QuantSeamMode::Soft {
                 bake_bank_seams(&mut bank, mode);
             }
-            self.state.wt_quant_seam = mode;
-            set_quant_seam_mode(mode);
-            self.state.status =
-                "AI seam off — DualCosine rebake (edited while AI on)".into();
+            self.state.status = format!("{} — rebake (edited while snapshot bake on)", mode.label());
         }
 
         self.ui_bank = bank.clone();
@@ -1091,8 +1092,8 @@ impl ReelSynthApp {
     }
 
     fn sync_bank_edit(&mut self) {
-        // Quant edits while AI seam is on mutate the baked bank — drop the pre-AI
-        // snapshot so toggle-off falls back to DualCosine rebake instead of stale restore.
+        // Quant edits while a snapshot bake is on mutate the baked bank — drop the
+        // pre-bake snapshot so Off falls back to Soft/Adapt rebake instead of stale restore.
         if self.state.ai_seam_enabled {
             self.ui_bank_pre_ai = None;
         }

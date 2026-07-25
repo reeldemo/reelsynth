@@ -56,7 +56,7 @@ pub struct WtSelectedLayerView<'a> {
     pub analyze_dialog_open: Option<&'a mut bool>,
     pub curve_view: &'a mut WtCurveViewTransform,
     pub quant_seam: &'a mut QuantSeamMode,
-    /// Header **AI seam** flag — kept in sync with Seam·Opt.
+    /// True when DualCosine / Noise2Noise / ReelAI is selected (snapshot bank bake).
     pub ai_seam_enabled: &'a mut bool,
     /// Artistic crackle 0..1 synced to `patch.crackle`.
     pub patch_crackle: &'a mut f32,
@@ -463,7 +463,7 @@ impl WtSelectedLayerView<'_> {
             ..
         } = toolbar_resp;
         if seam_changed {
-            *self.ai_seam_enabled = *self.quant_seam == QuantSeamMode::Opt;
+            *self.ai_seam_enabled = self.quant_seam.needs_snapshot_bake();
             crate::wt::set_quant_seam_mode(*self.quant_seam);
             seam_changed_out = true;
         }

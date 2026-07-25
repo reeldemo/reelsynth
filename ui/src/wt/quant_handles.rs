@@ -382,6 +382,8 @@ impl QuantHandleEditor<'_> {
 
 /// How aggressively to close the wavetable wrap seam after Quant rebuilds.
 ///
+/// Wrap-seam bake mode for Quant rebuilds and the header **ReelAI** dropdown.
+///
 /// Periodic cycles need `frame[0] ≈ frame[last]`. A hard overwrite of the last
 /// sample made the last Quant knob appear stuck; adaptive modes fade only as
 /// much as the discontinuity requires.
@@ -394,13 +396,23 @@ pub enum QuantSeamMode {
     /// Fade length scales with seam size; skips work when already closed.
     #[default]
     Adaptive,
-    /// Unsupervised DenoiseOpt (v10 R_blend seam heal) — inference only.
-    Opt,
+    /// Classical DualCosine periodize (`PeriodizeAlgo::DualCosine`).
+    DualCosine,
+    /// Embedded Noise2Noise U-Net-lite (paper baseline).
+    Noise2Noise,
+    /// **ReelAI** — DenoiseOpt v10 R_blend freeze (product AI seam heal).
+    ReelAi,
 }
 
 impl QuantSeamMode {
-    pub const LABELS: [&'static str; 4] =
-        ["Seam·Off", "Seam·Soft", "Seam·Adapt", "Seam·Opt"];
+    pub const LABELS: [&'static str; 6] = [
+        "Seam·Off",
+        "Seam·Soft",
+        "Seam·Adapt",
+        "DualCosine",
+        "Noise2Noise",
+        "ReelAI",
+    ];
 
     pub fn label(self) -> &'static str {
         Self::LABELS[self.index()]
@@ -411,8 +423,12 @@ impl QuantSeamMode {
             Self::Off => "No wrap fade — max edit freedom, may click at cycle wrap",
             Self::Soft => "Fixed fade into frame[0] (stronger crackle reduction)",
             Self::Adaptive => "Fade only as much as the wrap discontinuity needs",
-            Self::Opt => {
-                "AI DenoiseOpt v10 — discontinuity-local heal (R_blend); mid-cycle body conserved"
+            Self::DualCosine => "Classical DualCosine bake (paper board baseline)",
+            Self::Noise2Noise => {
+                "Noise2Noise U-Net-lite — corrupt→corrupt trained seam restorer (embedded weights)"
+            }
+            Self::ReelAi => {
+                "ReelAI — DenoiseOpt v10 discontinuity-local heal (R_blend); mid-cycle body conserved"
             }
         }
     }
@@ -422,7 +438,9 @@ impl QuantSeamMode {
             Self::Off => 0,
             Self::Soft => 1,
             Self::Adaptive => 2,
-            Self::Opt => 3,
+            Self::DualCosine => 3,
+            Self::Noise2Noise => 4,
+            Self::ReelAi => 5,
         }
     }
 
@@ -430,9 +448,21 @@ impl QuantSeamMode {
         match idx {
             0 => Self::Off,
             1 => Self::Soft,
-            3 => Self::Opt,
+            3 => Self::DualCosine,
+            4 => Self::Noise2Noise,
+            5 => Self::ReelAi,
             _ => Self::Adaptive,
         }
+    }
+
+    /// Full-bank bake from a pre-bake snapshot (header / toolbar A/B).
+    pub fn needs_snapshot_bake(self) -> bool {
+        matches!(self, Self::DualCosine | Self::Noise2Noise | Self::ReelAi)
+    }
+
+    /// Branded / learned AI bakes (Noise2Noise + ReelAI).
+    pub fn is_ai_bake(self) -> bool {
+        matches!(self, Self::Noise2Noise | Self::ReelAi)
     }
 }
 
@@ -547,10 +577,7 @@ pub fn periodize_quant_frame(frame: &mut [f32]) {
     periodize_quant_frame_with_mode(frame, current_quant_seam_mode());
 }
 
-/// Apply wrap-seam reduction with an explicit mode (tests / CLI).
-///
-/// Seam·Off forces crackle=1; Soft/Adaptive/Opt use [`current_crackle_amount`] (default 0).
-/// Seam·Opt runs the frozen unsupervised DenoiseOpt stack (inference only).
+/// Apply wrap-seam reduction with an explicit mode (tests / CLI / bank bake).
 pub fn periodize_quant_frame_with_mode(frame: &mut [f32], mode: QuantSeamMode) {
     use reelsynth::artifact_reduce::{periodize_with_algo, PeriodizeAlgo};
     use reelsynth::{periodize_cycle, SeamStyle};
@@ -562,7 +589,19 @@ pub fn periodize_quant_frame_with_mode(frame: &mut [f32], mode: QuantSeamMode) {
         QuantSeamMode::Adaptive => {
             periodize_cycle(frame, current_crackle_amount(), SeamStyle::Adaptive)
         }
-        QuantSeamMode::Opt => periodize_with_algo(
+        QuantSeamMode::DualCosine => periodize_with_algo(
+            frame,
+            current_crackle_amount(),
+            SeamStyle::Adaptive,
+            PeriodizeAlgo::DualCosine,
+        ),
+        QuantSeamMode::Noise2Noise => periodize_with_algo(
+            frame,
+            current_crackle_amount(),
+            SeamStyle::Adaptive,
+            PeriodizeAlgo::Noise2Noise,
+        ),
+        QuantSeamMode::ReelAi => periodize_with_algo(
             frame,
             current_crackle_amount(),
             SeamStyle::Adaptive,
@@ -571,10 +610,7 @@ pub fn periodize_quant_frame_with_mode(frame: &mut [f32], mode: QuantSeamMode) {
     }
 }
 
-/// Bake every frame in a bank with the given seam mode (navbar AI seam / Quant path).
-///
-/// Opt uses in-engine DenoiseOpt with embedded [`reelsynth::denoise_opt::FROZEN_THETA`]
-/// (v10 R_blend freeze; no Python / FitCell hybrid weights required).
+/// Bake every frame in a bank with the given seam mode (header ReelAI dropdown / Quant path).
 pub fn bake_bank_seams(bank: &mut reelsynth::WavetableBank, mode: QuantSeamMode) {
     set_quant_seam_mode(mode);
     set_crackle_amount(current_crackle_amount());
@@ -1187,21 +1223,42 @@ mod tests {
     }
 
     #[test]
-    fn bake_bank_seams_opt_closes_wrap() {
+    fn bake_bank_seams_dual_cosine_closes_wrap() {
         let mut bank = reelsynth::WavetableBank::new(2, 64);
         for i in 0..64 {
             bank.frame_mut(0)[i] = -0.9 + 1.8 * (i as f32 / 63.0);
             bank.frame_mut(1)[i] = if i < 32 { 0.8 } else { -0.8 };
         }
         set_crackle_amount(0.0);
-        bake_bank_seams(&mut bank, QuantSeamMode::Opt);
+        bake_bank_seams(&mut bank, QuantSeamMode::DualCosine);
         for f in 0..2 {
             let frame = bank.frame(f);
             let wrap = (frame[63] - frame[0]).abs();
-            assert!(
-                wrap < 1e-3,
-                "frame {f} wrap after DenoiseOpt bake: {wrap}"
-            );
+            assert!(wrap < 1e-3, "frame {f} wrap after DualCosine bake: {wrap}");
         }
+    }
+
+    #[test]
+    fn bake_bank_seams_reelai_and_n2n_finite() {
+        let mut raw = reelsynth::WavetableBank::new(1, 64);
+        for i in 0..64 {
+            raw.frame_mut(0)[i] = -0.9 + 1.8 * (i as f32 / 63.0);
+        }
+        let raw_wrap = (raw.frame(0)[63] - raw.frame(0)[0]).abs();
+        set_crackle_amount(0.0);
+
+        let mut reel = raw.clone();
+        bake_bank_seams(&mut reel, QuantSeamMode::ReelAi);
+        let reel_frame = reel.frame(0);
+        assert!(reel_frame.iter().all(|v| v.is_finite()));
+        let reel_wrap = (reel_frame[63] - reel_frame[0]).abs();
+        assert!(
+            reel_wrap < raw_wrap * 0.5,
+            "ReelAI wrap {reel_wrap} should be << raw {raw_wrap}"
+        );
+
+        let mut n2n = raw.clone();
+        bake_bank_seams(&mut n2n, QuantSeamMode::Noise2Noise);
+        assert!(n2n.frame(0).iter().all(|v| v.is_finite()));
     }
 }

@@ -268,7 +268,7 @@ impl WtToolbar {
                                     }
                                 });
                             combo.response.on_hover_text(
-                                "Wrap crackle reduction — Adaptive fades only as needed",
+                                "Wrap crackle — Off / Soft / Adapt, DualCosine, Noise2Noise, or ReelAI",
                             );
                         }
                         if let Some(crackle) = crackle_amount {
