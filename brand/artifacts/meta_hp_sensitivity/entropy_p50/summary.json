@@ -1,0 +1,83 @@
+{
+  "schema": "denoiseopt.meta_hp_sensitivity.config.v1",
+  "config": "entropy_p50",
+  "label": "entropy${+}50\\%$",
+  "honesty": "sensitivity_probe_500iters_OAT_not_full_5k_research",
+  "iters": 500,
+  "iters_done": 500,
+  "seed": 1902771841,
+  "champ_r": 0.9935721718470255,
+  "champ_raw": 0.9911555051803589,
+  "delta_r_vs_dual_cosine": 0.17457056045532227,
+  "delta_r_vs_default": 0.0023362040519714355,
+  "baseline_dual_cosine": 0.8165849447250366,
+  "wall_s": 2350.39666223526,
+  "wall_h": 0.6528879617320167,
+  "knobs": {
+    "pop_size": 12,
+    "ppo_clip": 0.2,
+    "lr": 0.003,
+    "entropy_coef": 0.03,
+    "ga_second_mutate_p": 0.5,
+    "freeze_hp": "entropy_coef",
+    "fit_steps": 24,
+    "batch": 48
+  },
+  "champ_arch": {
+    "depth": 12,
+    "width": 48,
+    "act": "tanh",
+    "ops": [
+      "pin",
+      "fade_pull",
+      "fir3",
+      "fir5"
+    ],
+    "wet": 0.2608363880126561,
+    "fir": [
+      0.37217669461914016,
+      0.17150399714364994,
+      0.33271075518243415,
+      0.3160401813120022,
+      0.38596774130644584
+    ],
+    "cell_kind": "tf_split",
+    "soft_logits": [
+      0.12942043065123887,
+      -0.09639365987536369,
+      0.6777668150764555,
+      1.002844695472203,
+      -0.4179284586309834,
+      -1.0945399343159181,
+      -0.38785349944167163,
+      -1.6247131324813269,
+      -0.9467297478715283,
+      -0.6949313326491351,
+      -0.39449067250169134,
+      0.3945991326747159,
+      -0.4494747640807353,
+      0.9363348400457228,
+      -0.2544055098101635
+    ],
+    "blocks": [
+      "tf_split",
+      "dual_path",
+      "moe_mix",
+      "noise_cond"
+    ],
+    "use_adv_aux": false,
+    "moe_mode": "sequential"
+  },
+  "champ_hp": {
+    "lr": 0.04530072299694849,
+    "fit_steps": 64,
+    "batch": 64,
+    "entropy_coef": 0.03,
+    "ppo_clip": 0.05,
+    "adv_coef": 0.12505991786119328,
+    "reward_mode": "abs_r"
+  },
+  "history_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_hp_sensitivity\\entropy_p50\\history.jsonl",
+  "finished_at": "20260724T115439Z",
+  "complete": true
+}

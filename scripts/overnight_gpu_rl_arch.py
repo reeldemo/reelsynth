@@ -11,8 +11,12 @@ Algorithms (named accurately — not claimed as SOTA):
   - Depth bias: deeper graphs rewarded when residual holds above DualCosine + margin
   - MoE soft gates over heterogeneous parallel experts (Shazeer-inspired, tiny)
 
-Primary score: prolonged residual R in [0,1] (1=best vs ideal sibling).
-PPO advantage is centered as (R - DualCosine) for zero-mean early credit assignment; selection uses absolute R.
+Primary score (v10.1): R_blend = α·R_seam(ideal,out) + (1-α)·R_body(eng,out), α=0.7.
+  - R_seam: discontinuity-local residual vs ideal on SEAM_W wrap neighborhoods.
+  - R_body: mid-cycle residual vs **engine** (identity on body — don't morph the curve).
+Search objective: J = R_blend - λ·latency_norm (λ=0.02, latency_norm=log(1+t_ms)/log(1+50)).
+Pure R_seam / whole-curve residual_score retained as debug JSON keys.
+PPO advantage is centered as (score - DualCosine) for zero-mean early credit assignment; selection uses J.
 Dense history.jsonl every iter. Saves unfitted (arch JSON) and fitted (weights+arch).
 
 Arch complexity / depth / mixtures preferred over raw it/s; paper target remains 1M if rate allows,
@@ -59,6 +63,7 @@ from denoise_meta_evo import (  # noqa: E402
     depth_mixture_bonus,
     ga_generation,
 )
+import metrics_snr_sdr as msm  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 META_ROOT = ROOT.parent / "denoise-opt-meta"
@@ -66,6 +71,11 @@ SEAM_W = 8
 MLP_IN = SEAM_W * 2
 N = 256
 PROLONG = 16
+LAMBDA_LATENCY = 0.02
+LATENCY_REF_MS = 50.0
+BLEND_ALPHA = msm.BLEND_ALPHA  # 0.7 — seam-weighted; body still strong
+LATENCY_WARMUP = 1
+LATENCY_REPEATS = 3
 
 # Expanded discrete NAS op vocabulary (seam operators + learnable nets).
 OPS = [
@@ -527,7 +537,7 @@ def prolong_tile(cycle: torch.Tensor, periods: int = PROLONG) -> torch.Tensor:
 
 
 def residual_score(ideal: torch.Tensor, out: torch.Tensor) -> torch.Tensor:
-    """R = clamp(1 - residual_rms / max(ideal_rms, eps), 0, 1); mean over batch."""
+    """Whole-curve prolonged R (debug / legacy). Prefer residual_score_blend for selection."""
     idp = prolong_tile(ideal)
     otp = prolong_tile(torch.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0))
     resid = otp - idp
@@ -535,6 +545,84 @@ def residual_score(ideal: torch.Tensor, out: torch.Tensor) -> torch.Tensor:
     ideal_rms = idp.pow(2).mean(dim=1).sqrt().clamp_min(1e-6)
     r = (1.0 - residual_rms / ideal_rms).clamp(0.0, 1.0)
     return torch.nan_to_num(r, nan=0.0, posinf=0.0, neginf=0.0).clamp(0.0, 1.0)
+
+
+def residual_score_seam(
+    ideal: torch.Tensor,
+    out: torch.Tensor,
+    *,
+    periods: int = PROLONG,
+    seam_w: int = SEAM_W,
+) -> torch.Tensor:
+    """Debug/component: discontinuity-local R on tiled wrap neighborhoods (vs ideal)."""
+    return msm.residual_score_seam(ideal, out, periods=periods, seam_w=seam_w)
+
+
+def residual_score_body(
+    ref: torch.Tensor,
+    out: torch.Tensor,
+    *,
+    periods: int = PROLONG,
+    seam_w: int = SEAM_W,
+) -> torch.Tensor:
+    """Debug/component: mid-cycle body R (prefer ref=engine for identity-on-body)."""
+    return msm.residual_score_body(ref, out, periods=periods, seam_w=seam_w)
+
+
+def residual_score_blend(
+    ideal: torch.Tensor,
+    eng: torch.Tensor,
+    out: torch.Tensor,
+    *,
+    alpha: float = BLEND_ALPHA,
+    periods: int = PROLONG,
+    seam_w: int = SEAM_W,
+) -> torch.Tensor:
+    """Primary v10.1: R_blend = α·R_seam(ideal,out) + (1-α)·R_body(eng,out)."""
+    return msm.residual_score_blend(
+        ideal, eng, out, alpha=alpha, periods=periods, seam_w=seam_w
+    )
+
+
+def latency_norm(t_ms: float, ref_ms: float = LATENCY_REF_MS) -> float:
+    return math.log1p(max(0.0, float(t_ms))) / math.log1p(max(ref_ms, 1e-6))
+
+
+def objective_j(
+    r_blend: float,
+    t_ms: float,
+    *,
+    lam: float = LAMBDA_LATENCY,
+    ref_ms: float = LATENCY_REF_MS,
+) -> float:
+    """Multi-obj search score: J = R_blend − λ · latency_norm."""
+    return float(r_blend) - float(lam) * latency_norm(t_ms, ref_ms=ref_ms)
+
+
+@torch.no_grad()
+def measure_forward_latency_ms(
+    cell: "SeamCell",
+    ops: list[str],
+    device: torch.device,
+    *,
+    batch: int = 32,
+    warmup: int = LATENCY_WARMUP,
+    repeats: int = LATENCY_REPEATS,
+) -> float:
+    """CPU/GPU wall time for forward + R_blend (same pattern as bench_signal_heal_latency)."""
+    ideal, eng = make_batch(batch, N, device)
+    for _ in range(max(0, warmup)):
+        out = apply_ops(eng, cell, ops)
+        _ = residual_score_blend(ideal, eng, out).mean()
+    if device.type == "cuda":
+        torch.cuda.synchronize()
+    t0 = time.perf_counter()
+    for _ in range(max(1, repeats)):
+        out = apply_ops(eng, cell, ops)
+        _ = residual_score_blend(ideal, eng, out).mean()
+    if device.type == "cuda":
+        torch.cuda.synchronize()
+    return 1000.0 * (time.perf_counter() - t0) / max(repeats, 1)
 
 
 def arch_state_vec(cfg: ArchConfig, hp: HyperParams, device: torch.device) -> torch.Tensor:
@@ -747,7 +835,16 @@ def deepen_arch_inplace(cfg: ArchConfig, bump: int) -> ArchConfig:
     if len(c.blocks) < max_g:
         prefer = [
             b
-            for b in ("unet", "attn", "dilated", "noise_cond", "moe_mix", "dense", "soft_mix")
+            for b in (
+                "n2n_unet",
+                "unet",
+                "attn",
+                "dilated",
+                "noise_cond",
+                "moe_mix",
+                "dense",
+                "soft_mix",
+            )
             if b not in c.blocks
         ]
         if prefer:
@@ -950,7 +1047,7 @@ def fit_cell(
     for _ in range(steps):
         ideal, eng = make_batch(batch, N, device)
         out = apply_ops(eng, cell, ops)
-        r = residual_score(ideal, out).mean()
+        r = residual_score_blend(ideal, eng, out).mean()
         last_r = finite_scalar(float(r.detach().item()), 0.0)
         if can_train and opt is not None:
             loss = 1.0 - r
@@ -998,21 +1095,63 @@ def fit_cell(
 def eval_cell(cell: SeamCell, ops: list[str], device: torch.device, batch: int = 64) -> float:
     ideal, eng = make_batch(batch, N, device)
     out = apply_ops(eng, cell, ops)
-    return finite_scalar(float(residual_score(ideal, out).mean().item()), 0.0)
+    return finite_scalar(float(residual_score_blend(ideal, eng, out).mean().item()), 0.0)
 
 
 @torch.no_grad()
 def dual_cosine_baseline(device: torch.device, batch: int = 128) -> float:
     ideal, eng = make_batch(batch, N, device)
     out = dual_cosine_blend(eng)
-    return float(residual_score(ideal, out).mean().item())
+    return float(residual_score_blend(ideal, eng, out).mean().item())
 
 
 @torch.no_grad()
 def nobake_baseline(device: torch.device, batch: int = 128) -> float:
-    """Unrepaired engine vs ideal sibling (near-ceiling reference ~0.97)."""
+    """Unrepaired engine vs ideal sibling (near-ceiling body; seam still damaged)."""
     ideal, eng = make_batch(batch, N, device)
-    return float(residual_score(ideal, eng).mean().item())
+    return float(residual_score_blend(ideal, eng, eng).mean().item())
+
+
+def evaluate_candidate(
+    cfg: ArchConfig,
+    hp: HyperParams,
+    device: torch.device,
+    *,
+    baseline: float,
+    fit_steps_default: int,
+    batch_default: int,
+) -> tuple[float, float, float, float, SeamCell]:
+    """Fit + R_blend eval + latency → (r_blend, j, j_scored, t_ms, cell)."""
+    cell = SeamCell(cfg).to(device)
+    fit_steps = int(hp.fit_steps or fit_steps_default)
+    batch = int(hp.batch or batch_default)
+    r_fit, _ = fit_cell(
+        cell,
+        cfg.ops,
+        device,
+        steps=fit_steps,
+        batch=batch,
+        lr=hp.lr,
+        adv_coef=hp.adv_coef if cfg.use_adv_aux else 0.0,
+    )
+    r_eval = eval_cell(cell, cfg.ops, device, batch=max(64, batch))
+    r_blend = finite_scalar(0.5 * r_fit + 0.5 * r_eval, 0.0)
+    t_ms = finite_scalar(
+        measure_forward_latency_ms(cell, cfg.ops, device, batch=min(32, max(8, batch))),
+        0.0,
+    )
+    j = finite_scalar(objective_j(r_blend, t_ms), 0.0)
+    dmb = finite_scalar(
+        depth_mixture_bonus(
+            r_blend,
+            baseline,
+            cfg.depth,
+            len(cfg.blocks),
+            cfg.moe_mode,
+        ),
+        0.0,
+    )
+    return r_blend, j, j + dmb, t_ms, cell
 
 
 def save_unfitted(run_dir: Path, cfg: ArchConfig, tag: str, hp: HyperParams | None = None) -> Path:
@@ -1376,14 +1515,20 @@ def main() -> int:
                 "cell_kinds": CELL_KINDS,
                 "blocks": BLOCKS,
                 "moe_modes": list(MOE_MODES),
+                "primary_metric": "r_blend",
+                "search_objective": "J=R_blend-lambda*latency_norm",
+                "lambda_latency": LAMBDA_LATENCY,
+                "latency_ref_ms": LATENCY_REF_MS,
+                "seam_w": SEAM_W,
+                "prolong": PROLONG,
                 "target_note": args.target_note,
                 "literature_artifact": "brand/artifacts/literature_rl_ga_nas_hybrid.json",
                 "literature_arch_artifact": "brand/artifacts/literature_audio_denoise_arch.json",
                 "pid": os.getpid(),
                 "started_at": utc_now(),
                 "note": (
-                    "PPO+GA_crossover+PBT+depth_bias+MoE_softgate — ERL-inspired interleave; "
-                    "not claimed SOTA"
+                    "v10: R_seam + latency J; PPO+GA_crossover+PBT+depth_bias+MoE_softgate — "
+                    "ERL-inspired interleave; not claimed SOTA"
                 ),
             },
             indent=2,
@@ -1401,6 +1546,18 @@ def main() -> int:
         Individual(cfg=random_arch(rng), hp=random_hp(rng), score=-1.0) for _ in range(args.pop_size)
     ]
     seed_specs = [
+        ArchConfig(
+            depth=6,
+            width=24,
+            act="gelu",
+            ops=["mlp_seam", "dual_cosine", "fir3", "cycle_net"],
+            wet=0.45,
+            fir=[0.2, 0.5, 0.2, 0.05, 0.05],
+            cell_kind="n2n_unet",
+            blocks=["n2n_unet", "attn", "dilated", "residual"],
+            soft_logits=[0.0] * len(OPS),
+            moe_mode="moe_parallel",
+        ),
         ArchConfig(
             depth=6,
             width=24,
@@ -1433,7 +1590,7 @@ def main() -> int:
             wet=0.4,
             fir=[0.25, 0.5, 0.25, 0.0, 0.0],
             cell_kind="attn",
-            blocks=["attn", "unet", "dual_path"],
+            blocks=["attn", "n2n_unet", "dual_path"],
             soft_logits=[0.0] * len(OPS),
             moe_mode="moe_parallel",
         ),
@@ -1445,7 +1602,7 @@ def main() -> int:
             wet=0.55,
             fir=[0.2, 0.5, 0.2, 0.05, 0.05],
             cell_kind="moe_mix",
-            blocks=["moe_mix", "unet", "attn", "dilated"],
+            blocks=["moe_mix", "n2n_unet", "attn", "dilated"],
             soft_logits=[rng.uniform(-0.3, 0.3) for _ in range(len(OPS))],
             use_adv_aux=False,
             moe_mode="moe_parallel",
@@ -1510,6 +1667,8 @@ def main() -> int:
     champion_cfg = pop[0].cfg
     champion_hp = pop[0].hp
     champion_cell: SeamCell | None = warm_cell
+    champion_r_seam = warm_residual if warm_residual >= 0 else -1.0
+    champion_t_ms = -1.0
     iters_since_improve = 0
     plateau = PlateauAdaptState()
     last_plateau_event: dict[str, Any] | None = None
@@ -1641,12 +1800,19 @@ def main() -> int:
         )
         r_eval = eval_cell(cell, trial_cfg.ops, device, batch=max(64, batch))
         raw_sum = 0.5 * r_fit + 0.5 * r_eval
-        residual_raw = finite_scalar(raw_sum, 0.0)
+        residual_raw = finite_scalar(raw_sum, 0.0)  # R_seam
         if not math.isfinite(raw_sum):
             log_line(
                 log_path,
                 f"NAN_RESIDUAL iter={it} r_fit={r_fit!r} r_eval={r_eval!r} -> 0.0",
             )
+        t_ms = finite_scalar(
+            measure_forward_latency_ms(
+                cell, trial_cfg.ops, device, batch=min(32, max(8, batch))
+            ),
+            0.0,
+        )
+        j_raw = finite_scalar(objective_j(residual_raw, t_ms), 0.0)
         dmb = depth_mixture_bonus(
             residual_raw,
             baseline,
@@ -1655,8 +1821,8 @@ def main() -> int:
             trial_cfg.moe_mode,
         )
         dmb = finite_scalar(dmb, 0.0)
-        residual = residual_raw + dmb
-        branch_best[branch] = max(branch_best[branch], residual_raw)
+        residual = j_raw + dmb  # scored selection objective (J + depth mix bonus)
+        branch_best[branch] = max(branch_best[branch], j_raw)
         recent_residuals.append(residual_raw)
 
         reward = finite_scalar(
@@ -1736,9 +1902,9 @@ def main() -> int:
 
         pop_div = arch_diversity(pop)
         champ_now = (
-            residual_raw
-            if residual_raw > champion_r
-            else (champion_r if champion_r >= 0 else residual_raw)
+            j_raw
+            if j_raw > champion_r
+            else (champion_r if champion_r >= 0 else j_raw)
         )
 
         if it == 1 or (it % args.history_every == 0):
@@ -1747,7 +1913,11 @@ def main() -> int:
                 "iter": it,
                 "t_sec": round(time.time() - t0, 6),
                 "residual": residual_raw,
+                "r_seam": residual_raw,
+                "t_ms": t_ms,
+                "j": j_raw,
                 "residual_scored": residual,
+                "residual_whole_curve": None,
                 "depth_mix_bonus": dmb,
                 "champ": champ_now,
                 "iters_since_improve": iters_since_improve,
@@ -1781,17 +1951,32 @@ def main() -> int:
                 "plateau_soft_boredom": plateau.soft_boredom,
                 "max_search_depth": arch_blocks.MAX_SEARCH_DEPTH,
                 "max_graph_len": arch_blocks.MAX_GRAPH_LEN,
+                "lambda_latency": LAMBDA_LATENCY,
+                "primary_metric": "r_blend",
+                "search_objective": "J=R_blend-lambda*latency_norm",
             }
+            # Optional whole-curve debug (cheap single batch already on device path)
+            try:
+                with torch.no_grad():
+                    _ideal, _eng = make_batch(min(32, batch), N, device)
+                    _out = apply_ops(_eng, cell, trial_cfg.ops)
+                    hist_row["residual_whole_curve"] = float(
+                        residual_score(_ideal, _out).mean().item()
+                    )
+            except Exception:
+                pass
             if last_plateau_event is not None and last_plateau_event.get("iter") == it:
                 hist_row["plateau_adapt"] = True
                 hist_row["plateau_adapt_event"] = last_plateau_event
             append_history(history_path, hist_row)
 
-        if residual_raw > champion_r:
-            champion_r = residual_raw
+        if j_raw > champion_r:
+            champion_r = j_raw
             champion_cfg = trial_cfg
             champion_hp = trial_hp
             champion_cell = cell
+            champion_r_seam = residual_raw
+            champion_t_ms = t_ms
             iters_since_improve = 0
             plateau.soft_boredom = 0
             victim = rng.randrange(len(pop))
@@ -1928,6 +2113,12 @@ def main() -> int:
             ckpt = {
                 "iter": iter_n,
                 "champion_residual": champion_r,
+                "champion_j": champion_r,
+                "champion_r_seam": champion_r_seam,
+                "champion_t_ms": champion_t_ms,
+                "lambda_latency": LAMBDA_LATENCY,
+                "primary_metric": "r_blend",
+                "search_objective": "J=R_blend-lambda*latency_norm",
                 "champion_arch": champion_cfg.to_dict(),
                 "champion_hp": champion_hp.to_dict(),
                 "baseline_dual_cosine": baseline,
@@ -1999,8 +2190,8 @@ def main() -> int:
             log_line(
                 log_path,
                 f"progress {it}/{args.iters} branch={branch} proposal={proposal} "
-                f"residual={residual_raw:.4f} scored={residual:.4f} dmb={dmb:.5f} "
-                f"champ={champion_r:.4f} baseline={baseline:.4f} "
+                f"r_seam={residual_raw:.4f} t_ms={t_ms:.3f} j={j_raw:.4f} scored={residual:.4f} "
+                f"dmb={dmb:.5f} champ_j={champion_r:.4f} baseline={baseline:.4f} "
                 f"iters_since_improve={iters_since_improve} "
                 f"entropy={entropy_now:.4f} pop_div={pop_div:.4f} "
                 f"depth={trial_cfg.depth} moe={trial_cfg.moe_mode} "
@@ -2026,6 +2217,12 @@ def main() -> int:
         "run_id": run_id,
         "iters_done": it if args.iters else 0,
         "champion_residual": champion_r,
+        "champion_j": champion_r,
+        "champion_r_seam": champion_r_seam,
+        "champion_t_ms": champion_t_ms,
+        "lambda_latency": LAMBDA_LATENCY,
+        "primary_metric": "r_blend",
+        "search_objective": "J=R_blend-lambda*latency_norm",
         "dual_cosine_baseline": baseline,
         "delta": champion_r - baseline,
         "iters_since_improve": iters_since_improve,

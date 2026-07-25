@@ -1,0 +1,87 @@
+{
+  "schema": "denoiseopt.meta_hp_sensitivity.config.v1",
+  "config": "pop_size_m50",
+  "label": "$n{-}50\\%$",
+  "honesty": "sensitivity_probe_500iters_OAT_not_full_5k_research",
+  "iters": 500,
+  "iters_done": 500,
+  "seed": 1902771841,
+  "champ_r": 0.9852776385943095,
+  "champ_raw": 0.9813609719276428,
+  "delta_r_vs_dual_cosine": 0.1647760272026062,
+  "delta_r_vs_default": -0.007458329200744629,
+  "baseline_dual_cosine": 0.8165849447250366,
+  "wall_s": 3209.9067509174347,
+  "wall_h": 0.8916407641437318,
+  "knobs": {
+    "pop_size": 6,
+    "ppo_clip": 0.2,
+    "lr": 0.003,
+    "entropy_coef": 0.02,
+    "ga_second_mutate_p": 0.5,
+    "freeze_hp": null,
+    "fit_steps": 24,
+    "batch": 48
+  },
+  "champ_arch": {
+    "depth": 12,
+    "width": 24,
+    "act": "tanh",
+    "ops": [
+      "dual_cosine",
+      "hann_blend",
+      "polish",
+      "mlp_seam",
+      "fir3",
+      "cycle_net"
+    ],
+    "wet": 0.8134070679848893,
+    "fir": [
+      0.4051317491243502,
+      0.41020788587293333,
+      0.06790787544142053,
+      0.4276788376439247,
+      0.4651861036155153
+    ],
+    "cell_kind": "dual_path",
+    "soft_logits": [
+      0.18760635722731733,
+      -0.9548994108980681,
+      -0.3787008107156379,
+      0.46406385252483795,
+      -0.45957065463081226,
+      0.950733273109419,
+      0.5896545366487914,
+      0.6876231386718485,
+      -0.423744671888063,
+      -1.1803065696065125,
+      0.7462347749169299,
+      1.213484982344291,
+      0.07470361273507875,
+      0.027471706819765518,
+      -1.0414407359391031
+    ],
+    "blocks": [
+      "dual_path",
+      "mlp",
+      "dilated",
+      "dense",
+      "lstm",
+      "xlstm"
+    ],
+    "use_adv_aux": false,
+    "moe_mode": "moe_parallel"
+  },
+  "champ_hp": {
+    "lr": 0.011983891299252519,
+    "fit_steps": 62,
+    "batch": 64,
+    "entropy_coef": 0.001,
+    "ppo_clip": 0.35,
+    "adv_coef": 0.012117679905679173,
+    "reward_mode": "neglog_gap"
+  },
+  "history_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_hp_sensitivity\\pop_size_m50\\history.jsonl",
+  "finished_at": "20260724T051337Z",
+  "complete": true
+}

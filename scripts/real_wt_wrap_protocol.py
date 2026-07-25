@@ -269,12 +269,16 @@ def score_corpus(
     rows = {}
     for name, fn in methods:
         out = fn(eng)
-        r = og.residual_score(ideal, out)
-        sec = msm.secondary_metrics(ideal, out, periods=int(og.PROLONG), seam_w=SEAM_W)
+        r = og.residual_score_blend(ideal, eng, out)
+        sec = msm.secondary_metrics(
+            ideal, out, periods=int(og.PROLONG), seam_w=SEAM_W, eng=eng, alpha=og.BLEND_ALPHA
+        )
         rows[name] = {
             "n": int(cycles.shape[0]),
             "R_mean": float(r.mean().item()),
             "R_std": float(r.std(unbiased=False).item()),
+            "primary_metric": "r_blend",
+            "blend_alpha": og.BLEND_ALPHA,
             **sec,
         }
     if "no_bake" in rows:
@@ -318,7 +322,7 @@ def main() -> None:
         type=Path,
         default=ART / "oa_akwf",
     )
-    ap.add_argument("--n-oa", type=int, default=24)
+    ap.add_argument("--n-oa", type=int, default=1280)
     ap.add_argument("--n-procedural", type=int, default=24)
     args = ap.parse_args()
     device = torch.device(args.device)

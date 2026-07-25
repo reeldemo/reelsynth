@@ -15,19 +15,19 @@ use super::quant_handles::{
     knob_y_on_curve, nearest_quant_handle, paint_quant_knob, quant_control_points,
     quant_knob_visual, resample_frame_from_quant_points, slot_x, QuantHandleEditor,
 };
+use super::residual::{layer_curve_label, layer_type_display};
 use super::shape_editor::ShapeEditor;
 use super::slots::effective_quant_count;
 use super::toolbar::{WtEditTool, WtToolbar, WtToolbarResponse};
 use super::view_2d::{apply_waveform_drag_inner, va_layer_waveform_points};
-use super::residual::{layer_curve_label, layer_type_display};
 use super::view_3d_stack::{
     layer_palette, layer_quant_display_scale, layer_waveform_points, HOVER_DISTANCE_PX,
     WAVE_SAMPLES,
 };
+use super::view_zoom::{consume_plot_scroll, WtCurveViewTransform};
 use super::waveform::{
     frame_index, selected_curve_hovered, selected_pane_shows_quant_knobs, waveform_fill_shape,
 };
-use super::view_zoom::{consume_plot_scroll, WtCurveViewTransform};
 use super::QuantSeamMode;
 
 pub struct WtSelectedLayerResponse {
@@ -36,6 +36,8 @@ pub struct WtSelectedLayerResponse {
     pub analyze_requested: bool,
     /// Patch-level params changed (e.g. crackle) — sync to engine without WT rebuild.
     pub params_changed: bool,
+    /// Quant seam mode changed (may need full-bank DenoiseOpt / DualCosine rebake).
+    pub seam_changed: bool,
     pub status_hint: Option<String>,
 }
 
@@ -54,6 +56,8 @@ pub struct WtSelectedLayerView<'a> {
     pub analyze_dialog_open: Option<&'a mut bool>,
     pub curve_view: &'a mut WtCurveViewTransform,
     pub quant_seam: &'a mut QuantSeamMode,
+    /// True when DualCosine / Noise2Noise / ReelAI is selected (snapshot bank bake).
+    pub ai_seam_enabled: &'a mut bool,
     /// Artistic crackle 0..1 synced to `patch.crackle`.
     pub patch_crackle: &'a mut f32,
 }
@@ -69,6 +73,7 @@ impl WtSelectedLayerView<'_> {
         let mut stack_changed = false;
         let mut analyze_requested = false;
         let mut params_changed = false;
+        let mut seam_changed_out = false;
         let mut status_hint: Option<String> = None;
 
         if !ui.is_rect_visible(rect) {
@@ -77,6 +82,7 @@ impl WtSelectedLayerView<'_> {
                 stack_changed,
                 analyze_requested,
                 params_changed,
+                seam_changed: seam_changed_out,
                 status_hint,
             };
         }
@@ -179,54 +185,51 @@ impl WtSelectedLayerView<'_> {
         let empty = WavetableBank::factory_saw_morph();
         let bank_ro = self.bank.as_ref().map(|b| &**b).unwrap_or(&empty);
 
-        let layer_pts: Option<Vec<Pos2>> =
-            self.wave_layers.get(layer_idx).and_then(|layer| {
-                if layer.enabled && layer.level > 0.0 {
-                    let pts = if layer_va {
-                        va_layer_waveform_points(layer, inner, WAVE_SAMPLES)
-                    } else {
-                        layer_waveform_points(layer, bank_ro, inner, 0.0, WAVE_SAMPLES)
-                    };
-                    if pts.len() >= 2 {
-                        Some(curve_view.map_points(&pts, inner))
-                    } else {
-                        None
-                    }
+        let layer_pts: Option<Vec<Pos2>> = self.wave_layers.get(layer_idx).and_then(|layer| {
+            if layer.enabled && layer.level > 0.0 {
+                let pts = if layer_va {
+                    va_layer_waveform_points(layer, inner, WAVE_SAMPLES)
+                } else {
+                    layer_waveform_points(layer, bank_ro, inner, 0.0, WAVE_SAMPLES)
+                };
+                if pts.len() >= 2 {
+                    Some(curve_view.map_points(&pts, inner))
                 } else {
                     None
                 }
-            });
+            } else {
+                None
+            }
+        });
 
-        let pointer_in_plot = ui
-            .ctx()
-            .pointer_latest_pos()
-            .filter(|p| inner.contains(*p));
+        let pointer_in_plot = ui.ctx().pointer_latest_pos().filter(|p| inner.contains(*p));
         let hover_slot_pre = if quant_active {
-            pointer_in_plot.and_then(|pos| {
-                self.bank.as_ref().and_then(|bank| {
-                    self.wave_layers.get(layer_idx).map(|layer| {
-                        let slot_count = effective_quant_count(self.wave_quant);
-                        let scale = layer_quant_display_scale(layer);
-                        let points = quant_control_points(bank.frame(frame_idx), slot_count);
-                        nearest_quant_handle(
-                            curve_view.unmap_pos(pos, inner),
-                            inner,
-                            &points,
-                            scale,
-                            hit_r,
-                        )
+            pointer_in_plot
+                .and_then(|pos| {
+                    self.bank.as_ref().and_then(|bank| {
+                        self.wave_layers.get(layer_idx).map(|layer| {
+                            let slot_count = effective_quant_count(self.wave_quant);
+                            let scale = layer_quant_display_scale(layer);
+                            let points = quant_control_points(bank.frame(frame_idx), slot_count);
+                            nearest_quant_handle(
+                                curve_view.unmap_pos(pos, inner),
+                                inner,
+                                &points,
+                                scale,
+                                hit_r,
+                            )
+                        })
                     })
                 })
-            })
-            .flatten()
+                .flatten()
         } else {
             None
         };
         let over_quant_knob = hover_slot_pre.is_some();
         let curve_hovered = pointer_in_plot.is_some_and(|pos| {
-            layer_pts
-                .as_ref()
-                .is_some_and(|pts| selected_curve_hovered(pts, pos, over_quant_knob, HOVER_DISTANCE_PX))
+            layer_pts.as_ref().is_some_and(|pts| {
+                selected_curve_hovered(pts, pos, over_quant_knob, HOVER_DISTANCE_PX)
+            })
         });
 
         // Paint plot first (bg → wave → knobs) so knobs cannot be covered by a late fill.
@@ -237,7 +240,9 @@ impl WtSelectedLayerView<'_> {
         paint_grid(&painter, inner, tokens.border);
 
         // Zero line / fill baseline follow zoom-pan (curve points are already mapped).
-        let baseline_y = curve_view.map_pos(Pos2::new(inner.center().x, mid_y), inner).y;
+        let baseline_y = curve_view
+            .map_pos(Pos2::new(inner.center().x, mid_y), inner)
+            .y;
 
         if let Some(pts) = layer_pts.as_ref() {
             let color = layer_palette(layer_idx);
@@ -407,9 +412,8 @@ impl WtSelectedLayerView<'_> {
                 }
             }
         } else if self.wave_quant > 0 && layer_va {
-            status_hint.get_or_insert_with(|| {
-                "Quant knobs: select a wavetable / residual layer".into()
-            });
+            status_hint
+                .get_or_insert_with(|| "Quant knobs: select a wavetable / residual layer".into());
         }
 
         // Toolbar last — drawn above the plot fill / knobs.
@@ -437,7 +441,9 @@ impl WtSelectedLayerView<'_> {
                 } else {
                     None
                 },
-                Some(self.quant_seam),
+                self.wave_layers
+                    .get_mut(layer_idx)
+                    .map(|l| &mut l.seam_mode),
                 Some(self.patch_crackle),
             )
         });
@@ -452,13 +458,48 @@ impl WtSelectedLayerView<'_> {
             assign_shape,
             interp_changed,
             segment_interp_changed,
-            seam_changed: _,
+            seam_changed,
             crackle_changed,
+            periodic_requested,
             ..
         } = toolbar_resp;
+        if seam_changed {
+            if let Some(layer) = self.wave_layers.get(layer_idx) {
+                let mode = layer.seam_mode;
+                crate::wt::set_quant_seam_mode(mode);
+                let frame_idx = frame_index(layer.wt_position, self.bank.as_ref().map(|b| b.num_frames).unwrap_or(1));
+                if let Some(bank) = self.bank.as_mut() {
+                    crate::wt::bake_frame_seam(bank, frame_idx, mode);
+                    frame_edited = true;
+                }
+                status_hint = Some(format!(
+                    "Layer {} heal — {}",
+                    layer_idx + 1,
+                    mode.short_name()
+                ));
+                params_changed = true;
+            }
+            seam_changed_out = true;
+        }
         if crackle_changed {
             params_changed = true;
             crate::wt::set_crackle_amount(*self.patch_crackle);
+        }
+        if periodic_requested {
+            if let Some(layer) = self.wave_layers.get(layer_idx) {
+                let frame_idx = frame_index(
+                    layer.wt_position,
+                    self.bank.as_ref().map(|b| b.num_frames).unwrap_or(1),
+                );
+                if let Some(bank) = self.bank.as_mut() {
+                    crate::wt::bake_frame_periodic(bank, frame_idx);
+                    frame_edited = true;
+                    status_hint = Some(format!(
+                        "Fit ends — DualCosine on layer {} frame",
+                        layer_idx + 1
+                    ));
+                }
+            }
         }
 
         if req {
@@ -543,6 +584,7 @@ impl WtSelectedLayerView<'_> {
             stack_changed,
             analyze_requested,
             params_changed,
+            seam_changed: seam_changed_out,
             status_hint,
         }
     }

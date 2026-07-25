@@ -1,0 +1,76 @@
+{
+  "approach": "aging_evo",
+  "iters": 5000,
+  "iters_done": 5000,
+  "seed": 1902771841,
+  "champ_r": 0.9937080172697703,
+  "champ_raw": 0.9907913506031036,
+  "delta_r_vs_dual_cosine": 0.17420640587806702,
+  "baseline_dual_cosine": 0.8165849447250366,
+  "wall_s": 54084.7970457077,
+  "wall_h": 15.023554734918806,
+  "lstm_in_champ": false,
+  "xlstm_in_champ": true,
+  "champ_arch": {
+    "depth": 12,
+    "width": 4,
+    "act": "tanh",
+    "ops": [
+      "skip_blend",
+      "classic",
+      "edge_pin",
+      "median3",
+      "fade_pull",
+      "soft_seam",
+      "dual_cosine",
+      "asym_wet"
+    ],
+    "wet": 0.18101387081810882,
+    "fir": [
+      0.5481286779534792,
+      0.17833221801173532,
+      0.10241772678394215,
+      0.07283789591877309,
+      0.34892760944246615
+    ],
+    "cell_kind": "tf_split",
+    "soft_logits": [
+      -0.4579005323718587,
+      -2.981338813954861,
+      4.7364851779280785,
+      0.6101057356005574,
+      3.8625946079666114,
+      2.728452628032122,
+      -0.8632787195498896,
+      2.302548992394518,
+      -0.19871076440227364,
+      -2.9965084902833046,
+      -2.3399345517847774,
+      1.843543469769556,
+      0.44409804137911735,
+      3.3560124528055244,
+      -2.7132556138503556
+    ],
+    "blocks": [
+      "tf_split",
+      "dual_path",
+      "noise_cond",
+      "dense",
+      "mlp",
+      "xlstm"
+    ],
+    "use_adv_aux": true,
+    "moe_mode": "sequential"
+  },
+  "champ_hp": {
+    "lr": 0.1,
+    "fit_steps": 64,
+    "batch": 64,
+    "entropy_coef": 0.08129074125068475,
+    "ppo_clip": 0.3,
+    "adv_coef": 0.04050301272015286,
+    "reward_mode": "neglog_gap"
+  },
+  "history_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\aging_evo\\history.jsonl",
+  "finished_at": "20260722T062445Z"
+}

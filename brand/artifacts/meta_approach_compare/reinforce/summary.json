@@ -1,0 +1,73 @@
+{
+  "approach": "reinforce",
+  "iters": 5000,
+  "iters_done": 5000,
+  "seed": 1902771841,
+  "champ_r": 0.9861335431734721,
+  "champ_raw": 0.9824668765068054,
+  "delta_r_vs_dual_cosine": 0.1658819317817688,
+  "baseline_dual_cosine": 0.8165849447250366,
+  "wall_s": 93355.20047926903,
+  "wall_h": 25.932000133130284,
+  "lstm_in_champ": false,
+  "xlstm_in_champ": true,
+  "champ_arch": {
+    "depth": 12,
+    "width": 32,
+    "act": "gelu",
+    "ops": [
+      "fir5",
+      "edge_pin",
+      "cycle_net",
+      "dual_cosine",
+      "pin",
+      "median3"
+    ],
+    "wet": 0.95,
+    "fir": [
+      0.41707984130659514,
+      0.4016578872817004,
+      0.11495769903091359,
+      0.10349922275485181,
+      0.208357821962166
+    ],
+    "cell_kind": "xlstm",
+    "soft_logits": [
+      0.04774620090581694,
+      -0.32165251750663515,
+      0.2982878961284213,
+      -0.7165699739121101,
+      -0.5795944368375175,
+      -0.5744449453828698,
+      0.7286089652402291,
+      -0.7979923965976198,
+      0.10055926805495552,
+      -0.7783028251305701,
+      -0.7136951865663054,
+      1.1556346108320361,
+      0.5035953742826852,
+      0.6674496450046455,
+      0.3626364552864384
+    ],
+    "blocks": [
+      "mlp",
+      "soft_mix",
+      "xlstm",
+      "tf_split",
+      "dual_path"
+    ],
+    "use_adv_aux": false,
+    "moe_mode": "moe_parallel"
+  },
+  "champ_hp": {
+    "lr": 0.04824754099928491,
+    "fit_steps": 64,
+    "batch": 64,
+    "entropy_coef": 0.04460833560455392,
+    "ppo_clip": 0.35,
+    "adv_coef": 0.09620045610417136,
+    "reward_mode": "neglog_gap"
+  },
+  "history_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\reinforce\\history.jsonl",
+  "finished_at": "20260721T151350Z"
+}

@@ -1,0 +1,81 @@
+{
+  "schema": "denoiseopt.meta_hp_sensitivity.config.v1",
+  "config": "ga_mut2_p50",
+  "label": "GA mut2${+}50\\%$",
+  "honesty": "sensitivity_probe_500iters_OAT_not_full_5k_research",
+  "iters": 500,
+  "iters_done": 500,
+  "seed": 1902771841,
+  "champ_r": 0.9919369119803111,
+  "champ_raw": 0.9900202453136444,
+  "delta_r_vs_dual_cosine": 0.1734353005886078,
+  "delta_r_vs_default": 0.001200944185256958,
+  "baseline_dual_cosine": 0.8165849447250366,
+  "wall_s": 2539.362741470337,
+  "wall_h": 0.7053785392973158,
+  "knobs": {
+    "pop_size": 12,
+    "ppo_clip": 0.2,
+    "lr": 0.003,
+    "entropy_coef": 0.02,
+    "ga_second_mutate_p": 0.75,
+    "freeze_hp": null,
+    "fit_steps": 24,
+    "batch": 48
+  },
+  "champ_arch": {
+    "depth": 12,
+    "width": 30,
+    "act": "gelu",
+    "ops": [
+      "pin",
+      "skip_blend",
+      "fir3",
+      "fade_pull"
+    ],
+    "wet": 0.5552178517645341,
+    "fir": [
+      0.18645988225270765,
+      0.1556338326971183,
+      0.545976246561661,
+      0.22709357718876838,
+      0.3950653203313975
+    ],
+    "cell_kind": "tf_split",
+    "soft_logits": [
+      -0.7882377098005982,
+      -0.5194596621094559,
+      0.2924005060498328,
+      -0.18122397451352212,
+      0.1538452291356085,
+      -0.09129686688202976,
+      -0.1897572490097426,
+      -0.18314377970699408,
+      -0.8244581954952881,
+      0.29320033975656873,
+      0.5118019594780338,
+      0.180509208742967,
+      0.5509410998325874,
+      0.34156087582661576,
+      0.9434950348324818
+    ],
+    "blocks": [
+      "tf_split",
+      "soft_mix"
+    ],
+    "use_adv_aux": true,
+    "moe_mode": "sequential"
+  },
+  "champ_hp": {
+    "lr": 0.06281896231360473,
+    "fit_steps": 64,
+    "batch": 64,
+    "entropy_coef": 0.001,
+    "ppo_clip": 0.10000000000000002,
+    "adv_coef": 0.048142690797284,
+    "reward_mode": "abs_r"
+  },
+  "history_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_hp_sensitivity\\ga_mut2_p50\\history.jsonl",
+  "finished_at": "20260724T103142Z",
+  "complete": true
+}

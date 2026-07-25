@@ -63,6 +63,8 @@ pub struct WtToolbarResponse {
     pub seam_changed: bool,
     /// Artistic crackle amount (patch.crackle) changed.
     pub crackle_changed: bool,
+    /// Apply a one-shot DualCosine end fit to the loaded bank.
+    pub periodic_requested: bool,
 }
 
 pub struct WtToolbar;
@@ -101,6 +103,7 @@ impl WtToolbar {
         let mut segment_interp_changed = false;
         let mut seam_changed = false;
         let mut crackle_changed = false;
+        let mut periodic_requested = false;
 
         if !ui.is_rect_visible(rect) {
             return WtToolbarResponse {
@@ -111,16 +114,13 @@ impl WtToolbar {
                 segment_interp_changed,
                 seam_changed,
                 crackle_changed,
+                periodic_requested,
             };
         }
 
         let painter = ui.painter_at(rect);
         painter.rect_filled(rect, RADIUS_SM, tokens.surface2);
-        painter.rect_stroke(
-            rect,
-            RADIUS_SM,
-            egui::Stroke::new(1.0_f32, tokens.border),
-        );
+        painter.rect_stroke(rect, RADIUS_SM, egui::Stroke::new(1.0_f32, tokens.border));
 
         region(ui, rect.shrink2(egui::vec2(4.0, 2.0)), |ui| {
             ui.set_clip_rect(rect);
@@ -186,6 +186,15 @@ impl WtToolbar {
                     {
                         analyze_requested = true;
                     }
+                    if ui
+                        .small_button("Fit ends")
+                        .on_hover_text(
+                            "Fit ends on this layer's frame — DualCosine periodize (single wave)",
+                        )
+                        .clicked()
+                    {
+                        periodic_requested = true;
+                    }
                 });
                 if wave_quant > 0 {
                     ui.horizontal_wrapped(|ui| {
@@ -250,14 +259,17 @@ impl WtToolbar {
                             }
                         }
                         if let Some(seam) = seam_mode {
-                            let combo = egui::ComboBox::from_id_salt("wt_quant_seam")
-                                .selected_text(seam.label())
-                                .width(COMBO_W + 8.0)
+                            let combo = egui::ComboBox::from_id_salt("wt_layer_seam")
+                                .selected_text(seam.layer_label())
+                                .width(COMBO_W + 16.0)
                                 .show_ui(ui, |ui| {
-                                    for (idx, &label) in QuantSeamMode::LABELS.iter().enumerate() {
+                                    for (idx, _) in QuantSeamMode::LABELS.iter().enumerate() {
                                         let mode = QuantSeamMode::from_index(idx);
                                         if ui
-                                            .selectable_label(seam.index() == idx, label)
+                                            .selectable_label(
+                                                seam.index() == idx,
+                                                mode.layer_label(),
+                                            )
                                             .on_hover_text(mode.tooltip())
                                             .clicked()
                                             && *seam != mode
@@ -268,7 +280,7 @@ impl WtToolbar {
                                     }
                                 });
                             combo.response.on_hover_text(
-                                "Wrap crackle reduction — Adaptive fades only as needed",
+                                "Layer heal — wrap repair for this wave only (other layers keep their own mode)",
                             );
                         }
                         if let Some(crackle) = crackle_amount {
@@ -291,6 +303,7 @@ impl WtToolbar {
             segment_interp_changed,
             seam_changed,
             crackle_changed,
+            periodic_requested,
         }
     }
 }

@@ -1,0 +1,89 @@
+{
+  "schema": "denoiseopt.meta_hp_sensitivity.config.v1",
+  "config": "ga_mut2_m50",
+  "label": "GA mut2${-}50\\%$",
+  "honesty": "sensitivity_probe_500iters_OAT_not_full_5k_research",
+  "iters": 500,
+  "iters_done": 500,
+  "seed": 1902771841,
+  "champ_r": 0.9872603573004405,
+  "champ_raw": 0.9833436906337738,
+  "delta_r_vs_dual_cosine": 0.16675874590873718,
+  "delta_r_vs_default": -0.0054756104946136475,
+  "baseline_dual_cosine": 0.8165849447250366,
+  "wall_s": 2281.009157896042,
+  "wall_h": 0.6336136549711228,
+  "knobs": {
+    "pop_size": 12,
+    "ppo_clip": 0.2,
+    "lr": 0.003,
+    "entropy_coef": 0.02,
+    "ga_second_mutate_p": 0.25,
+    "freeze_hp": null,
+    "fit_steps": 24,
+    "batch": 48
+  },
+  "champ_arch": {
+    "depth": 12,
+    "width": 48,
+    "act": "tanh",
+    "ops": [
+      "soft_seam",
+      "fir5",
+      "mlp_seam",
+      "pin",
+      "asym_wet",
+      "fade_pull",
+      "edge_pin",
+      "cycle_net"
+    ],
+    "wet": 0.95,
+    "fir": [
+      0.5821550649558417,
+      0.10319831399129159,
+      0.3338255308468686,
+      0.2308354818548385,
+      0.5035286666901595
+    ],
+    "cell_kind": "moe_mix",
+    "soft_logits": [
+      -1.42586613076169,
+      0.2649885298255723,
+      -0.15481900279239835,
+      -0.1985893559031376,
+      0.27101577566368484,
+      -0.263967107755179,
+      0.3172219676785086,
+      0.5054087295987787,
+      -1.3197869803042805,
+      0.38217853767163434,
+      0.45635654700192596,
+      -0.26119986667089407,
+      -0.6027381094469486,
+      -1.1642002645102174,
+      1.167471872283652
+    ],
+    "blocks": [
+      "bottleneck",
+      "dense",
+      "soft_mix",
+      "noise_cond",
+      "dual_path",
+      "moe_mix"
+    ],
+    "use_adv_aux": true,
+    "moe_mode": "moe_parallel"
+  },
+  "champ_hp": {
+    "lr": 0.009319228784732313,
+    "fit_steps": 64,
+    "batch": 48,
+    "entropy_coef": 0.06738772800345397,
+    "ppo_clip": 0.25000000000000006,
+    "adv_coef": 0.05672808022329569,
+    "reward_mode": "abs_r"
+  },
+  "history_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_hp_sensitivity\\ga_mut2_m50\\history.jsonl",
+  "finished_at": "20260724T094922Z",
+  "complete": true
+}

@@ -1,0 +1,9 @@
+% Auto-generated HP sensitivity Results snippet (W4 / Q3). T6 may \input this.
+\paragraph{Hyperparameter sensitivity (Q3).}
+\label{para:hp-sensitivity}
+RQ: how sensitive is hybrid champion $R$ to $\pm 50\%$ shifts of Table~\ref{tab:hyperparams} knobs?
+We run a \textbf{one-at-a-time sensitivity probe} (not a full $5$k re-search): $500$ outer iterations per config, seed \texttt{1902771841}, sine{+}cliff FitCell matched to the meta-compare protocol (batch $48$, fit steps $24$).
+Perturbed knobs: population size $n$, PPO clip $\epsilon$, fit Adam learning rate, GA second-mutate rate, and PPO entropy coefficient.
+Table~\ref{tab:hp-sensitivity} and Figure~\ref{fig:hp-sensitivity} report champion absolute $R$ versus the Table-2 default (default champ $R\approx 0.9888$; largest $|\Delta R|$ among completed arms $\approx 0.0123$).
+
+This is local robustness evidence under the stated budget and seed; the $5$k matched-budget ranking remains the primary approach comparison.

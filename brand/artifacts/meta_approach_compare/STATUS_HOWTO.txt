@@ -1,0 +1,32 @@
+﻿# Meta-approach status poll (crash-safe)
+
+From `reelsynth` root:
+
+```powershell
+.\.venv_gpu\Scripts\python.exe scripts\meta_approach_status.py
+powershell -File scripts\meta_approach_status.ps1
+powershell -File scripts\meta_approach_status.ps1 -Watch 30
+.\.venv_gpu\Scripts\python.exe scripts\meta_approach_status.py --json
+```
+
+## Durable files (survive Cursor crashes)
+
+| Path | Role |
+|------|------|
+| `brand\artifacts\meta_approach_compare\STATUS.json` | Live aggregate status |
+| `brand\artifacts\meta_approach_STATUS.json` | Mirror of STATUS.json |
+| `brand\artifacts\meta_approach_compare\<approach>\checkpoint.json` | Resume state every 25 iters |
+| `brand\artifacts\meta_approach_compare\<approach>\history.jsonl` | Per-iter log |
+| `brand\artifacts\meta_approach_compare\bench.pid` / `bench.lock` | Single-instance lock |
+
+## Resume / relaunch (safe)
+
+```powershell
+.\.venv_gpu\Scripts\python.exe scripts\launch_meta_approach_compare.py
+```
+
+Refuses a second copy while the lock PID is alive. Resumes from checkpoints by default.
+
+## Approaches (5k each)
+
+random, cmaes, reinforce, aging_evo, tpe, hybrid_lstm (LSTM in bake search vocab)

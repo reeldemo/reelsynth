@@ -54,13 +54,46 @@ A default empty clip is auto-selected on the active track so you can draw immedi
 | **Save** | Write current patch as `.reelpreset` |
 | **Design** / **Compose** | Switch shell mode — sound design vs mini-DAW |
 | **WT** menu | Open/Save `.reelwt`, **factory wavetables** (applies bank to the Design wave stack — promotes a wavetable layer so sound matches the editor), Vital/WAV/Serum import |
+| **Result heal** | Header dropdown (**Result·…**): Off / Soft / Adapt, DualCosine, Noise2Noise, or **ReelAI**. Bakes the **whole wavetable bank** (total/Result path) before playback. Session snapshot A/B. |
+| **Layer heal** | Selected toolbar (**Layer·…**): same methods, applied only to the **selected layer’s frame**. One oscillator can mix modes across layers (e.g. L1 DualCosine, L2 ReelAI). Persisted on each layer in `.reelpreset`. |
+| **Fit ends** | Selected toolbar one-shot DualCosine on the **selected layer frame** only. |
 | **Piano** | Show/hide on-screen keyboard |
-| **Key / Scale / Layout** | Performance input: root key, scale mode, piano vs scale-fold vs chord row |
+| **Key / Scale / Layout** | Performance input: root key, scale mode, piano vs scale-fold vs chord row. **Piano** layout is chromatic (black keys play); **Scale** folds/snaps to the scale |
+| **Oct − / +** | Persisted ±3-octave shift for hardware MIDI and the chromatic computer-keyboard play row; on-screen piano keys keep their labeled pitches |
 | **Arp** (footer) | Toggle arpeggiator; input mode, style, rate, octaves, gate, latch |
 | **MIDI** combo | Select hardware MIDI input device |
 | **Audio** combo | Select CPAL output device (speakers, headphones, DI / interface) |
 | **Settings** | Header **Settings** dropdown (not a modal): graphics backend, GPU waveforms, auto MIDI, auto audio output, keyboard layout |
 | **Status** | Audio/MIDI state, save confirmations, errors |
+
+### ReelAI seam heal
+
+Wavetable frames must meet at the loop point (`sample[0] ≈ sample[last]`). A cliff there becomes a pitched click under sustain. ReelSynth heals with a **pre-playback bake** — two scopes:
+
+| Control | Scope |
+|---------|--------|
+| **Result·…** (header) | Whole bank / total Result path — DualCosine, Noise2Noise, or **ReelAI** |
+| **Layer·…** (Selected toolbar) | **This layer’s frame only** — so one oscillator can mix repairs (L1 DualCosine, L2 ReelAI, …) |
+| **Fit ends** | One-shot DualCosine on the **selected layer frame** |
+
+| Mode | Role |
+|------|------|
+| **Off** | Raw ends — max edit freedom, may click |
+| **Soft** | Fixed-width fade into the wrap |
+| **Adapt** | Fade only as much as the discontinuity needs |
+| **DualCosine** | Classical DualCosine periodize |
+| **Noise2Noise** | Embedded Noise2Noise U-Net-lite |
+| **ReelAI** | Product AI — DenoiseOpt v10 discontinuity-local heal |
+
+**How bake works**
+
+- Result heal snapshots the bank then rewrites all frames (session A/B).
+- Layer heal rewrites only that layer’s frame; other layers keep their samples and their own `seam_mode` (saved in `.reelpreset`).
+- Not realtime DSP — no stream delay.
+
+**Honest limit:** live morph between frames can still click; re-run Result or Layer heal after the stack settles.
+
+Research write-up: [WHITEPAPER_DENOISE_OPT.md](WHITEPAPER_DENOISE_OPT.md) · [papers/denoise_opt/](papers/denoise_opt/).
 
 ---
 
@@ -132,7 +165,7 @@ The position strip is **layer chips only** on Design — no 256-frame scrub.
 |--------|---------|-----|
 | **1 Result** | **Result · N · {stack_mode}** | Stack sum with fill; dim sibling layer strokes. Hover near a layer curve previews it (thicker stroke + hand cursor); click commits `selected_layer_idx`. Drag Y=level, X=phase/WT. **Overlay method** combo (`add` / `avg` / `avg_equal`) in the pane caption writes `osc.stack_mode` and updates audio. **Result Quant** (when Quant > 0) reshapes the total via **Residual**; the **selected** WT/residual curve also shows its Quant knobs (siblings and VA curves stay stroke-only). Knob proximity wins over curve click |
 | **2 Layers** | **Layers · Osc N** | Every enabled layer labelled (`L1 · saw`, …). Hover nearest curve within ~14 px previews selection (`Hover · L2 · saw`); click commits selection; **Quant knobs only on the selected** WT/residual curve at its edit frame (VA / non-selected: stroke only). Hovering a *different* layer curve prefers selection over Quant knob grab (so L1/L2 stay selectable when L3 has knobs) |
-| **3 Selected** | **Edit · Layer N · {type}** | Always the selected layer (fill + thick). Toolbar: **Select / Shape / Interp (All·… + per-segment)** when the layer is WT/residual and Quant > 0; **QuantHandleEditor** knobs for drag reshape; Pencil / Curve / Shape tools. VA selection shows a status hint instead of knobs |
+| **3 Selected** | **Edit · Layer N · {type}** | Always the selected layer (fill + thick). Toolbar: **Select / Shape / Fit ends / Interp (All·… + per-segment)** when the layer is WT/residual and Quant > 0; **Fit ends** one-shot bakes classical DualCosine wrap continuity across every bank frame without changing Seam mode; **QuantHandleEditor** knobs for drag reshape; Pencil / Curve / Shape tools. VA selection shows a status hint instead of knobs |
 
 **Residual layer** — first Result Quant drag appends one wavetable layer (`residual: true`, shown as **Residual** in the strip). Stack mode switches to **add** if needed. Further Result edits update the same layer; math: `residual[i] = (desired[i] − others[i]) / (sign × level)`.
 

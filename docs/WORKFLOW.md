@@ -67,8 +67,9 @@ cargo run -p reelsynth-app --bin reelsynth-app
 Tweak while playing:
 
 - Oscillators, filter, ADSR, LFO, mod matrix, FX
+- If imports or Quant edits tick at the loop, use header **ReelAI** or Selected **Fit ends** ([GETTING_STARTED.md § Clean wrap crackle](GETTING_STARTED.md#clean-wrap-crackle-with-reelai))
 - **Save** → `my_lead.reelpreset`
-- **WT → Save .reelwt** if you edited the table
+- **WT → Save .reelwt** if you edited the table (includes any seam bake you want to keep)
 
 See [UI.md](UI.md) for every control.
 

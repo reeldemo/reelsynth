@@ -1,0 +1,70 @@
+{
+  "approach": "tpe",
+  "iters": 5000,
+  "iters_done": 5000,
+  "seed": 1902771841,
+  "champ_r": 0.9844795259634653,
+  "champ_raw": 0.9810628592967987,
+  "delta_r_vs_dual_cosine": 0.16447791457176208,
+  "baseline_dual_cosine": 0.8165849447250366,
+  "wall_s": 40246.18546843529,
+  "wall_h": 11.179495963454247,
+  "lstm_in_champ": true,
+  "xlstm_in_champ": false,
+  "champ_arch": {
+    "depth": 12,
+    "width": 48,
+    "act": "tanh",
+    "ops": [
+      "fade_pull",
+      "soft_seam",
+      "fir3",
+      "dual_cosine"
+    ],
+    "wet": 0.9348937218875767,
+    "fir": [
+      0.1729540070286399,
+      0.12402584347677849,
+      0.4278343665939988,
+      0.23768454064776323,
+      0.5003024104239541
+    ],
+    "cell_kind": "dense",
+    "soft_logits": [
+      -0.297464133397048,
+      0.8014184042907015,
+      0.47597139656698917,
+      0.9036458882191813,
+      0.7688422978364637,
+      -0.1978311974552971,
+      -0.11920189441471196,
+      0.34499633737085933,
+      -0.47097250059722073,
+      -0.5915668326230459,
+      -0.504422136922043,
+      0.7720504869042188,
+      0.6699175565885098,
+      -0.1787245041391663,
+      -0.5727043534257994
+    ],
+    "blocks": [
+      "soft_mix",
+      "noise_cond",
+      "dense",
+      "lstm"
+    ],
+    "use_adv_aux": false,
+    "moe_mode": "moe_parallel"
+  },
+  "champ_hp": {
+    "lr": 0.007338636791276506,
+    "fit_steps": 48,
+    "batch": 64,
+    "entropy_coef": 0.02,
+    "ppo_clip": 0.2,
+    "adv_coef": 0.05,
+    "reward_mode": "vs_dualcosine"
+  },
+  "history_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\tpe\\history.jsonl",
+  "finished_at": "20260722T173532Z"
+}

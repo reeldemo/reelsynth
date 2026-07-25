@@ -1,0 +1,84 @@
+{
+  "schema": "denoiseopt.meta_hp_sensitivity.config.v1",
+  "config": "default",
+  "label": "Table-2 default",
+  "honesty": "sensitivity_probe_500iters_OAT_not_full_5k_research",
+  "iters": 500,
+  "iters_done": 500,
+  "seed": 1902771841,
+  "champ_r": 0.9912359677950541,
+  "champ_raw": 0.9888193011283875,
+  "delta_r_vs_dual_cosine": 0.17223435640335083,
+  "delta_r_vs_default": 0.0,
+  "baseline_dual_cosine": 0.8165849447250366,
+  "wall_s": 3096.0427894592285,
+  "wall_h": 0.8600118859608968,
+  "knobs": {
+    "pop_size": 12,
+    "ppo_clip": 0.2,
+    "lr": 0.003,
+    "entropy_coef": 0.02,
+    "ga_second_mutate_p": 0.5,
+    "freeze_hp": null,
+    "fit_steps": 24,
+    "batch": 48
+  },
+  "champ_arch": {
+    "depth": 12,
+    "width": 48,
+    "act": "silu",
+    "ops": [
+      "soft_seam",
+      "asym_wet",
+      "median3",
+      "hann_blend",
+      "skip_blend"
+    ],
+    "wet": 0.05,
+    "fir": [
+      0.30627483041371034,
+      0.4626182188475869,
+      0.41186198146075864,
+      0.41370216862540876,
+      0.08522038032546589
+    ],
+    "cell_kind": "tf_split",
+    "soft_logits": [
+      0.997916122244263,
+      0.6043061744008758,
+      0.18063085093524112,
+      -0.17458506476519464,
+      -0.9647236246929874,
+      -0.4169327931767239,
+      0.35142967528988994,
+      -0.013848721796064778,
+      0.32028749687415514,
+      1.1430854051803703,
+      -0.23890348551720764,
+      -0.2949719437456298,
+      -0.5293005604708471,
+      -0.20245709902534556,
+      0.505650240740153
+    ],
+    "blocks": [
+      "tf_split",
+      "lstm",
+      "mlp",
+      "residual"
+    ],
+    "use_adv_aux": true,
+    "moe_mode": "sequential"
+  },
+  "champ_hp": {
+    "lr": 0.05592743998856427,
+    "fit_steps": 64,
+    "batch": 48,
+    "entropy_coef": 0.001,
+    "ppo_clip": 0.35,
+    "adv_coef": 0.07671509574606161,
+    "reward_mode": "neglog_gap"
+  },
+  "history_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_hp_sensitivity\\default\\history.jsonl",
+  "finished_at": "20260724T042006Z",
+  "complete": true
+}

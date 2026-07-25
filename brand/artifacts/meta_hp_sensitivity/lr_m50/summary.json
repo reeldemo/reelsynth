@@ -1,0 +1,82 @@
+{
+  "schema": "denoiseopt.meta_hp_sensitivity.config.v1",
+  "config": "lr_m50",
+  "label": "fit lr${-}50\\%$",
+  "honesty": "sensitivity_probe_500iters_OAT_not_full_5k_research",
+  "iters": 500,
+  "iters_done": 500,
+  "seed": 1902771841,
+  "champ_r": 0.98045174853007,
+  "champ_raw": 0.9765350818634033,
+  "delta_r_vs_dual_cosine": 0.1599501371383667,
+  "delta_r_vs_default": -0.01228421926498413,
+  "baseline_dual_cosine": 0.8165849447250366,
+  "wall_s": 2072.605350971222,
+  "wall_h": 0.5757237086031172,
+  "knobs": {
+    "pop_size": 12,
+    "ppo_clip": 0.2,
+    "lr": 0.0015,
+    "entropy_coef": 0.02,
+    "ga_second_mutate_p": 0.5,
+    "freeze_hp": "lr",
+    "fit_steps": 24,
+    "batch": 48
+  },
+  "champ_arch": {
+    "depth": 12,
+    "width": 46,
+    "act": "relu",
+    "ops": [
+      "edge_pin"
+    ],
+    "wet": 0.290725117645945,
+    "fir": [
+      0.19473572822121282,
+      0.3171301675607133,
+      0.30205372153063154,
+      0.4253699169630574,
+      0.31640213574692033
+    ],
+    "cell_kind": "residual",
+    "soft_logits": [
+      -1.395711549664533,
+      -0.18545549028921116,
+      0.3213543743284766,
+      -0.8183633350660664,
+      -1.7418564350389554,
+      -0.11829323793944527,
+      0.11410831944668935,
+      0.926893389759694,
+      -0.35011295035531115,
+      0.4874969106968267,
+      0.00368277966759345,
+      -0.8899802492909819,
+      1.2528083775768792,
+      -0.6584874243614466,
+      -2.1338360994981325
+    ],
+    "blocks": [
+      "residual",
+      "xlstm",
+      "lstm",
+      "bottleneck",
+      "mlp",
+      "dense"
+    ],
+    "use_adv_aux": true,
+    "moe_mode": "moe_parallel"
+  },
+  "champ_hp": {
+    "lr": 0.0015,
+    "fit_steps": 48,
+    "batch": 64,
+    "entropy_coef": 0.05184104029269047,
+    "ppo_clip": 0.05,
+    "adv_coef": 0.09249347485754728,
+    "reward_mode": "vs_dualcosine"
+  },
+  "history_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_hp_sensitivity\\lr_m50\\history.jsonl",
+  "finished_at": "20260724T080644Z",
+  "complete": true
+}

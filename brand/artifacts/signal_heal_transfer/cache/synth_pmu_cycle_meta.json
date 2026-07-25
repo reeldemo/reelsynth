@@ -1,0 +1,9 @@
+{
+  "domain": "power",
+  "n": 256,
+  "period_l": 256,
+  "wrap": "Synthetic 1-cycle voltage with harmonics; ideal=clean AC; engine=wrap cliff (+ optional notch). IEEE 39-bus PMU OA not fetched.",
+  "citation": "Synthetic IEEE 1159 / C37.118-style cycle proxy",
+  "seed": 1902771841,
+  "label": "synthetic_pilot \u2014 not DataPort PMU recordings"
+}

@@ -1,0 +1,15 @@
+{
+  "domain": "bearings",
+  "files": [
+    "105.mat",
+    "169.mat",
+    "209.mat",
+    "97.mat"
+  ],
+  "n": 256,
+  "period_l": 256,
+  "wrap": "Per-rev windows from CWRU DE @12 kHz; ideal=cubic resample to L; engine=linear (bad-COT proxy) + DenoiseOpt-style wrap cliff+noise.",
+  "fs_hz": 12000.0,
+  "citation": "Case Western Reserve University Bearing Data Center",
+  "seed": 1902771841
+}

@@ -1,0 +1,83 @@
+{
+  "schema": "denoiseopt.meta_hp_sensitivity.config.v1",
+  "config": "pop_size_p50",
+  "label": "$n{+}50\\%$",
+  "honesty": "sensitivity_probe_500iters_OAT_not_full_5k_research",
+  "iters": 500,
+  "iters_done": 500,
+  "seed": 1902771841,
+  "champ_r": 0.9833977069060008,
+  "champ_raw": 0.9807310402393341,
+  "delta_r_vs_dual_cosine": 0.16414609551429749,
+  "delta_r_vs_default": -0.008088260889053345,
+  "baseline_dual_cosine": 0.8165849447250366,
+  "wall_s": 1857.8919100761414,
+  "wall_h": 0.5160810861322614,
+  "knobs": {
+    "pop_size": 18,
+    "ppo_clip": 0.2,
+    "lr": 0.003,
+    "entropy_coef": 0.02,
+    "ga_second_mutate_p": 0.5,
+    "freeze_hp": null,
+    "fit_steps": 24,
+    "batch": 48
+  },
+  "champ_arch": {
+    "depth": 12,
+    "width": 12,
+    "act": "relu",
+    "ops": [
+      "cycle_net",
+      "fir5",
+      "fir3"
+    ],
+    "wet": 0.6789215428927309,
+    "fir": [
+      0.43149046591277024,
+      0.5278638795990683,
+      0.28935611246027565,
+      0.5017307308702199,
+      0.2601385229867843
+    ],
+    "cell_kind": "lstm",
+    "soft_logits": [
+      0.7705339470000392,
+      0.8191152976432903,
+      -0.7083379838472788,
+      0.5341204891228295,
+      -0.5989385819625592,
+      -0.4413899189311301,
+      -0.6975968543831459,
+      0.8185549794434075,
+      0.7386852551819121,
+      0.5933259968640037,
+      0.3290602603671111,
+      0.7542423033916443,
+      0.27960034177665993,
+      -0.7836958439068511,
+      -0.35878284094336177
+    ],
+    "blocks": [
+      "lstm",
+      "attn",
+      "tf_split",
+      "residual",
+      "gated"
+    ],
+    "use_adv_aux": false,
+    "moe_mode": "sequential"
+  },
+  "champ_hp": {
+    "lr": 0.05813473760574942,
+    "fit_steps": 54,
+    "batch": 64,
+    "entropy_coef": 0.01107712361144262,
+    "ppo_clip": 0.3,
+    "adv_coef": 0.03362100781429175,
+    "reward_mode": "neglog_gap"
+  },
+  "history_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_hp_sensitivity\\pop_size_p50\\history.jsonl",
+  "finished_at": "20260724T054435Z",
+  "complete": true
+}

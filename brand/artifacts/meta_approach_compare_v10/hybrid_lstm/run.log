@@ -1,0 +1,77 @@
+2026-07-25T09:59:12 START approach=hybrid_lstm iters=1200 seed=1902771841 device=cuda baseline_dual_cosine=0.291421 nobake=0.879736 n2n_gate_R_seam=0.9659161567687988 blocks_has_lstm=True blocks_has_xlstm=True hp_reward_sweep=on plateau_every=500 primary_metric=r_seam search_objective=J
+2026-07-25T09:59:13 CHAMP approach=hybrid_lstm iter=1 J_scored=0.406496 R_seam=0.412634 J=0.404913 t_ms=3.563 beats_n2n=False lstm=False xlstm=False reward_mode=vs_nobake
+2026-07-25T09:59:18 CHAMP approach=hybrid_lstm iter=5 J_scored=0.431888 R_seam=0.450100 J=0.428888 t_ms=63.722 beats_n2n=False lstm=False xlstm=True reward_mode=vs_dualcosine
+2026-07-25T09:59:18 CHAMP approach=hybrid_lstm iter=6 J_scored=0.499326 R_seam=0.503806 J=0.498159 t_ms=2.035 beats_n2n=False lstm=False xlstm=False reward_mode=neglog_gap
+2026-07-25T09:59:25 CHAMP approach=hybrid_lstm iter=9 J_scored=0.571673 R_seam=0.577577 J=0.570506 t_ms=3.016 beats_n2n=False lstm=False xlstm=False reward_mode=vs_dualcosine
+2026-07-25T10:00:45 CHAMP approach=hybrid_lstm iter=30 J_scored=0.585506 R_seam=0.594201 J=0.582590 t_ms=8.803 beats_n2n=False lstm=False xlstm=False reward_mode=abs_r
+2026-07-25T10:00:46 CHAMP approach=hybrid_lstm iter=31 J_scored=0.713007 R_seam=0.721477 J=0.710590 t_ms=7.502 beats_n2n=False lstm=False xlstm=False reward_mode=neglog_gap
+2026-07-25T10:01:17 CKPT approach=hybrid_lstm iter=50/1200 champ=0.713007
+2026-07-25T10:03:57 CKPT approach=hybrid_lstm iter=100/1200 champ=0.713007
+2026-07-25T10:04:46 CHAMP approach=hybrid_lstm iter=130 J_scored=0.717044 R_seam=0.723805 J=0.714127 t_ms=5.703 beats_n2n=False lstm=False xlstm=False reward_mode=abs_r
+2026-07-25T10:04:59 CHAMP approach=hybrid_lstm iter=137 J_scored=0.753617 R_seam=0.758587 J=0.750700 t_ms=3.714 beats_n2n=False lstm=False xlstm=False reward_mode=vs_dualcosine
+2026-07-25T10:05:00 CHAMP approach=hybrid_lstm iter=138 J_scored=0.778644 R_seam=0.784548 J=0.775477 t_ms=4.949 beats_n2n=False lstm=False xlstm=False reward_mode=vs_nobake
+2026-07-25T10:05:19 CKPT approach=hybrid_lstm iter=150/1200 champ=0.778644
+2026-07-25T10:06:31 CKPT approach=hybrid_lstm iter=200/1200 champ=0.778644
+2026-07-25T10:07:51 CHAMP approach=hybrid_lstm iter=233 J_scored=0.780867 R_seam=0.786226 J=0.777950 t_ms=4.088 beats_n2n=False lstm=False xlstm=False reward_mode=vs_dualcosine
+2026-07-25T10:07:57 CHAMP approach=hybrid_lstm iter=237 J_scored=0.788635 R_seam=0.793865 J=0.786052 t_ms=3.646 beats_n2n=False lstm=False xlstm=False reward_mode=vs_dualcosine
+2026-07-25T10:08:11 CKPT approach=hybrid_lstm iter=250/1200 champ=0.788635
+2026-07-25T10:09:24 CKPT approach=hybrid_lstm iter=300/1200 champ=0.788635
+2026-07-25T10:09:35 CHAMP approach=hybrid_lstm iter=312 J_scored=0.813208 R_seam=0.818805 J=0.810208 t_ms=4.419 beats_n2n=False lstm=False xlstm=False reward_mode=vs_dualcosine
+2026-07-25T10:10:03 CKPT approach=hybrid_lstm iter=350/1200 champ=0.813208
+2026-07-25T10:10:31 CHAMP approach=hybrid_lstm iter=386 J_scored=0.834153 R_seam=0.840266 J=0.831153 t_ms=4.998 beats_n2n=False lstm=False xlstm=False reward_mode=vs_nobake
+2026-07-25T10:10:38 CKPT approach=hybrid_lstm iter=400/1200 champ=0.834153
+2026-07-25T10:11:39 CKPT approach=hybrid_lstm iter=450/1200 champ=0.834153
+2026-07-25T10:13:00 CKPT approach=hybrid_lstm iter=500/1200 champ=0.834153
+2026-07-25T10:14:16 CKPT approach=hybrid_lstm iter=550/1200 champ=0.834153
+2026-07-25T10:15:20 CKPT approach=hybrid_lstm iter=600/1200 champ=0.834153
+2026-07-25T10:16:54 CKPT approach=hybrid_lstm iter=650/1200 champ=0.834153
+2026-07-25T10:18:10 CKPT approach=hybrid_lstm iter=700/1200 champ=0.834153
+2026-07-25T10:37:36 START approach=hybrid_lstm iters=1200 seed=1902771841 device=cuda baseline_dual_cosine=0.503994 nobake=0.915815 n2n_gate_R_blend=0.9750486612319946 blocks_has_lstm=True blocks_has_xlstm=True hp_reward_sweep=on plateau_every=500 primary_metric=r_blend search_objective=J
+2026-07-25T10:37:38 CHAMP approach=hybrid_lstm iter=1 J_scored=0.565921 R_blend=0.573409 R_seam=0.44822484254837036 R_body=0.937727153301239 J=0.564338 t_ms=4.950 beats_n2n=False lstm=False xlstm=False reward_mode=vs_nobake
+2026-07-25T10:37:51 CHAMP approach=hybrid_lstm iter=2 J_scored=0.576539 R_blend=0.594752 R_seam=0.5000525712966919 R_body=0.9620739221572876 J=0.573539 t_ms=63.733 beats_n2n=False lstm=False xlstm=True reward_mode=vs_dualcosine
+2026-07-25T10:38:11 CHAMP approach=hybrid_lstm iter=6 J_scored=0.842196 R_blend=0.851027 R_seam=0.8320722579956055 R_body=0.9735106229782104 J=0.839529 t_ms=8.586 beats_n2n=False lstm=True xlstm=False reward_mode=neglog_gap
+2026-07-25T10:38:22 CHAMP approach=hybrid_lstm iter=7 J_scored=0.845983 R_blend=0.863917 R_seam=0.8281883001327515 R_body=0.9899477362632751 J=0.842566 t_ms=65.505 beats_n2n=False lstm=False xlstm=True reward_mode=vs_dualcosine
+2026-07-25T10:38:33 CHAMP approach=hybrid_lstm iter=9 J_scored=0.889112 R_blend=0.895270 R_seam=0.8640382289886475 R_body=0.9948505163192749 J=0.887945 t_ms=3.221 beats_n2n=False lstm=False xlstm=False reward_mode=vs_nobake
+2026-07-25T10:39:08 CHAMP approach=hybrid_lstm iter=18 J_scored=0.891832 R_blend=0.900055 R_seam=0.846686840057373 R_body=0.9922040700912476 J=0.887915 t_ms=9.875 beats_n2n=False lstm=False xlstm=False reward_mode=neglog_gap
+2026-07-25T10:39:25 CHAMP approach=hybrid_lstm iter=26 J_scored=0.906929 R_blend=0.914398 R_seam=0.8939031362533569 R_body=0.9928340911865234 J=0.903513 t_ms=7.498 beats_n2n=False lstm=False xlstm=False reward_mode=neglog_gap
+2026-07-25T10:40:24 CHAMP approach=hybrid_lstm iter=37 J_scored=0.908723 R_blend=0.926155 R_seam=0.9093500971794128 R_body=0.9948673248291016 J=0.904806 t_ms=65.490 beats_n2n=False lstm=False xlstm=True reward_mode=neglog_gap
+2026-07-25T10:40:27 CHAMP approach=hybrid_lstm iter=38 J_scored=0.921014 R_blend=0.929058 R_seam=0.8964513540267944 R_body=0.9957379698753357 J=0.917597 t_ms=8.518 beats_n2n=False lstm=False xlstm=False reward_mode=neglog_gap
+2026-07-25T10:42:03 CKPT approach=hybrid_lstm iter=50/1200 champ=0.921014
+2026-07-25T10:45:11 CKPT approach=hybrid_lstm iter=100/1200 champ=0.921014
+2026-07-25T10:47:41 CHAMP approach=hybrid_lstm iter=132 J_scored=0.921459 R_blend=0.931529 R_seam=0.884802520275116 R_body=0.9955877065658569 J=0.917542 t_ms=14.639 beats_n2n=False lstm=True xlstm=False reward_mode=vs_dualcosine
+2026-07-25T10:48:15 CHAMP approach=hybrid_lstm iter=138 J_scored=0.935201 R_blend=0.944954 R_seam=0.9159097671508789 R_body=0.9916849136352539 J=0.934035 t_ms=7.556 beats_n2n=False lstm=False xlstm=False reward_mode=neglog_gap
+2026-07-25T10:49:00 CKPT approach=hybrid_lstm iter=150/1200 champ=0.935201
+2026-07-25T10:52:16 CKPT approach=hybrid_lstm iter=200/1200 champ=0.935201
+2026-07-25T10:52:21 CHAMP approach=hybrid_lstm iter=203 J_scored=0.944927 R_blend=0.953771 R_seam=0.9430179595947266 R_body=0.9942547678947449 J=0.943677 t_ms=6.275 beats_n2n=False lstm=False xlstm=False reward_mode=neglog_gap
+2026-07-25T10:52:51 CHAMP approach=hybrid_lstm iter=212 J_scored=0.946022 R_blend=0.955637 R_seam=0.9367472529411316 R_body=0.994354248046875 J=0.944605 t_ms=7.747 beats_n2n=False lstm=False xlstm=False reward_mode=vs_nobake
+2026-07-25T10:53:30 CHAMP approach=hybrid_lstm iter=222 J_scored=0.950477 R_blend=0.957977 R_seam=0.9566511511802673 R_body=0.9957212209701538 J=0.949061 t_ms=4.771 beats_n2n=False lstm=False xlstm=False reward_mode=vs_dualcosine
+2026-07-25T10:56:30 CKPT approach=hybrid_lstm iter=250/1200 champ=0.950477
+2026-07-25T10:58:18 CHAMP approach=hybrid_lstm iter=276 J_scored=0.957483 R_blend=0.965422 R_seam=0.9437646865844727 R_body=0.9950941801071167 J=0.955900 t_ms=5.501 beats_n2n=False lstm=False xlstm=False reward_mode=vs_nobake
+2026-07-25T11:00:36 CKPT approach=hybrid_lstm iter=300/1200 champ=0.957483
+2026-07-25T11:05:44 CKPT approach=hybrid_lstm iter=350/1200 champ=0.957483
+2026-07-25T11:09:35 CHAMP approach=hybrid_lstm iter=396 J_scored=0.959895 R_blend=0.969209 R_seam=0.9536470770835876 R_body=0.9961749911308289 J=0.958312 t_ms=7.520 beats_n2n=False lstm=False xlstm=False reward_mode=vs_nobake
+2026-07-25T11:10:03 CKPT approach=hybrid_lstm iter=400/1200 champ=0.959895
+2026-07-25T11:11:04 CHAMP approach=hybrid_lstm iter=412 J_scored=0.961238 R_blend=0.970898 R_seam=0.9572572708129883 R_body=0.9984528422355652 J=0.959488 t_ms=8.422 beats_n2n=False lstm=False xlstm=False reward_mode=vs_nobake
+2026-07-25T11:14:25 CKPT approach=hybrid_lstm iter=450/1200 champ=0.961238
+= = =   2 0 2 6 - 0 7 - 2 5 T 1 1 : 2 0 : 3 1 . 5 2 8 8 3 6 4 + 0 2 : 0 0   R E S U M E   a f t e r   d e a t h   a t   ~ 4 9 4   = = =  
+ RESUME hybrid_lstm from iter=476 champ=0.961238
+2026-07-25T11:20:35 START approach=hybrid_lstm iters=1200 seed=1902771841 device=cuda baseline_dual_cosine=0.503994 nobake=0.915815 n2n_gate_R_blend=0.9750486612319946 blocks_has_lstm=True blocks_has_xlstm=True hp_reward_sweep=on plateau_every=500 primary_metric=r_blend search_objective=J
+2026-07-25T11:22:39 CKPT approach=hybrid_lstm iter=500/1200 champ=0.961238
+2026-07-25T11:27:21 CKPT approach=hybrid_lstm iter=550/1200 champ=0.961238
+2026-07-25T11:32:41 CKPT approach=hybrid_lstm iter=600/1200 champ=0.961238
+2026-07-25T11:38:00 CKPT approach=hybrid_lstm iter=650/1200 champ=0.961238
+2026-07-25T11:42:08 CKPT approach=hybrid_lstm iter=700/1200 champ=0.961238
+RESUME hybrid_lstm from iter=735 champ=0.961238
+2026-07-25T11:50:17 START approach=hybrid_lstm iters=1200 seed=1902771841 device=cuda baseline_dual_cosine=0.503994 nobake=0.915815 n2n_gate_R_blend=0.9750486612319946 blocks_has_lstm=True blocks_has_xlstm=True hp_reward_sweep=on plateau_every=500 primary_metric=r_blend search_objective=J
+2026-07-25T11:52:01 CKPT approach=hybrid_lstm iter=750/1200 champ=0.961238
+2026-07-25T11:56:12 CKPT approach=hybrid_lstm iter=800/1200 champ=0.961238
+2026-07-25T12:00:35 CKPT approach=hybrid_lstm iter=850/1200 champ=0.961238
+2026-07-25T12:04:02 CKPT approach=hybrid_lstm iter=900/1200 champ=0.961238
+2026-07-25T12:07:25 CKPT approach=hybrid_lstm iter=950/1200 champ=0.961238
+2026-07-25T12:11:41 CKPT approach=hybrid_lstm iter=1000/1200 champ=0.961238
+2026-07-25T12:14:58 CKPT approach=hybrid_lstm iter=1050/1200 champ=0.961238
+2026-07-25T12:17:43 CKPT approach=hybrid_lstm iter=1100/1200 champ=0.961238
+2026-07-25T12:18:03 CHAMP approach=hybrid_lstm iter=1108 J_scored=0.962084 R_blend=0.969512 R_seam=0.9596530199050903 R_body=0.9970661997795105 J=0.960334 t_ms=5.076 beats_n2n=False lstm=False xlstm=False reward_mode=vs_nobake
+2026-07-25T12:22:33 CKPT approach=hybrid_lstm iter=1150/1200 champ=0.962084
+2026-07-25T12:25:29 CKPT approach=hybrid_lstm iter=1200/1200 champ=0.962084
+2026-07-25T12:25:29 DONE approach=hybrid_lstm champ_r=0.962084 wall_h=1.650 lstm=False xlstm=False

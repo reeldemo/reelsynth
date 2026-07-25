@@ -95,6 +95,27 @@ Imported tables save as `.reelwt`. Factory banks (Saw Morph, Formant, …) are u
 
 ![Wavetable editor](https://github.com/reeldemo/reelsynth/releases/download/v0.1.0/04-wt-editor-2d-3d.png)
 
+## Clean wrap crackle with ReelAI
+
+Single-cycle wavetables loop forever. If the first and last samples disagree, you hear a **wrap click** (especially on sustained notes and after imports). ReelSynth heals that with a **pre-playback bake** — it rewrites the frames once, then the synth plays normally (no realtime neural delay).
+
+| Control | Where | What it does |
+|---------|--------|--------------|
+| **Result·ReelAI** (etc.) | Header | Heals the **whole bank** / total Result path |
+| **Layer·…** | Selected toolbar | Heals **this layer’s frame only** — mix DualCosine / ReelAI / Off across layers in one osc |
+| **Noise2Noise** | Either dropdown | Embedded U-Net-lite baseline — useful A/B vs ReelAI |
+| **DualCosine** | Either dropdown | Classical periodize — fast, predictable |
+| **Fit ends** | Selected toolbar (near FFT) | One-shot DualCosine on the **selected layer frame** |
+| Soft / Adapt / Off | Either dropdown | Light fade, adaptive fade, or raw ends |
+
+**Typical flow after an import**
+
+1. Load the bank (**WT → Import** or Factory).
+2. Hold a note — if you hear a tick each cycle, open the header **ReelAI** combo and pick **ReelAI** (or **Fit ends** for a classical fix).
+3. A/B with **DualCosine** or **Noise2Noise**; restore with **Seam·Off** / **Seam·Adapt** (snapshot restore for the AI/classical bake modes).
+
+Seam mode is **session-only** (not written into `.reelpreset`). Morphing or stacking layers can open new discontinuities — run **Fit ends** or re-select ReelAI after big stack edits if clicks return. Details: [UI.md § ReelAI seam heal](UI.md#reelai-seam-heal).
+
 ## What to do next
 
 | Goal | Next doc |

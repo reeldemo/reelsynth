@@ -17,3 +17,23 @@ docs-images.zip
 .superpowers/
 
 .venv_gpu/
+
+# AKWF OA source clone / zip (copied subset lives under oa_akwf/)
+brand/artifacts/real_wt_cycles/_akwf_src/
+
+# Signal-heal pilot: keep results, skip bulky raw downloads
+brand/artifacts/signal_heal_transfer/raw/
+brand/artifacts/signal_heal_transfer/**/*.pt
+brand/artifacts/signal_heal_transfer/**/policy.pt
+brand/artifacts/signal_heal_transfer/**/champ_cell.pt
+brand/artifacts/signal_heal_transfer/**/history.jsonl
+brand/artifacts/signal_heal_transfer/*.log
+
+# HP sensitivity probe: keep summaries/figures, skip runtime weights/logs
+brand/artifacts/meta_hp_sensitivity/**/policy.pt
+brand/artifacts/meta_hp_sensitivity/**/history.jsonl
+brand/artifacts/meta_hp_sensitivity/**/run.log
+brand/artifacts/meta_hp_sensitivity/launch*.log
+brand/artifacts/meta_hp_sensitivity/*.pid
+brand/artifacts/meta_hp_sensitivity_STATUS.json
+brand/artifacts/meta_hp_sensitivity/launch*.log.prev

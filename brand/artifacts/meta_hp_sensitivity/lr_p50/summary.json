@@ -1,0 +1,85 @@
+{
+  "schema": "denoiseopt.meta_hp_sensitivity.config.v1",
+  "config": "lr_p50",
+  "label": "fit lr${+}50\\%$",
+  "honesty": "sensitivity_probe_500iters_OAT_not_full_5k_research",
+  "iters": 500,
+  "iters_done": 500,
+  "seed": 1902771841,
+  "champ_r": 0.9853008248011271,
+  "champ_raw": 0.9813841581344604,
+  "delta_r_vs_dual_cosine": 0.16479921340942383,
+  "delta_r_vs_default": -0.007435142993927002,
+  "baseline_dual_cosine": 0.8165849447250366,
+  "wall_s": 3877.247251033783,
+  "wall_h": 1.077013125287162,
+  "knobs": {
+    "pop_size": 12,
+    "ppo_clip": 0.2,
+    "lr": 0.0045000000000000005,
+    "entropy_coef": 0.02,
+    "ga_second_mutate_p": 0.5,
+    "freeze_hp": "lr",
+    "fit_steps": 24,
+    "batch": 48
+  },
+  "champ_arch": {
+    "depth": 12,
+    "width": 34,
+    "act": "tanh",
+    "ops": [
+      "classic",
+      "skip_blend",
+      "fir5",
+      "fir3"
+    ],
+    "wet": 0.27210083081680214,
+    "fir": [
+      0.41259108269545386,
+      0.27402401230756,
+      0.40984604426196614,
+      0.40398731538335675,
+      0.3739558514874119
+    ],
+    "cell_kind": "conv1d",
+    "soft_logits": [
+      0.8896251261862413,
+      -0.13708385393267802,
+      0.09577946134579685,
+      -0.49525335652262936,
+      -0.11981766414491274,
+      0.5059730968477372,
+      -0.944447117247942,
+      0.012924730055023426,
+      -0.5210349554167386,
+      0.786032235419803,
+      0.541430076416726,
+      0.37129194502780016,
+      0.3358572737608976,
+      -0.29814371915016225,
+      0.5115476609189977
+    ],
+    "blocks": [
+      "conv1d",
+      "moe_mix",
+      "unet",
+      "noise_cond",
+      "mlp",
+      "dense"
+    ],
+    "use_adv_aux": false,
+    "moe_mode": "moe_parallel"
+  },
+  "champ_hp": {
+    "lr": 0.0045000000000000005,
+    "fit_steps": 64,
+    "batch": 48,
+    "entropy_coef": 0.005842051011692748,
+    "ppo_clip": 0.35,
+    "adv_coef": 0.0,
+    "reward_mode": "neglog_gap"
+  },
+  "history_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_hp_sensitivity\\lr_p50\\history.jsonl",
+  "finished_at": "20260724T091121Z",
+  "complete": true
+}

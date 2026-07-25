@@ -1,0 +1,22 @@
+{
+  "schema": "denoiseopt.hear_samples_panel.v1",
+  "hear_dir": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_samples",
+  "manifest": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_samples\\manifest.json",
+  "n_samples": 5,
+  "sample_rate": 44100,
+  "freq_hz": 440.0,
+  "duration_s": 3.0,
+  "eval_seed": 20260719,
+  "search_seed": 1902771841,
+  "tiles": [
+    46,
+    21,
+    4,
+    49,
+    48
+  ],
+  "rebuild": "scripts/export_meta_hear_samples.py --approach hybrid_lstm",
+  "png": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\paper_v8_listening\\fig_hear_samples_panel.png",
+  "pdf": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\paper_v8_listening\\fig_hear_samples_panel.pdf",
+  "note": "Paper panel only; not a formal listening / A/B study."
+}

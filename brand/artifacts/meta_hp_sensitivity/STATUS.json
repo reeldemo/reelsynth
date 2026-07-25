@@ -1,0 +1,16 @@
+{
+  "updated_at": "20260724T115439Z",
+  "pid": 12252,
+  "phase": "all_complete",
+  "target_iters": 500,
+  "n_complete": 11,
+  "n_configs": 11,
+  "copied": [
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\denoise-opt-meta\\paper\\v8\\figures\\meta_hp_sensitivity.json",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\denoise-opt-meta\\paper\\v8\\figures\\fig_meta_hp_sensitivity.png",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\denoise-opt-meta\\paper\\v8\\figures\\fig_meta_hp_sensitivity.pdf",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\denoise-opt-meta\\paper\\v8\\figures\\tab_meta_hp_sensitivity.tex",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\denoise-opt-meta\\paper\\v8\\figures\\RESULTS_HP_SENSITIVITY.md",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\denoise-opt-meta\\paper\\v8\\subsections\\results_hp_sensitivity.tex"
+  ]
+}

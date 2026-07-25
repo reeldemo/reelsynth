@@ -1,0 +1,11 @@
+{
+  "no_bake": 0.8450800776481628,
+  "dual_cosine": 0.46078309416770935,
+  "soft_periodize_hann": 0.42329141497612,
+  "linear_fade": 0.4814341068267822,
+  "endpoint_pin_mean": 0.5053764581680298,
+  "seam_fir3": 0.4483480453491211,
+  "cot_linear_periodize": 0.8450800776481628,
+  "cot_cubic_then_dualcosine": 0.46078309416770935,
+  "ours_hybrid_lstm": 0.9623140096664429
+}

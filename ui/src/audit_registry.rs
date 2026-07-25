@@ -113,6 +113,7 @@ pub enum AuditId {
     HeaderMidiCombo,
     HeaderAudioCombo,
     HeaderPianoToggle,
+    HeaderAiSeamToggle,
     HeaderLeftCluster,
     HeaderRightCluster,
     // Osc column
@@ -259,7 +260,12 @@ impl AuditId {
             Self::HeaderOpenBtn | Self::HeaderSaveBtn | Self::HeaderModeDesign
             | Self::HeaderModeCompose | Self::FooterChordPad(_) => AuditChecks::BC,
             Self::HeaderMidiCombo | Self::HeaderAudioCombo => AuditChecks::BX,
-            Self::HeaderWtMenu | Self::HeaderSettingsMenu | Self::HeaderPianoToggle | Self::OscWtQuant | Self::OscWarpSelect
+            Self::HeaderWtMenu
+                | Self::HeaderSettingsMenu
+                | Self::HeaderPianoToggle
+                | Self::HeaderAiSeamToggle
+                | Self::OscWtQuant
+                | Self::OscWarpSelect
             | Self::OscPulseWidth | Self::OscUnisonSlider | Self::OscSpreadSlider
             | Self::OscFmAlgorithm | Self::OscFxAddBtn | Self::OscModAmountDrag(_)
             | Self::CenterWt3dModeToggle | Self::ComposeTransportPlay | Self::ComposeTransportBpm
@@ -315,6 +321,7 @@ fn static_label(id: &AuditId) -> &'static str {
         AuditId::HeaderMidiCombo => "header.midi_combo",
         AuditId::HeaderAudioCombo => "header.audio_combo",
         AuditId::HeaderPianoToggle => "header.piano_toggle",
+        AuditId::HeaderAiSeamToggle => "header.ai_seam_toggle",
         AuditId::HeaderLeftCluster => "header.left_cluster",
         AuditId::HeaderRightCluster => "header.right_cluster",
         AuditId::OscColumn => "osc.column",
@@ -604,7 +611,8 @@ fn parent_bounds(
         | AuditId::HeaderBrand => Some(AuditId::HeaderLeftCluster),
         AuditId::HeaderMidiCombo
         | AuditId::HeaderAudioCombo
-        | AuditId::HeaderPianoToggle => Some(AuditId::HeaderRightCluster),
+        | AuditId::HeaderPianoToggle
+        | AuditId::HeaderAiSeamToggle => Some(AuditId::HeaderRightCluster),
         AuditId::OscStripCards
         | AuditId::OscTypeSelect
         | AuditId::OscKnobsLevelPanCoarse

@@ -1,0 +1,80 @@
+{
+  "schema": "denoiseopt.meta_hp_sensitivity.config.v1",
+  "config": "ppo_clip_p50",
+  "label": "$\\epsilon{+}50\\%$",
+  "honesty": "sensitivity_probe_500iters_OAT_not_full_5k_research",
+  "iters": 500,
+  "iters_done": 500,
+  "seed": 1902771841,
+  "champ_r": 0.9925795277754466,
+  "champ_raw": 0.9904128611087799,
+  "delta_r_vs_dual_cosine": 0.1738279163837433,
+  "delta_r_vs_default": 0.001593559980392456,
+  "baseline_dual_cosine": 0.8165849447250366,
+  "wall_s": 2602.3105206489563,
+  "wall_h": 0.722864033513599,
+  "knobs": {
+    "pop_size": 12,
+    "ppo_clip": 0.30000000000000004,
+    "lr": 0.003,
+    "entropy_coef": 0.02,
+    "ga_second_mutate_p": 0.5,
+    "freeze_hp": "ppo_clip",
+    "fit_steps": 24,
+    "batch": 48
+  },
+  "champ_arch": {
+    "depth": 12,
+    "width": 10,
+    "act": "tanh",
+    "ops": [
+      "cycle_net",
+      "fir5"
+    ],
+    "wet": 0.6270347334827867,
+    "fir": [
+      0.28493823371008664,
+      0.13247467123593212,
+      0.18711863314056043,
+      0.29386851840122524,
+      0.4569592407932532
+    ],
+    "cell_kind": "tf_split",
+    "soft_logits": [
+      0.41227807197025346,
+      -0.5381992473276569,
+      0.3654105466057762,
+      0.640717847961563,
+      0.38005445251185144,
+      0.5558915757640011,
+      -0.008314144369695908,
+      -0.4043730114240556,
+      -0.9637871725303357,
+      0.8426972255534988,
+      -0.6295035652854346,
+      -0.8599091781639345,
+      -0.17750271405059004,
+      -0.2855067349295708,
+      -0.4946954373876531
+    ],
+    "blocks": [
+      "tf_split",
+      "dense",
+      "soft_mix"
+    ],
+    "use_adv_aux": true,
+    "moe_mode": "sequential"
+  },
+  "champ_hp": {
+    "lr": 0.07589589843633741,
+    "fit_steps": 64,
+    "batch": 64,
+    "entropy_coef": 0.034470095907868835,
+    "ppo_clip": 0.30000000000000004,
+    "adv_coef": 0.10735640508467086,
+    "reward_mode": "abs_r"
+  },
+  "history_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_hp_sensitivity\\ppo_clip_p50\\history.jsonl",
+  "finished_at": "20260724T073211Z",
+  "complete": true
+}

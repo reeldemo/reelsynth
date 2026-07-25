@@ -35,7 +35,6 @@ import torch.nn as nn
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import overnight_gpu_rl_arch as og  # noqa: E402
 from denoise_arch_blocks import BLOCKS, CELL_KINDS, MAX_GRAPH_LEN, MAX_SEARCH_DEPTH, MAX_WIDTH  # noqa: E402
-from denoise_meta_evo import depth_mixture_bonus  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 META_ROOT = ROOT.parent / "denoise-opt-meta"
@@ -112,6 +111,35 @@ def maybe_inject_recurrent(cfg: og.ArchConfig, rng: random.Random, p: float = 0.
     return cfg
 
 
+def maybe_inject_n2n(cfg: og.ArchConfig, rng: random.Random, p: float = 0.18) -> og.ArchConfig:
+    """With probability p, inject SeamN2N-parity n2n_unet into the bake graph."""
+    if rng.random() >= p:
+        return cfg
+    if "n2n_unet" in cfg.blocks and cfg.cell_kind == "n2n_unet":
+        return cfg
+    if rng.random() < 0.45:
+        cfg.cell_kind = "n2n_unet"
+    cfg.blocks = og.normalize_graph(list(cfg.blocks) + ["n2n_unet"], cfg.cell_kind)
+    if "cycle_net" not in cfg.ops:
+        cfg.ops = og.ensure_trainable_ops(list(cfg.ops) + ["cycle_net"])
+    return cfg
+
+
+def inject_search_priors(cfg: og.ArchConfig, rng: random.Random) -> og.ArchConfig:
+    cfg = maybe_inject_recurrent(cfg, rng, p=0.18)
+    cfg = maybe_inject_n2n(cfg, rng, p=0.2)
+    return cfg
+
+
+_LAST_EVAL_METRICS: dict[str, float] = {
+    "r_blend": 0.0,
+    "r_seam": 0.0,
+    "r_body": 0.0,
+    "j": 0.0,
+    "t_ms": 0.0,
+}
+
+
 def evaluate(
     cfg: og.ArchConfig,
     hp: og.HyperParams,
@@ -121,32 +149,25 @@ def evaluate(
     fit_steps_default: int,
     batch_default: int,
 ) -> tuple[float, float, og.SeamCell]:
-    """Fit + eval; return (residual_raw, residual_with_bonus, cell)."""
-    cell = og.SeamCell(cfg).to(device)
-    fit_steps = int(hp.fit_steps or fit_steps_default)
-    batch = int(hp.batch or batch_default)
-    r_fit, _ = og.fit_cell(
-        cell,
-        cfg.ops,
+    """Fit + R_blend + latency J; return (r_blend, j_scored, cell)."""
+    r_blend, j, j_scored, t_ms, cell = og.evaluate_candidate(
+        cfg,
+        hp,
         device,
-        steps=fit_steps,
-        batch=batch,
-        lr=hp.lr,
-        adv_coef=hp.adv_coef if cfg.use_adv_aux else 0.0,
+        baseline=baseline,
+        fit_steps_default=fit_steps_default,
+        batch_default=batch_default,
     )
-    r_eval = og.eval_cell(cell, cfg.ops, device, batch=max(64, batch))
-    residual_raw = og.finite_scalar(0.5 * r_fit + 0.5 * r_eval, 0.0)
-    dmb = og.finite_scalar(
-        depth_mixture_bonus(
-            residual_raw,
-            baseline,
-            cfg.depth,
-            len(cfg.blocks),
-            cfg.moe_mode,
-        ),
-        0.0,
-    )
-    return residual_raw, residual_raw + dmb, cell
+    _LAST_EVAL_METRICS["r_blend"] = float(r_blend)
+    _LAST_EVAL_METRICS["j"] = float(j)
+    _LAST_EVAL_METRICS["t_ms"] = float(t_ms)
+    # Debug components on a fresh batch (no grad).
+    with torch.no_grad():
+        ideal, eng = og.make_batch(max(32, batch_default), og.N, device)
+        out = og.apply_ops(eng, cell, cfg.ops)
+        _LAST_EVAL_METRICS["r_seam"] = float(og.residual_score_seam(ideal, out).mean().item())
+        _LAST_EVAL_METRICS["r_body"] = float(og.residual_score_body(eng, out).mean().item())
+    return r_blend, j_scored, cell
 
 
 def append_hist(path: Path, row: dict[str, Any]) -> None:
@@ -155,10 +176,28 @@ def append_hist(path: Path, row: dict[str, Any]) -> None:
 
 
 def save_ckpt(path: Path, payload: dict[str, Any]) -> None:
+    """Atomic-ish JSON write with Windows-friendly retries (AV/indexer locks)."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-    tmp.replace(path)
+    text = json.dumps(payload, indent=2)
+    tmp = path.with_name(f"{path.stem}.{os.getpid()}.tmp")
+    tmp.write_text(text, encoding="utf-8")
+    last_err: Exception | None = None
+    for attempt in range(12):
+        try:
+            os.replace(str(tmp), str(path))
+            return
+        except PermissionError as exc:
+            last_err = exc
+            time.sleep(0.05 * (attempt + 1))
+        except OSError as exc:
+            last_err = exc
+            time.sleep(0.05 * (attempt + 1))
+    # Last resort: non-atomic overwrite so the search does not die mid-run.
+    try:
+        path.write_text(text, encoding="utf-8")
+        tmp.unlink(missing_ok=True)
+    except Exception as exc:  # noqa: BLE001
+        raise last_err or exc
 
 
 def load_ckpt(path: Path) -> dict[str, Any] | None:
@@ -555,7 +594,7 @@ def aging_step(
         parent = max(pop, key=lambda x: x.score)
     action = rng.randrange(og.N_ACTIONS)
     child_cfg = og.mutate_arch(parent.cfg, action, rng, None)
-    child_cfg = maybe_inject_recurrent(child_cfg, rng, p=0.22)
+    child_cfg = inject_search_priors(child_cfg, rng)
     child_hp = og.mutate_hp(parent.hp, rng)
     r_raw, r, cell = evaluate(
         child_cfg, child_hp, device, baseline=baseline, fit_steps_default=fit_steps, batch_default=batch
@@ -631,6 +670,17 @@ def run_approach(
 
     baseline = og.dual_cosine_baseline(device, batch=128)
     nobake_ref = og.nobake_baseline(device, batch=128)
+    # Beat-N2N gate: champ R_blend must strictly exceed frozen N2N corrupt→corrupt holdout.
+    n2n_gate_r: float | None = None
+    n2n_json = ROOT / "brand" / "artifacts" / "n2n_seam_baselines" / "n2n_baseline.json"
+    if n2n_json.is_file():
+        try:
+            n2n_blob = json.loads(n2n_json.read_text(encoding="utf-8"))
+            n2n_gate_r = float(
+                n2n_blob["modes"]["n2n_corrupt_corrupt"]["eval"]["residual_R"]
+            )
+        except Exception:
+            n2n_gate_r = None
     start_it = 1
     champ_r = -1.0
     champ_raw = -1.0
@@ -638,6 +688,9 @@ def run_approach(
     champ_hp: og.HyperParams | None = None
     champ_lstm = False
     champ_xlstm = False
+    champ_beats_n2n = False
+    champ_t_ms = 0.0
+    champ_j = -1.0
     iters_since_improve = 0
     plateau_every = 500
     t0 = time.time()
@@ -668,6 +721,9 @@ def run_approach(
         start_it = done_prev + 1
         champ_r = float(ckpt.get("champ_r", -1.0))
         champ_raw = float(ckpt.get("champ_raw", champ_r))
+        champ_j = float(ckpt.get("champ_j", champ_r))
+        champ_t_ms = float(ckpt.get("champ_t_ms", 0.0))
+        champ_beats_n2n = bool(ckpt.get("champ_beats_n2n", False))
         champ_lstm = bool(ckpt.get("champ_lstm", False))
         champ_xlstm = bool(ckpt.get("champ_xlstm", False))
         elapsed_prev = float(ckpt.get("wall_s", 0.0))
@@ -747,8 +803,10 @@ def run_approach(
     log(
         f"START approach={name} iters={iters} seed={seed} device={device} "
         f"baseline_dual_cosine={baseline:.6f} nobake={nobake_ref:.6f} "
+        f"n2n_gate_R_blend={n2n_gate_r} "
         f"blocks_has_lstm={'lstm' in BLOCKS} blocks_has_xlstm={'xlstm' in BLOCKS} "
-        f"hp_reward_sweep=on plateau_every={plateau_every}"
+        f"hp_reward_sweep=on plateau_every={plateau_every} "
+        f"primary_metric=r_blend search_objective=J"
     )
 
     # Hybrid: reuse overnight branch rotation with LSTM vocabulary already live
@@ -766,7 +824,7 @@ def run_approach(
     for it in range(start_it, iters + 1):
         proposal = name
         if name == "random":
-            trial_cfg = maybe_inject_recurrent(og.random_arch(rng), rng, p=0.2)
+            trial_cfg = inject_search_priors(og.random_arch(rng), rng)
             trial_hp = og.random_hp(rng)
             r_raw, r, cell = evaluate(
                 trial_cfg,
@@ -824,7 +882,7 @@ def run_approach(
             action = int(action_t.item())
             logprob = dist.log_prob(action_t)
             trial_cfg = og.mutate_arch(cur_cfg, action, rng, None)
-            trial_cfg = maybe_inject_recurrent(trial_cfg, rng, p=0.18)
+            trial_cfg = inject_search_priors(trial_cfg, rng)
             trial_hp = og.mutate_hp(cur_hp, rng)
             r_raw, r, cell = evaluate(
                 trial_cfg,
@@ -905,7 +963,7 @@ def run_approach(
                 trial_cfg = og.mutate_arch(cfg, action, rng, plateau)
                 trial_hp = og.mutate_hp(hp, rng)
                 proposal = "PPO_MUTATION"
-            trial_cfg = maybe_inject_recurrent(trial_cfg, rng, p=0.18)
+            trial_cfg = inject_search_priors(trial_cfg, rng)
             r_raw, r, cell = evaluate(
                 trial_cfg,
                 trial_hp,
@@ -953,18 +1011,51 @@ def run_approach(
         else:
             raise ValueError(name)
 
-        if r > champ_r:
+        beats = n2n_gate_r is None or r_raw > float(n2n_gate_r)
+        promote = False
+        if beats and (not champ_beats_n2n or r > champ_r):
+            # Gate-passing always replaces a non-passing champ; else need better J.
+            promote = True
+        elif (not champ_beats_n2n) and (not beats) and r > champ_r:
+            # Provisional champ while nobody has cleared the N2N gate yet.
+            promote = True
+        if promote:
             champ_r = r
             champ_raw = r_raw
             champ_cfg = trial_cfg
             champ_hp = trial_hp
+            champ_beats_n2n = bool(beats)
+            champ_t_ms = float(_LAST_EVAL_METRICS.get("t_ms") or 0.0)
+            champ_j = float(_LAST_EVAL_METRICS.get("j") or r)
             flags = arch_recurrent_flags(trial_cfg)
             champ_lstm = flags["lstm"]
             champ_xlstm = flags["xlstm"]
             iters_since_improve = 0
+            torch.save(
+                {
+                    "cell_state_dict": cell.state_dict(),
+                    "architecture": trial_cfg.to_dict(),
+                    "hyperparams": trial_hp.to_dict(),
+                    "r_blend": r_raw,
+                    "r_seam": _LAST_EVAL_METRICS.get("r_seam"),
+                    "r_body": _LAST_EVAL_METRICS.get("r_body"),
+                    "j": champ_j,
+                    "t_ms": champ_t_ms,
+                    "beats_n2n": champ_beats_n2n,
+                    "n2n_gate_r": n2n_gate_r,
+                    "primary_metric": "r_blend",
+                    "blend_alpha": og.BLEND_ALPHA,
+                    "search_objective": "J=R_blend-lambda*latency_norm",
+                },
+                approach_dir / "champ_cell.pt",
+            )
             log(
-                f"CHAMP approach={name} iter={it} R={champ_r:.6f} raw={champ_raw:.6f} "
-                f"lstm={champ_lstm} xlstm={champ_xlstm} "
+                f"CHAMP approach={name} iter={it} J_scored={champ_r:.6f} "
+                f"R_blend={champ_raw:.6f} "
+                f"R_seam={_LAST_EVAL_METRICS.get('r_seam')} "
+                f"R_body={_LAST_EVAL_METRICS.get('r_body')} "
+                f"J={champ_j:.6f} t_ms={champ_t_ms:.3f} "
+                f"beats_n2n={champ_beats_n2n} lstm={champ_lstm} xlstm={champ_xlstm} "
                 f"reward_mode={getattr(trial_hp, 'reward_mode', None)}"
             )
         else:
@@ -976,19 +1067,31 @@ def run_approach(
             "approach": name,
             "proposal": proposal,
             "residual": r_raw,
+            "r_blend": r_raw,
+            "r_seam": _LAST_EVAL_METRICS.get("r_seam"),
+            "r_body": _LAST_EVAL_METRICS.get("r_body"),
+            "t_ms": _LAST_EVAL_METRICS.get("t_ms"),
+            "j": _LAST_EVAL_METRICS.get("j"),
             "residual_scored": r,
             "champ": champ_r,
             "champ_raw": champ_raw,
+            "beats_n2n": champ_beats_n2n,
+            "n2n_gate_r": n2n_gate_r,
+            "blend_alpha": og.BLEND_ALPHA,
             "lstm_in_trial": trial_flags["lstm"],
             "xlstm_in_trial": trial_flags["xlstm"],
             "lstm_in_champ": champ_lstm,
             "xlstm_in_champ": champ_xlstm,
+            "n2n_unet_in_trial": "n2n_unet" in trial_cfg.blocks or trial_cfg.cell_kind == "n2n_unet",
             "baseline_dual_cosine": baseline,
             "baseline_nobake": nobake_ref,
             "reward_mode": getattr(trial_hp, "reward_mode", None),
             "wall_s": elapsed_prev + (time.time() - t0),
             "arch": trial_cfg.to_dict(),
             "hp": trial_hp.to_dict(),
+            "primary_metric": "r_blend",
+            "search_objective": "J=R_blend-lambda*latency_norm",
+            "lambda_latency": og.LAMBDA_LATENCY,
         }
         append_hist(hist_path, row)
         tb_log(
@@ -1008,6 +1111,12 @@ def run_approach(
                 "iters_done": it,
                 "champ_r": champ_r,
                 "champ_raw": champ_raw,
+                "champ_j": champ_j,
+                "champ_t_ms": champ_t_ms,
+                "champ_beats_n2n": champ_beats_n2n,
+                "n2n_gate_r": n2n_gate_r,
+                "primary_metric": "r_blend",
+                "search_objective": "J=R_blend-lambda*latency_norm",
                 "champ_lstm": champ_lstm,
                 "champ_xlstm": champ_xlstm,
                 "champ_cfg": champ_cfg.to_dict() if champ_cfg else None,
@@ -1051,6 +1160,13 @@ def run_approach(
         "seed": seed,
         "champ_r": champ_r,
         "champ_raw": champ_raw,
+        "champ_j": champ_j,
+        "champ_t_ms": champ_t_ms,
+        "champ_beats_n2n": champ_beats_n2n,
+        "n2n_gate_r": n2n_gate_r,
+        "primary_metric": "r_blend",
+        "search_objective": "J=R_blend-lambda*latency_norm",
+        "lambda_latency": og.LAMBDA_LATENCY,
         "delta_r_vs_dual_cosine": champ_raw - baseline if champ_raw >= 0 else None,
         "baseline_dual_cosine": baseline,
         "wall_s": wall_s,
@@ -1059,8 +1175,10 @@ def run_approach(
         "xlstm_in_champ": champ_xlstm,
         "champ_arch": champ_cfg.to_dict() if champ_cfg else None,
         "champ_hp": champ_hp.to_dict() if champ_hp else None,
+        "champ_cell_path": str(approach_dir / "champ_cell.pt"),
         "history_path": str(hist_path),
         "finished_at": utc_now(),
+        "protocol": "paper_v10",
     }
     (approach_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     log(
@@ -1127,6 +1245,150 @@ DISPLAY_NAMES = {
     "tpe": "TPE Bayes NAS",
     "hybrid_lstm": "Ours (hybrid GA–PPO)",
 }
+
+# Okabe–Ito (same as learning-curve figure)
+BAR_COLORS = {
+    "random": "#000000",
+    "cmaes": "#0072B2",
+    "reinforce": "#009E73",
+    "aging_evo": "#E69F00",
+    "tpe": "#CC79A7",
+    "hybrid_lstm": "#D55E00",
+}
+
+
+def plot_bars(aggregate: dict[str, Any], out_png: Path, out_pdf: Path | None = None) -> None:
+    """At-a-glance bar chart: champ R (+ optional ΔR panel). Manuscript display names."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    order = [m for m in APPROACHES if any(r["method"] == m for r in aggregate.get("table", []))]
+    by_m = {r["method"]: r for r in aggregate.get("table", [])}
+    labels = [DISPLAY_NAMES.get(m, m) for m in order]
+    rs = [float(by_m[m]["champ_r"]) for m in order]
+    deltas = [float(by_m[m]["delta_r_vs_dual_cosine"]) for m in order]
+    colors = [BAR_COLORS.get(m, "#666666") for m in order]
+    hatches = ["", "//", "\\\\", "xx", "..", "++"]
+
+    fig, (ax0, ax1) = plt.subplots(
+        1, 2, figsize=(7.2, 3.4), gridspec_kw={"width_ratios": [1.15, 1.0]}
+    )
+    x = np.arange(len(order))
+    bars0 = ax0.bar(x, rs, color=colors, edgecolor="#333333", linewidth=0.8, width=0.72)
+    for b, h in zip(bars0, hatches):
+        b.set_hatch(h)
+    ax0.set_xticks(x)
+    ax0.set_xticklabels(labels, rotation=28, ha="right", fontsize=7.5)
+    ax0.set_ylabel("Champion prolonged $R$")
+    ax0.set_title("(a) Absolute champion $R$@5k")
+    ymin = max(0.96, min(rs) - 0.008) if rs else 0.96
+    ax0.set_ylim(ymin, min(1.0, max(rs) + 0.004) if rs else 1.0)
+    ax0.grid(True, axis="y", alpha=0.28)
+    base = aggregate.get("baseline_dual_cosine")
+    if base is not None:
+        ax0.axhline(float(base), color="#999999", linestyle="--", linewidth=1.2, label="DualCosine")
+        ax0.legend(loc="lower right", fontsize=7, frameon=False)
+
+    bars1 = ax1.bar(x, deltas, color=colors, edgecolor="#333333", linewidth=0.8, width=0.72)
+    for b, h in zip(bars1, hatches):
+        b.set_hatch(h)
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(labels, rotation=28, ha="right", fontsize=7.5)
+    ax1.set_ylabel("$\\Delta R$ vs DualCosine")
+    ax1.set_title("(b) Gap vs DualCosine (reporting only)")
+    ax1.axhline(0.0, color="#666666", linewidth=0.8)
+    ax1.grid(True, axis="y", alpha=0.28)
+
+    fig.suptitle(
+        "Matched 5k meta-approach comparison (seed 1902771841)",
+        fontsize=10,
+        y=1.02,
+    )
+    fig.tight_layout()
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_png, dpi=220, bbox_inches="tight")
+    if out_pdf is not None:
+        fig.savefig(out_pdf, bbox_inches="tight")
+    plt.close(fig)
+
+
+def build_aggregate_from_summaries(
+    out_dir: Path,
+    *,
+    iters: int,
+    seed: int,
+    batch: int,
+    fit_steps: int,
+    pop_size: int,
+    device: str,
+    approaches: list[str] | None = None,
+) -> dict[str, Any]:
+    """Rebuild publishable aggregate JSON from per-approach summary.json files."""
+    names = list(approaches or APPROACHES)
+    summaries: list[dict[str, Any]] = []
+    for name in names:
+        sp = out_dir / name / "summary.json"
+        if not sp.is_file():
+            raise FileNotFoundError(f"missing summary for {name}: {sp}")
+        summaries.append(json.loads(sp.read_text(encoding="utf-8")))
+    baseline = summaries[0].get("baseline_dual_cosine")
+    for s in summaries:
+        if s.get("baseline_dual_cosine") is not None:
+            baseline = s["baseline_dual_cosine"]
+            break
+    return {
+        "schema": "denoiseopt.meta_approach_compare.v1",
+        "publishable": True,
+        "seed": seed,
+        "iters": iters,
+        "batch": batch,
+        "fit_steps": fit_steps,
+        "pop_size": pop_size,
+        "device": device,
+        "baseline_dual_cosine": baseline,
+        "lstm_in_search_vocab": True,
+        "xlstm_in_search_vocab": True,
+        "reward_modes": list(getattr(og, "REWARD_MODES", ())),
+        "blocks": list(BLOCKS),
+        "approaches": {s["approach"]: s for s in summaries},
+        "table": [
+            {
+                "method": s["approach"],
+                "champ_r": s["champ_raw"],
+                "delta_r_vs_dual_cosine": s["delta_r_vs_dual_cosine"],
+                "wall_h": s["wall_h"],
+                "lstm_in_champ": s["lstm_in_champ"],
+                "xlstm_in_champ": s.get("xlstm_in_champ", False),
+            }
+            for s in summaries
+        ],
+        "created_at": utc_now(),
+    }
+
+
+def publish_aggregate_artifacts(aggregate: dict[str, Any], out_dir: Path) -> tuple[Path, Path, Path]:
+    """Write aggregate JSON, learning-curve PNG, bar chart, and TeX table into paper figures."""
+    paper_fig = META_ROOT / "paper" / "v7" / "figures"
+    paper_fig.mkdir(parents=True, exist_ok=True)
+    agg_path = out_dir / "meta_approach_compare.json"
+    agg_path.write_text(json.dumps(aggregate, indent=2), encoding="utf-8")
+    shutil.copy2(agg_path, paper_fig / "meta_approach_compare.json")
+
+    png = paper_fig / "fig_meta_approach_compare.png"
+    plot_compare(aggregate, png)
+    shutil.copy2(png, out_dir / "fig_meta_approach_compare.png")
+
+    bars_png = paper_fig / "meta_approach_bars.png"
+    bars_pdf = paper_fig / "meta_approach_bars.pdf"
+    plot_bars(aggregate, bars_png, bars_pdf)
+    shutil.copy2(bars_png, out_dir / "meta_approach_bars.png")
+
+    write_meta_table_tex(aggregate, paper_fig / "meta_approaches_table.tex")
+    return agg_path, png, bars_png
+
 
 def plot_compare(aggregate: dict[str, Any], out_png: Path) -> None:
     import matplotlib
@@ -1221,6 +1483,11 @@ def main() -> int:
         type=Path,
         default=ROOT / "brand" / "artifacts" / "meta_approach_compare",
     )
+    ap.add_argument(
+        "--aggregate-only",
+        action="store_true",
+        help="Rebuild aggregate JSON + TeX + learning-curve/bar figures from summary.json; no search.",
+    )
     args = ap.parse_args()
 
     device = torch.device(args.device if args.device != "cuda" or torch.cuda.is_available() else "cpu")
@@ -1230,6 +1497,39 @@ def main() -> int:
     for n in names:
         if n not in APPROACHES:
             raise SystemExit(f"Unknown approach {n!r}; choose from {APPROACHES}")
+
+    if args.aggregate_only:
+        aggregate = build_aggregate_from_summaries(
+            out_dir,
+            iters=args.iters,
+            seed=args.seed,
+            batch=args.batch,
+            fit_steps=args.fit_steps,
+            pop_size=args.pop_size,
+            device=str(device),
+            approaches=names,
+        )
+        agg_path, png, bars_png = publish_aggregate_artifacts(aggregate, out_dir)
+        write_status(
+            out_dir,
+            phase="all_complete",
+            target_iters=args.iters,
+            approaches=names,
+            current=None,
+            current_iter=args.iters,
+            pid=os.getpid(),
+            extra={
+                "aggregate": str(agg_path),
+                "figure": str(png),
+                "bars": str(bars_png),
+                "mode": "aggregate_only",
+            },
+        )
+        print(json.dumps(aggregate["table"], indent=2), flush=True)
+        print(f"Wrote {agg_path}", flush=True)
+        print(f"Wrote {png}", flush=True)
+        print(f"Wrote {bars_png}", flush=True)
+        return 0
 
     # Protect long runs: --no-resume alone must not wipe progress.
     allow_fresh = bool(args.force_fresh)
@@ -1303,17 +1603,7 @@ def main() -> int:
         ],
         "created_at": utc_now(),
     }
-    agg_path = out_dir / "meta_approach_compare.json"
-    agg_path.write_text(json.dumps(aggregate, indent=2), encoding="utf-8")
-
-    paper_fig = META_ROOT / "paper" / "v7" / "figures"
-    paper_fig.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(agg_path, paper_fig / "meta_approach_compare.json")
-
-    png = paper_fig / "fig_meta_approach_compare.png"
-    plot_compare(aggregate, png)
-    shutil.copy2(png, out_dir / "fig_meta_approach_compare.png")
-    write_meta_table_tex(aggregate, paper_fig / "meta_approaches_table.tex")
+    agg_path, png, bars_png = publish_aggregate_artifacts(aggregate, out_dir)
     write_status(
         out_dir,
         phase="all_complete",
@@ -1322,11 +1612,12 @@ def main() -> int:
         current=None,
         current_iter=args.iters,
         pid=os.getpid(),
-        extra={"aggregate": str(agg_path), "figure": str(png)},
+        extra={"aggregate": str(agg_path), "figure": str(png), "bars": str(bars_png)},
     )
     print(json.dumps(aggregate["table"], indent=2), flush=True)
     print(f"Wrote {agg_path}", flush=True)
     print(f"Wrote {png}", flush=True)
+    print(f"Wrote {bars_png}", flush=True)
     return 0
 
 

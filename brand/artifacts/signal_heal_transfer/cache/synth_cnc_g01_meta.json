@@ -1,0 +1,9 @@
+{
+  "domain": "cnc",
+  "n": 256,
+  "period_l": 256,
+  "wrap": "Synthetic closed G01 contour residual: ideal=wide G2-ish corner blend; engine=sharp corners + DenoiseOpt wrap cliff. KIT CNC real data not fetched.",
+  "citation": "Synthetic CAD proxy per SIGNAL_HEALING_DATASETS.md CNC paragraph",
+  "seed": 1902771841,
+  "label": "synthetic_pilot \u2014 not KIT multimodal CNC recordings"
+}

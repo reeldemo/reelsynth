@@ -174,6 +174,7 @@ pub struct PerformanceUi {
     pub chord_set: usize,
     pub voicing: usize,
     pub base_octave: i8,
+    pub input_octave_offset: i8,
     pub scale_behavior: ScaleBehavior,
     pub arp: ArpUi,
 }
@@ -187,6 +188,7 @@ impl Default for PerformanceUi {
             chord_set: 0,
             voicing: 0,
             base_octave: 4,
+            input_octave_offset: 0,
             scale_behavior: ScaleBehavior::default(),
             arp: ArpUi::default(),
         }
@@ -209,6 +211,7 @@ impl PerformanceUi {
                 ChordVoicing::Root => 2,
             },
             base_octave: s.base_octave,
+            input_octave_offset: s.input_octave_offset.clamp(-3, 3),
             scale_behavior: s.scale_behavior,
             arp: ArpUi::from_settings(&s.arp),
         }
@@ -231,6 +234,7 @@ impl PerformanceUi {
                 _ => ChordVoicing::Close,
             },
             base_octave: self.base_octave,
+            input_octave_offset: self.input_octave_offset.clamp(-3, 3),
             arp: self.arp.to_settings(),
         }
     }
@@ -302,6 +306,7 @@ mod tests {
             root: 7,
             scale: Scale::Dorian,
             layout: PerformanceLayout::Chords,
+            input_octave_offset: 2,
             arp: ArpSettings {
                 enabled: true,
                 input_mode: ArpInputMode::ScaleDegrees,
@@ -316,6 +321,7 @@ mod tests {
         assert_eq!(back.root, 7);
         assert_eq!(back.scale, Scale::Dorian);
         assert_eq!(back.layout, PerformanceLayout::Chords);
+        assert_eq!(back.input_octave_offset, 2);
         assert!(back.arp.enabled);
         assert_eq!(back.arp.input_mode, ArpInputMode::ScaleDegrees);
         assert_eq!(back.arp.direction, ArpDirection::UpDown);

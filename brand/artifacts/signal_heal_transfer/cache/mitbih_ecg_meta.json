@@ -1,0 +1,22 @@
+{
+  "domain": "ecg",
+  "records": [
+    "100",
+    "101",
+    "103",
+    "105",
+    "112",
+    "113",
+    "115",
+    "117",
+    "121",
+    "123"
+  ],
+  "n": 256,
+  "period_l": 256,
+  "wrap": "R\u2013R normal beats resampled to L; ideal=local mean template with mild endpoint equalize (SBMM-lite classical); engine=single beat + wrap cliff.",
+  "fs_hz": 360.0,
+  "citation": "MIT-BIH Arrhythmia Database (PhysioNet, ODC-By 1.0)",
+  "seed": 1902771841,
+  "baseline_note": "ECG baselines are classical board + beat-average / spline join \u2014 not Cycle-GAN / BeatDiff SOTA (those need trained weights)."
+}

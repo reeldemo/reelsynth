@@ -1,0 +1,72 @@
+{
+  "approach": "random",
+  "iters": 5000,
+  "iters_done": 5000,
+  "seed": 1902771841,
+  "champ_r": 0.9812390058835347,
+  "champ_raw": 0.9781556725502014,
+  "delta_r_vs_dual_cosine": 0.1615707278251648,
+  "baseline_dual_cosine": 0.8165849447250366,
+  "wall_s": 20592.766453504562,
+  "wall_h": 5.720212903751268,
+  "lstm_in_champ": false,
+  "xlstm_in_champ": false,
+  "champ_arch": {
+    "depth": 10,
+    "width": 40,
+    "act": "silu",
+    "ops": [
+      "fade_pull",
+      "cycle_net",
+      "fir5",
+      "edge_pin",
+      "mlp_seam",
+      "soft_seam"
+    ],
+    "wet": 0.5036157242442906,
+    "fir": [
+      0.16714619114570994,
+      0.10944754136313169,
+      0.15226969647734767,
+      0.4109516064144032,
+      0.3773185052622726
+    ],
+    "cell_kind": "dense",
+    "soft_logits": [
+      -0.13140087716424875,
+      -0.5154500776028825,
+      0.47654013601694545,
+      0.377505759428884,
+      0.0563526698972614,
+      0.8192100779171827,
+      -0.25742350416272375,
+      0.27289795567348896,
+      -0.6505469192664384,
+      0.5241535382144451,
+      -0.8841245847672277,
+      0.38007385134988425,
+      0.0556233084810267,
+      0.6154742067279724,
+      0.43281298392038003
+    ],
+    "blocks": [
+      "dense",
+      "mlp",
+      "soft_mix",
+      "conv1d"
+    ],
+    "use_adv_aux": false,
+    "moe_mode": "moe_parallel"
+  },
+  "champ_hp": {
+    "lr": 0.007084206758905005,
+    "fit_steps": 48,
+    "batch": 64,
+    "entropy_coef": 0.005859226156338963,
+    "ppo_clip": 0.1,
+    "adv_coef": 0.1,
+    "reward_mode": "vs_dualcosine"
+  },
+  "history_path": "brand\\artifacts\\meta_approach_compare\\random\\history.jsonl",
+  "finished_at": "20260720T100513Z"
+}

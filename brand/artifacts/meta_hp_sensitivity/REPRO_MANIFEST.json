@@ -1,0 +1,18 @@
+{
+  "schema": "denoiseopt.meta_hp_sensitivity.repro.v1",
+  "seed": 1902771841,
+  "iters_per_config": 500,
+  "fit_steps": 24,
+  "batch": 48,
+  "design": "OAT_pm50",
+  "honesty": "One-at-a-time \u00b150% sensitivity probe at 500 outer iters under seed 1902771841. Measures local robustness of Table-2 / tab:hyperparams knobs; does NOT re-prove the 5k meta-approach ranking.",
+  "script": "scripts/bench_meta_hp_sensitivity.py",
+  "out_dir": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_hp_sensitivity",
+  "forbidden": "brand/artifacts/meta_approach_compare/",
+  "n_complete": 11,
+  "n_configs": 11,
+  "all_complete": true,
+  "built_at": "20260724T115439Z",
+  "resume_cmd": ".venv_gpu/Scripts/python.exe scripts/bench_meta_hp_sensitivity.py",
+  "aggregate_only_cmd": ".venv_gpu/Scripts/python.exe scripts/bench_meta_hp_sensitivity.py --aggregate-only"
+}

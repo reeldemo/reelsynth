@@ -1,0 +1,34 @@
+{
+  "schema": "denoiseopt.meta_approach_status.v1",
+  "updated_at": "2026-07-25T10:25:29.873913+00:00",
+  "phase": "all_complete",
+  "pid": 67512,
+  "out_dir": "brand\\artifacts\\meta_approach_compare_v10",
+  "target_iters": 1200,
+  "approaches_planned": [
+    "hybrid_lstm"
+  ],
+  "current_approach": null,
+  "current_iter": 1200,
+  "n_complete": 1,
+  "n_total": 1,
+  "all_complete": true,
+  "rows": [
+    {
+      "approach": "hybrid_lstm",
+      "iters_done": 1200,
+      "target_iters": 1200,
+      "pct": 100.0,
+      "champ_r": 0.969511866569519,
+      "lstm_in_champ": false,
+      "xlstm_in_champ": false,
+      "wall_s": 5941.281064271927,
+      "complete": true,
+      "history_lines": 1200,
+      "has_checkpoint": true
+    }
+  ],
+  "aggregate": "brand\\artifacts\\meta_approach_compare_v10\\meta_approach_compare.json",
+  "figure": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\denoise-opt-meta\\paper\\v7\\figures\\fig_meta_approach_compare.png",
+  "bars": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\denoise-opt-meta\\paper\\v7\\figures\\meta_approach_bars.png"
+}

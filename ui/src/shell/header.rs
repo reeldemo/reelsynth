@@ -5,19 +5,22 @@ use reelsynth_ui_theme::Tokens;
 use super::*;
 use crate::audit_registry::{record_region, record_used, AuditId};
 use crate::fx_rack::{draw_effect_rack_sidebar, EffectRackState};
-use crate::layout::{osc_column_split_heights, OSC_SIDEBAR_STACK_GAP, UiScale};
-use crate::mod_matrix::{draw_mod_matrix_sidebar, ModMatrixState};
+use crate::layout::{osc_column_split_heights, UiScale, OSC_SIDEBAR_STACK_GAP};
 use crate::layout_audit::{
     header_left_cluster_rect_id, header_right_cluster_rect_id, header_used_rect_id,
-    osc_fx_allocated_rect_id, osc_fx_used_rect_id, osc_mod_allocated_rect_id,
-    osc_mod_used_rect_id, osc_used_rect_id,
+    osc_fx_allocated_rect_id, osc_fx_used_rect_id, osc_mod_allocated_rect_id, osc_mod_used_rect_id,
+    osc_used_rect_id,
 };
+use crate::mod_matrix::{draw_mod_matrix_sidebar, ModMatrixState};
 use crate::osc_column::{draw_osc_column, OscColumnInput, OscColumnState};
-use crate::region::region;
-use crate::state::ShellMode;
-use crate::widgets::{button_ghost, button_toggle, menu_action, menu_divider, menu_section_label, menu_selectable, reel_combo, select_value_text, styled_menu_body};
 use crate::performance::draw_performance_header;
+use crate::region::region;
 use crate::state::OscStripContext;
+use crate::state::ShellMode;
+use crate::widgets::{
+    button_ghost, button_toggle, menu_action, menu_divider, menu_section_label, menu_selectable,
+    reel_combo, select_value_text, styled_menu_body,
+};
 use crate::wt::morph_amount_for_position;
 
 pub(super) fn draw_header(
@@ -87,36 +90,36 @@ pub(super) fn draw_header(
 
                     let wt_menu = ui.menu_button(header_menu_label("WT"), |ui| {
                         styled_menu_body(ui, |ui| {
-                        if menu_action(ui, "Open .reelwt…").clicked() {
-                            actions.import_wt_file = true;
-                            ui.close_menu();
-                        }
-                        if menu_action(ui, "Save .reelwt…").clicked() {
-                            actions.save_wt_file = true;
-                            ui.close_menu();
-                        }
-                        menu_divider(ui);
-                        menu_section_label(ui, "Factory wavetables");
-                        for entry in FACTORY_BANKS {
-                            if menu_action(ui, entry.label).clicked() {
-                                actions.import_factory_wt = Some(entry.id.to_string());
+                            if menu_action(ui, "Open .reelwt…").clicked() {
+                                actions.import_wt_file = true;
                                 ui.close_menu();
                             }
-                        }
-                        menu_divider(ui);
-                        menu_section_label(ui, "Import");
-                        if menu_action(ui, "Vital (.vitaltable)…").clicked() {
-                            actions.import_vital_wt = true;
-                            ui.close_menu();
-                        }
-                        if menu_action(ui, "WAV folder…").clicked() {
-                            actions.import_wav_folder = true;
-                            ui.close_menu();
-                        }
-                        if menu_action(ui, "Serum (.fxp)…").clicked() {
-                            actions.import_serum_fxp = true;
-                            ui.close_menu();
-                        }
+                            if menu_action(ui, "Save .reelwt…").clicked() {
+                                actions.save_wt_file = true;
+                                ui.close_menu();
+                            }
+                            menu_divider(ui);
+                            menu_section_label(ui, "Factory wavetables");
+                            for entry in FACTORY_BANKS {
+                                if menu_action(ui, entry.label).clicked() {
+                                    actions.import_factory_wt = Some(entry.id.to_string());
+                                    ui.close_menu();
+                                }
+                            }
+                            menu_divider(ui);
+                            menu_section_label(ui, "Import");
+                            if menu_action(ui, "Vital (.vitaltable)…").clicked() {
+                                actions.import_vital_wt = true;
+                                ui.close_menu();
+                            }
+                            if menu_action(ui, "WAV folder…").clicked() {
+                                actions.import_wav_folder = true;
+                                ui.close_menu();
+                            }
+                            if menu_action(ui, "Serum (.fxp)…").clicked() {
+                                actions.import_serum_fxp = true;
+                                ui.close_menu();
+                            }
                         });
                     });
                     record_used(ui.ctx(), AuditId::HeaderWtMenu, wt_menu.response.rect);
@@ -274,10 +277,8 @@ pub(super) fn draw_header(
 
                         ui.horizontal(|ui| {
                             ui.spacing_mut().item_spacing.x = 6.0;
-                            let (dot_rect, _) = ui.allocate_exact_size(
-                                egui::vec2(6.0, 6.0),
-                                egui::Sense::hover(),
-                            );
+                            let (dot_rect, _) =
+                                ui.allocate_exact_size(egui::vec2(6.0, 6.0), egui::Sense::hover());
                             ui.painter_at(dot_rect).circle_filled(
                                 dot_rect.center(),
                                 3.0,
@@ -295,6 +296,40 @@ pub(super) fn draw_header(
                             state.piano_visible = !state.piano_visible;
                         }
                         record_used(ui.ctx(), AuditId::HeaderPianoToggle, toggle.rect);
+
+                        let seam_label = state.wt_quant_seam.result_label();
+                        let seam_combo = reel_combo(
+                            ui,
+                            "header_result_heal",
+                            select_value_text(&seam_label),
+                            128.0,
+                            |ui| {
+                                use crate::wt::QuantSeamMode;
+                                for (idx, _) in QuantSeamMode::LABELS.iter().enumerate() {
+                                    let mode = QuantSeamMode::from_index(idx);
+                                    if menu_selectable(
+                                        ui,
+                                        state.wt_quant_seam == mode,
+                                        &mode.result_label(),
+                                    )
+                                    .on_hover_text(mode.tooltip())
+                                    .clicked()
+                                        && state.wt_quant_seam != mode
+                                    {
+                                        state.wt_quant_seam = mode;
+                                        state.ai_seam_enabled = mode.needs_snapshot_bake();
+                                        crate::wt::set_quant_seam_mode(mode);
+                                        actions.ai_seam_changed = true;
+                                    }
+                                }
+                            },
+                        )
+                        .response
+                        .on_hover_text(
+                            "Result heal — bakes the total wavetable bank (all frames) before play. \
+                             Per-layer heal lives on the Selected toolbar.",
+                        );
+                        record_used(ui.ctx(), AuditId::HeaderAiSeamToggle, seam_combo.rect);
 
                         let midi_label = midi
                             .names
@@ -375,7 +410,12 @@ fn truncate_status(s: &str, max_chars: usize) -> String {
     if s.chars().count() <= max_chars {
         s.to_string()
     } else {
-        format!("{}…", s.chars().take(max_chars.saturating_sub(1)).collect::<String>())
+        format!(
+            "{}…",
+            s.chars()
+                .take(max_chars.saturating_sub(1))
+                .collect::<String>()
+        )
     }
 }
 
@@ -460,12 +500,11 @@ pub(super) fn draw_osc(
             Rect::NOTHING
         };
         let mod_rect = if stack.mod_matrix > 0.0 {
-            let mod_top = y
-                + if fx_rect.is_positive() {
-                    OSC_SIDEBAR_STACK_GAP * s
-                } else {
-                    0.0
-                };
+            let mod_top = y + if fx_rect.is_positive() {
+                OSC_SIDEBAR_STACK_GAP * s
+            } else {
+                0.0
+            };
             Rect::from_min_max(
                 egui::pos2(rect.min.x, mod_top),
                 egui::pos2(rect.max.x, mod_top + stack.mod_matrix),
@@ -542,7 +581,6 @@ pub(super) fn draw_osc(
             record_region(ui.ctx(), AuditId::OscFxPanel, fx_rect, used);
         }
 
-
         if mod_rect.is_positive() {
             let mod_result = draw_mod_matrix_sidebar(
                 ui,
@@ -566,7 +604,8 @@ pub(super) fn draw_osc(
         }
 
         let used = ui.min_rect().intersect(rect);
-        ui.ctx().data_mut(|d| d.insert_temp(osc_used_rect_id(), used));
+        ui.ctx()
+            .data_mut(|d| d.insert_temp(osc_used_rect_id(), used));
         record_region(ui.ctx(), AuditId::OscColumn, rect, used);
     });
 }

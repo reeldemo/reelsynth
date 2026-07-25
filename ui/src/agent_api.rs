@@ -91,7 +91,10 @@ impl AgentSession {
             "off" | "seam·off" | "seam-off" => QuantSeamMode::Off,
             "soft" | "seam·soft" | "seam-soft" => QuantSeamMode::Soft,
             "adapt" | "adaptive" | "seam·adapt" | "seam-adapt" => QuantSeamMode::Adaptive,
-            "opt" | "denoise" | "denoise_opt" | "seam·opt" | "seam-opt" => QuantSeamMode::Opt,
+            "dualcosine" | "dual_cosine" | "dual-cosine" => QuantSeamMode::DualCosine,
+            "n2n" | "noise2noise" | "noise_2_noise" => QuantSeamMode::Noise2Noise,
+            "opt" | "denoise" | "denoise_opt" | "seam·opt" | "seam-opt" | "reelai" | "reel_ai"
+            | "reel-ai" => QuantSeamMode::ReelAi,
             other => return Err(format!("unknown seam mode: {other}")),
         };
         self.set_seam_mode(mode);

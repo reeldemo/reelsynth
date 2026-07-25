@@ -6,6 +6,26 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+### Changed
+
+### Fixed
+
+## [0.3.0] - 2026-07-25
+
+### Added
+
+- **Input octave shift** — header **Oct −/+** control persists with the preset and shifts hardware MIDI plus the chromatic computer-keyboard play row by ±3 octaves. The painted on-screen piano remains at its labeled pitches.
+- **Result vs Layer heal** — header **Result·…** bakes the whole bank (total mix path); Selected **Layer·…** + **Fit ends** heal only the selected layer’s frame so one oscillator can use different mechanisms per layer (`WaveLayer.seam_mode` in `.reelpreset`).
+- **Fit ends** — Selected WT toolbar one-shot classical **DualCosine** bake on the **selected layer frame** (was whole-bank).
+- **ReelAI seam dropdown** — header + Selected toolbar choose Seam·Off / Soft / Adapt, classical **DualCosine**, embedded **Noise2Noise**, or branded **ReelAI** (DenoiseOpt v10 `R_blend` freeze). Snapshot full-bank bake for DualCosine / Noise2Noise / ReelAI; Off restores the pre-bake bank. Session-only (not in app settings / presets).
+
+### Changed
+
+- **Docs — ReelAI manual** — musician path documents ReelAI / Noise2Noise / DualCosine / Fit ends bake-before-play flow in [GETTING_STARTED.md](docs/GETTING_STARTED.md), [UI.md](docs/UI.md), and [WORKFLOW.md](docs/WORKFLOW.md).
+- **AI seam / DenoiseOpt v10 freeze** — `FROZEN_THETA` re-locked under the v10.1 **R_blend** objective (α=0.7 discontinuity-local seam heal + mid-cycle body identity), constrained to still pass the harsh-catalog denoise+shape quality gate vs DualCosine. Holdout: R_blend ≈0.807 vs prior frozen ≈0.694 and DualCosine ≈0.478 (`brand/artifacts/denoise_opt_v10_r_blend_freeze.json`; `bench_denoise_opt -- --r-blend`). Neural hybrid_lstm FitCell remains research-only; product path is the in-engine **ReelAI** bake.
+
 ## [0.2.0] - 2026-07-20
 
 ### Added
@@ -18,6 +38,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **Second-note poly click** — √N voice headroom ducks fast / restores slow, with a soft bus clip, so 2–5 note chords no longer chop held notes or clip into crackle. Regression covers simultaneous + staggered polyphony through **12** voices.
+- **Piano layout black keys** — footer / keyboard notes no longer scale-snap under default **Piano** layout (Major etc.); C#/D#/F#/G#/A# play chromatically. Snap still applies in **Scale** layout.
 - **WT curve fill** — area under Design Selected / Result / 2D waveforms uses a per-segment mesh to the zero baseline instead of egui `convex_polygon` (fan tessellation looked like crossed triangles on oscillating curves); fill/zero line track zoom-pan; layer sampling no longer duplicates phase 0 at the right edge
 - **Compose black keys** — shared footer piano no longer force-enables scale-fold in Compose; fold follows **Scale** layout only (same path as Design), so C#/D#/F#/G#/A# play again under default Piano + Major
 - **Header status / MIDI** — MIDI device combo shows **No MIDI** instead of raw `None` when disconnected; Quant interp patch value `none` maps to **Hold** and toolbar segment combo shows mode labels (`1→2·Linear`)
@@ -89,6 +111,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Python PyO3 bindings for render and export
 - Plugin UI shell (CLAP entry stub, no host I/O)
 
-[Unreleased]: https://github.com/reeldemo/reelsynth/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/reeldemo/reelsynth/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/reeldemo/reelsynth/releases/tag/v0.3.0
 [0.2.0]: https://github.com/reeldemo/reelsynth/releases/tag/v0.2.0
 [0.1.0]: https://github.com/reeldemo/reelsynth/releases/tag/v0.1.0

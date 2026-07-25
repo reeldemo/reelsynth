@@ -2,9 +2,11 @@
 
 **ReelSynth technical note** · 2026-07-18 · MIT
 
+> **Product name:** in the app this is **ReelAI** (header + Selected seam dropdown), with **Fit ends** for a one-shot classical DualCosine bake. Musician guide: [GETTING_STARTED.md § Clean wrap crackle](GETTING_STARTED.md#clean-wrap-crackle-with-reelai) · [UI.md § ReelAI](UI.md#reelai-seam-heal).
+
 ## Abstract
 
-We denoise wavetable wrap crackle without labeled training data. A moderately deep, seam-local periodize stack with twelve continuous parameters θ is fit once by minimizing a joint loss of **how much crackle was removed** and **how much mid-cycle shape was kept**. At runtime the synth only runs frozen inference (O(N) per cycle). On ReelSynth’s harsh signal matrix the fitted DenoiseOpt option reaches mean denoise ≈ 0.78 and shape ≈ 0.99 (quality ≈ 0.89), matching or beating the hand-tuned DualCosine seam baseline while remaining an explicit user-selectable mode (`Seam·Opt`).
+We denoise wavetable wrap crackle without labeled training data. A moderately deep, seam-local periodize stack with twelve continuous parameters θ is fit once by minimizing a joint loss of **how much crackle was removed** and **how much mid-cycle shape was kept**. At runtime the synth only runs frozen inference (O(N) per cycle). On ReelSynth’s harsh signal matrix the fitted DenoiseOpt option reaches mean denoise ≈ 0.78 and shape ≈ 0.99 (quality ≈ 0.89), matching or beating the hand-tuned DualCosine seam baseline while remaining an explicit user-selectable mode (**ReelAI** in the UI; historically `Seam·Opt`).
 
 ## Problem
 

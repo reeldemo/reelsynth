@@ -1,0 +1,374 @@
+{
+  "schema": "reelsynth-preset-v2",
+  "name": "Heal DualCosine \u00b7 tile 49",
+  "wavetable_id": "04_tile49_dualcosine",
+  "wavetable_path": "04_tile49_dualcosine.reelwt",
+  "oscillators": [
+    {
+      "type": "wavetable",
+      "level": 0.9,
+      "position": 0.0,
+      "detune": 10.0,
+      "unison": 3,
+      "pan": 0.0,
+      "wavetable_id": "04_tile49_dualcosine",
+      "pulse_width": 0.5,
+      "morph_a": 0.0,
+      "morph_b": 15.0,
+      "morph_amount": 0.0,
+      "warp_mode": "none",
+      "warp_amount": 0.0,
+      "fm_source": "none",
+      "fm_ratio": 1.0,
+      "fm_index": 0.0,
+      "wave_quant": 16,
+      "wave_slot": 0,
+      "wave_slot_fine": 0.0,
+      "wave_slots": [
+        {
+          "frame": 0.0,
+          "label": "Heal"
+        },
+        {
+          "frame": 1.0,
+          "label": ""
+        },
+        {
+          "frame": 2.0,
+          "label": ""
+        },
+        {
+          "frame": 3.0,
+          "label": ""
+        },
+        {
+          "frame": 4.0,
+          "label": ""
+        },
+        {
+          "frame": 5.0,
+          "label": ""
+        },
+        {
+          "frame": 6.0,
+          "label": ""
+        },
+        {
+          "frame": 7.0,
+          "label": "Mid"
+        },
+        {
+          "frame": 8.0,
+          "label": ""
+        },
+        {
+          "frame": 9.0,
+          "label": ""
+        },
+        {
+          "frame": 10.0,
+          "label": ""
+        },
+        {
+          "frame": 11.0,
+          "label": ""
+        },
+        {
+          "frame": 12.0,
+          "label": ""
+        },
+        {
+          "frame": 13.0,
+          "label": ""
+        },
+        {
+          "frame": 14.0,
+          "label": ""
+        },
+        {
+          "frame": 15.0,
+          "label": "End"
+        }
+      ],
+      "wave_layers": [],
+      "stack_mode": "add"
+    }
+  ],
+  "filter": {
+    "type": "lowpass",
+    "cutoff": 2800.0,
+    "resonance": 0.45,
+    "key_tracking": 0.65,
+    "drive": 0.12
+  },
+  "filter2": {
+    "type": "lowpass",
+    "cutoff": 5200.0,
+    "resonance": 0.22,
+    "key_tracking": 0.4,
+    "drive": 0.0
+  },
+  "envelope": {
+    "attack": 0.01,
+    "decay": 0.32,
+    "sustain": 0.65,
+    "release": 0.42
+  },
+  "filter_envelope": {
+    "attack": 0.02,
+    "decay": 0.4,
+    "sustain": 0.35,
+    "release": 0.5
+  },
+  "lfo": {
+    "rate": 0.35,
+    "depth": 0.08,
+    "target": "osc1_position",
+    "shape": "sine"
+  },
+  "lfo2": {
+    "rate": 0.5,
+    "depth": 0.0,
+    "target": "wt_position",
+    "shape": "sine"
+  },
+  "macros": [
+    {
+      "value": 0.5,
+      "target": "filter_cutoff",
+      "amount": 0.6
+    },
+    {
+      "value": 0.5,
+      "target": "osc1_position",
+      "amount": 0.5
+    },
+    {
+      "value": 0.5,
+      "target": "osc1_fm_index",
+      "amount": 0.4
+    },
+    {
+      "value": 0.5,
+      "target": "filter_resonance",
+      "amount": 0.35
+    }
+  ],
+  "mod_matrix": [
+    {
+      "source": "lfo1",
+      "target": "osc1_position",
+      "amount": 0.12,
+      "enabled": true
+    },
+    {
+      "source": "velocity",
+      "target": "osc1_level",
+      "amount": 0.35,
+      "enabled": true
+    },
+    {
+      "source": "filt_env",
+      "target": "filter_cutoff",
+      "amount": 0.22,
+      "enabled": true
+    }
+  ],
+  "effects": [
+    {
+      "effect_type": "chorus",
+      "bypassed": false,
+      "mix": 0.22,
+      "rate": 0.8,
+      "depth": 0.35,
+      "time_ms": 280.0,
+      "feedback": 0.32,
+      "size": 0.68,
+      "damping": 0.42,
+      "drive": 0.35,
+      "tone": 0.5,
+      "threshold": -18.0,
+      "ratio": 4.0,
+      "attack": 0.01,
+      "release": 0.12
+    },
+    {
+      "effect_type": "delay",
+      "bypassed": false,
+      "mix": 0.18,
+      "rate": 0.8,
+      "depth": 0.35,
+      "time_ms": 120.0,
+      "feedback": 0.28,
+      "size": 0.68,
+      "damping": 0.42,
+      "drive": 0.35,
+      "tone": 0.5,
+      "threshold": -18.0,
+      "ratio": 4.0,
+      "attack": 0.01,
+      "release": 0.12
+    },
+    {
+      "effect_type": "reverb",
+      "bypassed": true,
+      "mix": 0.28,
+      "rate": 0.8,
+      "depth": 0.35,
+      "time_ms": 280.0,
+      "feedback": 0.32,
+      "size": 0.68,
+      "damping": 0.42,
+      "drive": 0.35,
+      "tone": 0.5,
+      "threshold": -18.0,
+      "ratio": 4.0,
+      "attack": 0.01,
+      "release": 0.12
+    }
+  ],
+  "sub_level": 0.1,
+  "noise_level": 0.0,
+  "unison_stereo_spread": 0.85,
+  "performance": {
+    "root": 0,
+    "scale": "major",
+    "scale_behavior": "snap",
+    "layout": "piano",
+    "chord_set": "triads",
+    "voicing": "close",
+    "base_octave": 4,
+    "arp": {
+      "enabled": false,
+      "input_mode": "single_note",
+      "direction": "up",
+      "rate": "quarter",
+      "gate": 0.85,
+      "octave_spread": 1,
+      "latch": false
+    }
+  },
+  "sequence": {
+    "bpm": 120.0,
+    "time_sig_num": 4,
+    "time_sig_den": 4,
+    "loop_region": {
+      "start_beats": 0.0,
+      "end_beats": 16.0,
+      "enabled": true
+    },
+    "tracks": [
+      {
+        "name": "Track 1",
+        "mute": false,
+        "solo": false,
+        "arm": false,
+        "clips": [],
+        "target_osc": null
+      },
+      {
+        "name": "Track 2",
+        "mute": false,
+        "solo": false,
+        "arm": false,
+        "clips": [],
+        "target_osc": null
+      },
+      {
+        "name": "Track 3",
+        "mute": false,
+        "solo": false,
+        "arm": false,
+        "clips": [],
+        "target_osc": null
+      },
+      {
+        "name": "Track 4",
+        "mute": false,
+        "solo": false,
+        "arm": false,
+        "clips": [],
+        "target_osc": null
+      }
+    ],
+    "scenes": [
+      {
+        "name": "Scene 1",
+        "slots": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "name": "Scene 2",
+        "slots": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "name": "Scene 3",
+        "slots": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "name": "Scene 4",
+        "slots": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "name": "Scene 5",
+        "slots": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "name": "Scene 6",
+        "slots": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "name": "Scene 7",
+        "slots": [
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "name": "Scene 8",
+        "slots": [
+          null,
+          null,
+          null,
+          null
+        ]
+      }
+    ],
+    "quantize": {
+      "division": "sixteenth",
+      "triplet": false
+    }
+  },
+  "crackle": 0.0
+}

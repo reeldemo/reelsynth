@@ -1,0 +1,230 @@
+{
+  "schema": "denoiseopt.meta_hear_presets.v1",
+  "approach_code": "hybrid_lstm",
+  "approach_display": "Ours (hybrid GA\u2013PPO)",
+  "eval_seed": 20260719,
+  "search_seed": 1902771841,
+  "holdout_source": "holdout_batch.pt",
+  "bank": {
+    "num_frames": 16,
+    "frame_size": 2048
+  },
+  "preset_style": "factory_wt_lead Design + Factory Lead FX (chorus/delay on, reverb bypassed)",
+  "champ_raw_from_summary": 0.9914649724960327,
+  "delta_r_vs_dual_cosine_summary": 0.1748800277709961,
+  "refit": {
+    "fit_steps": 64,
+    "batch": 64,
+    "lr": 0.06844036093419292,
+    "adv_coef": 0.0,
+    "converged": false,
+    "train_r_last": 0.9913412928581238
+  },
+  "train_r_last": 0.9913412928581238,
+  "champ_arch": {
+    "depth": 12,
+    "width": 48,
+    "act": "tanh",
+    "ops": [
+      "cycle_net",
+      "fade_pull",
+      "fir5"
+    ],
+    "wet": 0.7245407380693173,
+    "fir": [
+      0.09384575163009412,
+      0.48805814652102797,
+      0.39091825891943194,
+      0.331059364757842,
+      0.46083074612670105
+    ],
+    "cell_kind": "tf_split",
+    "soft_logits": [
+      -0.7310634675404777,
+      0.1710795557276254,
+      -0.6233001575325193,
+      0.9827618982555753,
+      0.3947958367868978,
+      0.373733937967083,
+      0.46914590455657923,
+      0.37583370129354693,
+      -0.08300391880653188,
+      0.41187302648163265,
+      0.21241824583315116,
+      -0.36736061966500033,
+      0.3777839866967111,
+      1.352627609124864,
+      -0.11422418026695591
+    ],
+    "blocks": [
+      "tf_split"
+    ],
+    "use_adv_aux": true,
+    "moe_mode": "sequential"
+  },
+  "samples": [
+    {
+      "sample_index": 1,
+      "tile_index": 46,
+      "eval_seed": 20260719,
+      "wrap_abs": 2.282712936401367,
+      "R": {
+        "no_bake": 0.9503467082977295,
+        "dual_cosine": 0.6029019951820374,
+        "ours_hybrid": 0.9919406771659851
+      },
+      "files": {
+        "ours": {
+          "reelpreset": "01_tile46_ours.reelpreset",
+          "reelwt": "01_tile46_ours.reelwt"
+        },
+        "nobake": {
+          "reelpreset": "01_tile46_nobake.reelpreset",
+          "reelwt": "01_tile46_nobake.reelwt"
+        },
+        "dualcosine": {
+          "reelpreset": "01_tile46_dualcosine.reelpreset",
+          "reelwt": "01_tile46_dualcosine.reelwt"
+        }
+      },
+      "paper_heal_tile": true
+    },
+    {
+      "sample_index": 2,
+      "tile_index": 21,
+      "eval_seed": 20260719,
+      "wrap_abs": 2.2893970012664795,
+      "R": {
+        "no_bake": 0.93118816614151,
+        "dual_cosine": 0.639761209487915,
+        "ours_hybrid": 0.9914826154708862
+      },
+      "files": {
+        "ours": {
+          "reelpreset": "02_tile21_ours.reelpreset",
+          "reelwt": "02_tile21_ours.reelwt"
+        },
+        "nobake": {
+          "reelpreset": "02_tile21_nobake.reelpreset",
+          "reelwt": "02_tile21_nobake.reelwt"
+        },
+        "dualcosine": {
+          "reelpreset": "02_tile21_dualcosine.reelpreset",
+          "reelwt": "02_tile21_dualcosine.reelwt"
+        }
+      },
+      "paper_heal_tile": false
+    },
+    {
+      "sample_index": 3,
+      "tile_index": 4,
+      "eval_seed": 20260719,
+      "wrap_abs": 2.1520464420318604,
+      "R": {
+        "no_bake": 0.9685397148132324,
+        "dual_cosine": 0.651323676109314,
+        "ours_hybrid": 0.9930242896080017
+      },
+      "files": {
+        "ours": {
+          "reelpreset": "03_tile4_ours.reelpreset",
+          "reelwt": "03_tile4_ours.reelwt"
+        },
+        "nobake": {
+          "reelpreset": "03_tile4_nobake.reelpreset",
+          "reelwt": "03_tile4_nobake.reelwt"
+        },
+        "dualcosine": {
+          "reelpreset": "03_tile4_dualcosine.reelpreset",
+          "reelwt": "03_tile4_dualcosine.reelwt"
+        }
+      },
+      "paper_heal_tile": false
+    },
+    {
+      "sample_index": 4,
+      "tile_index": 49,
+      "eval_seed": 20260719,
+      "wrap_abs": 2.103854179382324,
+      "R": {
+        "no_bake": 0.9804750084877014,
+        "dual_cosine": 0.6008924245834351,
+        "ours_hybrid": 0.9913511276245117
+      },
+      "files": {
+        "ours": {
+          "reelpreset": "04_tile49_ours.reelpreset",
+          "reelwt": "04_tile49_ours.reelwt"
+        },
+        "nobake": {
+          "reelpreset": "04_tile49_nobake.reelpreset",
+          "reelwt": "04_tile49_nobake.reelwt"
+        },
+        "dualcosine": {
+          "reelpreset": "04_tile49_dualcosine.reelpreset",
+          "reelwt": "04_tile49_dualcosine.reelwt"
+        }
+      },
+      "paper_heal_tile": false
+    },
+    {
+      "sample_index": 5,
+      "tile_index": 48,
+      "eval_seed": 20260719,
+      "wrap_abs": 1.9376832246780396,
+      "R": {
+        "no_bake": 0.9761191606521606,
+        "dual_cosine": 0.631062388420105,
+        "ours_hybrid": 0.99102383852005
+      },
+      "files": {
+        "ours": {
+          "reelpreset": "05_tile48_ours.reelpreset",
+          "reelwt": "05_tile48_ours.reelwt"
+        },
+        "nobake": {
+          "reelpreset": "05_tile48_nobake.reelpreset",
+          "reelwt": "05_tile48_nobake.reelwt"
+        },
+        "dualcosine": {
+          "reelpreset": "05_tile48_dualcosine.reelpreset",
+          "reelwt": "05_tile48_dualcosine.reelwt"
+        }
+      },
+      "paper_heal_tile": false
+    }
+  ],
+  "absolute_paths": [
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\01_tile46_ours.reelpreset",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\01_tile46_ours.reelwt",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\01_tile46_nobake.reelpreset",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\01_tile46_nobake.reelwt",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\01_tile46_dualcosine.reelpreset",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\01_tile46_dualcosine.reelwt",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\02_tile21_ours.reelpreset",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\02_tile21_ours.reelwt",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\02_tile21_nobake.reelpreset",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\02_tile21_nobake.reelwt",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\02_tile21_dualcosine.reelpreset",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\02_tile21_dualcosine.reelwt",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\03_tile4_ours.reelpreset",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\03_tile4_ours.reelwt",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\03_tile4_nobake.reelpreset",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\03_tile4_nobake.reelwt",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\03_tile4_dualcosine.reelpreset",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\03_tile4_dualcosine.reelwt",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\04_tile49_ours.reelpreset",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\04_tile49_ours.reelwt",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\04_tile49_nobake.reelpreset",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\04_tile49_nobake.reelwt",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\04_tile49_dualcosine.reelpreset",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\04_tile49_dualcosine.reelwt",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\05_tile48_ours.reelpreset",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\05_tile48_ours.reelwt",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\05_tile48_nobake.reelpreset",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\05_tile48_nobake.reelwt",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\05_tile48_dualcosine.reelpreset",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hear_presets\\05_tile48_dualcosine.reelwt"
+  ],
+  "note": "Each .reelwt is the L=256 heal/engine cycle linearly resampled to 2048-sample frames \u00d7 16 (identical frames). Open the .reelpreset in reelsynth-app; sibling .reelwt resolves via wavetable_id / wavetable_path."
+}

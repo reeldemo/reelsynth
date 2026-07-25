@@ -1,7 +1,9 @@
-//! Unsupervised crackle denoise: fit θ once on denoise+shape loss, infer with frozen θ.
+//! Unsupervised crackle denoise: fit θ once, infer with frozen θ.
 //!
-//! No labeled data. Offline coordinate descent minimizes
-//! `L = (1 − denoise) + λ(1 − shape)` on the harsh signal matrix.
+//! No labeled data. Offline coordinate descent historically minimized
+//! `L = (1 − denoise) + λ(1 − shape)` on the harsh signal matrix; production
+//! freeze now locks under the v10.1 **R_blend** objective (seam heal + body
+//! identity) via `bench_denoise_opt -- --r-blend`.
 //!
 //! **Shape invariant:** mid-cycle samples are copied from the input; only head/tail
 //! seam zones are rewritten. That is how aggressive denoise stays shape-safe.
@@ -12,22 +14,31 @@ use serde_json::json;
 pub const N_THETA: usize = 12;
 pub const LAMBDA_SHAPE: f32 = 1.0;
 
-/// Frozen after 1500-trial residual-objective bi-level meta (champion meta_top1 /
-/// `evo_explore_515`). Primary score: prolonged residual vs ideal. Regenerate via
-/// `bench_denoise_meta`.
+/// Frozen under v10.1 R_blend protocol (α=0.7 seam / body), subject to the
+/// harsh-catalog denoise+shape quality gate vs DualCosine.
+///
+/// Fitted with `cargo run -p reelsynth --release --bin bench_denoise_opt -- --r-blend`
+/// on the procedural sound bench (gate-constrained ascent). Artifact:
+/// `brand/artifacts/denoise_opt_v10_r_blend_freeze.json`. Neural hybrid_lstm
+/// FitCell champ remains research-only (`brand/artifacts/meta_approach_compare_v10/`);
+/// this θ is the best in-engine DenoiseOpt bake under the discontinuity-local
+/// heal objective (keep mid-cycle body) that still passes the product quality gate.
+///
+/// Prior lineage: 1500-trial residual bi-level meta `evo_explore_515`, then v10
+/// R_blend re-lock.
 pub const FROZEN_THETA: [f32; N_THETA] = [
-    0.6743, // detrend / seam pull
+    0.8993, // detrend / seam pull
     0.3573, // fade length scale
-    0.7695, // dual target blend
-    0.2606, // raised-cosine weight
-    0.7395, // secondary tail fade
-    0.4262, // ease gamma
-    0.2884, // polish wet
+    0.9695, // dual target blend
+    0.0000, // raised-cosine weight
+    0.4895, // secondary tail fade
+    1.0000, // ease gamma
+    0.0000, // polish wet
     0.0,    // reserved (mid always dry)
-    0.4770, // head/tail asymmetry
-    0.6788, // wrap pin
-    0.4341, // base fade scale knob
-    0.4200, // second polish wet
+    0.2770, // head/tail asymmetry
+    0.0000, // wrap pin
+    0.1341, // base fade scale knob
+    0.0950, // second polish wet
 ];
 
 #[derive(Debug, Clone, Copy)]
@@ -105,6 +116,150 @@ pub fn residual_score_prolonged(ideal_cycle: &[f32], out_cycle: &[f32], periods:
     let ideal = tile_cycle(ideal_cycle, periods);
     let rendered = tile_cycle(out_cycle, periods);
     residual_score(&ideal, &rendered)
+}
+
+/// Discontinuity-local R (v10 primary): after tiling, RMS only on wrap neighborhoods
+/// of width `seam_w` at each period head/tail (`[0:W] ∪ [L-W:L]` per tile).
+pub fn residual_score_seam(
+    ideal: &[f32],
+    rendered: &[f32],
+    n_cycle: usize,
+    periods: usize,
+    seam_w: usize,
+) -> f32 {
+    let n = ideal.len().min(rendered.len());
+    if n == 0 || n_cycle == 0 || periods == 0 {
+        return 0.0;
+    }
+    let w = seam_w.max(1).min(n_cycle / 2).max(1);
+    let mut e_res = 0.0f32;
+    let mut e_id = 0.0f32;
+    let mut count = 0usize;
+    for k in 0..periods {
+        let base = k * n_cycle;
+        if base + n_cycle > n {
+            break;
+        }
+        for i in 0..w {
+            let hi = base + i;
+            let lo = base + n_cycle - w + i;
+            for idx in [hi, lo] {
+                let r = rendered[idx] - ideal[idx];
+                e_res += r * r;
+                e_id += ideal[idx] * ideal[idx];
+                count += 1;
+            }
+        }
+    }
+    if count == 0 {
+        return 0.0;
+    }
+    let inv = 1.0 / count as f32;
+    let residual_rms = (e_res * inv).sqrt();
+    let ideal_rms = (e_id * inv).sqrt();
+    (1.0 - residual_rms / ideal_rms.max(1e-6)).clamp(0.0, 1.0)
+}
+
+/// Prolonged seam residual: tile then score wrap neighborhoods.
+pub fn residual_score_seam_prolonged(
+    ideal_cycle: &[f32],
+    out_cycle: &[f32],
+    periods: usize,
+    seam_w: usize,
+) -> f32 {
+    let n = ideal_cycle.len().min(out_cycle.len());
+    if n == 0 {
+        return 0.0;
+    }
+    let ideal = tile_cycle(&ideal_cycle[..n], periods);
+    let rendered = tile_cycle(&out_cycle[..n], periods);
+    residual_score_seam(&ideal, &rendered, n, periods, seam_w)
+}
+
+/// Mid-cycle body R (v10.1): after tiling, RMS on non-seam samples `[W:L-W]` per tile.
+/// Prefer `body_ref` = engine so high score means identity on the body (don't morph the curve).
+pub fn residual_score_body(
+    body_ref: &[f32],
+    rendered: &[f32],
+    n_cycle: usize,
+    periods: usize,
+    seam_w: usize,
+) -> f32 {
+    let n = body_ref.len().min(rendered.len());
+    if n == 0 || n_cycle == 0 || periods == 0 {
+        return 0.0;
+    }
+    let w = seam_w.max(1).min(n_cycle / 2).max(1);
+    let mut e_res = 0.0f32;
+    let mut e_ref = 0.0f32;
+    let mut count = 0usize;
+    for k in 0..periods {
+        let base = k * n_cycle;
+        if base + n_cycle > n {
+            break;
+        }
+        if n_cycle <= 2 * w {
+            let mid = base + n_cycle / 2;
+            let r = rendered[mid] - body_ref[mid];
+            e_res += r * r;
+            e_ref += body_ref[mid] * body_ref[mid];
+            count += 1;
+            continue;
+        }
+        for i in w..(n_cycle - w) {
+            let idx = base + i;
+            let r = rendered[idx] - body_ref[idx];
+            e_res += r * r;
+            e_ref += body_ref[idx] * body_ref[idx];
+            count += 1;
+        }
+    }
+    if count == 0 {
+        return 0.0;
+    }
+    let inv = 1.0 / count as f32;
+    let residual_rms = (e_res * inv).sqrt();
+    let ref_rms = (e_ref * inv).sqrt();
+    (1.0 - residual_rms / ref_rms.max(1e-6)).clamp(0.0, 1.0)
+}
+
+/// Primary v10.1: `R_blend = α·R_seam(ideal,out) + (1-α)·R_body(eng,out)` (default α=0.7).
+pub const BLEND_ALPHA: f32 = 0.7;
+
+pub fn residual_score_blend(
+    ideal: &[f32],
+    eng: &[f32],
+    rendered: &[f32],
+    n_cycle: usize,
+    periods: usize,
+    seam_w: usize,
+    alpha: f32,
+) -> f32 {
+    let a = alpha.clamp(0.0, 1.0);
+    let r_seam = residual_score_seam(ideal, rendered, n_cycle, periods, seam_w);
+    let r_body = residual_score_body(eng, rendered, n_cycle, periods, seam_w);
+    (a * r_seam + (1.0 - a) * r_body).clamp(0.0, 1.0)
+}
+
+pub fn residual_score_blend_prolonged(
+    ideal_cycle: &[f32],
+    eng_cycle: &[f32],
+    out_cycle: &[f32],
+    periods: usize,
+    seam_w: usize,
+    alpha: f32,
+) -> f32 {
+    let n = ideal_cycle
+        .len()
+        .min(eng_cycle.len())
+        .min(out_cycle.len());
+    if n == 0 {
+        return 0.0;
+    }
+    let ideal = tile_cycle(&ideal_cycle[..n], periods);
+    let eng = tile_cycle(&eng_cycle[..n], periods);
+    let rendered = tile_cycle(&out_cycle[..n], periods);
+    residual_score_blend(&ideal, &eng, &rendered, n, periods, seam_w, alpha)
 }
 
 pub fn score_cycle(raw: &[f32], out: &[f32]) -> QualityScores {
@@ -380,6 +535,55 @@ pub fn fit_denoise_theta(restarts: usize, sweeps: usize) -> ([f32; N_THETA], f32
     (best, best_l, best_d, best_s, best_q)
 }
 
+pub fn quality_gate_for_theta(theta: &[f32; N_THETA]) -> (bool, f32, f32, f32, f32, f32, f32) {
+    use crate::artifact_reduce::{periodize_with_algo, PeriodizeAlgo};
+    use crate::seam::SeamStyle;
+
+    let cat = catalog(512);
+    let mut sum_opt = [0.0f32; 3];
+    let mut sum_dual = [0.0f32; 3];
+    let mut n = 0u32;
+
+    for id in harsh_ids() {
+        let Some(src) = cat.iter().find(|s| s.id == *id) else {
+            continue;
+        };
+        let raw = &src.samples;
+        let mut opt = raw.clone();
+        apply_denoise_theta(&mut opt, 0.0, theta);
+        let mut dual = raw.clone();
+        periodize_with_algo(&mut dual, 0.0, SeamStyle::Adaptive, PeriodizeAlgo::DualCosine);
+
+        let qo = score_cycle(raw, &opt);
+        let qd = score_cycle(raw, &dual);
+        sum_opt[0] += qo.denoise;
+        sum_opt[1] += qo.shape;
+        sum_opt[2] += qo.quality;
+        sum_dual[0] += qd.denoise;
+        sum_dual[1] += qd.shape;
+        sum_dual[2] += qd.quality;
+        n += 1;
+    }
+    let c = n.max(1) as f32;
+    for s in [&mut sum_opt, &mut sum_dual] {
+        s[0] /= c;
+        s[1] /= c;
+        s[2] /= c;
+    }
+    let pass = sum_opt[2] + 1e-4 >= sum_dual[2] - 0.02
+        && sum_opt[0] + 0.05 >= sum_dual[0]
+        && sum_opt[1] >= 0.95;
+    (
+        pass,
+        sum_opt[0],
+        sum_opt[1],
+        sum_opt[2],
+        sum_dual[0],
+        sum_dual[1],
+        sum_dual[2],
+    )
+}
+
 pub fn run_quality_gate_report() -> serde_json::Value {
     use crate::artifact_reduce::{periodize_with_algo, PeriodizeAlgo};
     use crate::seam::SeamStyle;
@@ -443,6 +647,7 @@ pub fn run_quality_gate_report() -> serde_json::Value {
         "classic": { "denoise": sum_classic[0], "shape": sum_classic[1], "quality": sum_classic[2] },
         "frozen_theta": FROZEN_THETA.as_slice(),
         "fixtures": rows,
+        "protocol_note": "denoise+shape harsh-catalog gate; production freeze also scores v10 R_blend",
     });
 
     // #region agent log
@@ -532,6 +737,58 @@ mod tests {
         let ms = t0.elapsed().as_secs_f64() * 1000.0;
         eprintln!("200×2048 denoise_opt: {ms:.2} ms");
         assert!(ms < 500.0, "inference too slow: {ms} ms");
+    }
+
+    #[test]
+    fn residual_score_seam_perfect_match_is_one() {
+        let wave: Vec<f32> = (0..128)
+            .map(|i| (i as f32 / 128.0 * std::f32::consts::TAU).sin())
+            .collect();
+        let s = residual_score_seam_prolonged(&wave, &wave, 16, 8);
+        assert!((s - 1.0).abs() < 1e-5, "got {s}");
+    }
+
+    #[test]
+    fn residual_score_seam_wrap_cliff_hurts_more_than_mid() {
+        let ideal: Vec<f32> = (0..128)
+            .map(|i| (i as f32 / 128.0 * std::f32::consts::TAU).sin())
+            .collect();
+        let mut cliff = ideal.clone();
+        cliff[0] = -3.0;
+        cliff[127] = 3.0;
+        let mut mid = ideal.clone();
+        mid[64] = 3.0;
+        let s_cliff = residual_score_seam_prolonged(&ideal, &cliff, 16, 8);
+        let s_mid = residual_score_seam_prolonged(&ideal, &mid, 16, 8);
+        assert!(s_cliff < s_mid, "seam cliff {s_cliff} should score below mid damage {s_mid}");
+        assert!(s_cliff < 0.99);
+        assert!((0.0..=1.0).contains(&s_cliff));
+    }
+
+    #[test]
+    fn residual_score_blend_body_identity_and_morph() {
+        let ideal: Vec<f32> = (0..128)
+            .map(|i| (i as f32 / 128.0 * std::f32::consts::TAU).sin())
+            .collect();
+        let mut eng = ideal.clone();
+        for i in 0..8 {
+            eng[i] += 0.5;
+            eng[120 + i] -= 0.5;
+        }
+        let mut healed = eng.clone();
+        for i in 0..8 {
+            healed[i] = ideal[i];
+            healed[120 + i] = ideal[120 + i];
+        }
+        let r_body = residual_score_body(&eng, &healed, 128, 16, 8);
+        assert!(r_body > 0.99, "identity body got {r_body}");
+        let r_blend = residual_score_blend(&ideal, &eng, &healed, 128, 16, 8, BLEND_ALPHA);
+        let mut morph = healed.clone();
+        for i in 54..74 {
+            morph[i] += 1.5;
+        }
+        let r_blend_m = residual_score_blend(&ideal, &eng, &morph, 128, 16, 8, BLEND_ALPHA);
+        assert!(r_blend_m < r_blend, "morph body should lower blend {r_blend_m} vs {r_blend}");
     }
 
     #[test]

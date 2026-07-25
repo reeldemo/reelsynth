@@ -1,0 +1,119 @@
+{
+  "schema": "denoiseopt.vibrato_spectrogram.v1",
+  "approach_code": "hybrid_lstm",
+  "approach_display": "Ours (hybrid GA\u2013PPO)",
+  "eval_seed": 20260719,
+  "search_seed": 1902771841,
+  "tile_index": 46,
+  "pick_note": "prefer_intro_tile46",
+  "wrap_abs": 2.282712936401367,
+  "holdout_source": "holdout_batch.pt",
+  "playback": {
+    "sample_rate": 44100,
+    "base_hz": 220.0,
+    "vibrato_rate_hz": 5.0,
+    "vibrato_depth": 0.03,
+    "duration_s": 2.0,
+    "n_fft": 1024,
+    "hop": 256
+  },
+  "R_cycle_tile": {
+    "no_bake": 0.9503467082977295,
+    "dual_cosine": 0.6029019951820374,
+    "ours_hybrid": 0.9943400621414185
+  },
+  "R_cycle_holdout_mean": {
+    "no_bake": 0.9717606902122498,
+    "dual_cosine": 0.8248767852783203,
+    "ours_hybrid": 0.9915754795074463,
+    "n": 64
+  },
+  "R_modulated_tile": {
+    "no_bake": 0.9537080018640848,
+    "dual_cosine": 0.6171139876768619,
+    "ours_hybrid": 0.9952813808114935
+  },
+  "R_modulated_mean_top_wrap": {
+    "no_bake": 0.967655664246744,
+    "dual_cosine": 0.6556272345453609,
+    "ours_hybrid": 0.9932518381948641
+  },
+  "R_modulated_std_top_wrap": {
+    "no_bake": 0.017745524461400933,
+    "dual_cosine": 0.02948037895959956,
+    "ours_hybrid": 0.0019727085661328477
+  },
+  "modulated_tile_indices": [
+    21,
+    46,
+    4,
+    49,
+    48,
+    16,
+    39,
+    28
+  ],
+  "refit": {
+    "fit_steps": 64,
+    "batch": 64,
+    "lr": 0.06844036093419292,
+    "adv_coef": 0.0,
+    "converged": false,
+    "train_r_last": 0.9914011359214783
+  },
+  "train_r_last": 0.9914011359214783,
+  "champ_arch": {
+    "depth": 12,
+    "width": 48,
+    "act": "tanh",
+    "ops": [
+      "cycle_net",
+      "fade_pull",
+      "fir5"
+    ],
+    "wet": 0.7245407380693173,
+    "fir": [
+      0.09384575163009412,
+      0.48805814652102797,
+      0.39091825891943194,
+      0.331059364757842,
+      0.46083074612670105
+    ],
+    "cell_kind": "tf_split",
+    "soft_logits": [
+      -0.7310634675404777,
+      0.1710795557276254,
+      -0.6233001575325193,
+      0.9827618982555753,
+      0.3947958367868978,
+      0.373733937967083,
+      0.46914590455657923,
+      0.37583370129354693,
+      -0.08300391880653188,
+      0.41187302648163265,
+      0.21241824583315116,
+      -0.36736061966500033,
+      0.3777839866967111,
+      1.352627609124864,
+      -0.11422418026695591
+    ],
+    "blocks": [
+      "tf_split"
+    ],
+    "use_adv_aux": true,
+    "moe_mode": "sequential"
+  },
+  "wav_files": {
+    "nobake": "tile46_vibrato_nobake.wav",
+    "dualcosine": "tile46_vibrato_dualcosine.wav",
+    "ours": "tile46_vibrato_ours.wav",
+    "ideal": "tile46_vibrato_ideal.wav"
+  },
+  "png": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\vibrato_spectrogram\\fig_vibrato_spectrogram.png",
+  "pdf": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\vibrato_spectrogram\\fig_vibrato_spectrogram.pdf",
+  "paper_copies": [
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\denoise-opt-meta\\paper\\v8\\figures\\fig_vibrato_spectrogram.png",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\denoise-opt-meta\\paper\\v8\\figures\\fig_vibrato_spectrogram.pdf"
+  ],
+  "note": "Cycle R is the standard prolonged residual on L=256 periods. Modulated R applies the same clamp(1 - rms(out-ideal)/rms(ideal)) formula to vibrato-rendered audio under a shared pitch envelope. No formal listening study; spectrogram + downloadable WAVs only."
+}

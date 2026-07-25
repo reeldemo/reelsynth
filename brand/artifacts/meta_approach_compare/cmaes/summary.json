@@ -1,0 +1,71 @@
+{
+  "approach": "cmaes",
+  "iters": 5000,
+  "iters_done": 5000,
+  "seed": 1902771841,
+  "champ_r": 0.9867652376492818,
+  "champ_raw": 0.9846819043159485,
+  "delta_r_vs_dual_cosine": 0.16809695959091187,
+  "baseline_dual_cosine": 0.8165849447250366,
+  "wall_s": 8205.355647325516,
+  "wall_h": 2.279265457590421,
+  "lstm_in_champ": false,
+  "xlstm_in_champ": false,
+  "champ_arch": {
+    "depth": 4,
+    "width": 48,
+    "act": "tanh",
+    "ops": [
+      "mlp_seam",
+      "dual_cosine",
+      "fir3",
+      "cycle_net",
+      "asym_wet"
+    ],
+    "wet": 0.9161707513428526,
+    "fir": [
+      0.2,
+      0.5,
+      0.2,
+      0.1,
+      0.1
+    ],
+    "cell_kind": "mlp",
+    "soft_logits": [
+      0.302919109697556,
+      -0.20367520479637136,
+      0.398687606451125,
+      -0.3074350080143776,
+      0.13390018369536005,
+      -0.0637572572424212,
+      -0.14071927864117917,
+      -0.07511256681796319,
+      0.19441200457536112,
+      0.2060344273783774,
+      -0.3270090893749896,
+      -0.08436155625078423,
+      0.3694433180539023,
+      0.3486534187254019,
+      0.4526057094293129
+    ],
+    "blocks": [
+      "mlp",
+      "soft_mix",
+      "residual",
+      "moe_mix"
+    ],
+    "use_adv_aux": false,
+    "moe_mode": "moe_parallel"
+  },
+  "champ_hp": {
+    "lr": 0.008701896517086563,
+    "fit_steps": 48,
+    "batch": 64,
+    "entropy_coef": 0.02,
+    "ppo_clip": 0.2,
+    "adv_coef": 0.05,
+    "reward_mode": "vs_dualcosine"
+  },
+  "history_path": "brand\\artifacts\\meta_approach_compare\\cmaes\\history.jsonl",
+  "finished_at": "20260720T122158Z"
+}

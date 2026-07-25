@@ -1,0 +1,12 @@
+{
+  "n_samples": 4096,
+  "seed": 20260719,
+  "cycle_length_N": 256,
+  "prolong_tiles": 16,
+  "seam_width": 8,
+  "wrap_jump_p75": 1.397344708442688,
+  "wrap_jump_p90": 1.8262945413589478,
+  "hard_top10pct_n": 410,
+  "hard_top10pct_identity_R_mean": 0.9672549366950989,
+  "figure": "fig_dataset_distributions.png"
+}

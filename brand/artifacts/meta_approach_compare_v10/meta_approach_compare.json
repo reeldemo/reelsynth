@@ -1,0 +1,131 @@
+{
+  "schema": "denoiseopt.meta_approach_compare.v1",
+  "publishable": true,
+  "seed": 1902771841,
+  "iters": 1200,
+  "batch": 48,
+  "fit_steps": 24,
+  "pop_size": 12,
+  "device": "cuda",
+  "baseline_dual_cosine": 0.5039944648742676,
+  "lstm_in_search_vocab": true,
+  "xlstm_in_search_vocab": true,
+  "reward_modes": [
+    "abs_r",
+    "vs_dualcosine",
+    "vs_nobake",
+    "neglog_gap"
+  ],
+  "blocks": [
+    "mlp",
+    "residual",
+    "dense",
+    "gated",
+    "bottleneck",
+    "unet",
+    "n2n_unet",
+    "conv1d",
+    "dilated",
+    "attn",
+    "dual_path",
+    "lstm",
+    "xlstm",
+    "tf_split",
+    "noise_cond",
+    "soft_mix",
+    "moe_mix"
+  ],
+  "approaches": {
+    "hybrid_lstm": {
+      "approach": "hybrid_lstm",
+      "iters": 1200,
+      "iters_done": 1200,
+      "seed": 1902771841,
+      "champ_r": 0.962084067594961,
+      "champ_raw": 0.969511866569519,
+      "champ_j": 0.960334067594961,
+      "champ_t_ms": 5.075566664648552,
+      "champ_beats_n2n": false,
+      "n2n_gate_r": 0.9750486612319946,
+      "primary_metric": "r_blend",
+      "search_objective": "J=R_blend-lambda*latency_norm",
+      "lambda_latency": 0.02,
+      "delta_r_vs_dual_cosine": 0.46551740169525146,
+      "baseline_dual_cosine": 0.5039944648742676,
+      "wall_s": 5941.307574748993,
+      "wall_h": 1.6503632152080536,
+      "lstm_in_champ": false,
+      "xlstm_in_champ": false,
+      "champ_arch": {
+        "depth": 8,
+        "width": 47,
+        "act": "silu",
+        "ops": [
+          "mlp_seam",
+          "dual_cosine",
+          "fade_pull",
+          "fir5",
+          "fir3"
+        ],
+        "wet": 0.30440788358952603,
+        "fir": [
+          0.5789882152930277,
+          0.4992414330272559,
+          0.2344763089101724,
+          0.12942933369929283,
+          0.1450392863962855
+        ],
+        "cell_kind": "tf_split",
+        "soft_logits": [
+          0.6944331807089,
+          -0.003561884854017039,
+          -0.643612720761839,
+          -0.9347127782236354,
+          -0.5638676505600198,
+          -0.8758054863977554,
+          0.09930790855720753,
+          -0.06904125617621673,
+          -0.2329281846425456,
+          0.0036836637861792365,
+          -0.2618556190213558,
+          0.9913442280118114,
+          0.39304709469296245,
+          -0.5073650539806194,
+          0.2764738217356617
+        ],
+        "blocks": [
+          "tf_split",
+          "moe_mix",
+          "residual",
+          "soft_mix"
+        ],
+        "use_adv_aux": true,
+        "moe_mode": "sequential"
+      },
+      "champ_hp": {
+        "lr": 0.045892627770135336,
+        "fit_steps": 64,
+        "batch": 64,
+        "entropy_coef": 0.001,
+        "ppo_clip": 0.2,
+        "adv_coef": 0.06350035051469044,
+        "reward_mode": "vs_nobake"
+      },
+      "champ_cell_path": "brand\\artifacts\\meta_approach_compare_v10\\hybrid_lstm\\champ_cell.pt",
+      "history_path": "brand\\artifacts\\meta_approach_compare_v10\\hybrid_lstm\\history.jsonl",
+      "finished_at": "20260725T102529Z",
+      "protocol": "paper_v10"
+    }
+  },
+  "table": [
+    {
+      "method": "hybrid_lstm",
+      "champ_r": 0.969511866569519,
+      "delta_r_vs_dual_cosine": 0.46551740169525146,
+      "wall_h": 1.6503632152080536,
+      "lstm_in_champ": false,
+      "xlstm_in_champ": false
+    }
+  ],
+  "created_at": "20260725T102529Z"
+}

@@ -41,9 +41,13 @@ def set_seed(seed: int, device: torch.device) -> None:
 
 @torch.no_grad()
 def per_tile_metrics(
-    ideal: torch.Tensor, out: torch.Tensor, *, seam_w: int = 8
+    ideal: torch.Tensor,
+    eng: torch.Tensor,
+    out: torch.Tensor,
+    *,
+    seam_w: int = 8,
 ) -> dict[str, torch.Tensor]:
-    r = og.residual_score(ideal, out)
+    r = og.residual_score_blend(ideal, eng, out)
     snr = msm.tiled_snr_db(ideal, out, periods=int(og.PROLONG))
     sdr = msm.tiled_sdr_db(ideal, out, periods=int(og.PROLONG))
     jump = msm.wrap_jump_abs(out)
@@ -174,7 +178,7 @@ def main() -> None:
         if device.type == "cuda":
             torch.cuda.empty_cache()
         out = run_fn(fn, eng)
-        metrics = per_tile_metrics(ideal, out, seam_w=og.SEAM_W)
+        metrics = per_tile_metrics(ideal, eng, out, seam_w=og.SEAM_W)
         results["strata"][mname] = {}
         for sname, mask in strata_masks.items():
             results["strata"][mname][sname] = summarize(metrics, mask)

@@ -1,0 +1,85 @@
+{
+  "schema": "denoiseopt.meta_hp_sensitivity.config.v1",
+  "config": "ppo_clip_m50",
+  "label": "$\\epsilon{-}50\\%$",
+  "honesty": "sensitivity_probe_500iters_OAT_not_full_5k_research",
+  "iters": 500,
+  "iters_done": 500,
+  "seed": 1902771841,
+  "champ_r": 0.9855103947321574,
+  "champ_raw": 0.9815937280654907,
+  "delta_r_vs_dual_cosine": 0.1650087833404541,
+  "delta_r_vs_default": -0.0072255730628967285,
+  "baseline_dual_cosine": 0.8165849447250366,
+  "wall_s": 3853.1945264339447,
+  "wall_h": 1.070331812898318,
+  "knobs": {
+    "pop_size": 12,
+    "ppo_clip": 0.1,
+    "lr": 0.003,
+    "entropy_coef": 0.02,
+    "ga_second_mutate_p": 0.5,
+    "freeze_hp": "ppo_clip",
+    "fit_steps": 24,
+    "batch": 48
+  },
+  "champ_arch": {
+    "depth": 12,
+    "width": 32,
+    "act": "gelu",
+    "ops": [
+      "fir3",
+      "fir5",
+      "edge_pin",
+      "fade_pull"
+    ],
+    "wet": 0.855626897243437,
+    "fir": [
+      0.507920550047329,
+      0.15463339713936514,
+      0.16765909186030958,
+      0.5216174659006906,
+      0.25491882682496175
+    ],
+    "cell_kind": "bottleneck",
+    "soft_logits": [
+      -0.3762500203682082,
+      -1.060206276262694,
+      -0.46391350074543725,
+      0.551909167019592,
+      -0.9656816567715278,
+      0.7042361047341822,
+      0.33806683695111683,
+      -0.5275559181935807,
+      -0.2774685157025578,
+      -0.0975837194614145,
+      -0.011973545625503013,
+      0.6784278772910411,
+      0.050432561453180424,
+      0.16300807380948173,
+      -0.46845844441068507
+    ],
+    "blocks": [
+      "bottleneck",
+      "lstm",
+      "xlstm",
+      "soft_mix",
+      "dense",
+      "dual_path"
+    ],
+    "use_adv_aux": false,
+    "moe_mode": "moe_parallel"
+  },
+  "champ_hp": {
+    "lr": 0.013249056624436597,
+    "fit_steps": 64,
+    "batch": 64,
+    "entropy_coef": 0.025051334227789483,
+    "ppo_clip": 0.1,
+    "adv_coef": 0.02586828009983797,
+    "reward_mode": "vs_dualcosine"
+  },
+  "history_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_hp_sensitivity\\ppo_clip_m50\\history.jsonl",
+  "finished_at": "20260724T064848Z",
+  "complete": true
+}

@@ -1,0 +1,518 @@
+{
+  "schema": "denoiseopt.meta_approach_compare.v1",
+  "publishable": true,
+  "seed": 1902771841,
+  "iters": 5000,
+  "batch": 48,
+  "fit_steps": 24,
+  "pop_size": 12,
+  "device": "cuda",
+  "baseline_dual_cosine": 0.8165849447250366,
+  "lstm_in_search_vocab": true,
+  "xlstm_in_search_vocab": true,
+  "reward_modes": [
+    "abs_r",
+    "vs_dualcosine",
+    "vs_nobake",
+    "neglog_gap"
+  ],
+  "blocks": [
+    "mlp",
+    "residual",
+    "dense",
+    "gated",
+    "bottleneck",
+    "unet",
+    "conv1d",
+    "dilated",
+    "attn",
+    "dual_path",
+    "lstm",
+    "xlstm",
+    "tf_split",
+    "noise_cond",
+    "soft_mix",
+    "moe_mix"
+  ],
+  "approaches": {
+    "random": {
+      "approach": "random",
+      "iters": 5000,
+      "iters_done": 5000,
+      "seed": 1902771841,
+      "champ_r": 0.9812390058835347,
+      "champ_raw": 0.9781556725502014,
+      "delta_r_vs_dual_cosine": 0.1615707278251648,
+      "baseline_dual_cosine": 0.8165849447250366,
+      "wall_s": 20592.766453504562,
+      "wall_h": 5.720212903751268,
+      "lstm_in_champ": false,
+      "xlstm_in_champ": false,
+      "champ_arch": {
+        "depth": 10,
+        "width": 40,
+        "act": "silu",
+        "ops": [
+          "fade_pull",
+          "cycle_net",
+          "fir5",
+          "edge_pin",
+          "mlp_seam",
+          "soft_seam"
+        ],
+        "wet": 0.5036157242442906,
+        "fir": [
+          0.16714619114570994,
+          0.10944754136313169,
+          0.15226969647734767,
+          0.4109516064144032,
+          0.3773185052622726
+        ],
+        "cell_kind": "dense",
+        "soft_logits": [
+          -0.13140087716424875,
+          -0.5154500776028825,
+          0.47654013601694545,
+          0.377505759428884,
+          0.0563526698972614,
+          0.8192100779171827,
+          -0.25742350416272375,
+          0.27289795567348896,
+          -0.6505469192664384,
+          0.5241535382144451,
+          -0.8841245847672277,
+          0.38007385134988425,
+          0.0556233084810267,
+          0.6154742067279724,
+          0.43281298392038003
+        ],
+        "blocks": [
+          "dense",
+          "mlp",
+          "soft_mix",
+          "conv1d"
+        ],
+        "use_adv_aux": false,
+        "moe_mode": "moe_parallel"
+      },
+      "champ_hp": {
+        "lr": 0.007084206758905005,
+        "fit_steps": 48,
+        "batch": 64,
+        "entropy_coef": 0.005859226156338963,
+        "ppo_clip": 0.1,
+        "adv_coef": 0.1,
+        "reward_mode": "vs_dualcosine"
+      },
+      "history_path": "brand\\artifacts\\meta_approach_compare\\random\\history.jsonl",
+      "finished_at": "20260720T100513Z"
+    },
+    "cmaes": {
+      "approach": "cmaes",
+      "iters": 5000,
+      "iters_done": 5000,
+      "seed": 1902771841,
+      "champ_r": 0.9867652376492818,
+      "champ_raw": 0.9846819043159485,
+      "delta_r_vs_dual_cosine": 0.16809695959091187,
+      "baseline_dual_cosine": 0.8165849447250366,
+      "wall_s": 8205.355647325516,
+      "wall_h": 2.279265457590421,
+      "lstm_in_champ": false,
+      "xlstm_in_champ": false,
+      "champ_arch": {
+        "depth": 4,
+        "width": 48,
+        "act": "tanh",
+        "ops": [
+          "mlp_seam",
+          "dual_cosine",
+          "fir3",
+          "cycle_net",
+          "asym_wet"
+        ],
+        "wet": 0.9161707513428526,
+        "fir": [
+          0.2,
+          0.5,
+          0.2,
+          0.1,
+          0.1
+        ],
+        "cell_kind": "mlp",
+        "soft_logits": [
+          0.302919109697556,
+          -0.20367520479637136,
+          0.398687606451125,
+          -0.3074350080143776,
+          0.13390018369536005,
+          -0.0637572572424212,
+          -0.14071927864117917,
+          -0.07511256681796319,
+          0.19441200457536112,
+          0.2060344273783774,
+          -0.3270090893749896,
+          -0.08436155625078423,
+          0.3694433180539023,
+          0.3486534187254019,
+          0.4526057094293129
+        ],
+        "blocks": [
+          "mlp",
+          "soft_mix",
+          "residual",
+          "moe_mix"
+        ],
+        "use_adv_aux": false,
+        "moe_mode": "moe_parallel"
+      },
+      "champ_hp": {
+        "lr": 0.008701896517086563,
+        "fit_steps": 48,
+        "batch": 64,
+        "entropy_coef": 0.02,
+        "ppo_clip": 0.2,
+        "adv_coef": 0.05,
+        "reward_mode": "vs_dualcosine"
+      },
+      "history_path": "brand\\artifacts\\meta_approach_compare\\cmaes\\history.jsonl",
+      "finished_at": "20260720T122158Z"
+    },
+    "reinforce": {
+      "approach": "reinforce",
+      "iters": 5000,
+      "iters_done": 5000,
+      "seed": 1902771841,
+      "champ_r": 0.9861335431734721,
+      "champ_raw": 0.9824668765068054,
+      "delta_r_vs_dual_cosine": 0.1658819317817688,
+      "baseline_dual_cosine": 0.8165849447250366,
+      "wall_s": 93355.20047926903,
+      "wall_h": 25.932000133130284,
+      "lstm_in_champ": false,
+      "xlstm_in_champ": true,
+      "champ_arch": {
+        "depth": 12,
+        "width": 32,
+        "act": "gelu",
+        "ops": [
+          "fir5",
+          "edge_pin",
+          "cycle_net",
+          "dual_cosine",
+          "pin",
+          "median3"
+        ],
+        "wet": 0.95,
+        "fir": [
+          0.41707984130659514,
+          0.4016578872817004,
+          0.11495769903091359,
+          0.10349922275485181,
+          0.208357821962166
+        ],
+        "cell_kind": "xlstm",
+        "soft_logits": [
+          0.04774620090581694,
+          -0.32165251750663515,
+          0.2982878961284213,
+          -0.7165699739121101,
+          -0.5795944368375175,
+          -0.5744449453828698,
+          0.7286089652402291,
+          -0.7979923965976198,
+          0.10055926805495552,
+          -0.7783028251305701,
+          -0.7136951865663054,
+          1.1556346108320361,
+          0.5035953742826852,
+          0.6674496450046455,
+          0.3626364552864384
+        ],
+        "blocks": [
+          "mlp",
+          "soft_mix",
+          "xlstm",
+          "tf_split",
+          "dual_path"
+        ],
+        "use_adv_aux": false,
+        "moe_mode": "moe_parallel"
+      },
+      "champ_hp": {
+        "lr": 0.04824754099928491,
+        "fit_steps": 64,
+        "batch": 64,
+        "entropy_coef": 0.04460833560455392,
+        "ppo_clip": 0.35,
+        "adv_coef": 0.09620045610417136,
+        "reward_mode": "neglog_gap"
+      },
+      "history_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\reinforce\\history.jsonl",
+      "finished_at": "20260721T151350Z"
+    },
+    "aging_evo": {
+      "approach": "aging_evo",
+      "iters": 5000,
+      "iters_done": 5000,
+      "seed": 1902771841,
+      "champ_r": 0.9937080172697703,
+      "champ_raw": 0.9907913506031036,
+      "delta_r_vs_dual_cosine": 0.17420640587806702,
+      "baseline_dual_cosine": 0.8165849447250366,
+      "wall_s": 54084.7970457077,
+      "wall_h": 15.023554734918806,
+      "lstm_in_champ": false,
+      "xlstm_in_champ": true,
+      "champ_arch": {
+        "depth": 12,
+        "width": 4,
+        "act": "tanh",
+        "ops": [
+          "skip_blend",
+          "classic",
+          "edge_pin",
+          "median3",
+          "fade_pull",
+          "soft_seam",
+          "dual_cosine",
+          "asym_wet"
+        ],
+        "wet": 0.18101387081810882,
+        "fir": [
+          0.5481286779534792,
+          0.17833221801173532,
+          0.10241772678394215,
+          0.07283789591877309,
+          0.34892760944246615
+        ],
+        "cell_kind": "tf_split",
+        "soft_logits": [
+          -0.4579005323718587,
+          -2.981338813954861,
+          4.7364851779280785,
+          0.6101057356005574,
+          3.8625946079666114,
+          2.728452628032122,
+          -0.8632787195498896,
+          2.302548992394518,
+          -0.19871076440227364,
+          -2.9965084902833046,
+          -2.3399345517847774,
+          1.843543469769556,
+          0.44409804137911735,
+          3.3560124528055244,
+          -2.7132556138503556
+        ],
+        "blocks": [
+          "tf_split",
+          "dual_path",
+          "noise_cond",
+          "dense",
+          "mlp",
+          "xlstm"
+        ],
+        "use_adv_aux": true,
+        "moe_mode": "sequential"
+      },
+      "champ_hp": {
+        "lr": 0.1,
+        "fit_steps": 64,
+        "batch": 64,
+        "entropy_coef": 0.08129074125068475,
+        "ppo_clip": 0.3,
+        "adv_coef": 0.04050301272015286,
+        "reward_mode": "neglog_gap"
+      },
+      "history_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\aging_evo\\history.jsonl",
+      "finished_at": "20260722T062445Z"
+    },
+    "tpe": {
+      "approach": "tpe",
+      "iters": 5000,
+      "iters_done": 5000,
+      "seed": 1902771841,
+      "champ_r": 0.9844795259634653,
+      "champ_raw": 0.9810628592967987,
+      "delta_r_vs_dual_cosine": 0.16447791457176208,
+      "baseline_dual_cosine": 0.8165849447250366,
+      "wall_s": 40246.18546843529,
+      "wall_h": 11.179495963454247,
+      "lstm_in_champ": true,
+      "xlstm_in_champ": false,
+      "champ_arch": {
+        "depth": 12,
+        "width": 48,
+        "act": "tanh",
+        "ops": [
+          "fade_pull",
+          "soft_seam",
+          "fir3",
+          "dual_cosine"
+        ],
+        "wet": 0.9348937218875767,
+        "fir": [
+          0.1729540070286399,
+          0.12402584347677849,
+          0.4278343665939988,
+          0.23768454064776323,
+          0.5003024104239541
+        ],
+        "cell_kind": "dense",
+        "soft_logits": [
+          -0.297464133397048,
+          0.8014184042907015,
+          0.47597139656698917,
+          0.9036458882191813,
+          0.7688422978364637,
+          -0.1978311974552971,
+          -0.11920189441471196,
+          0.34499633737085933,
+          -0.47097250059722073,
+          -0.5915668326230459,
+          -0.504422136922043,
+          0.7720504869042188,
+          0.6699175565885098,
+          -0.1787245041391663,
+          -0.5727043534257994
+        ],
+        "blocks": [
+          "soft_mix",
+          "noise_cond",
+          "dense",
+          "lstm"
+        ],
+        "use_adv_aux": false,
+        "moe_mode": "moe_parallel"
+      },
+      "champ_hp": {
+        "lr": 0.007338636791276506,
+        "fit_steps": 48,
+        "batch": 64,
+        "entropy_coef": 0.02,
+        "ppo_clip": 0.2,
+        "adv_coef": 0.05,
+        "reward_mode": "vs_dualcosine"
+      },
+      "history_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\tpe\\history.jsonl",
+      "finished_at": "20260722T173532Z"
+    },
+    "hybrid_lstm": {
+      "approach": "hybrid_lstm",
+      "iters": 5000,
+      "iters_done": 5000,
+      "seed": 1902771841,
+      "champ_r": 0.9931316391626994,
+      "champ_raw": 0.9914649724960327,
+      "delta_r_vs_dual_cosine": 0.1748800277709961,
+      "baseline_dual_cosine": 0.8165849447250366,
+      "wall_s": 30444.498994350433,
+      "wall_h": 8.456805276208454,
+      "lstm_in_champ": false,
+      "xlstm_in_champ": false,
+      "champ_arch": {
+        "depth": 12,
+        "width": 48,
+        "act": "tanh",
+        "ops": [
+          "cycle_net",
+          "fade_pull",
+          "fir5"
+        ],
+        "wet": 0.7245407380693173,
+        "fir": [
+          0.09384575163009412,
+          0.48805814652102797,
+          0.39091825891943194,
+          0.331059364757842,
+          0.46083074612670105
+        ],
+        "cell_kind": "tf_split",
+        "soft_logits": [
+          -0.7310634675404777,
+          0.1710795557276254,
+          -0.6233001575325193,
+          0.9827618982555753,
+          0.3947958367868978,
+          0.373733937967083,
+          0.46914590455657923,
+          0.37583370129354693,
+          -0.08300391880653188,
+          0.41187302648163265,
+          0.21241824583315116,
+          -0.36736061966500033,
+          0.3777839866967111,
+          1.352627609124864,
+          -0.11422418026695591
+        ],
+        "blocks": [
+          "tf_split"
+        ],
+        "use_adv_aux": true,
+        "moe_mode": "sequential"
+      },
+      "champ_hp": {
+        "lr": 0.06844036093419292,
+        "fit_steps": 64,
+        "batch": 64,
+        "entropy_coef": 0.031589720357329015,
+        "ppo_clip": 0.30000000000000004,
+        "adv_coef": 0.0,
+        "reward_mode": "vs_dualcosine"
+      },
+      "history_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare\\hybrid_lstm\\history.jsonl",
+      "finished_at": "20260723T020256Z"
+    }
+  },
+  "table": [
+    {
+      "method": "random",
+      "champ_r": 0.9781556725502014,
+      "delta_r_vs_dual_cosine": 0.1615707278251648,
+      "wall_h": 5.720212903751268,
+      "lstm_in_champ": false,
+      "xlstm_in_champ": false
+    },
+    {
+      "method": "cmaes",
+      "champ_r": 0.9846819043159485,
+      "delta_r_vs_dual_cosine": 0.16809695959091187,
+      "wall_h": 2.279265457590421,
+      "lstm_in_champ": false,
+      "xlstm_in_champ": false
+    },
+    {
+      "method": "reinforce",
+      "champ_r": 0.9824668765068054,
+      "delta_r_vs_dual_cosine": 0.1658819317817688,
+      "wall_h": 25.932000133130284,
+      "lstm_in_champ": false,
+      "xlstm_in_champ": true
+    },
+    {
+      "method": "aging_evo",
+      "champ_r": 0.9907913506031036,
+      "delta_r_vs_dual_cosine": 0.17420640587806702,
+      "wall_h": 15.023554734918806,
+      "lstm_in_champ": false,
+      "xlstm_in_champ": true
+    },
+    {
+      "method": "tpe",
+      "champ_r": 0.9810628592967987,
+      "delta_r_vs_dual_cosine": 0.16447791457176208,
+      "wall_h": 11.179495963454247,
+      "lstm_in_champ": true,
+      "xlstm_in_champ": false
+    },
+    {
+      "method": "hybrid_lstm",
+      "champ_r": 0.9914649724960327,
+      "delta_r_vs_dual_cosine": 0.1748800277709961,
+      "wall_h": 8.456805276208454,
+      "lstm_in_champ": false,
+      "xlstm_in_champ": false
+    }
+  ],
+  "created_at": "20260723T035356Z"
+}

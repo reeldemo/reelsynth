@@ -88,8 +88,8 @@ pub use state::{
     ShellAudioDevices, ShellConfig, ShellMidiDevices, ShellMode, UiState, WtView3dMode,
 };
 pub use wt::{
-    composite_stack_sample, factory_bank, factory_label, set_gpu_renderer_active, FactoryBankEntry,
-    QuantSeamMode, FACTORY_BANKS,
+    bake_bank_seams, composite_stack_sample, factory_bank, factory_label, set_crackle_amount,
+    set_gpu_renderer_active, set_quant_seam_mode, FactoryBankEntry, QuantSeamMode, FACTORY_BANKS,
 };
 
 pub use state_sync::{
