@@ -1,0 +1,39 @@
+{
+  "schema": "denoiseopt.signal_heal_deep_sota_status.v1",
+  "status": "not_executed",
+  "honesty": "Do not invent Cycle-GAN / BeatDiff / deep COT numbers. Paper author should cite these as not-run under the DenoiseOpt prolonged-R protocol.",
+  "intended_baselines": [
+    {
+      "id": "cycle_gan_ecg",
+      "domain": "ecg",
+      "citation_hint": "Cycle-GAN / adversarial beat morph repair literature (ECG)",
+      "why_not_run": "No published weights adapted to L=256 prolonged residual R wrap protocol in this session; training from scratch exceeds pilot budget."
+    },
+    {
+      "id": "beatdiff",
+      "domain": "ecg",
+      "citation_hint": "BeatDiff / diffusion beat generation or repair",
+      "why_not_run": "Requires trained diffusion checkpoints + different objective; not reimplemented here."
+    },
+    {
+      "id": "deep_order_tracking",
+      "domain": "bearings",
+      "citation_hint": "Learned / deep computed-order-tracking networks",
+      "why_not_run": "Pilot uses classical bad-COT (linear resample) + DualCosine board only."
+    },
+    {
+      "id": "paderborn_deep",
+      "domain": "bearings",
+      "citation_hint": "Paderborn KAt deep fault / denoise pipelines",
+      "why_not_run": "Dataset not downloaded (registration / no OA mirror); cannot score deep baselines without data."
+    },
+    {
+      "id": "pmu_tve_estimator_sota",
+      "domain": "power",
+      "citation_hint": "IEEE C37.118 TVE-optimized estimators on OA PMU traces",
+      "why_not_run": "IEEE DataPort login wall; only synthetic_power / synth_pmu_cycle proxy ran."
+    }
+  ],
+  "what_did_run": "Classical shared board + domain classical proxies + Ours hybrid_lstm under prolonged residual R.",
+  "artifact_table": "brand/artifacts/signal_heal_transfer/results_table.json"
+}

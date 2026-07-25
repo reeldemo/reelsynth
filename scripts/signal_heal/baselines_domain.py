@@ -88,6 +88,14 @@ def domain_baselines(domain: str) -> dict[str, Callable[[torch.Tensor], torch.Te
         board["spline_join"] = spline_join
         board["beat_average_sbmm_lite"] = beat_average_project
         return board
+    if domain == "cnc":
+        # Corner-rounding classical proxies (not Beudaert analytic G2 solver).
+        board["spline_join"] = spline_join
+        return board
+    if domain == "power":
+        # Cycle splice classical proxies (not trained PQ denoisers).
+        board["spline_join"] = spline_join
+        return board
     return board
 
 
@@ -100,7 +108,7 @@ BASELINE_LABELS = {
     "seam_fir3": "classical seam FIR3",
     "cot_linear_periodize": "bearings classical bad-COT control (passthrough of linear resample)",
     "cot_cubic_then_dualcosine": "bearings classical: DualCosine on cracked (not published deep COT)",
-    "spline_join": "ECG classical spline/FIR join (not Cycle-GAN)",
+    "spline_join": "domain classical spline/FIR join (not Cycle-GAN / deep SOTA)",
     "beat_average_sbmm_lite": "ECG classical SBMM-lite beat average (not BeatDiff/Cycle-GAN)",
     "ours_hybrid_lstm": "Ours (hybrid GA–PPO / hybrid_lstm outer loop)",
 }

@@ -1,0 +1,80 @@
+{
+  "approach": "hybrid_lstm",
+  "iters": 150,
+  "iters_done": 150,
+  "seed": 1902771841,
+  "champ_raw": 0.6863193511962891,
+  "champ_r": 0.689569351196289,
+  "baseline_dual_cosine": 0.3358902335166931,
+  "nobake": 0.4514510929584503,
+  "delta_r_vs_dual_cosine": 0.35042911767959595,
+  "champ_arch": {
+    "depth": 11,
+    "width": 16,
+    "act": "relu",
+    "ops": [
+      "pin",
+      "fir3",
+      "classic",
+      "edge_pin",
+      "cycle_net",
+      "fir5",
+      "median3"
+    ],
+    "wet": 0.7338770661903066,
+    "fir": [
+      0.33132178214722124,
+      0.4068208174972824,
+      0.12466115409807278,
+      0.33616523222145217,
+      0.14311362217885398
+    ],
+    "cell_kind": "dilated",
+    "soft_logits": [
+      -0.9475718358471241,
+      -0.9781912941117334,
+      -0.5315398463759959,
+      0.64648229635978,
+      -0.08035745842446373,
+      0.37003793791752315,
+      0.4197963075392943,
+      -0.055882104427511514,
+      -0.6438104825312576,
+      -0.5257274316843499,
+      0.1342524093163151,
+      -0.7347955777260939,
+      -0.46648155391277046,
+      0.7258041028773026,
+      0.06118426264511778
+    ],
+    "blocks": [
+      "dilated",
+      "soft_mix",
+      "dual_path",
+      "unet"
+    ],
+    "use_adv_aux": false,
+    "moe_mode": "moe_parallel"
+  },
+  "champ_hp": {
+    "lr": 0.07484644052018344,
+    "fit_steps": 53,
+    "batch": 32,
+    "entropy_coef": 0.002391304527525095,
+    "ppo_clip": 0.30000000000000004,
+    "adv_coef": 0.01636363381731547,
+    "reward_mode": "abs_r"
+  },
+  "branch_best": {
+    "ppo": 0.6534772515296936,
+    "ga": 0.6863193511962891,
+    "pbt": 0.6529791355133057,
+    "nas": 0.6467903256416321,
+    "combo": 0.6527546048164368
+  },
+  "wall_s": 1188.753895521164,
+  "finished_at": "20260725T042923Z",
+  "partial": false,
+  "metric": "prolonged residual R = clamp(1 - rms(tile(out)-tile(ideal)) / rms(tile(ideal)), 0, 1); same as overnight_gpu_rl_arch.residual_score; periods=PROLONG",
+  "holdout_refit_R": 0.6312171220779419
+}

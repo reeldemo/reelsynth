@@ -243,7 +243,21 @@ def build_mfpt(
             if k.startswith("__"):
                 continue
             arr = np.asarray(v)
-            if arr.dtype == object and arr.size == 1:
+            # Structured (1,1) bearing record: fields sr/gs/load/rate
+            if arr.dtype.names and arr.size >= 1:
+                try:
+                    st = arr.flat[0]
+                    names = st.dtype.names or ()
+                    if "gs" in names:
+                        sig = np.asarray(st["gs"], dtype=np.float64).ravel()
+                    if "sr" in names:
+                        fs = float(np.asarray(st["sr"]).ravel()[0])
+                    if "rate" in names:
+                        # rate is shaft Hz in MFPT baseline files
+                        rpm = float(np.asarray(st["rate"]).ravel()[0]) * 60.0
+                except Exception:
+                    pass
+            elif arr.dtype == object and arr.size == 1:
                 try:
                     st = arr.flat[0]
                     if hasattr(st, "dtype") and st.dtype.names:
@@ -253,13 +267,13 @@ def build_mfpt(
                         if "sr" in names:
                             fs = float(np.asarray(st["sr"]).ravel()[0])
                         if "rate" in names:
-                            # rate is shaft Hz in some files
                             rpm = float(np.asarray(st["rate"]).ravel()[0]) * 60.0
                 except Exception:
                     pass
-            elif arr.ndim == 1 and arr.size > 5000 and np.issubdtype(arr.dtype, np.number):
-                if sig is None or arr.size > sig.size:
-                    sig = arr.astype(np.float64)
+            elif arr.ndim >= 1 and arr.size > 5000 and np.issubdtype(arr.dtype, np.number):
+                flat = arr.astype(np.float64).ravel()
+                if sig is None or flat.size > sig.size:
+                    sig = flat
         if sig is None or sig.size < 8000:
             continue
         spr = int(round(fs * 60.0 / rpm))
@@ -268,7 +282,11 @@ def build_mfpt(
         max_start = sig.size - 2 * spr
         if max_start <= 0:
             continue
-        for s in rng.choice(np.arange(0, max_start, spr), size=min(40, max(1, max_start // spr)), replace=False):
+        starts = np.arange(0, max_start, spr)
+        if starts.size == 0:
+            continue
+        take = min(40, starts.size)
+        for s in rng.choice(starts, size=take, replace=False):
             seg = sig[int(s) : int(s) + spr]
             ideal = _zscore(_resample_1d(seg, period_l, kind="cubic"))
             bad = _zscore(_resample_1d(seg, period_l, kind="linear"))
@@ -378,13 +396,231 @@ def build_mitbih(
     )
 
 
+def build_ptbxl(
+    *,
+    n_periods: int = 256,
+    period_l: int = PERIOD_L,
+    seed: int = SEED,
+    raw_dir: Path | None = None,
+) -> DatasetBundle | None:
+    """PTB-XL records100 (100 Hz) lead-I beat windows; classical board only."""
+    raw_dir = raw_dir or (RAW / "ptbxl")
+    try:
+        import wfdb
+    except ImportError:
+        return None
+    heas = sorted(raw_dir.rglob("*_lr.hea")) + sorted(raw_dir.rglob("*_hr.hea"))
+    if not heas:
+        return None
+    rng = np.random.default_rng(seed + 23)
+    beats: list[np.ndarray] = []
+    used: list[str] = []
+    for hea in heas:
+        rec = hea.with_suffix("")  # path without .hea
+        try:
+            sig, fields = wfdb.rdsamp(str(rec))
+        except Exception:
+            continue
+        fs = float(fields.get("fs", 100.0))
+        x = np.asarray(sig[:, 0], dtype=np.float64)
+        # Simple peak pick on z-scored lead (no WFDB annotations in records100 subset).
+        xz = _zscore(x)
+        thr = 0.55 * float(np.max(xz))
+        min_dist = max(12, int(0.28 * fs))
+        peaks: list[int] = []
+        i = 5
+        while i < xz.size - 5:
+            if xz[i] >= thr and xz[i] >= xz[i - 1] and xz[i] >= xz[i + 1]:
+                if not peaks or i - peaks[-1] >= min_dist:
+                    peaks.append(i)
+                i += max(4, min_dist // 2)
+            else:
+                i += 1
+        for a, b in zip(peaks[:-1], peaks[1:]):
+            if b - a < max(16, int(0.22 * fs)) or b - a > int(1.8 * fs):
+                continue
+            beats.append(_zscore(_resample_1d(x[a:b], period_l, kind="cubic")))
+        used.append(hea.stem)
+        if len(beats) >= n_periods * 3:
+            break
+    if len(beats) < 32:
+        return None
+    beats_arr = np.stack(beats, axis=0)
+    ideals: list[np.ndarray] = []
+    engines: list[np.ndarray] = []
+    idx = rng.permutation(len(beats_arr))
+    for i in idx[:n_periods]:
+        lo = max(0, int(i) - 8)
+        hi = min(len(beats_arr), int(i) + 9)
+        template = beats_arr[lo:hi].mean(axis=0).astype(np.float32)
+        ideal = template.copy()
+        w = 8
+        target = 0.5 * (ideal[0] + ideal[-1])
+        for j in range(w):
+            a = j / max(w - 1, 1)
+            ideal[j] = (1 - a) * target + a * ideal[j]
+            ideal[-1 - j] = (1 - a) * target + a * ideal[-1 - j]
+        eng = _inject_cliff(beats_arr[int(i)], rng)
+        ideals.append(_zscore(ideal))
+        engines.append(eng)
+    return DatasetBundle(
+        name="ptbxl_ecg",
+        ideal=torch.from_numpy(np.stack(ideals, 0)),
+        engine=torch.from_numpy(np.stack(engines, 0)),
+        meta={
+            "domain": "ecg",
+            "records": used,
+            "n": len(ideals),
+            "period_l": period_l,
+            "wrap": (
+                "PTB-XL records100 (100 Hz) lead-I R–R windows resampled to L; "
+                "ideal=local mean template + mild endpoint equalize; engine=beat+cliff."
+            ),
+            "fs_hz": 100.0,
+            "citation": "PTB-XL (PhysioNet, CC BY 4.0) — low-res subset pilot, not full 500 Hz corpus",
+            "seed": seed,
+            "subset": "records100/00000 (~12 records)",
+            "baseline_note": (
+                "Classical board + SBMM-lite / spline only. Cycle-GAN / BeatDiff not executed."
+            ),
+        },
+    )
+
+
+def build_synth_cnc(
+    *,
+    n_periods: int = 256,
+    period_l: int = PERIOD_L,
+    seed: int = SEED,
+) -> DatasetBundle:
+    """Synthetic closed G01 toolpath: sharp corners vs G2-ish rounded sibling.
+
+    Proxy when KIT CNC DOI is login-walled. Scores path residual under tiled loops.
+    """
+    rng = np.random.default_rng(seed + 41)
+    ideals: list[np.ndarray] = []
+    engines: list[np.ndarray] = []
+    for _ in range(n_periods):
+        # Closed square-ish contour in angle domain: 4 corners + edge noise
+        t = np.linspace(0.0, 1.0, period_l, endpoint=False)
+        # Ideal: rounded (raised-cosine corner blend) radial path error signal
+        corners = np.array([0.0, 0.25, 0.5, 0.75])
+        ideal = 0.15 * np.sin(2 * np.pi * t)  # base contour component
+        for c in corners:
+            d = np.minimum(np.abs(t - c), 1.0 - np.abs(t - c))
+            # Smooth G2-ish bump (wide)
+            ideal = ideal + 0.35 * np.exp(-0.5 * (d / 0.04) ** 2)
+        ideal = _zscore(ideal.astype(np.float32))
+        # Engine: sharp G01 corners (narrow spikes) + wrap cliff
+        eng = 0.15 * np.sin(2 * np.pi * t)
+        for c in corners:
+            d = np.minimum(np.abs(t - c), 1.0 - np.abs(t - c))
+            eng = eng + 0.55 * np.exp(-0.5 * (d / 0.012) ** 2)
+        eng = _inject_cliff(_zscore(eng.astype(np.float32)), rng)
+        # Mild content jitter so periods are not identical
+        jitter = 0.02 * rng.standard_normal(period_l).astype(np.float32)
+        ideals.append(_zscore(ideal + 0.5 * jitter))
+        engines.append(eng + 0.25 * jitter)
+    return DatasetBundle(
+        name="synth_cnc_g01",
+        ideal=torch.from_numpy(np.stack(ideals, 0)),
+        engine=torch.from_numpy(np.stack(engines, 0)),
+        meta={
+            "domain": "cnc",
+            "n": n_periods,
+            "period_l": period_l,
+            "wrap": (
+                "Synthetic closed G01 contour residual: ideal=wide G2-ish corner blend; "
+                "engine=sharp corners + DenoiseOpt wrap cliff. KIT CNC real data not fetched."
+            ),
+            "citation": "Synthetic CAD proxy per SIGNAL_HEALING_DATASETS.md CNC paragraph",
+            "seed": seed,
+            "label": "synthetic_pilot — not KIT multimodal CNC recordings",
+        },
+    )
+
+
+def build_synth_pmu(
+    *,
+    n_periods: int = 256,
+    period_l: int = PERIOD_L,
+    seed: int = SEED,
+) -> DatasetBundle:
+    """Synthetic power-cycle / PMU window wrap (IEEE 1159-style harmonics).
+
+    Proxy when IEEE DataPort PMU OA requires account login.
+    """
+    rng = np.random.default_rng(seed + 59)
+    ideals: list[np.ndarray] = []
+    engines: list[np.ndarray] = []
+    for _ in range(n_periods):
+        t = np.linspace(0.0, 1.0, period_l, endpoint=False)
+        # Fundamental + odd harmonics (clean AC cycle)
+        a3 = 0.08 + 0.04 * rng.random()
+        a5 = 0.04 + 0.03 * rng.random()
+        phase = 2 * np.pi * rng.random()
+        ideal = (
+            np.sin(2 * np.pi * t + phase)
+            + a3 * np.sin(6 * np.pi * t + phase)
+            + a5 * np.sin(10 * np.pi * t + phase)
+        )
+        ideal = _zscore(ideal.astype(np.float32))
+        # Engine: same content with abrupt phase/step at wrap (window cliff) + noise
+        eng = ideal.copy()
+        eng = _inject_cliff(eng, rng)
+        # Extra mid-cycle notch (capacitor-switch / window splice proxy)
+        if rng.random() < 0.35:
+            k = int(rng.integers(period_l // 4, 3 * period_l // 4))
+            eng[k : k + 3] *= 0.2
+        ideals.append(ideal)
+        engines.append(eng)
+    return DatasetBundle(
+        name="synth_pmu_cycle",
+        ideal=torch.from_numpy(np.stack(ideals, 0)),
+        engine=torch.from_numpy(np.stack(engines, 0)),
+        meta={
+            "domain": "power",
+            "n": n_periods,
+            "period_l": period_l,
+            "wrap": (
+                "Synthetic 1-cycle voltage with harmonics; ideal=clean AC; "
+                "engine=wrap cliff (+ optional notch). IEEE 39-bus PMU OA not fetched."
+            ),
+            "citation": "Synthetic IEEE 1159 / C37.118-style cycle proxy",
+            "seed": seed,
+            "label": "synthetic_pilot — not DataPort PMU recordings",
+        },
+    )
+
+
 def try_optional_probe() -> dict[str, str]:
-    """Document skipped optional datasets (KIT / PMU / NMR)."""
-    return {
-        "kit_cnc": "skipped — KIT CNC DOI needs browser/login flow; not fetched in pilot",
-        "ieee_pmu": "skipped — IEEE DataPort free account wall",
+    """Document skipped optional datasets (real KIT / PMU / Paderborn / NMR)."""
+    base = {
+        "kit_cnc_real": (
+            "skipped — KIT CNC DOI needs browser/login; ran synth_cnc_g01 instead"
+        ),
+        "ieee_pmu_real": (
+            "skipped — IEEE DataPort free-account wall; ran synth_pmu_cycle instead"
+        ),
+        "paderborn_kat": (
+            "downloaded K001.rar (OA mirror) but extraction blocked — no CLI UnRAR; "
+            "SFX installer GUI hung; scores not claimed"
+        ),
         "bmrb_nmr": "skipped — BMRB FID needs per-entry API hunt; defer to follow-up",
+        "mfpt_bearings": (
+            "skipped if zip missing — official + Figshare + data-acoustics HTML/timeout/404"
+        ),
+        "deep_sota_cyclegan_beatdiff": (
+            "not executed — no trained Cycle-GAN / BeatDiff weights under residual protocol"
+        ),
     }
+    skip_path = CACHE / "skipped_optional.json"
+    if skip_path.is_file():
+        try:
+            base.update(json.loads(skip_path.read_text(encoding="utf-8")))
+        except Exception:
+            pass
+    return base
 
 
 def ensure_bundles(
@@ -398,6 +634,9 @@ def ensure_bundles(
         "cwru_bearings": lambda: build_cwru(n_periods=n_periods),
         "mfpt_bearings": lambda: build_mfpt(n_periods=min(128, n_periods)),
         "mitbih_ecg": lambda: build_mitbih(n_periods=n_periods),
+        "ptbxl_ecg": lambda: build_ptbxl(n_periods=n_periods),
+        "synth_cnc_g01": lambda: build_synth_cnc(n_periods=n_periods),
+        "synth_pmu_cycle": lambda: build_synth_pmu(n_periods=n_periods),
     }
     for name, fn in builders.items():
         cache_path = CACHE / f"{name}.pt"
@@ -413,9 +652,12 @@ def ensure_bundles(
         if bundle is not None:
             bundle.save(cache_path)
             meta_path.write_text(json.dumps(bundle.meta, indent=2), encoding="utf-8")
-    (CACHE / "skipped_optional.json").write_text(
-        json.dumps(try_optional_probe(), indent=2), encoding="utf-8"
-    )
+    skip = try_optional_probe()
+    if out.get("mfpt_bearings") is not None:
+        skip.pop("mfpt_bearings", None)
+    if out.get("ptbxl_ecg") is not None:
+        skip.pop("ptbxl_ecg", None)
+    (CACHE / "skipped_optional.json").write_text(json.dumps(skip, indent=2), encoding="utf-8")
     return out
 
 

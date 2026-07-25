@@ -1,5 +1,9 @@
 {
-  "kit_cnc": "skipped \u2014 KIT CNC DOI needs browser/login flow; not fetched in pilot",
-  "ieee_pmu": "skipped \u2014 IEEE DataPort free account wall",
-  "bmrb_nmr": "skipped \u2014 BMRB FID needs per-entry API hunt; defer to follow-up"
+  "kit_cnc_real": "skipped \u2014 KIT CNC DOI needs browser/login; ran synth_cnc_g01 instead",
+  "ieee_pmu_real": "skipped \u2014 IEEE DataPort free-account wall; ran synth_pmu_cycle instead",
+  "paderborn_kat": "skipped \u2014 Paderborn KAt registration / no anonymous OA mirror in this session",
+  "bmrb_nmr": "skipped \u2014 BMRB FID deferred",
+  "deep_sota_cyclegan_beatdiff": "not executed \u2014 no trained Cycle-GAN / BeatDiff weights under residual protocol",
+  "kit_cnc": "skipped \u2014 KIT CNC DOI needs browser/login flow; synthetic_cnc_wrap used as proxy",
+  "ieee_pmu": "skipped \u2014 IEEE DataPort free-account wall; synthetic_power_wrap used as proxy"
 }

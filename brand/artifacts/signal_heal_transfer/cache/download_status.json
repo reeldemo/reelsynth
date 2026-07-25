@@ -1,0 +1,21 @@
+{
+  "cwru": true,
+  "mitdb": true,
+  "ptbxl": true,
+  "mfpt": {
+    "ok": false,
+    "path": null,
+    "note": "https://www.mfpt.org/wp-content/uploads/2020/02/MFPT-Fault-Data-Sets.zip: HTML/login wall (not PK zip); https://www.mfpt.org/wp-content/uploads/2020/02/MFPT-Fault-Data-Sets.zip: HTML/login wall (not PK zip); https://figshare.com/ndownloader/files/53049140: too small 0; https://figshare.com/ndownloader/files/53049140: too small 0; https://ndownloader.figshare.com/files/53049140: HTTPError: HTTP Error 404: Not Found; https://ndownloader.figshare.com/files/53049140: HTTPError: HTTP Error 404: Not Found"
+  },
+  "paderborn": {
+    "ok": true,
+    "url": "https://groups.uni-paderborn.de/kat/BearingDataCenter/K001.rar",
+    "note": "probe hit"
+  },
+  "skipped": {
+    "mfpt_bearings": "MFPT zip: official + Figshare + data-acoustics mirrors returned HTML wall / timeout / 404 \u2014 https://www.mfpt.org/wp-content/uploads/2020/02/MFPT-Fault-Data-Sets.zip: HTML/login wall (not PK zip); https://www.mfpt.org/wp-content/uploads/2020/02/MFPT-Fault-Data-Sets.zip: HTML/login wall (not PK zip); https://figshare.com/ndownloader/files/53049140: too small 0; https://figshare.com/ndownload",
+    "kit_cnc": "skipped \u2014 KIT CNC DOI needs browser/login flow; synthetic_cnc_wrap used as proxy",
+    "ieee_pmu": "skipped \u2014 IEEE DataPort free-account wall; synthetic_power_wrap used as proxy",
+    "bmrb_nmr": "skipped \u2014 BMRB FID deferred"
+  }
+}

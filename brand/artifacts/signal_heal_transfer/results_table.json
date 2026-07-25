@@ -1,5 +1,5 @@
 {
-  "finished_at": "20260723T201503Z",
+  "finished_at": "20260725T043542Z",
   "config": {
     "iters": 250,
     "fit_steps": 40,
@@ -9,23 +9,36 @@
     "device": "cuda",
     "period_l": 256,
     "metric": "prolonged residual R (DenoiseOpt)",
-    "method": "hybrid_lstm only"
+    "method": "hybrid_lstm only",
+    "note": "v9 expand: MFPT/PTB-XL 150-iter search; synth CNC/PMU 100-iter; CWRU/MIT prior 250-iter"
   },
   "datasets_ran": [
     "cwru_bearings",
-    "mitbih_ecg"
+    "mfpt_bearings",
+    "mitbih_ecg",
+    "ptbxl_ecg",
+    "synth_cnc_g01",
+    "synth_pmu_cycle"
   ],
   "skipped": {
     "mfpt_bearings": "MFPT zip URL returned HTML (login/wall); skipped",
-    "kit_cnc": "skipped \u2014 KIT CNC DOI browser/login flow",
-    "ieee_pmu": "skipped \u2014 IEEE DataPort free-account wall",
-    "bmrb_nmr": "skipped \u2014 BMRB FID deferred"
+    "kit_cnc": "skipped \u2014 KIT CNC DOI needs browser/login flow; synthetic_cnc_wrap used as proxy",
+    "ieee_pmu": "skipped \u2014 IEEE DataPort free-account wall; synthetic_power_wrap used as proxy",
+    "bmrb_nmr": "skipped \u2014 BMRB FID deferred",
+    "kit_cnc_real": "skipped \u2014 KIT CNC DOI needs browser/login; ran synth_cnc_g01 instead",
+    "ieee_pmu_real": "skipped \u2014 IEEE DataPort free-account wall; ran synth_pmu_cycle instead",
+    "paderborn_kat": "skipped \u2014 Paderborn KAt registration / no anonymous OA mirror in this session",
+    "deep_sota_cyclegan_beatdiff": "not executed \u2014 no trained Cycle-GAN / BeatDiff weights under residual protocol"
   },
   "skipped_optional": {
     "mfpt_bearings": "MFPT zip URL returned HTML (login/wall); skipped",
-    "kit_cnc": "skipped \u2014 KIT CNC DOI browser/login flow",
-    "ieee_pmu": "skipped \u2014 IEEE DataPort free-account wall",
-    "bmrb_nmr": "skipped \u2014 BMRB FID deferred"
+    "kit_cnc": "skipped \u2014 KIT CNC DOI needs browser/login flow; synthetic_cnc_wrap used as proxy",
+    "ieee_pmu": "skipped \u2014 IEEE DataPort free-account wall; synthetic_power_wrap used as proxy",
+    "bmrb_nmr": "skipped \u2014 BMRB FID deferred",
+    "kit_cnc_real": "skipped \u2014 KIT CNC DOI needs browser/login; ran synth_cnc_g01 instead",
+    "ieee_pmu_real": "skipped \u2014 IEEE DataPort free-account wall; ran synth_pmu_cycle instead",
+    "paderborn_kat": "skipped \u2014 Paderborn KAt registration / no anonymous OA mirror in this session",
+    "deep_sota_cyclegan_beatdiff": "not executed \u2014 no trained Cycle-GAN / BeatDiff weights under residual protocol"
   },
   "table": {
     "cwru_bearings": {
@@ -49,6 +62,48 @@
       "spline_join": 0.7133563756942749,
       "beat_average_sbmm_lite": 0.21354642510414124,
       "ours_hybrid_lstm": 0.8792431354522705
+    },
+    "mfpt_bearings": {
+      "no_bake": 0.8777574300765991,
+      "dual_cosine": 0.7760615348815918,
+      "soft_periodize_hann": 0.7584093809127808,
+      "linear_fade": 0.785477340221405,
+      "endpoint_pin_mean": 0.7932640910148621,
+      "seam_fir3": 0.8054651021957397,
+      "cot_linear_periodize": 0.8777574300765991,
+      "cot_cubic_then_dualcosine": 0.7760615348815918,
+      "ours_hybrid_lstm": 0.8841551542282104
+    },
+    "ptbxl_ecg": {
+      "no_bake": 0.4503036439418793,
+      "dual_cosine": 0.33602726459503174,
+      "soft_periodize_hann": 0.3213019073009491,
+      "linear_fade": 0.3563128411769867,
+      "endpoint_pin_mean": 0.5920919179916382,
+      "seam_fir3": 0.45145106315612793,
+      "spline_join": 0.4971606135368347,
+      "beat_average_sbmm_lite": 0.3880534768104553,
+      "ours_hybrid_lstm": 0.6402570605278015
+    },
+    "synth_cnc_g01": {
+      "no_bake": 0.407349556684494,
+      "dual_cosine": 0.4134986996650696,
+      "soft_periodize_hann": 0.41066181659698486,
+      "linear_fade": 0.42281708121299744,
+      "endpoint_pin_mean": 0.4013846516609192,
+      "seam_fir3": 0.4186563491821289,
+      "spline_join": 0.43584924936294556,
+      "ours_hybrid_lstm": 0.4675419330596924
+    },
+    "synth_pmu_cycle": {
+      "no_bake": 0.9562694430351257,
+      "dual_cosine": 0.9393190145492554,
+      "soft_periodize_hann": 0.9360737800598145,
+      "linear_fade": 0.9414891004562378,
+      "endpoint_pin_mean": 0.9605169296264648,
+      "seam_fir3": 0.9477394819259644,
+      "spline_join": 0.9205054640769958,
+      "ours_hybrid_lstm": 0.9682239294052124
     }
   },
   "per_dataset": {
@@ -122,7 +177,131 @@
       "holdout_refit_R": 0.8792431354522705,
       "iters_done": 250,
       "note": null
+    },
+    "mfpt_bearings": {
+      "meta": {
+        "domain": "bearings",
+        "n": 128,
+        "period_l": 256,
+        "wrap": "MFPT shaft-rate periods; cubic ideal vs linear+cliff engine.",
+        "citation": "MFPT Fault Data Sets (Society for Machinery Failure Prevention Technology)",
+        "seed": 1902771841,
+        "label": "classical_board_plus_bad_cot \u2014 not a published deep SOTA reimplementation"
+      },
+      "baseline_labels": {
+        "no_bake": "classical / passthrough",
+        "dual_cosine": "classical DualCosine fade",
+        "soft_periodize_hann": "classical Hann soft-periodize",
+        "linear_fade": "classical linear fade",
+        "endpoint_pin_mean": "classical endpoint pin",
+        "seam_fir3": "classical seam FIR3",
+        "cot_linear_periodize": "bearings classical bad-COT control (passthrough of linear resample)",
+        "cot_cubic_then_dualcosine": "bearings classical: DualCosine on cracked (not published deep COT)",
+        "ours_hybrid_lstm": "Ours (hybrid GA\u2013PPO / hybrid_lstm outer loop)"
+      },
+      "champ_raw": 0.8903567790985107,
+      "holdout_refit_R": 0.8841551542282104
+    },
+    "ptbxl_ecg": {
+      "meta": {
+        "domain": "ecg",
+        "records": [
+          "00001_lr",
+          "00002_lr",
+          "00003_lr",
+          "00004_lr",
+          "00005_lr",
+          "00006_lr",
+          "00007_lr",
+          "00008_lr",
+          "00009_lr",
+          "00010_lr",
+          "00011_lr",
+          "00012_lr",
+          "00013_lr",
+          "00014_lr",
+          "00015_lr",
+          "00016_lr",
+          "00017_lr",
+          "00018_lr",
+          "00019_lr",
+          "00020_lr"
+        ],
+        "n": 235,
+        "period_l": 256,
+        "wrap": "PTB-XL records100 (100 Hz) lead-I R\u2013R windows resampled to L; ideal=local mean template + mild endpoint equalize; engine=beat+cliff.",
+        "fs_hz": 100.0,
+        "citation": "PTB-XL (PhysioNet, CC BY 4.0) \u2014 low-res subset pilot, not full 500 Hz corpus",
+        "seed": 1902771841,
+        "subset": "records100/00000 (~12 records)",
+        "baseline_note": "Classical board + SBMM-lite / spline only. Cycle-GAN / BeatDiff not executed."
+      },
+      "baseline_labels": {
+        "no_bake": "classical / passthrough",
+        "dual_cosine": "classical DualCosine fade",
+        "soft_periodize_hann": "classical Hann soft-periodize",
+        "linear_fade": "classical linear fade",
+        "endpoint_pin_mean": "classical endpoint pin",
+        "seam_fir3": "classical seam FIR3",
+        "spline_join": "domain classical spline/FIR join (not Cycle-GAN / deep SOTA)",
+        "beat_average_sbmm_lite": "ECG classical SBMM-lite beat average (not BeatDiff/Cycle-GAN)",
+        "ours_hybrid_lstm": "Ours (hybrid GA\u2013PPO / hybrid_lstm outer loop)"
+      },
+      "champ_raw": 0.6840845048427582,
+      "holdout_refit_R": 0.6402570605278015
+    },
+    "synth_cnc_g01": {
+      "meta": {
+        "domain": "cnc",
+        "n": 256,
+        "period_l": 256,
+        "wrap": "Synthetic closed G01 contour residual: ideal=wide G2-ish corner blend; engine=sharp corners + DenoiseOpt wrap cliff. KIT CNC real data not fetched.",
+        "citation": "Synthetic CAD proxy per SIGNAL_HEALING_DATASETS.md CNC paragraph",
+        "seed": 1902771841,
+        "label": "synthetic_pilot \u2014 not KIT multimodal CNC recordings"
+      },
+      "baseline_labels": {
+        "no_bake": "classical / passthrough",
+        "dual_cosine": "classical DualCosine fade",
+        "soft_periodize_hann": "classical Hann soft-periodize",
+        "linear_fade": "classical linear fade",
+        "endpoint_pin_mean": "classical endpoint pin",
+        "seam_fir3": "classical seam FIR3",
+        "spline_join": "domain classical spline/FIR join (not Cycle-GAN / deep SOTA)",
+        "ours_hybrid_lstm": "Ours (hybrid GA\u2013PPO / hybrid_lstm outer loop)"
+      },
+      "champ_raw": 0.46774129569530487,
+      "holdout_refit_R": 0.4675419330596924
+    },
+    "synth_pmu_cycle": {
+      "meta": {
+        "domain": "power",
+        "n": 256,
+        "period_l": 256,
+        "wrap": "Synthetic 1-cycle voltage with harmonics; ideal=clean AC; engine=wrap cliff (+ optional notch). IEEE 39-bus PMU OA not fetched.",
+        "citation": "Synthetic IEEE 1159 / C37.118-style cycle proxy",
+        "seed": 1902771841,
+        "label": "synthetic_pilot \u2014 not DataPort PMU recordings"
+      },
+      "baseline_labels": {
+        "no_bake": "classical / passthrough",
+        "dual_cosine": "classical DualCosine fade",
+        "soft_periodize_hann": "classical Hann soft-periodize",
+        "linear_fade": "classical linear fade",
+        "endpoint_pin_mean": "classical endpoint pin",
+        "seam_fir3": "classical seam FIR3",
+        "spline_join": "domain classical spline/FIR join (not Cycle-GAN / deep SOTA)",
+        "ours_hybrid_lstm": "Ours (hybrid GA\u2013PPO / hybrid_lstm outer loop)"
+      },
+      "champ_raw": 0.9750369191169739,
+      "holdout_refit_R": 0.9682239294052124
     }
   },
-  "honesty": "Classical board + domain classical proxies (bad-COT / SBMM-lite). Not a deep SOTA bake-off unless published model weights were run."
+  "honesty": "Classical board + domain classical proxies. Not a deep SOTA bake-off unless published model weights were run. synth_cnc_g01 / synth_pmu_cycle are synthetic proxies when real KIT / DataPort downloads are blocked.",
+  "deep_sota_status": {
+    "cycle_gan": "not_executed",
+    "beatdiff": "not_executed",
+    "paderborn_deep": "not_executed",
+    "note": "Literature comparison only; no invented scores."
+  }
 }

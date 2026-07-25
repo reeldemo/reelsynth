@@ -1,0 +1,33 @@
+{
+  "domain": "ecg",
+  "records": [
+    "00001_lr",
+    "00002_lr",
+    "00003_lr",
+    "00004_lr",
+    "00005_lr",
+    "00006_lr",
+    "00007_lr",
+    "00008_lr",
+    "00009_lr",
+    "00010_lr",
+    "00011_lr",
+    "00012_lr",
+    "00013_lr",
+    "00014_lr",
+    "00015_lr",
+    "00016_lr",
+    "00017_lr",
+    "00018_lr",
+    "00019_lr",
+    "00020_lr"
+  ],
+  "n": 235,
+  "period_l": 256,
+  "wrap": "PTB-XL records100 (100 Hz) lead-I R\u2013R windows resampled to L; ideal=local mean template + mild endpoint equalize; engine=beat+cliff.",
+  "fs_hz": 100.0,
+  "citation": "PTB-XL (PhysioNet, CC BY 4.0) \u2014 low-res subset pilot, not full 500 Hz corpus",
+  "seed": 1902771841,
+  "subset": "records100/00000 (~12 records)",
+  "baseline_note": "Classical board + SBMM-lite / spline only. Cycle-GAN / BeatDiff not executed."
+}

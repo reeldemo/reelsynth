@@ -1,0 +1,79 @@
+{
+  "approach": "hybrid_lstm",
+  "iters": 250,
+  "iters_done": 200,
+  "seed": 1902771841,
+  "champ_raw": 0.8903567790985107,
+  "champ_r": 0.8932734457651774,
+  "baseline_dual_cosine": 0.7662345767021179,
+  "nobake": 0.8784814476966858,
+  "delta_r_vs_dual_cosine": 0.12412220239639282,
+  "champ_arch": {
+    "depth": 12,
+    "width": 17,
+    "act": "silu",
+    "ops": [
+      "cycle_net",
+      "fade_pull",
+      "fir5"
+    ],
+    "wet": 0.8508541372527699,
+    "fir": [
+      0.09955245554073716,
+      0.06671269554771417,
+      0.06850749173145798,
+      0.3714727103377512,
+      0.058556344762366604
+    ],
+    "cell_kind": "xlstm",
+    "soft_logits": [
+      -0.7310634675404777,
+      0.1710795557276254,
+      -0.6233001575325193,
+      0.9827618982555753,
+      0.3947958367868978,
+      0.373733937967083,
+      0.46914590455657923,
+      0.37583370129354693,
+      -0.08300391880653188,
+      0.41187302648163265,
+      0.21241824583315116,
+      -0.36736061966500033,
+      0.3777839866967111,
+      1.352627609124864,
+      -0.11422418026695591
+    ],
+    "blocks": [
+      "xlstm",
+      "unet",
+      "attn",
+      "lstm",
+      "dense",
+      "noise_cond"
+    ],
+    "use_adv_aux": false,
+    "moe_mode": "sequential"
+  },
+  "champ_hp": {
+    "lr": 0.02988943937062461,
+    "fit_steps": 56,
+    "batch": 48,
+    "entropy_coef": 0.028616380977871808,
+    "ppo_clip": 0.20000000000000007,
+    "adv_coef": 0.029539746050910053,
+    "reward_mode": "vs_nobake"
+  },
+  "branch_best": {
+    "ppo": 0.8903567790985107,
+    "ga": 0.8881435394287109,
+    "pbt": 0.8882305324077606,
+    "nas": 0.883619874715805,
+    "combo": 0.8888044357299805
+  },
+  "wall_s": 2149.834983110428,
+  "finished_at": "20260725T040927Z",
+  "partial": false,
+  "metric": "prolonged residual R = clamp(1 - rms(tile(out)-tile(ideal)) / rms(tile(ideal)), 0, 1); same as overnight_gpu_rl_arch.residual_score",
+  "holdout_refit_R": 0.8841551542282104,
+  "note": "Finalized from mid-run champ (plateaued); iters_done may be < requested 250"
+}
