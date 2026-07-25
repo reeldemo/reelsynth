@@ -521,8 +521,9 @@ def write_readme(path: Path, results: dict[str, Any]) -> None:
         "- **CWRU bearings:** DE @12 kHz; per-rev windows via RPM; **ideal** = cubic resample to $L$; "
         "**engine** = linear resample (bad-COT proxy) + DenoiseOpt-style wrap cliff + seam noise.",
         "- **MFPT:** same protocol when zip available; fixed shaft-rate periods.",
-        "- **MIT-BIH ECG:** R–R normal beats → $L$; **ideal** = local mean template + mild endpoint "
+        "- **MIT-BIH / PTB-XL ECG:** R–R beats → $L$; **ideal** = local mean template + mild endpoint "
         "equalize (SBMM-lite classical); **engine** = single beat + wrap cliff.",
+        "- **synth_cnc_g01 / synth_pmu_cycle:** synthetic CNC / power-cycle proxies when KIT / DataPort blocked.",
         "",
         "## Seeds",
         "",
@@ -533,8 +534,9 @@ def write_readme(path: Path, results: dict[str, Any]) -> None:
         "",
         "- Baselines are a **classical board** (+ domain classical COT / SBMM-lite). "
         "We do **not** claim BeatDiff / Cycle-GAN / deep order-tracking SOTA unless those weights ran.",
+        "- See `DEEP_SOTA_NOT_EXECUTED.json` and `LISTENING_PROTOCOL_MAIN.md` (no invented MOS).",
         "- Do not wipe `brand/artifacts/meta_approach_compare/`.",
-        "- Optional KIT CNC / IEEE PMU / BMRB NMR skipped if login/paywall.",
+        "- Optional KIT CNC / IEEE PMU / Paderborn / BMRB NMR skipped if login/paywall.",
         "",
         "### Skipped optional",
         "",
@@ -550,9 +552,12 @@ def write_readme(path: Path, results: dict[str, Any]) -> None:
         "## Reproduce",
         "",
         "```bash",
-        ".venv_gpu/Scripts/python scripts/_tmp_dl_signal_heal.py   # or built-in ensure",
-        ".venv_gpu/Scripts/python scripts/bench_signal_heal_transfer.py --iters 250",
+        ".venv_gpu/Scripts/python scripts/download_signal_heal_data.py",
+        ".venv_gpu/Scripts/python scripts/bench_signal_heal_transfer.py --iters 250 --merge-existing",
+        ".venv_gpu/Scripts/python scripts/export_signal_heal_hear_pack.py",
         "```",
+        "",
+        "Also: `REPRO.md`, `DEEP_SOTA_NOT_EXECUTED.json`, `LISTENING_PROTOCOL_MAIN.md`.",
         "",
     ]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -566,7 +571,8 @@ def write_paper_note(path: Path, results: dict[str, Any]) -> None:
         f"**Date:** {results.get('finished_at', '')}",
         "",
         "Pilot transfer of DenoiseOpt’s winning outer loop (**hybrid GA–PPO / `hybrid_lstm`**) "
-        "to public cycle-local wrap tasks (CWRU bearings, MIT-BIH ECG; MFPT if available). "
+        "to public cycle-local wrap tasks (CWRU, MIT-BIH, PTB-XL; MFPT if available; "
+        "synthetic CNC/PMU proxies when OA downloads are blocked). "
         "Period length $L=256$; score = prolonged residual $R$ vs ideal sibling.",
         "",
         "## Results (prolonged $R$, higher better)",
@@ -609,14 +615,30 @@ def main() -> int:
     ap.add_argument(
         "--datasets",
         type=str,
-        default="cwru_bearings,mitbih_ecg,mfpt_bearings",
+        default="cwru_bearings,mitbih_ecg,mfpt_bearings,ptbxl_ecg,synth_cnc_g01,synth_pmu_cycle",
         help="comma list; missing downloads are skipped",
+    )
+    ap.add_argument(
+        "--merge-existing",
+        action="store_true",
+        help="keep prior results_table rows for datasets not re-run",
     )
     ap.add_argument("--skip-search", action="store_true", help="baselines only (debug)")
     args = ap.parse_args()
 
     device = torch.device(args.device if args.device != "cuda" or torch.cuda.is_available() else "cpu")
     OUT.mkdir(parents=True, exist_ok=True)
+
+    prior_table: dict[str, dict[str, float]] = {}
+    prior_per: dict[str, Any] = {}
+    prior_path = OUT / "results_table.json"
+    if args.merge_existing and prior_path.is_file():
+        try:
+            prior = json.loads(prior_path.read_text(encoding="utf-8"))
+            prior_table = dict(prior.get("table") or {})
+            prior_per = dict(prior.get("per_dataset") or {})
+        except Exception:
+            pass
 
     print("Building / loading domain bundles…")
     bundles = ensure_bundles(force=args.force_rebuild, n_periods=args.n_periods)
@@ -625,7 +647,7 @@ def main() -> int:
     warm_path = ROOT / "brand" / "artifacts" / "meta_approach_compare" / "hybrid_lstm" / "summary.json"
     warm = json.loads(warm_path.read_text(encoding="utf-8")) if warm_path.is_file() else None
 
-    table: dict[str, dict[str, float]] = {}
+    table: dict[str, dict[str, float]] = dict(prior_table) if args.merge_existing else {}
     per_ds: dict[str, Any] = {}
     ran: list[str] = []
     skipped: dict[str, str] = json.loads(
@@ -677,6 +699,19 @@ def main() -> int:
         ran.append(name)
         (ds_dir / "scores.json").write_text(json.dumps(row, indent=2), encoding="utf-8")
 
+    # Preserve prior per_dataset for merge-only rows
+    if args.merge_existing:
+        for k, v in prior_per.items():
+            if k not in per_ds:
+                per_ds[k] = {
+                    "meta": v.get("meta", {}),
+                    "baseline_labels": v.get("baseline_labels", {}),
+                    "hybrid_summary": {
+                        "champ_raw": v.get("champ_raw"),
+                        "holdout_refit_R": v.get("holdout_refit_R"),
+                    },
+                }
+
     results = {
         "finished_at": utc_now(),
         "config": {
@@ -690,7 +725,8 @@ def main() -> int:
             "metric": "prolonged residual R (DenoiseOpt)",
             "method": "hybrid_lstm only",
         },
-        "datasets_ran": ran,
+        "datasets_ran": sorted(set(ran) | (set(prior_table) if args.merge_existing else set())),
+        "datasets_ran_this_session": ran,
         "skipped": skipped,
         "skipped_optional": skipped,
         "table": table,
@@ -705,20 +741,31 @@ def main() -> int:
         },
         "honesty": (
             "Classical board + domain classical proxies. Not a deep SOTA bake-off unless "
-            "published model weights were run."
+            "published model weights were run. synth_cnc_g01 / synth_pmu_cycle are synthetic "
+            "proxies when real KIT / DataPort downloads are blocked."
         ),
+        "deep_sota_status": {
+            "cycle_gan": "not_executed",
+            "beatdiff": "not_executed",
+            "paderborn_deep": "not_executed",
+            "note": "Literature comparison only; no invented scores.",
+        },
     }
     (OUT / "results_table.json").write_text(json.dumps(results, indent=2), encoding="utf-8")
     plot_bars(table, OUT / "fig_signal_heal_transfer.png", OUT / "fig_signal_heal_transfer.pdf")
     write_readme(OUT / "README.md", results)
 
-    # Paper mirror note
+    # Paper mirror note + figures into titled v9 folder
     paper_note = META_PAPER / "docs" / "SIGNAL_HEAL_TRANSFER_PILOT.md"
     if META_PAPER.is_dir():
         write_paper_note(paper_note, results)
-        # also mirror under reelsynth docs
         write_paper_note(ROOT / "docs" / "papers" / "denoise_opt" / "SIGNAL_HEAL_TRANSFER_PILOT.md", results)
-        fig_dst = META_PAPER / "paper" / "v7" / "figures"
+        fig_dst = (
+            META_PAPER
+            / "paper"
+            / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v9"
+            / "figures"
+        )
         if fig_dst.parent.is_dir():
             fig_dst.mkdir(parents=True, exist_ok=True)
             import shutil
@@ -727,6 +774,24 @@ def main() -> int:
                 src = OUT / f"fig_signal_heal_transfer.{ext}"
                 if src.is_file():
                     shutil.copy2(src, fig_dst / f"fig_signal_heal_transfer.{ext}")
+            # Also keep JSON table sibling for paper author
+            shutil.copy2(OUT / "results_table.json", fig_dst / "signal_heal_transfer_results_table.json")
+            for name in (
+                "DEEP_SOTA_NOT_EXECUTED.json",
+                "LISTENING_PROTOCOL_MAIN.md",
+                "REPRO.md",
+            ):
+                p = OUT / name
+                if p.is_file():
+                    shutil.copy2(p, fig_dst.parent / name)
+
+    # Always write deep-SOTA honesty + REPRO next to artifacts
+    deep_path = OUT / "DEEP_SOTA_NOT_EXECUTED.json"
+    if not deep_path.is_file():
+        deep_path.write_text(
+            json.dumps(results.get("deep_sota_status", {}), indent=2),
+            encoding="utf-8",
+        )
 
     print("Ran:", ran)
     print("Table:", json.dumps(table, indent=2))
