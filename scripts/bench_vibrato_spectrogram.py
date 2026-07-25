@@ -7,7 +7,7 @@ reports mean prolonged R on the cycle board plus modulated-playback residual.
 
 Writes:
   brand/artifacts/vibrato_spectrogram/
-  denoise-opt-meta/paper/Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v8/figures/fig_vibrato_spectrogram.{png,pdf,json}
+  denoise-opt-meta/paper/Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v9/figures/fig_vibrato_spectrogram.{png,pdf,json}
 
 Does NOT touch brand/artifacts/meta_approach_compare/ contents (read-only champ).
 """
@@ -43,7 +43,7 @@ from plot_meta_heal_samples import (  # noqa: E402
 )
 
 OUT_DIR = ROOT / "brand" / "artifacts" / "vibrato_spectrogram"
-V8_FIG = ROOT.parent / "denoise-opt-meta" / "paper" / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v8" / "figures"
+V8_FIG = ROOT.parent / "denoise-opt-meta" / "paper" / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v9" / "figures"
 
 C_ENGINE = "#D55E00"
 C_DUAL = "#0072B2"
@@ -382,7 +382,7 @@ Slow vibrato playback of cracked / DualCosine / Ours on holdout tile **{idx}**.
 - Duration: **{args.duration} s**
 - Seeds: eval **{EVAL_SEED}**, search/refit **{SEARCH_SEED}**
 
-Figures: `fig_vibrato_spectrogram.{{png,pdf}}` (mirrored to `paper/Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v8/figures/`).
+Figures: `fig_vibrato_spectrogram.{{png,pdf}}` (mirrored to `paper/Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v9/figures/`).
 
 Rebuild:
 

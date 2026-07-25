@@ -8,7 +8,7 @@ Builds:
 No new NAS. Does not modify/wipe meta_approach_compare/ (read-only).
 
 Writes under brand/artifacts/paper_v8_listening/ and copies to
-denoise-opt-meta/paper/Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v8/figures/.
+denoise-opt-meta/paper/Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v9/figures/.
 """
 from __future__ import annotations
 
@@ -30,7 +30,7 @@ HEAR_DIR = ROOT / "brand" / "artifacts" / "meta_approach_compare" / "hear_sample
 EXPORT_JSON = ROOT / "brand" / "artifacts" / "real_wt_cycles" / "reelsynth_export_cycles.json"
 AKWF_DIR = ROOT / "brand" / "artifacts" / "real_wt_cycles" / "oa_akwf"
 OUT_DIR = ROOT / "brand" / "artifacts" / "paper_v8_listening"
-V8_FIG = ROOT.parent / "denoise-opt-meta" / "paper" / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v8" / "figures"
+V8_FIG = ROOT.parent / "denoise-opt-meta" / "paper" / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v9" / "figures"
 
 C_ENGINE = "#D55E00"
 C_DUAL = "#0072B2"
@@ -225,7 +225,7 @@ def plot_wt_gallery(export_json: Path, akwf_dir: Path, out_dir: Path, paper_dir:
         "export_banks": [manifest[i]["bank"] for i in chosen],
         "akwf_files": [p.name for p in akwf_files],
         "akwf_dir": str(akwf_dir.resolve()) if akwf_dir.is_dir() else None,
-        "matrix_fold": "paper/Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v8/figures/real_wt_matrix.json",
+        "matrix_fold": "paper/Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v9/figures/real_wt_matrix.json",
         "png": str(png.resolve()),
         "pdf": str(pdf.resolve()),
         "note": "Gallery only; scores remain in real_wt_matrix.json. No new meta search.",

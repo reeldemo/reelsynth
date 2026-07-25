@@ -913,8 +913,8 @@ Checkpoints live under each `{{config_id}}/checkpoint.json`. Completed configs a
 
 
 def publish_to_paper(aggregate: dict[str, Any], out_dir: Path) -> list[Path]:
-    paper_fig = META_ROOT / "paper" / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v8" / "figures"
-    paper_sub = META_ROOT / "paper" / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v8" / "subsections"
+    paper_fig = META_ROOT / "paper" / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v9" / "figures"
+    paper_sub = META_ROOT / "paper" / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v9" / "subsections"
     paper_fig.mkdir(parents=True, exist_ok=True)
     paper_sub.mkdir(parents=True, exist_ok=True)
     copied: list[Path] = []
