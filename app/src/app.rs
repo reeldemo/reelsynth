@@ -514,15 +514,7 @@ impl ReelSynthApp {
     }
 
     fn transform_piano_note(&self, raw: u8, settings: &PerformanceSettings) -> u8 {
-        if settings.scale.is_chromatic() {
-            return raw;
-        }
-        match settings.layout {
-            PerformanceLayout::Piano | PerformanceLayout::Scale => {
-                snap_note(raw, settings.root, settings.scale)
-            }
-            PerformanceLayout::Chords => raw,
-        }
+        transform_piano_note(raw, settings)
     }
 
     fn current_bpm(&self) -> f32 {
@@ -1278,6 +1270,20 @@ impl ReelSynthApp {
     }
 }
 
+fn transform_piano_note(raw: u8, settings: &PerformanceSettings) -> u8 {
+    if settings.scale.is_chromatic() {
+        return raw;
+    }
+    match settings.layout {
+        // Chromatic piano: black keys play as pressed (fold/snap only in Scale layout).
+        PerformanceLayout::Piano | PerformanceLayout::Chords => raw,
+        PerformanceLayout::Scale => match settings.scale_behavior {
+            ScaleBehavior::Snap => snap_note(raw, settings.root, settings.scale),
+            ScaleBehavior::Filter => raw,
+        },
+    }
+}
+
 fn freq_to_midi_note(freq: f32) -> u8 {
     if freq <= 0.0 {
         return 60;
@@ -1595,5 +1601,37 @@ impl eframe::App for ReelSynthApp {
         if self.audio.is_some() {
             ctx.request_repaint();
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use reelsynth::Scale;
+
+    #[test]
+    fn piano_layout_keeps_black_keys_chromatic() {
+        let settings = PerformanceSettings {
+            layout: PerformanceLayout::Piano,
+            scale: Scale::Major,
+            root: 0,
+            scale_behavior: ScaleBehavior::Snap,
+            ..PerformanceSettings::default()
+        };
+        // C#3 must stay C# under Piano+Major (not snap to C).
+        assert_eq!(transform_piano_note(61, &settings), 61);
+        assert_eq!(transform_piano_note(63, &settings), 63);
+    }
+
+    #[test]
+    fn scale_layout_snap_maps_black_keys() {
+        let settings = PerformanceSettings {
+            layout: PerformanceLayout::Scale,
+            scale: Scale::Major,
+            root: 0,
+            scale_behavior: ScaleBehavior::Snap,
+            ..PerformanceSettings::default()
+        };
+        assert_eq!(transform_piano_note(61, &settings), 60);
     }
 }

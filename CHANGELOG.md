@@ -27,6 +27,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **Piano layout black keys** — footer / keyboard notes no longer scale-snap under default **Piano** layout (Major etc.); C#/D#/F#/G#/A# play chromatically. Snap still applies in **Scale** layout.
 - **WT curve fill** — area under Design Selected / Result / 2D waveforms uses a per-segment mesh to the zero baseline instead of egui `convex_polygon` (fan tessellation looked like crossed triangles on oscillating curves); fill/zero line track zoom-pan; layer sampling no longer duplicates phase 0 at the right edge
 - **Compose black keys** — shared footer piano no longer force-enables scale-fold in Compose; fold follows **Scale** layout only (same path as Design), so C#/D#/F#/G#/A# play again under default Piano + Major
 - **Header status / MIDI** — MIDI device combo shows **No MIDI** instead of raw `None` when disconnected; Quant interp patch value `none` maps to **Hold** and toolbar segment combo shows mode labels (`1→2·Linear`)
