@@ -12,6 +12,10 @@ fn default_base_octave() -> i8 {
     4
 }
 
+fn default_input_octave_offset() -> i8 {
+    0
+}
+
 /// Key + scale + layout options for the performance layer.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PerformanceSettings {
@@ -31,6 +35,9 @@ pub struct PerformanceSettings {
     /// Octave for scale-degree and chord-row mapping (4 = middle C octave).
     #[serde(default = "default_base_octave")]
     pub base_octave: i8,
+    /// Octave shift for external MIDI and chromatic computer-keyboard input.
+    #[serde(default = "default_input_octave_offset")]
+    pub input_octave_offset: i8,
     #[serde(default)]
     pub arp: ArpSettings,
 }
@@ -45,6 +52,7 @@ impl Default for PerformanceSettings {
             chord_set: ChordSet::default(),
             voicing: ChordVoicing::default(),
             base_octave: default_base_octave(),
+            input_octave_offset: default_input_octave_offset(),
             arp: ArpSettings::default(),
         }
     }

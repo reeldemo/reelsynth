@@ -6,7 +6,7 @@ use reelsynth_ui_theme::Tokens;
 use crate::audit_registry::{record_region, AuditId};
 
 use crate::widgets::{
-    menu_divider, menu_section_label, menu_selectable, reel_combo, select_value_text,
+    button_ghost, menu_divider, menu_section_label, menu_selectable, reel_combo, select_value_text,
     styled_menu_body,
 };
 use crate::UiState;
@@ -46,10 +46,7 @@ fn performance_summary(state: &UiState) -> String {
 }
 
 /// Compact Performance dropdown: key, scale, layout, and chord degree when applicable.
-pub fn draw_performance_header(
-    ui: &mut Ui,
-    state: &mut UiState,
-) -> PerformanceHeaderActions {
+pub fn draw_performance_header(ui: &mut Ui, state: &mut UiState) -> PerformanceHeaderActions {
     let tokens = Tokens::default();
     let mut actions = PerformanceHeaderActions::default();
     let summary = performance_summary(state);
@@ -60,60 +57,86 @@ pub fn draw_performance_header(
             .size(10.0)
             .color(tokens.text_muted),
     );
-    let combo = reel_combo(ui, "perf_settings", select_value_text(&summary), 110.0, |ui| {
-        styled_menu_body(ui, |ui| {
-            let perf = &mut state.performance;
+    let combo = reel_combo(
+        ui,
+        "perf_settings",
+        select_value_text(&summary),
+        110.0,
+        |ui| {
+            styled_menu_body(ui, |ui| {
+                let perf = &mut state.performance;
 
-            menu_section_label(ui, "Key");
-            for (idx, name) in ROOT_NAMES.iter().enumerate() {
-                if menu_selectable(ui, perf.root == idx, name).clicked() {
-                    perf.root = idx;
-                    actions.params_changed = true;
+                menu_section_label(ui, "Key");
+                for (idx, name) in ROOT_NAMES.iter().enumerate() {
+                    if menu_selectable(ui, perf.root == idx, name).clicked() {
+                        perf.root = idx;
+                        actions.params_changed = true;
+                    }
                 }
-            }
 
-            menu_divider(ui);
-            menu_section_label(ui, "Scale");
-            for (idx, name) in SCALE_NAMES.iter().enumerate() {
-                if menu_selectable(ui, perf.scale == idx, name).clicked() {
-                    perf.scale = idx;
-                    actions.params_changed = true;
-                }
-            }
-
-            menu_divider(ui);
-            menu_section_label(ui, "Layout");
-            for (idx, name) in LAYOUT_NAMES.iter().enumerate() {
-                if menu_selectable(ui, perf.layout == idx, name).clicked() {
-                    perf.layout = idx;
-                    actions.params_changed = true;
-                }
-            }
-
-            if perf.layout == 2 {
                 menu_divider(ui);
-                menu_section_label(ui, "Chord degree");
-                for (deg, label) in CHORD_DEGREE_LABELS.iter().enumerate() {
-                    let active = state.active_chord_degree == Some(deg);
-                    if menu_selectable(ui, active, label).clicked() {
-                        if active {
-                            actions.chord_degree_off = Some(deg);
-                            state.active_chord_degree = None;
-                        } else {
-                            if let Some(prev) = state.active_chord_degree {
-                                actions.chord_degree_off = Some(prev);
+                menu_section_label(ui, "Scale");
+                for (idx, name) in SCALE_NAMES.iter().enumerate() {
+                    if menu_selectable(ui, perf.scale == idx, name).clicked() {
+                        perf.scale = idx;
+                        actions.params_changed = true;
+                    }
+                }
+
+                menu_divider(ui);
+                menu_section_label(ui, "Layout");
+                for (idx, name) in LAYOUT_NAMES.iter().enumerate() {
+                    if menu_selectable(ui, perf.layout == idx, name).clicked() {
+                        perf.layout = idx;
+                        actions.params_changed = true;
+                    }
+                }
+
+                if perf.layout == 2 {
+                    menu_divider(ui);
+                    menu_section_label(ui, "Chord degree");
+                    for (deg, label) in CHORD_DEGREE_LABELS.iter().enumerate() {
+                        let active = state.active_chord_degree == Some(deg);
+                        if menu_selectable(ui, active, label).clicked() {
+                            if active {
+                                actions.chord_degree_off = Some(deg);
+                                state.active_chord_degree = None;
+                            } else {
+                                if let Some(prev) = state.active_chord_degree {
+                                    actions.chord_degree_off = Some(prev);
+                                }
+                                actions.chord_degree_on = Some(deg);
+                                state.active_chord_degree = Some(deg);
                             }
-                            actions.chord_degree_on = Some(deg);
-                            state.active_chord_degree = Some(deg);
                         }
                     }
                 }
-            }
-        });
+            });
+        },
+    );
+    let octave_controls = ui.horizontal(|ui| {
+        let tooltip =
+            "Shift MIDI + computer keyboard by octaves. On-screen piano pitches stay fixed.";
+        if button_ghost(ui, "−").on_hover_text(tooltip).clicked() {
+            state.performance.input_octave_offset =
+                (state.performance.input_octave_offset - 1).max(-3);
+            actions.params_changed = true;
+        }
+        ui.label(format!("Oct {:+}", state.performance.input_octave_offset))
+            .on_hover_text(tooltip);
+        if button_ghost(ui, "+").on_hover_text(tooltip).clicked() {
+            state.performance.input_octave_offset =
+                (state.performance.input_octave_offset + 1).min(3);
+            actions.params_changed = true;
+        }
     });
     let perf_rect = egui::Rect::from_min_max(
         egui::pos2(perf_start.x, ui.min_rect().min.y),
-        combo.response.rect.max,
+        octave_controls
+            .response
+            .rect
+            .max
+            .max(combo.response.rect.max),
     );
     if perf_rect.is_positive() {
         record_region(ui.ctx(), AuditId::HeaderPerformance, perf_rect, perf_rect);

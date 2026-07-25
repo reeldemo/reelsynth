@@ -57,6 +57,7 @@ A default empty clip is auto-selected on the active track so you can draw immedi
 | **ReelAI** | Seam-heal dropdown (see [ReelAI seam heal](#reelai-seam-heal)) |
 | **Piano** | Show/hide on-screen keyboard |
 | **Key / Scale / Layout** | Performance input: root key, scale mode, piano vs scale-fold vs chord row. **Piano** layout is chromatic (black keys play); **Scale** folds/snaps to the scale |
+| **Oct − / +** | Persisted ±3-octave shift for hardware MIDI and the chromatic computer-keyboard play row; on-screen piano keys keep their labeled pitches |
 | **Arp** (footer) | Toggle arpeggiator; input mode, style, rate, octaves, gate, latch |
 | **MIDI** combo | Select hardware MIDI input device |
 | **Audio** combo | Select CPAL output device (speakers, headphones, DI / interface) |

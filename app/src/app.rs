@@ -10,9 +10,9 @@ use crossbeam_channel::{Receiver, Sender};
 use eframe::egui;
 use reelsynth::import::{import_serum_fxp, import_vital, import_wav_folder};
 use reelsynth::{
-    load_preset, note_in_scale, resolve_diatonic_chord, scale_degree_to_midi, snap_note,
-    resolve_bank_for_preset, ArpEngine, ArpEvent, MidiEvent, Patch,
-    PerformanceLayout, PerformanceSettings, ScaleBehavior, ScopeMonitor, WavetableBank,
+    load_preset, note_in_scale, resolve_bank_for_preset, resolve_diatonic_chord,
+    scale_degree_to_midi, snap_note, ArpEngine, ArpEvent, MidiEvent, Patch, PerformanceLayout,
+    PerformanceSettings, ScaleBehavior, ScopeMonitor, WavetableBank,
 };
 use reelsynth_ui::{
     apply_loaded_bank_to_design, bake_bank_seams, compose_to_patch_sequence, draw_shell,
@@ -53,7 +53,6 @@ fn resolve_bank(path: &Path, preset: &Patch) -> Result<WavetableBank, String> {
         None => Ok(WavetableBank::factory_saw_morph()),
     })
 }
-
 
 pub struct ReelSynthApp {
     audio: Option<Arc<AudioHandle>>,
@@ -191,12 +190,9 @@ impl ReelSynthApp {
         if let Some(idx) = self.midi_devices.keyboard_like_index() {
             if self.midi_selected != idx || changed {
                 self.midi_selected = idx;
-                self.midi_handle = MidiInputHandle::connect(
-                    &self.midi_devices,
-                    idx,
-                    self.midi_event_tx.clone(),
-                )
-                .unwrap_or_else(|_| MidiInputHandle::disconnected());
+                self.midi_handle =
+                    MidiInputHandle::connect(&self.midi_devices, idx, self.midi_event_tx.clone())
+                        .unwrap_or_else(|_| MidiInputHandle::disconnected());
                 let name = self
                     .midi_devices
                     .names
@@ -301,10 +297,7 @@ impl ReelSynthApp {
         match start_audio_on_device(44100, preferred, Some(bank.clone()), Some(patch.clone())) {
             Ok(handle) => {
                 let name = handle.device_name().to_string();
-                self.audio_selected = self
-                    .audio_devices
-                    .index_of_name(&name)
-                    .unwrap_or(0);
+                self.audio_selected = self.audio_devices.index_of_name(&name).unwrap_or(0);
                 self.app_settings.audio_output_device = Some(name.clone());
                 self.app_settings.save();
                 self.scope = handle.scope();
@@ -404,12 +397,14 @@ impl ReelSynthApp {
         duration = duration.min(clip_len - start).max(step);
 
         use reelsynth_ui::MidiNote;
-        self.state.compose.project.tracks[ti].clips[ci].notes.push(MidiNote {
-            pitch: pending.pitch,
-            start_beats: start,
-            duration_beats: duration,
-            velocity: pending.velocity,
-        });
+        self.state.compose.project.tracks[ti].clips[ci]
+            .notes
+            .push(MidiNote {
+                pitch: pending.pitch,
+                start_beats: start,
+                duration_beats: duration,
+                velocity: pending.velocity,
+            });
         self.state.status = format!(
             "Recorded {} @ beat {:.2} ({:.2} beats)",
             pending.pitch, start, duration
@@ -521,10 +516,7 @@ impl ReelSynthApp {
         if self.state.shell_mode == ShellMode::Compose {
             self.state.compose.project.bpm.max(1.0)
         } else {
-            self.current_patch
-                .sequence
-                .bpm
-                .max(1.0)
+            self.current_patch.sequence.bpm.max(1.0)
         }
     }
 
@@ -547,10 +539,7 @@ impl ReelSynthApp {
 
         let bpm = self.current_bpm();
         let dt_beats = dt_secs * bpm / 60.0;
-        let events = self
-            .arp
-            .engine
-            .tick(dt_beats, &settings.arp, &settings);
+        let events = self.arp.engine.tick(dt_beats, &settings.arp, &settings);
         for event in events {
             self.dispatch_arp_event(event);
         }
@@ -593,12 +582,8 @@ impl ReelSynthApp {
                 self.engine_note_on(note, velocity);
             }
             PerformanceKey::ScaleDegree(deg) => {
-                let note = scale_degree_to_midi(
-                    settings.root,
-                    settings.scale,
-                    deg,
-                    settings.base_octave,
-                );
+                let note =
+                    scale_degree_to_midi(settings.root, settings.scale, deg, settings.base_octave);
                 self.engine_note_on(note, velocity);
             }
             PerformanceKey::ChordDegree(deg) => {
@@ -633,12 +618,8 @@ impl ReelSynthApp {
                 self.engine_note_off(note);
             }
             PerformanceKey::ScaleDegree(deg) => {
-                let note = scale_degree_to_midi(
-                    settings.root,
-                    settings.scale,
-                    deg,
-                    settings.base_octave,
-                );
+                let note =
+                    scale_degree_to_midi(settings.root, settings.scale, deg, settings.base_octave);
                 self.engine_note_off(note);
             }
             PerformanceKey::ChordDegree(_) => {
@@ -673,12 +654,8 @@ impl ReelSynthApp {
                 self.arp.engine.note_on(note, velocity, &arp, &settings);
             }
             PerformanceKey::ScaleDegree(deg) => {
-                let note = scale_degree_to_midi(
-                    settings.root,
-                    settings.scale,
-                    deg,
-                    settings.base_octave,
-                );
+                let note =
+                    scale_degree_to_midi(settings.root, settings.scale, deg, settings.base_octave);
                 self.arp.engine.note_on(note, velocity, &arp, &settings);
             }
             PerformanceKey::ChordDegree(deg) => {
@@ -716,12 +693,8 @@ impl ReelSynthApp {
                 self.arp.engine.note_off(note, &arp, &settings);
             }
             PerformanceKey::ScaleDegree(deg) => {
-                let note = scale_degree_to_midi(
-                    settings.root,
-                    settings.scale,
-                    deg,
-                    settings.base_octave,
-                );
+                let note =
+                    scale_degree_to_midi(settings.root, settings.scale, deg, settings.base_octave);
                 self.arp.engine.note_off(note, &arp, &settings);
             }
             PerformanceKey::ChordDegree(_) => {
@@ -779,35 +752,32 @@ impl ReelSynthApp {
 
     fn connect_midi(&mut self, index: usize) {
         self.midi_selected = index;
-        self.midi_handle = match MidiInputHandle::connect(
-            &self.midi_devices,
-            index,
-            self.midi_event_tx.clone(),
-        ) {
-            Ok(h) => {
-                let label = self
-                    .midi_devices
-                    .names
-                    .get(index)
-                    .cloned()
-                    .unwrap_or_else(|| "MIDI".into());
-                self.state.midi_device = if index == 0 {
-                    crate::midi_input::MIDI_NONE_LABEL.into()
-                } else {
-                    label.clone()
-                };
-                if index == 0 {
-                    self.state.status = "MIDI disconnected".into();
-                } else {
-                    self.state.status = format!("MIDI: {label}");
+        self.midi_handle =
+            match MidiInputHandle::connect(&self.midi_devices, index, self.midi_event_tx.clone()) {
+                Ok(h) => {
+                    let label = self
+                        .midi_devices
+                        .names
+                        .get(index)
+                        .cloned()
+                        .unwrap_or_else(|| "MIDI".into());
+                    self.state.midi_device = if index == 0 {
+                        crate::midi_input::MIDI_NONE_LABEL.into()
+                    } else {
+                        label.clone()
+                    };
+                    if index == 0 {
+                        self.state.status = "MIDI disconnected".into();
+                    } else {
+                        self.state.status = format!("MIDI: {label}");
+                    }
+                    h
                 }
-                h
-            }
-            Err(e) => {
-                self.state.status = e;
-                MidiInputHandle::disconnected()
-            }
-        };
+                Err(e) => {
+                    self.state.status = e;
+                    MidiInputHandle::disconnected()
+                }
+            };
     }
 
     fn open_preset(&mut self) {
@@ -851,10 +821,7 @@ impl ReelSynthApp {
         } else {
             let default_name = format!(
                 "{}.reelpreset",
-                self.state
-                    .preset_name
-                    .replace(['/', '\\'], "_")
-                    .trim()
+                self.state.preset_name.replace(['/', '\\'], "_").trim()
             );
             rfd::FileDialog::new()
                 .add_filter("ReelSynth Preset", &["reelpreset"])
@@ -948,9 +915,7 @@ impl ReelSynthApp {
                 QuantSeamMode::Noise2Noise => {
                     "Noise2Noise on — embedded U-Net-lite seam restore".into()
                 }
-                QuantSeamMode::DualCosine => {
-                    "DualCosine on — classical periodize bake".into()
-                }
+                QuantSeamMode::DualCosine => "DualCosine on — classical periodize bake".into(),
                 _ => format!("{} — baked all frames", mode.label()),
             };
         } else if let Some(src) = self.ui_bank_pre_ai.take() {
@@ -964,7 +929,8 @@ impl ReelSynthApp {
             if mode == QuantSeamMode::Adaptive || mode == QuantSeamMode::Soft {
                 bake_bank_seams(&mut bank, mode);
             }
-            self.state.status = format!("{} — rebake (edited while snapshot bake on)", mode.label());
+            self.state.status =
+                format!("{} — rebake (edited while snapshot bake on)", mode.label());
         }
 
         self.ui_bank = bank.clone();
@@ -1074,9 +1040,7 @@ impl ReelSynthApp {
                 self.load_bank(bank, name, None);
                 self.state.status = format!(
                     "Imported Serum {}",
-                    path.file_name()
-                        .and_then(|n| n.to_str())
-                        .unwrap_or("patch")
+                    path.file_name().and_then(|n| n.to_str()).unwrap_or("patch")
                 );
             }
             Err(e) => self.state.status = format!("Serum import failed: {e}"),
@@ -1111,10 +1075,7 @@ impl ReelSynthApp {
         } else {
             let default_name = format!(
                 "{}.reelwt",
-                self.state
-                    .wt_bank_name
-                    .replace(['/', '\\'], "_")
-                    .trim()
+                self.state.wt_bank_name.replace(['/', '\\'], "_").trim()
             );
             rfd::FileDialog::new()
                 .add_filter("ReelSynth Wavetable", &["reelwt"])
@@ -1202,7 +1163,11 @@ impl ReelSynthApp {
         self.current_patch.sequence = seq.clone();
     }
 
-    fn handle_compose_actions(&mut self, actions: &reelsynth_ui::ShellActions, was_recording: bool) {
+    fn handle_compose_actions(
+        &mut self,
+        actions: &reelsynth_ui::ShellActions,
+        was_recording: bool,
+    ) {
         let Some(audio) = &self.audio else {
             return;
         };
@@ -1284,6 +1249,24 @@ fn transform_piano_note(raw: u8, settings: &PerformanceSettings) -> u8 {
     }
 }
 
+fn shift_input_note(note: u8, octave_offset: i8) -> u8 {
+    (note as i16 + octave_offset.clamp(-3, 3) as i16 * 12).clamp(0, 127) as u8
+}
+
+fn shift_input_midi_event(event: MidiEvent, octave_offset: i8) -> MidiEvent {
+    match event {
+        MidiEvent::NoteOn {
+            channel,
+            note,
+            velocity,
+        } => MidiEvent::note_on(channel, shift_input_note(note, octave_offset), velocity),
+        MidiEvent::NoteOff { channel, note } => {
+            MidiEvent::note_off(channel, shift_input_note(note, octave_offset))
+        }
+        other => other,
+    }
+}
+
 fn freq_to_midi_note(freq: f32) -> u8 {
     if freq <= 0.0 {
         return 60;
@@ -1296,11 +1279,11 @@ fn keyboard_performance_key(
     key: egui::Key,
     layout: PerformanceLayout,
     computer_layout: ComputerLayout,
+    input_octave_offset: i8,
 ) -> Option<PerformanceKey> {
     match layout {
-        PerformanceLayout::Piano => {
-            keyboard_note(key, computer_layout).map(PerformanceKey::Note)
-        }
+        PerformanceLayout::Piano => keyboard_note(key, computer_layout)
+            .map(|note| PerformanceKey::Note(shift_input_note(note, input_octave_offset))),
         PerformanceLayout::Scale => {
             qwer_index(key, computer_layout).map(PerformanceKey::ScaleDegree)
         }
@@ -1317,17 +1300,27 @@ fn keyboard_performance_key(
 impl eframe::App for ReelSynthApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         while let Ok(event) = self.midi_event_rx.try_recv() {
-            let event = match event {
-                MidiEvent::NoteOn {
-                    channel,
-                    note,
-                    velocity,
-                } if self.state.scale_lock_midi => {
-                    let settings = self.state.performance.to_settings();
-                    let snapped = snap_note(note, settings.root, settings.scale);
-                    MidiEvent::note_on(channel, snapped, velocity)
+            let input_octave_offset = self.state.performance.input_octave_offset;
+            let event = shift_input_midi_event(event, input_octave_offset);
+            let event = if self.state.scale_lock_midi {
+                let settings = self.state.performance.to_settings();
+                match event {
+                    MidiEvent::NoteOn {
+                        channel,
+                        note,
+                        velocity,
+                    } => MidiEvent::note_on(
+                        channel,
+                        snap_note(note, settings.root, settings.scale),
+                        velocity,
+                    ),
+                    MidiEvent::NoteOff { channel, note } => {
+                        MidiEvent::note_off(channel, snap_note(note, settings.root, settings.scale))
+                    }
+                    other => other,
                 }
-                other => other,
+            } else {
+                event
             };
 
             if self.compose_is_recording() {
@@ -1356,11 +1349,8 @@ impl eframe::App for ReelSynthApp {
             }
         }
 
-        let layout = self
-            .state
-            .performance
-            .to_settings()
-            .layout;
+        let layout = self.state.performance.to_settings().layout;
+        let input_octave_offset = self.state.performance.input_octave_offset;
         let computer_layout = self.effective_keyboard_layout();
         ctx.input(|i| {
             for event in &i.events {
@@ -1372,7 +1362,7 @@ impl eframe::App for ReelSynthApp {
                 } = event
                 {
                     if let Some(perf_key) =
-                        keyboard_performance_key(*key, layout, computer_layout)
+                        keyboard_performance_key(*key, layout, computer_layout, input_octave_offset)
                     {
                         if *pressed {
                             match perf_key {
@@ -1426,8 +1416,7 @@ impl eframe::App for ReelSynthApp {
 
                 let preview_patch = patch_from_state(&self.state, &self.current_patch);
                 let now_secs = ui.input(|i| i.time);
-                let is_playing =
-                    self.scope.is_playing() || !self.state.keys_down.is_empty();
+                let is_playing = self.scope.is_playing() || !self.state.keys_down.is_empty();
                 let live_snapshot = if is_playing {
                     Some(self.scope.snapshot())
                 } else {
@@ -1586,10 +1575,7 @@ impl eframe::App for ReelSynthApp {
                 if let Some(idx) = actions.audio_device_selected {
                     if let Some(name) = self.audio_devices.names.get(idx).cloned() {
                         if self.audio.as_ref().map(|a| a.device_name()) != Some(name.as_str()) {
-                            self.select_audio_output(
-                                Some(name.as_str()),
-                                format!("Audio: {name}"),
-                            );
+                            self.select_audio_output(Some(name.as_str()), format!("Audio: {name}"));
                         } else {
                             self.audio_selected = idx;
                         }
@@ -1633,5 +1619,19 @@ mod tests {
             ..PerformanceSettings::default()
         };
         assert_eq!(transform_piano_note(61, &settings), 60);
+    }
+
+    #[test]
+    fn input_octave_shift_transposes_and_clamps_note_events() {
+        assert_eq!(shift_input_note(60, 1), 72);
+        assert_eq!(shift_input_note(120, 1), 127);
+        assert_eq!(shift_input_note(4, -1), 0);
+        assert!(matches!(
+            shift_input_midi_event(MidiEvent::note_off(2, 60), 1),
+            MidiEvent::NoteOff {
+                channel: 2,
+                note: 72
+            }
+        ));
     }
 }
