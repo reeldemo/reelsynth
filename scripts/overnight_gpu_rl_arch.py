@@ -11,9 +11,11 @@ Algorithms (named accurately — not claimed as SOTA):
   - Depth bias: deeper graphs rewarded when residual holds above DualCosine + margin
   - MoE soft gates over heterogeneous parallel experts (Shazeer-inspired, tiny)
 
-Primary score (v10): discontinuity-local R_seam on prolonged wrap neighborhoods (SEAM_W=8).
-Search objective: J = R_seam - λ·latency_norm (λ=0.02, latency_norm=log(1+t_ms)/log(1+50)).
-Whole-curve residual_score retained as optional debug JSON key.
+Primary score (v10.1): R_blend = α·R_seam(ideal,out) + (1-α)·R_body(eng,out), α=0.7.
+  - R_seam: discontinuity-local residual vs ideal on SEAM_W wrap neighborhoods.
+  - R_body: mid-cycle residual vs **engine** (identity on body — don't morph the curve).
+Search objective: J = R_blend - λ·latency_norm (λ=0.02, latency_norm=log(1+t_ms)/log(1+50)).
+Pure R_seam / whole-curve residual_score retained as debug JSON keys.
 PPO advantage is centered as (score - DualCosine) for zero-mean early credit assignment; selection uses J.
 Dense history.jsonl every iter. Saves unfitted (arch JSON) and fitted (weights+arch).
 
@@ -71,6 +73,7 @@ N = 256
 PROLONG = 16
 LAMBDA_LATENCY = 0.02
 LATENCY_REF_MS = 50.0
+BLEND_ALPHA = msm.BLEND_ALPHA  # 0.7 — seam-weighted; body still strong
 LATENCY_WARMUP = 1
 LATENCY_REPEATS = 3
 
@@ -534,7 +537,7 @@ def prolong_tile(cycle: torch.Tensor, periods: int = PROLONG) -> torch.Tensor:
 
 
 def residual_score(ideal: torch.Tensor, out: torch.Tensor) -> torch.Tensor:
-    """Whole-curve prolonged R (debug / legacy). Prefer residual_score_seam for selection."""
+    """Whole-curve prolonged R (debug / legacy). Prefer residual_score_blend for selection."""
     idp = prolong_tile(ideal)
     otp = prolong_tile(torch.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0))
     resid = otp - idp
@@ -551,8 +554,34 @@ def residual_score_seam(
     periods: int = PROLONG,
     seam_w: int = SEAM_W,
 ) -> torch.Tensor:
-    """Primary v10 metric: discontinuity-local R on tiled wrap neighborhoods."""
+    """Debug/component: discontinuity-local R on tiled wrap neighborhoods (vs ideal)."""
     return msm.residual_score_seam(ideal, out, periods=periods, seam_w=seam_w)
+
+
+def residual_score_body(
+    ref: torch.Tensor,
+    out: torch.Tensor,
+    *,
+    periods: int = PROLONG,
+    seam_w: int = SEAM_W,
+) -> torch.Tensor:
+    """Debug/component: mid-cycle body R (prefer ref=engine for identity-on-body)."""
+    return msm.residual_score_body(ref, out, periods=periods, seam_w=seam_w)
+
+
+def residual_score_blend(
+    ideal: torch.Tensor,
+    eng: torch.Tensor,
+    out: torch.Tensor,
+    *,
+    alpha: float = BLEND_ALPHA,
+    periods: int = PROLONG,
+    seam_w: int = SEAM_W,
+) -> torch.Tensor:
+    """Primary v10.1: R_blend = α·R_seam(ideal,out) + (1-α)·R_body(eng,out)."""
+    return msm.residual_score_blend(
+        ideal, eng, out, alpha=alpha, periods=periods, seam_w=seam_w
+    )
 
 
 def latency_norm(t_ms: float, ref_ms: float = LATENCY_REF_MS) -> float:
@@ -560,14 +589,14 @@ def latency_norm(t_ms: float, ref_ms: float = LATENCY_REF_MS) -> float:
 
 
 def objective_j(
-    r_seam: float,
+    r_blend: float,
     t_ms: float,
     *,
     lam: float = LAMBDA_LATENCY,
     ref_ms: float = LATENCY_REF_MS,
 ) -> float:
-    """Multi-obj search score: J = R_seam − λ · latency_norm."""
-    return float(r_seam) - float(lam) * latency_norm(t_ms, ref_ms=ref_ms)
+    """Multi-obj search score: J = R_blend − λ · latency_norm."""
+    return float(r_blend) - float(lam) * latency_norm(t_ms, ref_ms=ref_ms)
 
 
 @torch.no_grad()
@@ -580,17 +609,17 @@ def measure_forward_latency_ms(
     warmup: int = LATENCY_WARMUP,
     repeats: int = LATENCY_REPEATS,
 ) -> float:
-    """CPU/GPU wall time for forward + R_seam (same pattern as bench_signal_heal_latency)."""
+    """CPU/GPU wall time for forward + R_blend (same pattern as bench_signal_heal_latency)."""
     ideal, eng = make_batch(batch, N, device)
     for _ in range(max(0, warmup)):
         out = apply_ops(eng, cell, ops)
-        _ = residual_score_seam(ideal, out).mean()
+        _ = residual_score_blend(ideal, eng, out).mean()
     if device.type == "cuda":
         torch.cuda.synchronize()
     t0 = time.perf_counter()
     for _ in range(max(1, repeats)):
         out = apply_ops(eng, cell, ops)
-        _ = residual_score_seam(ideal, out).mean()
+        _ = residual_score_blend(ideal, eng, out).mean()
     if device.type == "cuda":
         torch.cuda.synchronize()
     return 1000.0 * (time.perf_counter() - t0) / max(repeats, 1)
@@ -1018,7 +1047,7 @@ def fit_cell(
     for _ in range(steps):
         ideal, eng = make_batch(batch, N, device)
         out = apply_ops(eng, cell, ops)
-        r = residual_score_seam(ideal, out).mean()
+        r = residual_score_blend(ideal, eng, out).mean()
         last_r = finite_scalar(float(r.detach().item()), 0.0)
         if can_train and opt is not None:
             loss = 1.0 - r
@@ -1066,21 +1095,21 @@ def fit_cell(
 def eval_cell(cell: SeamCell, ops: list[str], device: torch.device, batch: int = 64) -> float:
     ideal, eng = make_batch(batch, N, device)
     out = apply_ops(eng, cell, ops)
-    return finite_scalar(float(residual_score_seam(ideal, out).mean().item()), 0.0)
+    return finite_scalar(float(residual_score_blend(ideal, eng, out).mean().item()), 0.0)
 
 
 @torch.no_grad()
 def dual_cosine_baseline(device: torch.device, batch: int = 128) -> float:
     ideal, eng = make_batch(batch, N, device)
     out = dual_cosine_blend(eng)
-    return float(residual_score_seam(ideal, out).mean().item())
+    return float(residual_score_blend(ideal, eng, out).mean().item())
 
 
 @torch.no_grad()
 def nobake_baseline(device: torch.device, batch: int = 128) -> float:
-    """Unrepaired engine vs ideal sibling (near-ceiling reference ~0.97)."""
+    """Unrepaired engine vs ideal sibling (near-ceiling body; seam still damaged)."""
     ideal, eng = make_batch(batch, N, device)
-    return float(residual_score_seam(ideal, eng).mean().item())
+    return float(residual_score_blend(ideal, eng, eng).mean().item())
 
 
 def evaluate_candidate(
@@ -1092,7 +1121,7 @@ def evaluate_candidate(
     fit_steps_default: int,
     batch_default: int,
 ) -> tuple[float, float, float, float, SeamCell]:
-    """Fit + R_seam eval + latency → (r_seam, j, j_scored, t_ms, cell)."""
+    """Fit + R_blend eval + latency → (r_blend, j, j_scored, t_ms, cell)."""
     cell = SeamCell(cfg).to(device)
     fit_steps = int(hp.fit_steps or fit_steps_default)
     batch = int(hp.batch or batch_default)
@@ -1106,15 +1135,15 @@ def evaluate_candidate(
         adv_coef=hp.adv_coef if cfg.use_adv_aux else 0.0,
     )
     r_eval = eval_cell(cell, cfg.ops, device, batch=max(64, batch))
-    r_seam = finite_scalar(0.5 * r_fit + 0.5 * r_eval, 0.0)
+    r_blend = finite_scalar(0.5 * r_fit + 0.5 * r_eval, 0.0)
     t_ms = finite_scalar(
         measure_forward_latency_ms(cell, cfg.ops, device, batch=min(32, max(8, batch))),
         0.0,
     )
-    j = finite_scalar(objective_j(r_seam, t_ms), 0.0)
+    j = finite_scalar(objective_j(r_blend, t_ms), 0.0)
     dmb = finite_scalar(
         depth_mixture_bonus(
-            r_seam,
+            r_blend,
             baseline,
             cfg.depth,
             len(cfg.blocks),
@@ -1122,7 +1151,7 @@ def evaluate_candidate(
         ),
         0.0,
     )
-    return r_seam, j, j + dmb, t_ms, cell
+    return r_blend, j, j + dmb, t_ms, cell
 
 
 def save_unfitted(run_dir: Path, cfg: ArchConfig, tag: str, hp: HyperParams | None = None) -> Path:
@@ -1486,8 +1515,8 @@ def main() -> int:
                 "cell_kinds": CELL_KINDS,
                 "blocks": BLOCKS,
                 "moe_modes": list(MOE_MODES),
-                "primary_metric": "r_seam",
-                "search_objective": "J=R_seam-lambda*latency_norm",
+                "primary_metric": "r_blend",
+                "search_objective": "J=R_blend-lambda*latency_norm",
                 "lambda_latency": LAMBDA_LATENCY,
                 "latency_ref_ms": LATENCY_REF_MS,
                 "seam_w": SEAM_W,
@@ -1923,8 +1952,8 @@ def main() -> int:
                 "max_search_depth": arch_blocks.MAX_SEARCH_DEPTH,
                 "max_graph_len": arch_blocks.MAX_GRAPH_LEN,
                 "lambda_latency": LAMBDA_LATENCY,
-                "primary_metric": "r_seam",
-                "search_objective": "J=R_seam-lambda*latency_norm",
+                "primary_metric": "r_blend",
+                "search_objective": "J=R_blend-lambda*latency_norm",
             }
             # Optional whole-curve debug (cheap single batch already on device path)
             try:
@@ -2088,8 +2117,8 @@ def main() -> int:
                 "champion_r_seam": champion_r_seam,
                 "champion_t_ms": champion_t_ms,
                 "lambda_latency": LAMBDA_LATENCY,
-                "primary_metric": "r_seam",
-                "search_objective": "J=R_seam-lambda*latency_norm",
+                "primary_metric": "r_blend",
+                "search_objective": "J=R_blend-lambda*latency_norm",
                 "champion_arch": champion_cfg.to_dict(),
                 "champion_hp": champion_hp.to_dict(),
                 "baseline_dual_cosine": baseline,
@@ -2192,8 +2221,8 @@ def main() -> int:
         "champion_r_seam": champion_r_seam,
         "champion_t_ms": champion_t_ms,
         "lambda_latency": LAMBDA_LATENCY,
-        "primary_metric": "r_seam",
-        "search_objective": "J=R_seam-lambda*latency_norm",
+        "primary_metric": "r_blend",
+        "search_objective": "J=R_blend-lambda*latency_norm",
         "dual_cosine_baseline": baseline,
         "delta": champion_r - baseline,
         "iters_since_improve": iters_since_improve,

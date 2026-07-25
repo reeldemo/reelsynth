@@ -2,8 +2,9 @@
 """Domain adapters: build (ideal, cracked) period batches for wrap/seam transfer.
 
 Period length is fixed to overnight SeamCell ``N=256``.
-Residual metric: discontinuity-local ``R_seam`` (``overnight_gpu_rl_arch.residual_score_seam``);
-search objective ``J = R_seam - λ·latency_norm`` (v10). Whole-curve ``residual_score`` is debug-only.
+Residual metric: ``R_blend = α·R_seam(ideal,out) + (1-α)·R_body(eng,out)`` with α=0.7
+(``overnight_gpu_rl_arch.residual_score_blend``); search objective ``J = R_blend - λ·latency_norm``
+(v10.1). Pure ``R_seam`` / whole-curve ``residual_score`` are debug-only.
 """
 from __future__ import annotations
 

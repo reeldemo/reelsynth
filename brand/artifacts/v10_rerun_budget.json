@@ -1,0 +1,57 @@
+{
+  "schema": "denoiseopt.v10_rerun_budget.v1",
+  "protocol": "paper_v10.1",
+  "updated_at": "2026-07-25T08:30:00Z",
+  "note": "Restarted under R_blend after v10.1 metric refinement. Feasible single-session budget (full 5k×6 deferred). Primary search = hybrid_lstm only.",
+  "primary_metric": {
+    "name": "r_blend",
+    "formula": "R_blend = alpha * R_seam(ideal, out) + (1-alpha) * R_body(eng, out)",
+    "alpha": 0.7,
+    "R_seam": "seam windows vs ideal after prolong-tile",
+    "R_body": "body (non-seam) vs engine — identity on mid-cycle",
+    "J": "R_blend - lambda * latency_norm",
+    "lambda": 0.02
+  },
+  "n2n_retrain": {
+    "script": "scripts/train_n2n_seam_baseline.py",
+    "steps": 20000,
+    "batch": 64,
+    "lr": 0.002,
+    "primary_mode": "n2n_corrupt_corrupt",
+    "primary_metric": "r_blend",
+    "out": "brand/artifacts/n2n_seam_baselines/",
+    "restarted_under": "r_blend"
+  },
+  "meta_search": {
+    "script": "scripts/bench_meta_approaches_5k.py",
+    "approaches": ["hybrid_lstm"],
+    "iters": 1200,
+    "iters_extend_if_needed": 4000,
+    "pop_size": 12,
+    "fit_steps": 24,
+    "batch": 48,
+    "out_dir": "brand/artifacts/meta_approach_compare_v10",
+    "search_objective": "J=R_blend-lambda*latency_norm",
+    "lambda_latency": 0.02,
+    "beat_n2n_gate": true,
+    "gate_metric": "r_blend",
+    "force_fresh_on_metric_change": true,
+    "full_5k_x6_deferred": true,
+    "exports_ready": {
+      "reelsynth_export_cycles.json_n": 1280,
+      "oa_akwf_wavs": 1280
+    }
+  },
+  "n2n_vs_ours": {
+    "script": "scripts/bench_v10_n2n_vs_ours.py",
+    "boards": ["holdout", "multi_family", "factory_fx_1280", "akwf_1280"],
+    "out": "brand/artifacts/v10_n2n_vs_ours/"
+  },
+  "transfer": {
+    "script": "scripts/bench_signal_heal_transfer.py",
+    "iters_per_domain": 200,
+    "domains": ["cwru_bearings", "mfpt_bearings", "mitbih_ecg", "ptbxl_ecg", "synth_cnc_g01", "synth_pmu_cycle"],
+    "out_root": "brand/artifacts/signal_heal_transfer/",
+    "note": "Per-domain hybrid under R_blend + J; refill tables/latency after"
+  }
+}

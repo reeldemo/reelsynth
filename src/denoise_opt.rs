@@ -165,6 +165,92 @@ pub fn residual_score_seam_prolonged(
     residual_score_seam(&ideal, &rendered, n, periods, seam_w)
 }
 
+/// Mid-cycle body R (v10.1): after tiling, RMS on non-seam samples `[W:L-W]` per tile.
+/// Prefer `body_ref` = engine so high score means identity on the body (don't morph the curve).
+pub fn residual_score_body(
+    body_ref: &[f32],
+    rendered: &[f32],
+    n_cycle: usize,
+    periods: usize,
+    seam_w: usize,
+) -> f32 {
+    let n = body_ref.len().min(rendered.len());
+    if n == 0 || n_cycle == 0 || periods == 0 {
+        return 0.0;
+    }
+    let w = seam_w.max(1).min(n_cycle / 2).max(1);
+    let mut e_res = 0.0f32;
+    let mut e_ref = 0.0f32;
+    let mut count = 0usize;
+    for k in 0..periods {
+        let base = k * n_cycle;
+        if base + n_cycle > n {
+            break;
+        }
+        if n_cycle <= 2 * w {
+            let mid = base + n_cycle / 2;
+            let r = rendered[mid] - body_ref[mid];
+            e_res += r * r;
+            e_ref += body_ref[mid] * body_ref[mid];
+            count += 1;
+            continue;
+        }
+        for i in w..(n_cycle - w) {
+            let idx = base + i;
+            let r = rendered[idx] - body_ref[idx];
+            e_res += r * r;
+            e_ref += body_ref[idx] * body_ref[idx];
+            count += 1;
+        }
+    }
+    if count == 0 {
+        return 0.0;
+    }
+    let inv = 1.0 / count as f32;
+    let residual_rms = (e_res * inv).sqrt();
+    let ref_rms = (e_ref * inv).sqrt();
+    (1.0 - residual_rms / ref_rms.max(1e-6)).clamp(0.0, 1.0)
+}
+
+/// Primary v10.1: `R_blend = α·R_seam(ideal,out) + (1-α)·R_body(eng,out)` (default α=0.7).
+pub const BLEND_ALPHA: f32 = 0.7;
+
+pub fn residual_score_blend(
+    ideal: &[f32],
+    eng: &[f32],
+    rendered: &[f32],
+    n_cycle: usize,
+    periods: usize,
+    seam_w: usize,
+    alpha: f32,
+) -> f32 {
+    let a = alpha.clamp(0.0, 1.0);
+    let r_seam = residual_score_seam(ideal, rendered, n_cycle, periods, seam_w);
+    let r_body = residual_score_body(eng, rendered, n_cycle, periods, seam_w);
+    (a * r_seam + (1.0 - a) * r_body).clamp(0.0, 1.0)
+}
+
+pub fn residual_score_blend_prolonged(
+    ideal_cycle: &[f32],
+    eng_cycle: &[f32],
+    out_cycle: &[f32],
+    periods: usize,
+    seam_w: usize,
+    alpha: f32,
+) -> f32 {
+    let n = ideal_cycle
+        .len()
+        .min(eng_cycle.len())
+        .min(out_cycle.len());
+    if n == 0 {
+        return 0.0;
+    }
+    let ideal = tile_cycle(&ideal_cycle[..n], periods);
+    let eng = tile_cycle(&eng_cycle[..n], periods);
+    let rendered = tile_cycle(&out_cycle[..n], periods);
+    residual_score_blend(&ideal, &eng, &rendered, n, periods, seam_w, alpha)
+}
+
 pub fn score_cycle(raw: &[f32], out: &[f32]) -> QualityScores {
     let c_raw = crackle_c(raw);
     let c_out = crackle_c(out);
@@ -616,6 +702,32 @@ mod tests {
         assert!(s_cliff < s_mid, "seam cliff {s_cliff} should score below mid damage {s_mid}");
         assert!(s_cliff < 0.99);
         assert!((0.0..=1.0).contains(&s_cliff));
+    }
+
+    #[test]
+    fn residual_score_blend_body_identity_and_morph() {
+        let ideal: Vec<f32> = (0..128)
+            .map(|i| (i as f32 / 128.0 * std::f32::consts::TAU).sin())
+            .collect();
+        let mut eng = ideal.clone();
+        for i in 0..8 {
+            eng[i] += 0.5;
+            eng[120 + i] -= 0.5;
+        }
+        let mut healed = eng.clone();
+        for i in 0..8 {
+            healed[i] = ideal[i];
+            healed[120 + i] = ideal[120 + i];
+        }
+        let r_body = residual_score_body(&eng, &healed, 128, 16, 8);
+        assert!(r_body > 0.99, "identity body got {r_body}");
+        let r_blend = residual_score_blend(&ideal, &eng, &healed, 128, 16, 8, BLEND_ALPHA);
+        let mut morph = healed.clone();
+        for i in 54..74 {
+            morph[i] += 1.5;
+        }
+        let r_blend_m = residual_score_blend(&ideal, &eng, &morph, 128, 16, 8, BLEND_ALPHA);
+        assert!(r_blend_m < r_blend, "morph body should lower blend {r_blend_m} vs {r_blend}");
     }
 
     #[test]

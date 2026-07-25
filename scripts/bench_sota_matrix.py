@@ -132,10 +132,15 @@ def score_fn(
         torch.cuda.synchronize()
     dt_ms = (time.perf_counter() - t0) * 1000.0 / repeats
     assert out is not None
-    r = og.residual_score(ideal, out)
-    sec = msm.secondary_metrics(ideal, out, periods=int(og.PROLONG))
+    r = og.residual_score_blend(ideal, eng, out)
+    sec = msm.secondary_metrics(
+        ideal, out, periods=int(og.PROLONG), eng=eng, alpha=og.BLEND_ALPHA
+    )
     return {
         "residual_R": float(r.mean().item()),
+        "residual_R_blend": float(r.mean().item()),
+        "primary_metric": "r_blend",
+        "blend_alpha": og.BLEND_ALPHA,
         "ms_per_batch": float(dt_ms),
         "n_params": int(n_params),
         **sec,

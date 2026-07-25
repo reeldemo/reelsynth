@@ -131,7 +131,13 @@ def inject_search_priors(cfg: og.ArchConfig, rng: random.Random) -> og.ArchConfi
     return cfg
 
 
-_LAST_EVAL_METRICS: dict[str, float] = {"r_seam": 0.0, "j": 0.0, "t_ms": 0.0}
+_LAST_EVAL_METRICS: dict[str, float] = {
+    "r_blend": 0.0,
+    "r_seam": 0.0,
+    "r_body": 0.0,
+    "j": 0.0,
+    "t_ms": 0.0,
+}
 
 
 def evaluate(
@@ -143,8 +149,8 @@ def evaluate(
     fit_steps_default: int,
     batch_default: int,
 ) -> tuple[float, float, og.SeamCell]:
-    """Fit + R_seam + latency J; return (r_seam, j_scored, cell)."""
-    r_seam, j, j_scored, t_ms, cell = og.evaluate_candidate(
+    """Fit + R_blend + latency J; return (r_blend, j_scored, cell)."""
+    r_blend, j, j_scored, t_ms, cell = og.evaluate_candidate(
         cfg,
         hp,
         device,
@@ -152,10 +158,16 @@ def evaluate(
         fit_steps_default=fit_steps_default,
         batch_default=batch_default,
     )
-    _LAST_EVAL_METRICS["r_seam"] = float(r_seam)
+    _LAST_EVAL_METRICS["r_blend"] = float(r_blend)
     _LAST_EVAL_METRICS["j"] = float(j)
     _LAST_EVAL_METRICS["t_ms"] = float(t_ms)
-    return r_seam, j_scored, cell
+    # Debug components on a fresh batch (no grad).
+    with torch.no_grad():
+        ideal, eng = og.make_batch(max(32, batch_default), og.N, device)
+        out = og.apply_ops(eng, cell, cfg.ops)
+        _LAST_EVAL_METRICS["r_seam"] = float(og.residual_score_seam(ideal, out).mean().item())
+        _LAST_EVAL_METRICS["r_body"] = float(og.residual_score_body(eng, out).mean().item())
+    return r_blend, j_scored, cell
 
 
 def append_hist(path: Path, row: dict[str, Any]) -> None:
@@ -640,6 +652,17 @@ def run_approach(
 
     baseline = og.dual_cosine_baseline(device, batch=128)
     nobake_ref = og.nobake_baseline(device, batch=128)
+    # Beat-N2N gate: champ R_blend must strictly exceed frozen N2N corrupt→corrupt holdout.
+    n2n_gate_r: float | None = None
+    n2n_json = ROOT / "brand" / "artifacts" / "n2n_seam_baselines" / "n2n_baseline.json"
+    if n2n_json.is_file():
+        try:
+            n2n_blob = json.loads(n2n_json.read_text(encoding="utf-8"))
+            n2n_gate_r = float(
+                n2n_blob["modes"]["n2n_corrupt_corrupt"]["eval"]["residual_R"]
+            )
+        except Exception:
+            n2n_gate_r = None
     start_it = 1
     champ_r = -1.0
     champ_raw = -1.0
@@ -647,6 +670,9 @@ def run_approach(
     champ_hp: og.HyperParams | None = None
     champ_lstm = False
     champ_xlstm = False
+    champ_beats_n2n = False
+    champ_t_ms = 0.0
+    champ_j = -1.0
     iters_since_improve = 0
     plateau_every = 500
     t0 = time.time()
@@ -677,6 +703,9 @@ def run_approach(
         start_it = done_prev + 1
         champ_r = float(ckpt.get("champ_r", -1.0))
         champ_raw = float(ckpt.get("champ_raw", champ_r))
+        champ_j = float(ckpt.get("champ_j", champ_r))
+        champ_t_ms = float(ckpt.get("champ_t_ms", 0.0))
+        champ_beats_n2n = bool(ckpt.get("champ_beats_n2n", False))
         champ_lstm = bool(ckpt.get("champ_lstm", False))
         champ_xlstm = bool(ckpt.get("champ_xlstm", False))
         elapsed_prev = float(ckpt.get("wall_s", 0.0))
@@ -756,8 +785,10 @@ def run_approach(
     log(
         f"START approach={name} iters={iters} seed={seed} device={device} "
         f"baseline_dual_cosine={baseline:.6f} nobake={nobake_ref:.6f} "
+        f"n2n_gate_R_blend={n2n_gate_r} "
         f"blocks_has_lstm={'lstm' in BLOCKS} blocks_has_xlstm={'xlstm' in BLOCKS} "
-        f"hp_reward_sweep=on plateau_every={plateau_every}"
+        f"hp_reward_sweep=on plateau_every={plateau_every} "
+        f"primary_metric=r_blend search_objective=J"
     )
 
     # Hybrid: reuse overnight branch rotation with LSTM vocabulary already live
@@ -962,18 +993,51 @@ def run_approach(
         else:
             raise ValueError(name)
 
-        if r > champ_r:
+        beats = n2n_gate_r is None or r_raw > float(n2n_gate_r)
+        promote = False
+        if beats and (not champ_beats_n2n or r > champ_r):
+            # Gate-passing always replaces a non-passing champ; else need better J.
+            promote = True
+        elif (not champ_beats_n2n) and (not beats) and r > champ_r:
+            # Provisional champ while nobody has cleared the N2N gate yet.
+            promote = True
+        if promote:
             champ_r = r
             champ_raw = r_raw
             champ_cfg = trial_cfg
             champ_hp = trial_hp
+            champ_beats_n2n = bool(beats)
+            champ_t_ms = float(_LAST_EVAL_METRICS.get("t_ms") or 0.0)
+            champ_j = float(_LAST_EVAL_METRICS.get("j") or r)
             flags = arch_recurrent_flags(trial_cfg)
             champ_lstm = flags["lstm"]
             champ_xlstm = flags["xlstm"]
             iters_since_improve = 0
+            torch.save(
+                {
+                    "cell_state_dict": cell.state_dict(),
+                    "architecture": trial_cfg.to_dict(),
+                    "hyperparams": trial_hp.to_dict(),
+                    "r_blend": r_raw,
+                    "r_seam": _LAST_EVAL_METRICS.get("r_seam"),
+                    "r_body": _LAST_EVAL_METRICS.get("r_body"),
+                    "j": champ_j,
+                    "t_ms": champ_t_ms,
+                    "beats_n2n": champ_beats_n2n,
+                    "n2n_gate_r": n2n_gate_r,
+                    "primary_metric": "r_blend",
+                    "blend_alpha": og.BLEND_ALPHA,
+                    "search_objective": "J=R_blend-lambda*latency_norm",
+                },
+                approach_dir / "champ_cell.pt",
+            )
             log(
-                f"CHAMP approach={name} iter={it} R={champ_r:.6f} raw={champ_raw:.6f} "
-                f"lstm={champ_lstm} xlstm={champ_xlstm} "
+                f"CHAMP approach={name} iter={it} J_scored={champ_r:.6f} "
+                f"R_blend={champ_raw:.6f} "
+                f"R_seam={_LAST_EVAL_METRICS.get('r_seam')} "
+                f"R_body={_LAST_EVAL_METRICS.get('r_body')} "
+                f"J={champ_j:.6f} t_ms={champ_t_ms:.3f} "
+                f"beats_n2n={champ_beats_n2n} lstm={champ_lstm} xlstm={champ_xlstm} "
                 f"reward_mode={getattr(trial_hp, 'reward_mode', None)}"
             )
         else:
@@ -985,12 +1049,17 @@ def run_approach(
             "approach": name,
             "proposal": proposal,
             "residual": r_raw,
-            "r_seam": _LAST_EVAL_METRICS.get("r_seam", r_raw),
+            "r_blend": r_raw,
+            "r_seam": _LAST_EVAL_METRICS.get("r_seam"),
+            "r_body": _LAST_EVAL_METRICS.get("r_body"),
             "t_ms": _LAST_EVAL_METRICS.get("t_ms"),
             "j": _LAST_EVAL_METRICS.get("j"),
             "residual_scored": r,
             "champ": champ_r,
             "champ_raw": champ_raw,
+            "beats_n2n": champ_beats_n2n,
+            "n2n_gate_r": n2n_gate_r,
+            "blend_alpha": og.BLEND_ALPHA,
             "lstm_in_trial": trial_flags["lstm"],
             "xlstm_in_trial": trial_flags["xlstm"],
             "lstm_in_champ": champ_lstm,
@@ -1002,8 +1071,8 @@ def run_approach(
             "wall_s": elapsed_prev + (time.time() - t0),
             "arch": trial_cfg.to_dict(),
             "hp": trial_hp.to_dict(),
-            "primary_metric": "r_seam",
-            "search_objective": "J=R_seam-lambda*latency_norm",
+            "primary_metric": "r_blend",
+            "search_objective": "J=R_blend-lambda*latency_norm",
             "lambda_latency": og.LAMBDA_LATENCY,
         }
         append_hist(hist_path, row)
@@ -1024,6 +1093,12 @@ def run_approach(
                 "iters_done": it,
                 "champ_r": champ_r,
                 "champ_raw": champ_raw,
+                "champ_j": champ_j,
+                "champ_t_ms": champ_t_ms,
+                "champ_beats_n2n": champ_beats_n2n,
+                "n2n_gate_r": n2n_gate_r,
+                "primary_metric": "r_blend",
+                "search_objective": "J=R_blend-lambda*latency_norm",
                 "champ_lstm": champ_lstm,
                 "champ_xlstm": champ_xlstm,
                 "champ_cfg": champ_cfg.to_dict() if champ_cfg else None,
@@ -1067,6 +1142,13 @@ def run_approach(
         "seed": seed,
         "champ_r": champ_r,
         "champ_raw": champ_raw,
+        "champ_j": champ_j,
+        "champ_t_ms": champ_t_ms,
+        "champ_beats_n2n": champ_beats_n2n,
+        "n2n_gate_r": n2n_gate_r,
+        "primary_metric": "r_blend",
+        "search_objective": "J=R_blend-lambda*latency_norm",
+        "lambda_latency": og.LAMBDA_LATENCY,
         "delta_r_vs_dual_cosine": champ_raw - baseline if champ_raw >= 0 else None,
         "baseline_dual_cosine": baseline,
         "wall_s": wall_s,
@@ -1075,8 +1157,10 @@ def run_approach(
         "xlstm_in_champ": champ_xlstm,
         "champ_arch": champ_cfg.to_dict() if champ_cfg else None,
         "champ_hp": champ_hp.to_dict() if champ_hp else None,
+        "champ_cell_path": str(approach_dir / "champ_cell.pt"),
         "history_path": str(hist_path),
         "finished_at": utc_now(),
+        "protocol": "paper_v10",
     }
     (approach_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     log(

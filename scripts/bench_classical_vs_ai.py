@@ -117,7 +117,7 @@ def bench_fn(fn, device, batch=64, warmup=20, repeats=100):
     ideal, eng = og.make_batch(batch, og.N, device)
     for _ in range(warmup):
         out = fn(eng)
-        _ = og.residual_score(ideal, out).mean()
+        _ = og.residual_score_blend(ideal, eng, out).mean()
     if device.type == "cuda":
         torch.cuda.synchronize()
     # score on fresh fixed batch for stability
@@ -126,17 +126,24 @@ def bench_fn(fn, device, batch=64, warmup=20, repeats=100):
         torch.cuda.manual_seed_all(0)
     ideal, eng = og.make_batch(batch, og.N, device)
     out = fn(eng)
-    r = float(og.residual_score(ideal, out).mean().item())
+    r = float(og.residual_score_blend(ideal, eng, out).mean().item())
     if device.type == "cuda":
         torch.cuda.synchronize()
     t0 = time.perf_counter()
     for _ in range(repeats):
         out = fn(eng)
-        _ = og.residual_score(ideal, out).mean()
+        _ = og.residual_score_blend(ideal, eng, out).mean()
     if device.type == "cuda":
         torch.cuda.synchronize()
     ms = 1000.0 * (time.perf_counter() - t0) / repeats
-    return {"residual": r, "ms_per_batch": ms, "ms_per_sample": ms / batch}
+    return {
+        "residual": r,
+        "residual_R_blend": r,
+        "primary_metric": "r_blend",
+        "blend_alpha": og.BLEND_ALPHA,
+        "ms_per_batch": ms,
+        "ms_per_sample": ms / batch,
+    }
 
 
 def main():
