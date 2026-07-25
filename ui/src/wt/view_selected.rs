@@ -36,6 +36,8 @@ pub struct WtSelectedLayerResponse {
     pub analyze_requested: bool,
     /// Patch-level params changed (e.g. crackle) — sync to engine without WT rebuild.
     pub params_changed: bool,
+    /// Quant seam mode changed (may need full-bank DenoiseOpt / DualCosine rebake).
+    pub seam_changed: bool,
     pub status_hint: Option<String>,
 }
 
@@ -54,6 +56,8 @@ pub struct WtSelectedLayerView<'a> {
     pub analyze_dialog_open: Option<&'a mut bool>,
     pub curve_view: &'a mut WtCurveViewTransform,
     pub quant_seam: &'a mut QuantSeamMode,
+    /// Header **AI seam** flag — kept in sync with Seam·Opt.
+    pub ai_seam_enabled: &'a mut bool,
     /// Artistic crackle 0..1 synced to `patch.crackle`.
     pub patch_crackle: &'a mut f32,
 }
@@ -69,6 +73,7 @@ impl WtSelectedLayerView<'_> {
         let mut stack_changed = false;
         let mut analyze_requested = false;
         let mut params_changed = false;
+        let mut seam_changed_out = false;
         let mut status_hint: Option<String> = None;
 
         if !ui.is_rect_visible(rect) {
@@ -77,6 +82,7 @@ impl WtSelectedLayerView<'_> {
                 stack_changed,
                 analyze_requested,
                 params_changed,
+                seam_changed: seam_changed_out,
                 status_hint,
             };
         }
@@ -452,10 +458,15 @@ impl WtSelectedLayerView<'_> {
             assign_shape,
             interp_changed,
             segment_interp_changed,
-            seam_changed: _,
+            seam_changed,
             crackle_changed,
             ..
         } = toolbar_resp;
+        if seam_changed {
+            *self.ai_seam_enabled = *self.quant_seam == QuantSeamMode::Opt;
+            crate::wt::set_quant_seam_mode(*self.quant_seam);
+            seam_changed_out = true;
+        }
         if crackle_changed {
             params_changed = true;
             crate::wt::set_crackle_amount(*self.patch_crackle);
@@ -543,6 +554,7 @@ impl WtSelectedLayerView<'_> {
             stack_changed,
             analyze_requested,
             params_changed,
+            seam_changed: seam_changed_out,
             status_hint,
         }
     }

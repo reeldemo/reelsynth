@@ -100,6 +100,8 @@ pub struct ShellActions {
     pub import_wav_folder: bool,
     pub import_serum_fxp: bool,
     pub frame_edited: bool,
+    /// Header **AI seam** toggle flipped — app rebakes the wavetable bank.
+    pub ai_seam_changed: bool,
     pub midi_device_selected: Option<usize>,
     pub audio_device_selected: Option<usize>,
     pub chord_degree_on: Option<usize>,
@@ -149,8 +151,11 @@ pub struct UiState {
     pub wt_bank_name: String,
     pub wt_edit_tool: WtEditTool,
     pub wt_quant_interp: WtQuantInterp,
-    /// Wrap-seam reduction after Quant rebuilds (Off / Soft / Adaptive).
+    /// Wrap-seam reduction after Quant rebuilds (Off / Soft / Adaptive / Opt).
     pub wt_quant_seam: QuantSeamMode,
+    /// Header **AI seam** toggle — when true, bank bake uses DenoiseOpt (Seam·Opt).
+    /// Session-only (not in app settings / `.reelpreset`).
+    pub ai_seam_enabled: bool,
     /// Artistic crackle 0..1 (0 = eliminate / clean default). Synced to patch.crackle.
     pub patch_crackle: f32,
     /// Selected Quant knob on the active layer (for per-segment interp UI).
@@ -280,6 +285,7 @@ impl Default for UiState {
             wt_edit_tool: WtEditTool::Select,
             wt_quant_interp: WtQuantInterp::default(),
             wt_quant_seam: QuantSeamMode::Adaptive,
+            ai_seam_enabled: false,
             patch_crackle: 0.0,
             selected_quant_slot: None,
             wt_view_3d_mode: WtView3dMode::Stack,

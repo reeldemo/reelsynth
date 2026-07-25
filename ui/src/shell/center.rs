@@ -223,11 +223,15 @@ pub(super) fn draw_center(
                             analyze_dialog_open: Some(&mut state.analyze_dialog_open),
                             curve_view: &mut state.wt_curve_view,
                             quant_seam: &mut state.wt_quant_seam,
+                            ai_seam_enabled: &mut state.ai_seam_enabled,
                             patch_crackle: &mut state.patch_crackle,
                         };
                         let sel_resp = view_sel.show(ui);
                         if sel_resp.frame_edited {
                             actions.frame_edited = true;
+                        }
+                        if sel_resp.seam_changed {
+                            actions.ai_seam_changed = true;
                         }
                         if let Some(hint) = sel_resp.status_hint.as_deref() {
                             state.status = hint.to_string();

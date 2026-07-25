@@ -6,6 +6,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **AI seam header toggle** — navbar **AI seam** enables in-engine DenoiseOpt bake (`PeriodizeAlgo::DenoiseOpt` / embedded `FROZEN_THETA`) on every wavetable frame for audible A/B vs classical DualCosine (`PeriodizeAlgo::BEST`). Synced with Selected toolbar **Seam·Opt**. Session-only (not in app settings / presets). Snapshot restore on toggle-off; edits while AI is on invalidate the snapshot (off → DualCosine rebake).
+
 ## [0.2.0] - 2026-07-20
 
 ### Added

@@ -571,6 +571,18 @@ pub fn periodize_quant_frame_with_mode(frame: &mut [f32], mode: QuantSeamMode) {
     }
 }
 
+/// Bake every frame in a bank with the given seam mode (navbar AI seam / Quant path).
+///
+/// Opt uses in-engine DenoiseOpt with embedded [`reelsynth::denoise_opt::FROZEN_THETA`]
+/// (no Python / FitCell hybrid weights required).
+pub fn bake_bank_seams(bank: &mut reelsynth::WavetableBank, mode: QuantSeamMode) {
+    set_quant_seam_mode(mode);
+    set_crackle_amount(current_crackle_amount());
+    for i in 0..bank.num_frames {
+        periodize_quant_frame_with_mode(bank.frame_mut(i), mode);
+    }
+}
+
 /// Uniform-mode resample (all segments share `mode`).
 pub fn resample_frame_from_quant_points_uniform(
     frame: &mut [f32],
@@ -1174,4 +1186,22 @@ mod tests {
         }
     }
 
+    #[test]
+    fn bake_bank_seams_opt_closes_wrap() {
+        let mut bank = reelsynth::WavetableBank::new(2, 64);
+        for i in 0..64 {
+            bank.frame_mut(0)[i] = -0.9 + 1.8 * (i as f32 / 63.0);
+            bank.frame_mut(1)[i] = if i < 32 { 0.8 } else { -0.8 };
+        }
+        set_crackle_amount(0.0);
+        bake_bank_seams(&mut bank, QuantSeamMode::Opt);
+        for f in 0..2 {
+            let frame = bank.frame(f);
+            let wrap = (frame[63] - frame[0]).abs();
+            assert!(
+                wrap < 1e-3,
+                "frame {f} wrap after DenoiseOpt bake: {wrap}"
+            );
+        }
+    }
 }
