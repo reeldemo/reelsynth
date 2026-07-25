@@ -7,19 +7,19 @@ mod params;
 mod voice_pool;
 mod voice_rt;
 
+pub use crate::scope::ScopeMonitor;
 pub use bank_set::BankSet;
 pub use midi::{note_to_freq, pitch_bend_from_raw, MidiEvent};
 pub use mpe::{MpeConfig, MpeState, VoiceMpe};
 pub use params::{EngineParams, Smoother};
 pub use voice_pool::{VoicePool, MAX_VOICES};
 pub use voice_rt::RtVoice;
-pub use crate::scope::ScopeMonitor;
 
 use crate::fx::FxChain;
-use crate::overtone::OvertoneFilterChain;
-use crate::seam::CrackleVoice;
 use crate::modulation::apply_mods_to_patch;
+use crate::overtone::OvertoneFilterChain;
 use crate::patch::Patch;
+use crate::seam::CrackleVoice;
 use crate::sequence::{SequencerRuntime, TransportState};
 use crate::voice::render_note;
 use crate::wavetable::WavetableBank;
@@ -46,6 +46,8 @@ pub struct SynthEngine {
     scope: ScopeMonitor,
     mpe: MpeState,
     sequencer: SequencerRuntime,
+    /// Smoothed √N headroom — avoids a hard gain jump when a second voice starts.
+    headroom_smooth: f32,
 }
 
 fn voice_headroom(active_voices: usize) -> f32 {
@@ -55,6 +57,9 @@ fn voice_headroom(active_voices: usize) -> f32 {
         1.0 / (active_voices as f32).sqrt()
     }
 }
+
+/// Smooth poly headroom so 1→2 voice transitions don't chop the held note (click).
+const HEADROOM_SMOOTH_SECONDS: f32 = 0.012;
 
 fn sanitize_sample(sample: f32) -> f32 {
     if sample.is_finite() {
@@ -93,6 +98,7 @@ impl SynthEngine {
             scope: ScopeMonitor::new(),
             mpe: MpeState::new(),
             sequencer,
+            headroom_smooth: 1.0,
         }
     }
 
@@ -143,6 +149,7 @@ impl SynthEngine {
         self.pool.reset_patch(&patch);
         self.fx.set_effects(patch.effects.clone());
         self.overtone_harsh_frame = None;
+        self.headroom_smooth = 1.0;
         self.patch = patch;
     }
 
@@ -234,7 +241,10 @@ impl SynthEngine {
     }
 
     pub fn set_filter_chain(&mut self, slots: Vec<crate::patch::FilterSlot>) {
-        let capped: Vec<_> = slots.into_iter().take(crate::patch::FilterSlot::MAX_SLOTS).collect();
+        let capped: Vec<_> = slots
+            .into_iter()
+            .take(crate::patch::FilterSlot::MAX_SLOTS)
+            .collect();
         self.patch.filters = Some(capped);
         self.patch.sync_legacy_filters_from_chain();
         self.params
@@ -280,13 +290,7 @@ impl SynthEngine {
         }
     }
 
-    pub fn set_osc_fm(
-        &mut self,
-        index: usize,
-        fm_source: &str,
-        fm_ratio: f32,
-        fm_index: f32,
-    ) {
+    pub fn set_osc_fm(&mut self, index: usize, fm_source: &str, fm_ratio: f32, fm_index: f32) {
         self.patch.ensure_oscillators(index + 1);
         if let Some(osc) = self.patch.oscillators.get_mut(index) {
             osc.fm_source = fm_source.to_string();
@@ -490,17 +494,15 @@ impl SynthEngine {
                 }
                 self.pool.update_channel_mpe(channel, mpe);
             }
-            MidiEvent::ControlChange { channel, cc, value } => {
-                match cc {
-                    1 => self.mpe.set_modwheel(value),
-                    74 => {
-                        self.mpe.set_timbre(channel, value);
-                        let mpe = self.mpe.voice_mpe(channel);
-                        self.pool.update_channel_mpe(channel, mpe);
-                    }
-                    _ => {}
+            MidiEvent::ControlChange { channel, cc, value } => match cc {
+                1 => self.mpe.set_modwheel(value),
+                74 => {
+                    self.mpe.set_timbre(channel, value);
+                    let mpe = self.mpe.voice_mpe(channel);
+                    self.pool.update_channel_mpe(channel, mpe);
                 }
-            }
+                _ => {}
+            },
         }
     }
 
@@ -581,7 +583,7 @@ impl SynthEngine {
                 acc_l += stages.filtered[0];
                 acc_r += stages.filtered[1];
             }
-            let headroom = voice_headroom(voices_active);
+            let headroom = self.smooth_headroom(voices_active, dt);
             acc_l *= headroom;
             acc_r *= headroom;
             acc_osc *= headroom;
@@ -593,7 +595,8 @@ impl SynthEngine {
             let mono = self.fx.process_sample(suppressed);
             let fx_mono = mono;
             *sample = sanitize_sample(mono);
-            self.scope.write_frame(acc_osc * gain, filt_mono, fx_mono, mono, voices_active > 0);
+            self.scope
+                .write_frame(acc_osc * gain, filt_mono, fx_mono, mono, voices_active > 0);
             self.global_time += dt;
         }
     }
@@ -649,14 +652,18 @@ impl SynthEngine {
                 acc_l += stages.filtered[0];
                 acc_r += stages.filtered[1];
             }
-            let headroom = voice_headroom(voices_active);
+            let headroom = self.smooth_headroom(voices_active, dt);
             acc_l *= headroom;
             acc_r *= headroom;
             acc_osc *= headroom;
             let gain = self.params.master_gain.current();
             let filt_mono = (acc_l + acc_r) * 0.5 * gain;
-            let cl = self.crackle_l.process(acc_l * gain, self.scratch_patch.crackle);
-            let cr = self.crackle_r.process(acc_r * gain, self.scratch_patch.crackle);
+            let cl = self
+                .crackle_l
+                .process(acc_l * gain, self.scratch_patch.crackle);
+            let cr = self
+                .crackle_r
+                .process(acc_r * gain, self.scratch_patch.crackle);
             let [sl, sr_] = self.overtone.process_stereo(cl, cr);
             let [l, r] = self.fx.process_stereo(sl, sr_);
             let fx_mono = (l + r) * 0.5;
@@ -672,6 +679,14 @@ impl SynthEngine {
             );
             self.global_time += dt;
         }
+    }
+
+    #[inline]
+    fn smooth_headroom(&mut self, voices_active: usize, dt: f32) -> f32 {
+        let target = voice_headroom(voices_active);
+        let alpha = (dt / HEADROOM_SMOOTH_SECONDS).clamp(0.0, 1.0);
+        self.headroom_smooth += (target - self.headroom_smooth) * alpha;
+        self.headroom_smooth
     }
 
     /// Offline reference render using the same patch/bank (for golden tests).
@@ -711,5 +726,67 @@ impl SynthEngine {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::artifact_reduce::{periodize_with_algo, PeriodizeAlgo};
+    use crate::seam::SeamStyle;
+
+    fn max_abs_step(mono: &[f32]) -> f32 {
+        mono.windows(2)
+            .map(|w| (w[1] - w[0]).abs())
+            .fold(0.0f32, f32::max)
+    }
+
+    #[test]
+    fn second_note_onset_does_not_chop_held_voice() {
+        let mut bank = WavetableBank::factory_saw_morph();
+        for f in 0..bank.num_frames {
+            periodize_with_algo(
+                bank.frame_mut(f),
+                0.0,
+                SeamStyle::Adaptive,
+                PeriodizeAlgo::DualCosine,
+            );
+        }
+        let mut patch = Patch::factory_lead();
+        patch.effects.clear();
+        patch.lfo.depth = 0.0;
+        patch.lfo2.depth = 0.0;
+        for slot in &mut patch.mod_matrix {
+            slot.enabled = false;
+        }
+
+        let sr = 44_100u32;
+        let mut eng = SynthEngine::new(bank, patch, sr);
+        let total = (sr as f32 * 0.55) as usize;
+        let n2_at = (sr as f32 * 0.25) as usize;
+        let mut stereo = vec![0.0f32; total * 2];
+        eng.note_on(0, 60, 0.9);
+        let mut i = 0;
+        while i < total {
+            if i == n2_at {
+                eng.note_on(0, 64, 0.9);
+            }
+            let end = (i + 128).min(total);
+            eng.process_stereo(&mut stereo[i * 2..end * 2]);
+            i = end;
+        }
+        let mono: Vec<f32> = stereo.chunks(2).map(|c| (c[0] + c[1]) * 0.5).collect();
+
+        let pre_a = n2_at.saturating_sub((0.04 * sr as f32) as usize);
+        let pre_b = n2_at;
+        let post_a = n2_at;
+        let post_b = (n2_at + (0.020 * sr as f32) as usize).min(mono.len());
+        let pre_step = max_abs_step(&mono[pre_a..pre_b]);
+        let post_step = max_abs_step(&mono[post_a..post_b]);
+        // Instant √N headroom used to spike post_step ≫ pre_step (~0.3+).
+        assert!(
+            post_step < pre_step * 3.5 + 0.08,
+            "second-note headroom click: pre={pre_step:.4} post={post_step:.4}"
+        );
     }
 }
