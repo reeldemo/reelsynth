@@ -1,0 +1,677 @@
+{
+  "schema": "denoiseopt.hear_vibrato_methods.v1",
+  "eval_seed": 20260719,
+  "search_seed": 1902771841,
+  "sample_rate": 44100,
+  "base_hz": 440.0,
+  "duration_s": 3.0,
+  "vibrato_rate_hz": 5.0,
+  "vibrato_depth": 0.03,
+  "factory_lead_fx": true,
+  "playback": "Linear wavetable vibrato at 440.0 Hz, rate=5.0 Hz, depth=\u00b13.0%, 3.0s @ 44100 Hz mono PCM16. Factory Lead\u2013inspired chorus+delay applied after vibrato.",
+  "method_to_wavs": {
+    "nobake": [
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\01_tile46_nobake.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\02_tile21_nobake.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\03_tile4_nobake.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\04_tile49_nobake.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\05_tile48_nobake.wav"
+    ],
+    "dualcosine": [
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\01_tile46_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\02_tile21_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\03_tile4_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\04_tile49_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\05_tile48_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\cwru_bearings\\01_tile4_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\cwru_bearings\\02_tile35_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mfpt_bearings\\01_tile38_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mfpt_bearings\\02_tile59_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mitbih_ecg\\01_tile37_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mitbih_ecg\\02_tile29_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\ptbxl_ecg\\01_tile22_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\ptbxl_ecg\\02_tile31_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_cnc_g01\\01_tile13_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_cnc_g01\\02_tile17_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_pmu_cycle\\01_tile24_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_pmu_cycle\\02_tile49_dualcosine.wav"
+    ],
+    "ours_hybrid": [
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\01_tile46_ours_hybrid.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\02_tile21_ours_hybrid.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\03_tile4_ours_hybrid.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\04_tile49_ours_hybrid.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\05_tile48_ours_hybrid.wav"
+    ],
+    "random": [
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\01_tile46_random.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\02_tile21_random.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\03_tile4_random.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\04_tile49_random.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\05_tile48_random.wav"
+    ],
+    "cmaes": [
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\01_tile46_cmaes.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\02_tile21_cmaes.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\03_tile4_cmaes.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\04_tile49_cmaes.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\05_tile48_cmaes.wav"
+    ],
+    "reinforce": [
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\01_tile46_reinforce.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\02_tile21_reinforce.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\03_tile4_reinforce.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\04_tile49_reinforce.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\05_tile48_reinforce.wav"
+    ],
+    "aging_evo": [
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\01_tile46_aging_evo.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\02_tile21_aging_evo.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\03_tile4_aging_evo.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\04_tile49_aging_evo.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\05_tile48_aging_evo.wav"
+    ],
+    "tpe": [
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\01_tile46_tpe.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\02_tile21_tpe.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\03_tile4_tpe.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\04_tile49_tpe.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\05_tile48_tpe.wav"
+    ],
+    "engine": [
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\cwru_bearings\\01_tile4_engine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\cwru_bearings\\02_tile35_engine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mfpt_bearings\\01_tile38_engine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mfpt_bearings\\02_tile59_engine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mitbih_ecg\\01_tile37_engine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mitbih_ecg\\02_tile29_engine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\ptbxl_ecg\\01_tile22_engine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\ptbxl_ecg\\02_tile31_engine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_cnc_g01\\01_tile13_engine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_cnc_g01\\02_tile17_engine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_pmu_cycle\\01_tile24_engine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_pmu_cycle\\02_tile49_engine.wav"
+    ],
+    "ours": [
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\cwru_bearings\\01_tile4_ours.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\cwru_bearings\\02_tile35_ours.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mfpt_bearings\\01_tile38_ours.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mfpt_bearings\\02_tile59_ours.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mitbih_ecg\\01_tile37_ours.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mitbih_ecg\\02_tile29_ours.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\ptbxl_ecg\\01_tile22_ours.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\ptbxl_ecg\\02_tile31_ours.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_cnc_g01\\01_tile13_ours.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_cnc_g01\\02_tile17_ours.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_pmu_cycle\\01_tile24_ours.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_pmu_cycle\\02_tile49_ours.wav"
+    ]
+  },
+  "meta": {
+    "holdout_source": "holdout_batch.pt",
+    "arms": {
+      "ours_hybrid": {
+        "champ_raw": 0.9914649724960327,
+        "delta_r_vs_dual_cosine": 0.1748800277709961,
+        "refit": {
+          "fit_steps": 64,
+          "batch": 64,
+          "lr": 0.06844036093419292,
+          "adv_coef": 0.0,
+          "converged": false,
+          "train_r_last": 0.9885441660881042
+        },
+        "train_r_last": 0.9885441660881042,
+        "champ_arch": {
+          "depth": 12,
+          "width": 48,
+          "act": "tanh",
+          "ops": [
+            "cycle_net",
+            "fade_pull",
+            "fir5"
+          ],
+          "wet": 0.7245407380693173,
+          "fir": [
+            0.09384575163009412,
+            0.48805814652102797,
+            0.39091825891943194,
+            0.331059364757842,
+            0.46083074612670105
+          ],
+          "cell_kind": "tf_split",
+          "soft_logits": [
+            -0.7310634675404777,
+            0.1710795557276254,
+            -0.6233001575325193,
+            0.9827618982555753,
+            0.3947958367868978,
+            0.373733937967083,
+            0.46914590455657923,
+            0.37583370129354693,
+            -0.08300391880653188,
+            0.41187302648163265,
+            0.21241824583315116,
+            -0.36736061966500033,
+            0.3777839866967111,
+            1.352627609124864,
+            -0.11422418026695591
+          ],
+          "blocks": [
+            "tf_split"
+          ],
+          "use_adv_aux": true,
+          "moe_mode": "sequential"
+        }
+      },
+      "random": {
+        "approach_code": "random",
+        "approach_display": "Random",
+        "champ_raw": 0.9781556725502014,
+        "delta_r_vs_dual_cosine": 0.1615707278251648,
+        "refit": {
+          "fit_steps": 48,
+          "batch": 64,
+          "lr": 0.007084206758905005,
+          "adv_coef": 0.1,
+          "converged": false,
+          "train_r_last": 0.9775435924530029
+        },
+        "train_r_last": 0.9775435924530029
+      },
+      "cmaes": {
+        "approach_code": "cmaes",
+        "approach_display": "CMA-ES",
+        "champ_raw": 0.9846819043159485,
+        "delta_r_vs_dual_cosine": 0.16809695959091187,
+        "refit": {
+          "fit_steps": 48,
+          "batch": 64,
+          "lr": 0.008701896517086563,
+          "adv_coef": 0.05,
+          "converged": false,
+          "train_r_last": 0.9769395589828491
+        },
+        "train_r_last": 0.9769395589828491
+      },
+      "reinforce": {
+        "approach_code": "reinforce",
+        "approach_display": "REINFORCE",
+        "champ_raw": 0.9824668765068054,
+        "delta_r_vs_dual_cosine": 0.1658819317817688,
+        "refit": {
+          "fit_steps": 64,
+          "batch": 64,
+          "lr": 0.04824754099928491,
+          "adv_coef": 0.09620045610417136,
+          "converged": false,
+          "train_r_last": 0.9808838367462158
+        },
+        "train_r_last": 0.9808838367462158
+      },
+      "aging_evo": {
+        "approach_code": "aging_evo",
+        "approach_display": "Aging evo",
+        "champ_raw": 0.9907913506031036,
+        "delta_r_vs_dual_cosine": 0.17420640587806702,
+        "refit": {
+          "fit_steps": 64,
+          "batch": 64,
+          "lr": 0.1,
+          "adv_coef": 0.04050301272015286,
+          "converged": false,
+          "train_r_last": 0.9896166324615479
+        },
+        "train_r_last": 0.9896166324615479
+      },
+      "tpe": {
+        "approach_code": "tpe",
+        "approach_display": "TPE",
+        "champ_raw": 0.9810628592967987,
+        "delta_r_vs_dual_cosine": 0.16447791457176208,
+        "refit": {
+          "fit_steps": 48,
+          "batch": 64,
+          "lr": 0.007338636791276506,
+          "adv_coef": 0.05,
+          "converged": false,
+          "train_r_last": 0.9782512784004211
+        },
+        "train_r_last": 0.9782512784004211
+      }
+    },
+    "samples": [
+      {
+        "sample_index": 1,
+        "tile_index": 46,
+        "eval_seed": 20260719,
+        "wrap_abs": 2.282712936401367,
+        "R": {
+          "no_bake": 0.9503467082977295,
+          "dual_cosine": 0.6029019951820374,
+          "ours_hybrid": 0.9927011132240295,
+          "random": 0.9808019995689392,
+          "cmaes": 0.9875282645225525,
+          "reinforce": 0.9751545786857605,
+          "aging_evo": 0.9852424263954163,
+          "tpe": 0.98280268907547
+        },
+        "files": {
+          "nobake": "01_tile46_nobake.wav",
+          "dualcosine": "01_tile46_dualcosine.wav",
+          "ours_hybrid": "01_tile46_ours_hybrid.wav",
+          "random": "01_tile46_random.wav",
+          "cmaes": "01_tile46_cmaes.wav",
+          "reinforce": "01_tile46_reinforce.wav",
+          "aging_evo": "01_tile46_aging_evo.wav",
+          "tpe": "01_tile46_tpe.wav"
+        },
+        "paper_heal_tile": true,
+        "cycle_source": {
+          "nobake": "hear_presets.reelwt",
+          "dualcosine": "hear_presets.reelwt",
+          "ours_hybrid": "hear_presets.reelwt"
+        }
+      },
+      {
+        "sample_index": 2,
+        "tile_index": 21,
+        "eval_seed": 20260719,
+        "wrap_abs": 2.2893970012664795,
+        "R": {
+          "no_bake": 0.93118816614151,
+          "dual_cosine": 0.639761209487915,
+          "ours_hybrid": 0.9808849096298218,
+          "random": 0.9658861756324768,
+          "cmaes": 0.9794316291809082,
+          "reinforce": 0.9723972082138062,
+          "aging_evo": 0.9900317788124084,
+          "tpe": 0.9773263335227966
+        },
+        "files": {
+          "nobake": "02_tile21_nobake.wav",
+          "dualcosine": "02_tile21_dualcosine.wav",
+          "ours_hybrid": "02_tile21_ours_hybrid.wav",
+          "random": "02_tile21_random.wav",
+          "cmaes": "02_tile21_cmaes.wav",
+          "reinforce": "02_tile21_reinforce.wav",
+          "aging_evo": "02_tile21_aging_evo.wav",
+          "tpe": "02_tile21_tpe.wav"
+        },
+        "paper_heal_tile": false,
+        "cycle_source": {
+          "nobake": "hear_presets.reelwt",
+          "dualcosine": "hear_presets.reelwt",
+          "ours_hybrid": "hear_presets.reelwt"
+        }
+      },
+      {
+        "sample_index": 3,
+        "tile_index": 4,
+        "eval_seed": 20260719,
+        "wrap_abs": 2.1520464420318604,
+        "R": {
+          "no_bake": 0.9685397148132324,
+          "dual_cosine": 0.651323676109314,
+          "ours_hybrid": 0.9925950765609741,
+          "random": 0.9814981818199158,
+          "cmaes": 0.983843207359314,
+          "reinforce": 0.9835898876190186,
+          "aging_evo": 0.9941319823265076,
+          "tpe": 0.9819126129150391
+        },
+        "files": {
+          "nobake": "03_tile4_nobake.wav",
+          "dualcosine": "03_tile4_dualcosine.wav",
+          "ours_hybrid": "03_tile4_ours_hybrid.wav",
+          "random": "03_tile4_random.wav",
+          "cmaes": "03_tile4_cmaes.wav",
+          "reinforce": "03_tile4_reinforce.wav",
+          "aging_evo": "03_tile4_aging_evo.wav",
+          "tpe": "03_tile4_tpe.wav"
+        },
+        "paper_heal_tile": false,
+        "cycle_source": {
+          "nobake": "hear_presets.reelwt",
+          "dualcosine": "hear_presets.reelwt",
+          "ours_hybrid": "hear_presets.reelwt"
+        }
+      },
+      {
+        "sample_index": 4,
+        "tile_index": 49,
+        "eval_seed": 20260719,
+        "wrap_abs": 2.103854179382324,
+        "R": {
+          "no_bake": 0.9804750084877014,
+          "dual_cosine": 0.6008924245834351,
+          "ours_hybrid": 0.9882164597511292,
+          "random": 0.9911934733390808,
+          "cmaes": 0.9789608716964722,
+          "reinforce": 0.9865587949752808,
+          "aging_evo": 0.9895771145820618,
+          "tpe": 0.9891459941864014
+        },
+        "files": {
+          "nobake": "04_tile49_nobake.wav",
+          "dualcosine": "04_tile49_dualcosine.wav",
+          "ours_hybrid": "04_tile49_ours_hybrid.wav",
+          "random": "04_tile49_random.wav",
+          "cmaes": "04_tile49_cmaes.wav",
+          "reinforce": "04_tile49_reinforce.wav",
+          "aging_evo": "04_tile49_aging_evo.wav",
+          "tpe": "04_tile49_tpe.wav"
+        },
+        "paper_heal_tile": false,
+        "cycle_source": {
+          "nobake": "hear_presets.reelwt",
+          "dualcosine": "hear_presets.reelwt",
+          "ours_hybrid": "hear_presets.reelwt"
+        }
+      },
+      {
+        "sample_index": 5,
+        "tile_index": 48,
+        "eval_seed": 20260719,
+        "wrap_abs": 1.9376832246780396,
+        "R": {
+          "no_bake": 0.9761191606521606,
+          "dual_cosine": 0.631062388420105,
+          "ours_hybrid": 0.9926506280899048,
+          "random": 0.9866020679473877,
+          "cmaes": 0.9876745939254761,
+          "reinforce": 0.9888525009155273,
+          "aging_evo": 0.9904524087905884,
+          "tpe": 0.985836386680603
+        },
+        "files": {
+          "nobake": "05_tile48_nobake.wav",
+          "dualcosine": "05_tile48_dualcosine.wav",
+          "ours_hybrid": "05_tile48_ours_hybrid.wav",
+          "random": "05_tile48_random.wav",
+          "cmaes": "05_tile48_cmaes.wav",
+          "reinforce": "05_tile48_reinforce.wav",
+          "aging_evo": "05_tile48_aging_evo.wav",
+          "tpe": "05_tile48_tpe.wav"
+        },
+        "paper_heal_tile": false,
+        "cycle_source": {
+          "nobake": "hear_presets.reelwt",
+          "dualcosine": "hear_presets.reelwt",
+          "ours_hybrid": "hear_presets.reelwt"
+        }
+      }
+    ],
+    "absolute_paths": [
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\01_tile46_nobake.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\01_tile46_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\01_tile46_ours_hybrid.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\01_tile46_random.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\01_tile46_cmaes.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\01_tile46_reinforce.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\01_tile46_aging_evo.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\01_tile46_tpe.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\02_tile21_nobake.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\02_tile21_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\02_tile21_ours_hybrid.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\02_tile21_random.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\02_tile21_cmaes.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\02_tile21_reinforce.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\02_tile21_aging_evo.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\02_tile21_tpe.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\03_tile4_nobake.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\03_tile4_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\03_tile4_ours_hybrid.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\03_tile4_random.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\03_tile4_cmaes.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\03_tile4_reinforce.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\03_tile4_aging_evo.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\03_tile4_tpe.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\04_tile49_nobake.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\04_tile49_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\04_tile49_ours_hybrid.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\04_tile49_random.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\04_tile49_cmaes.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\04_tile49_reinforce.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\04_tile49_aging_evo.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\04_tile49_tpe.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\05_tile48_nobake.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\05_tile48_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\05_tile48_ours_hybrid.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\05_tile48_random.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\05_tile48_cmaes.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\05_tile48_reinforce.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\05_tile48_aging_evo.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\05_tile48_tpe.wav"
+    ],
+    "factory_lead_fx": true,
+    "baseline_cycle_source": {
+      "nobake": "hear_presets.reelwt",
+      "dualcosine": "hear_presets.reelwt",
+      "ours_hybrid": "hear_presets.reelwt"
+    }
+  },
+  "transfer": {
+    "datasets": {
+      "cwru_bearings": {
+        "dir": "brand/artifacts/hear_vibrato_methods/transfer/cwru_bearings",
+        "files": [
+          "01_tile4_engine.wav",
+          "01_tile4_dualcosine.wav",
+          "01_tile4_ours.wav",
+          "02_tile35_engine.wav",
+          "02_tile35_dualcosine.wav",
+          "02_tile35_ours.wav"
+        ],
+        "champ_raw": 0.8872717916965485,
+        "holdout_refit_R": null,
+        "picked_tiles": [
+          4,
+          35
+        ]
+      },
+      "mfpt_bearings": {
+        "dir": "brand/artifacts/hear_vibrato_methods/transfer/mfpt_bearings",
+        "files": [
+          "01_tile38_engine.wav",
+          "01_tile38_dualcosine.wav",
+          "01_tile38_ours.wav",
+          "02_tile59_engine.wav",
+          "02_tile59_dualcosine.wav",
+          "02_tile59_ours.wav"
+        ],
+        "champ_raw": 0.8903567790985107,
+        "holdout_refit_R": 0.8841551542282104,
+        "picked_tiles": [
+          38,
+          59
+        ]
+      },
+      "mitbih_ecg": {
+        "dir": "brand/artifacts/hear_vibrato_methods/transfer/mitbih_ecg",
+        "files": [
+          "01_tile37_engine.wav",
+          "01_tile37_dualcosine.wav",
+          "01_tile37_ours.wav",
+          "02_tile29_engine.wav",
+          "02_tile29_dualcosine.wav",
+          "02_tile29_ours.wav"
+        ],
+        "champ_raw": 0.8832423090934753,
+        "holdout_refit_R": 0.8792431354522705,
+        "picked_tiles": [
+          37,
+          29
+        ]
+      },
+      "ptbxl_ecg": {
+        "dir": "brand/artifacts/hear_vibrato_methods/transfer/ptbxl_ecg",
+        "files": [
+          "01_tile22_engine.wav",
+          "01_tile22_dualcosine.wav",
+          "01_tile22_ours.wav",
+          "02_tile31_engine.wav",
+          "02_tile31_dualcosine.wav",
+          "02_tile31_ours.wav"
+        ],
+        "champ_raw": 0.6863193511962891,
+        "holdout_refit_R": 0.6312171220779419,
+        "picked_tiles": [
+          22,
+          31
+        ]
+      },
+      "synth_cnc_g01": {
+        "dir": "brand/artifacts/hear_vibrato_methods/transfer/synth_cnc_g01",
+        "files": [
+          "01_tile13_engine.wav",
+          "01_tile13_dualcosine.wav",
+          "01_tile13_ours.wav",
+          "02_tile17_engine.wav",
+          "02_tile17_dualcosine.wav",
+          "02_tile17_ours.wav"
+        ],
+        "champ_raw": 0.4677353501319885,
+        "holdout_refit_R": 0.46774396300315857,
+        "picked_tiles": [
+          13,
+          17
+        ]
+      },
+      "synth_pmu_cycle": {
+        "dir": "brand/artifacts/hear_vibrato_methods/transfer/synth_pmu_cycle",
+        "files": [
+          "01_tile24_engine.wav",
+          "01_tile24_dualcosine.wav",
+          "01_tile24_ours.wav",
+          "02_tile49_engine.wav",
+          "02_tile49_dualcosine.wav",
+          "02_tile49_ours.wav"
+        ],
+        "champ_raw": 0.9750369191169739,
+        "holdout_refit_R": 0.9682701826095581,
+        "picked_tiles": [
+          24,
+          49
+        ]
+      }
+    },
+    "absolute_paths": [
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\cwru_bearings\\01_tile4_engine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\cwru_bearings\\01_tile4_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\cwru_bearings\\01_tile4_ours.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\cwru_bearings\\02_tile35_engine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\cwru_bearings\\02_tile35_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\cwru_bearings\\02_tile35_ours.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mfpt_bearings\\01_tile38_engine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mfpt_bearings\\01_tile38_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mfpt_bearings\\01_tile38_ours.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mfpt_bearings\\02_tile59_engine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mfpt_bearings\\02_tile59_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mfpt_bearings\\02_tile59_ours.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mitbih_ecg\\01_tile37_engine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mitbih_ecg\\01_tile37_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mitbih_ecg\\01_tile37_ours.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mitbih_ecg\\02_tile29_engine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mitbih_ecg\\02_tile29_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mitbih_ecg\\02_tile29_ours.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\ptbxl_ecg\\01_tile22_engine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\ptbxl_ecg\\01_tile22_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\ptbxl_ecg\\01_tile22_ours.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\ptbxl_ecg\\02_tile31_engine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\ptbxl_ecg\\02_tile31_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\ptbxl_ecg\\02_tile31_ours.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_cnc_g01\\01_tile13_engine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_cnc_g01\\01_tile13_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_cnc_g01\\01_tile13_ours.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_cnc_g01\\02_tile17_engine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_cnc_g01\\02_tile17_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_cnc_g01\\02_tile17_ours.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_pmu_cycle\\01_tile24_engine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_pmu_cycle\\01_tile24_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_pmu_cycle\\01_tile24_ours.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_pmu_cycle\\02_tile49_engine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_pmu_cycle\\02_tile49_dualcosine.wav",
+      "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_pmu_cycle\\02_tile49_ours.wav"
+    ]
+  },
+  "absolute_paths": [
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\01_tile46_nobake.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\01_tile46_dualcosine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\01_tile46_ours_hybrid.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\01_tile46_random.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\01_tile46_cmaes.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\01_tile46_reinforce.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\01_tile46_aging_evo.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\01_tile46_tpe.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\02_tile21_nobake.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\02_tile21_dualcosine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\02_tile21_ours_hybrid.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\02_tile21_random.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\02_tile21_cmaes.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\02_tile21_reinforce.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\02_tile21_aging_evo.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\02_tile21_tpe.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\03_tile4_nobake.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\03_tile4_dualcosine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\03_tile4_ours_hybrid.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\03_tile4_random.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\03_tile4_cmaes.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\03_tile4_reinforce.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\03_tile4_aging_evo.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\03_tile4_tpe.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\04_tile49_nobake.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\04_tile49_dualcosine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\04_tile49_ours_hybrid.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\04_tile49_random.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\04_tile49_cmaes.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\04_tile49_reinforce.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\04_tile49_aging_evo.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\04_tile49_tpe.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\05_tile48_nobake.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\05_tile48_dualcosine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\05_tile48_ours_hybrid.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\05_tile48_random.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\05_tile48_cmaes.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\05_tile48_reinforce.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\05_tile48_aging_evo.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\meta\\05_tile48_tpe.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\cwru_bearings\\01_tile4_engine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\cwru_bearings\\01_tile4_dualcosine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\cwru_bearings\\01_tile4_ours.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\cwru_bearings\\02_tile35_engine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\cwru_bearings\\02_tile35_dualcosine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\cwru_bearings\\02_tile35_ours.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mfpt_bearings\\01_tile38_engine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mfpt_bearings\\01_tile38_dualcosine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mfpt_bearings\\01_tile38_ours.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mfpt_bearings\\02_tile59_engine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mfpt_bearings\\02_tile59_dualcosine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mfpt_bearings\\02_tile59_ours.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mitbih_ecg\\01_tile37_engine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mitbih_ecg\\01_tile37_dualcosine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mitbih_ecg\\01_tile37_ours.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mitbih_ecg\\02_tile29_engine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mitbih_ecg\\02_tile29_dualcosine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\mitbih_ecg\\02_tile29_ours.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\ptbxl_ecg\\01_tile22_engine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\ptbxl_ecg\\01_tile22_dualcosine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\ptbxl_ecg\\01_tile22_ours.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\ptbxl_ecg\\02_tile31_engine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\ptbxl_ecg\\02_tile31_dualcosine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\ptbxl_ecg\\02_tile31_ours.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_cnc_g01\\01_tile13_engine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_cnc_g01\\01_tile13_dualcosine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_cnc_g01\\01_tile13_ours.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_cnc_g01\\02_tile17_engine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_cnc_g01\\02_tile17_dualcosine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_cnc_g01\\02_tile17_ours.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_pmu_cycle\\01_tile24_engine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_pmu_cycle\\01_tile24_dualcosine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_pmu_cycle\\01_tile24_ours.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_pmu_cycle\\02_tile49_engine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_pmu_cycle\\02_tile49_dualcosine.wav",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\hear_vibrato_methods\\transfer\\synth_pmu_cycle\\02_tile49_ours.wav"
+  ],
+  "n_wavs": 76
+}
