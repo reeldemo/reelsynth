@@ -8,6 +8,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+### Changed
+
+### Fixed
+
+## [0.3.0] - 2026-07-25
+
+### Added
+
 - **Input octave shift** — header **Oct −/+** control persists with the preset and shifts hardware MIDI plus the chromatic computer-keyboard play row by ±3 octaves. The painted on-screen piano remains at its labeled pitches.
 - **Result vs Layer heal** — header **Result·…** bakes the whole bank (total mix path); Selected **Layer·…** + **Fit ends** heal only the selected layer’s frame so one oscillator can use different mechanisms per layer (`WaveLayer.seam_mode` in `.reelpreset`).
 - **Fit ends** — Selected WT toolbar one-shot classical **DualCosine** bake on the **selected layer frame** (was whole-bank).
@@ -103,6 +111,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Python PyO3 bindings for render and export
 - Plugin UI shell (CLAP entry stub, no host I/O)
 
-[Unreleased]: https://github.com/reeldemo/reelsynth/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/reeldemo/reelsynth/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/reeldemo/reelsynth/releases/tag/v0.3.0
 [0.2.0]: https://github.com/reeldemo/reelsynth/releases/tag/v0.2.0
 [0.1.0]: https://github.com/reeldemo/reelsynth/releases/tag/v0.1.0
