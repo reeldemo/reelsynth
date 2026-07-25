@@ -762,8 +762,7 @@ mod tests {
             .fold(0.0f32, f32::max)
     }
 
-    #[test]
-    fn second_note_onset_does_not_chop_held_voice() {
+    fn factory_lead_clean_engine() -> SynthEngine {
         let mut bank = WavetableBank::factory_saw_morph();
         for f in 0..bank.num_frames {
             periodize_with_algo(
@@ -780,9 +779,79 @@ mod tests {
         for slot in &mut patch.mod_matrix {
             slot.enabled = false;
         }
+        SynthEngine::new(bank, patch, 44_100)
+    }
 
+    /// Chromatic cluster starting at C4 — enough for 12 distinct MIDI notes.
+    fn chord_notes(count: usize) -> Vec<u8> {
+        (0..count).map(|i| 60u8.saturating_add(i as u8)).collect()
+    }
+
+    fn render_chord_onset(note_count: usize) -> (Vec<f32>, usize, u32) {
         let sr = 44_100u32;
-        let mut eng = SynthEngine::new(bank, patch, sr);
+        let mut eng = factory_lead_clean_engine();
+        let total = (sr as f32 * 0.55) as usize;
+        let chord_at = (sr as f32 * 0.12) as usize;
+        let notes = chord_notes(note_count);
+        let mut stereo = vec![0.0f32; total * 2];
+        let mut fired = false;
+        let mut i = 0;
+        while i < total {
+            if !fired && i >= chord_at {
+                for n in &notes {
+                    eng.note_on(0, *n, 0.9);
+                }
+                fired = true;
+            }
+            let end = (i + 128).min(total);
+            eng.process_stereo(&mut stereo[i * 2..end * 2]);
+            i = end;
+        }
+        let mono: Vec<f32> = stereo.chunks(2).map(|c| (c[0] + c[1]) * 0.5).collect();
+        (mono, chord_at, sr)
+    }
+
+    fn render_staggered_notes(note_count: usize) -> Vec<f32> {
+        let sr = 44_100u32;
+        let mut eng = factory_lead_clean_engine();
+        let notes = chord_notes(note_count);
+        // Space note-ons by 30 ms so each headroom step is isolated.
+        let gap = (0.030 * sr as f32) as usize;
+        let total = gap * note_count + (sr as f32 * 0.25) as usize;
+        let mut stereo = vec![0.0f32; total * 2];
+        let mut next_note = 0usize;
+        let mut i = 0;
+        while i < total {
+            while next_note < note_count && i >= next_note * gap {
+                eng.note_on(0, notes[next_note], 0.9);
+                next_note += 1;
+            }
+            let end = (i + 128).min(total);
+            eng.process_stereo(&mut stereo[i * 2..end * 2]);
+            i = end;
+        }
+        stereo.chunks(2).map(|c| (c[0] + c[1]) * 0.5).collect()
+    }
+
+    #[test]
+    fn voice_headroom_targets_through_12() {
+        assert!((voice_headroom(0) - 1.0).abs() < 1e-6);
+        assert!((voice_headroom(1) - 1.0).abs() < 1e-6);
+        for n in 2usize..=12 {
+            let h = voice_headroom(n);
+            let expect = 1.0 / (n as f32).sqrt();
+            assert!(
+                (h - expect).abs() < 1e-5,
+                "n={n}: headroom={h} expect={expect}"
+            );
+            assert!(h < voice_headroom(n - 1));
+        }
+    }
+
+    #[test]
+    fn second_note_onset_does_not_chop_held_voice() {
+        let sr = 44_100u32;
+        let mut eng = factory_lead_clean_engine();
         let total = (sr as f32 * 0.55) as usize;
         let n2_at = (sr as f32 * 0.25) as usize;
         let mut stereo = vec![0.0f32; total * 2];
@@ -811,7 +880,6 @@ mod tests {
             .map(|s| s.abs())
             .fold(0.0f32, f32::max);
         assert!(peak > 0.05, "second note too quiet ({peak})");
-        // Instant √N headroom used to spike post_step ≫ pre_step (~0.3+).
         assert!(
             post_step < pre_step * 3.5 + 0.08,
             "second-note headroom click: pre={pre_step:.4} post={post_step:.4}"
@@ -819,58 +887,48 @@ mod tests {
     }
 
     #[test]
-    fn five_note_chord_onset_stays_bounded() {
-        let mut bank = WavetableBank::factory_saw_morph();
-        for f in 0..bank.num_frames {
-            periodize_with_algo(
-                bank.frame_mut(f),
-                0.0,
-                SeamStyle::Adaptive,
-                PeriodizeAlgo::DualCosine,
+    fn simultaneous_chord_onset_bounded_for_2_through_12_notes() {
+        for n in 2usize..=12 {
+            let (mono, chord_at, sr) = render_chord_onset(n);
+            let onset_end = (chord_at + (0.05 * sr as f32) as usize).min(mono.len());
+            let onset_step = max_abs_step(&mono[chord_at..onset_end]);
+            let peak = mono[chord_at..onset_end]
+                .iter()
+                .map(|s| s.abs())
+                .fold(0.0f32, f32::max);
+            assert!(
+                peak > 0.04,
+                "{n}-note chord too quiet (peak={peak:.4})"
+            );
+            // Allow a mild rise with density; soft-bus + duck should keep this below hard clip steps.
+            let step_cap = 0.35 + 0.03 * n as f32;
+            assert!(
+                onset_step < step_cap,
+                "{n}-note simultaneous onset crackle: step={onset_step:.4} cap={step_cap:.4} peak={peak:.4}"
+            );
+            assert!(
+                mono.iter().all(|s| s.is_finite() && s.abs() <= 1.01),
+                "{n}-note chord hard-clipped or non-finite"
             );
         }
-        let mut patch = Patch::factory_lead();
-        patch.effects.clear();
-        patch.lfo.depth = 0.0;
-        patch.lfo2.depth = 0.0;
-        for slot in &mut patch.mod_matrix {
-            slot.enabled = false;
-        }
+    }
 
-        let sr = 44_100u32;
-        let mut eng = SynthEngine::new(bank, patch, sr);
-        let total = (sr as f32 * 0.6) as usize;
-        let chord_at = (sr as f32 * 0.15) as usize;
-        let notes = [60u8, 64, 67, 71, 74];
-        let mut stereo = vec![0.0f32; total * 2];
-        let mut fired = false;
-        let mut i = 0;
-        while i < total {
-            if !fired && i >= chord_at {
-                for n in notes {
-                    eng.note_on(0, n, 0.9);
-                }
-                fired = true;
-            }
-            let end = (i + 128).min(total);
-            eng.process_stereo(&mut stereo[i * 2..end * 2]);
-            i = end;
+    #[test]
+    fn staggered_notes_through_12_stay_bounded() {
+        for n in 2usize..=12 {
+            let mono = render_staggered_notes(n);
+            let peak = mono.iter().map(|s| s.abs()).fold(0.0f32, f32::max);
+            let max_step = max_abs_step(&mono);
+            assert!(peak > 0.04, "staggered {n} notes too quiet (peak={peak:.4})");
+            let step_cap = 0.40 + 0.025 * n as f32;
+            assert!(
+                max_step < step_cap,
+                "staggered {n}-note headroom crackle: step={max_step:.4} cap={step_cap:.4} peak={peak:.4}"
+            );
+            assert!(
+                mono.iter().all(|s| s.is_finite() && s.abs() <= 1.01),
+                "staggered {n}-note hard-clipped or non-finite"
+            );
         }
-        let mono: Vec<f32> = stereo.chunks(2).map(|c| (c[0] + c[1]) * 0.5).collect();
-        let onset_end = (chord_at + (0.04 * sr as f32) as usize).min(mono.len());
-        let onset_step = max_abs_step(&mono[chord_at..onset_end]);
-        let peak = mono[chord_at..onset_end]
-            .iter()
-            .map(|s| s.abs())
-            .fold(0.0f32, f32::max);
-        assert!(peak > 0.05, "chord too quiet ({peak})");
-        assert!(
-            onset_step < 0.55,
-            "five-note chord onset crackle: step={onset_step:.4} peak={peak:.4}"
-        );
-        assert!(
-            mono.iter().all(|s| s.is_finite() && s.abs() <= 1.01),
-            "bus clipped to non-finite or hard foldover"
-        );
     }
 }
