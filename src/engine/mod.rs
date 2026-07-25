@@ -58,8 +58,12 @@ fn voice_headroom(active_voices: usize) -> f32 {
     }
 }
 
-/// Smooth poly headroom so 1→2 voice transitions don't chop the held note (click).
-const HEADROOM_SMOOTH_SECONDS: f32 = 0.012;
+/// Smooth poly headroom: duck quickly when voices are added (avoid bus clip),
+/// restore slowly when voices leave (avoid swell clicks).
+const HEADROOM_DOWN_SECONDS: f32 = 0.004;
+const HEADROOM_UP_SECONDS: f32 = 0.045;
+/// Cap how far smooth may sit above the target so a 5-note chord can't clip for tens of ms.
+const HEADROOM_ABOVE_TARGET_MAX: f32 = 0.06;
 
 fn sanitize_sample(sample: f32) -> f32 {
     if sample.is_finite() {
@@ -584,8 +588,8 @@ impl SynthEngine {
                 acc_r += stages.filtered[1];
             }
             let headroom = self.smooth_headroom(voices_active, dt);
-            acc_l *= headroom;
-            acc_r *= headroom;
+            acc_l = Self::soft_bus(acc_l * headroom);
+            acc_r = Self::soft_bus(acc_r * headroom);
             acc_osc *= headroom;
             let gain = self.params.master_gain.current();
             let filt_mono = (acc_l + acc_r) * 0.5 * gain;
@@ -653,8 +657,8 @@ impl SynthEngine {
                 acc_r += stages.filtered[1];
             }
             let headroom = self.smooth_headroom(voices_active, dt);
-            acc_l *= headroom;
-            acc_r *= headroom;
+            acc_l = Self::soft_bus(acc_l * headroom);
+            acc_r = Self::soft_bus(acc_r * headroom);
             acc_osc *= headroom;
             let gain = self.params.master_gain.current();
             let filt_mono = (acc_l + acc_r) * 0.5 * gain;
@@ -684,9 +688,26 @@ impl SynthEngine {
     #[inline]
     fn smooth_headroom(&mut self, voices_active: usize, dt: f32) -> f32 {
         let target = voice_headroom(voices_active);
-        let alpha = (dt / HEADROOM_SMOOTH_SECONDS).clamp(0.0, 1.0);
+        // Prevent a multi-note chord from riding near-unity gain while √N target is low.
+        if self.headroom_smooth > target + HEADROOM_ABOVE_TARGET_MAX {
+            self.headroom_smooth = target + HEADROOM_ABOVE_TARGET_MAX;
+        }
+        let tau = if target < self.headroom_smooth {
+            HEADROOM_DOWN_SECONDS
+        } else {
+            HEADROOM_UP_SECONDS
+        };
+        let alpha = (dt / tau).clamp(0.0, 1.0);
         self.headroom_smooth += (target - self.headroom_smooth) * alpha;
         self.headroom_smooth
+    }
+
+    /// Soft bus clip after voice sum — catches residual poly peaks without hard digital foldover.
+    #[inline]
+    fn soft_bus(x: f32) -> f32 {
+        // Cubic soft-clip: unity gain near 0, gentle compress above ~0.8.
+        let a = x.clamp(-1.5, 1.5);
+        a - (a * a * a) * (1.0 / 6.75)
     }
 
     /// Offline reference render using the same patch/bank (for golden tests).
@@ -766,10 +787,12 @@ mod tests {
         let n2_at = (sr as f32 * 0.25) as usize;
         let mut stereo = vec![0.0f32; total * 2];
         eng.note_on(0, 60, 0.9);
+        let mut fired_n2 = false;
         let mut i = 0;
         while i < total {
-            if i == n2_at {
+            if !fired_n2 && i >= n2_at {
                 eng.note_on(0, 64, 0.9);
+                fired_n2 = true;
             }
             let end = (i + 128).min(total);
             eng.process_stereo(&mut stereo[i * 2..end * 2]);
@@ -783,10 +806,71 @@ mod tests {
         let post_b = (n2_at + (0.020 * sr as f32) as usize).min(mono.len());
         let pre_step = max_abs_step(&mono[pre_a..pre_b]);
         let post_step = max_abs_step(&mono[post_a..post_b]);
+        let peak = mono[post_a..post_b]
+            .iter()
+            .map(|s| s.abs())
+            .fold(0.0f32, f32::max);
+        assert!(peak > 0.05, "second note too quiet ({peak})");
         // Instant √N headroom used to spike post_step ≫ pre_step (~0.3+).
         assert!(
             post_step < pre_step * 3.5 + 0.08,
             "second-note headroom click: pre={pre_step:.4} post={post_step:.4}"
+        );
+    }
+
+    #[test]
+    fn five_note_chord_onset_stays_bounded() {
+        let mut bank = WavetableBank::factory_saw_morph();
+        for f in 0..bank.num_frames {
+            periodize_with_algo(
+                bank.frame_mut(f),
+                0.0,
+                SeamStyle::Adaptive,
+                PeriodizeAlgo::DualCosine,
+            );
+        }
+        let mut patch = Patch::factory_lead();
+        patch.effects.clear();
+        patch.lfo.depth = 0.0;
+        patch.lfo2.depth = 0.0;
+        for slot in &mut patch.mod_matrix {
+            slot.enabled = false;
+        }
+
+        let sr = 44_100u32;
+        let mut eng = SynthEngine::new(bank, patch, sr);
+        let total = (sr as f32 * 0.6) as usize;
+        let chord_at = (sr as f32 * 0.15) as usize;
+        let notes = [60u8, 64, 67, 71, 74];
+        let mut stereo = vec![0.0f32; total * 2];
+        let mut fired = false;
+        let mut i = 0;
+        while i < total {
+            if !fired && i >= chord_at {
+                for n in notes {
+                    eng.note_on(0, n, 0.9);
+                }
+                fired = true;
+            }
+            let end = (i + 128).min(total);
+            eng.process_stereo(&mut stereo[i * 2..end * 2]);
+            i = end;
+        }
+        let mono: Vec<f32> = stereo.chunks(2).map(|c| (c[0] + c[1]) * 0.5).collect();
+        let onset_end = (chord_at + (0.04 * sr as f32) as usize).min(mono.len());
+        let onset_step = max_abs_step(&mono[chord_at..onset_end]);
+        let peak = mono[chord_at..onset_end]
+            .iter()
+            .map(|s| s.abs())
+            .fold(0.0f32, f32::max);
+        assert!(peak > 0.05, "chord too quiet ({peak})");
+        assert!(
+            onset_step < 0.55,
+            "five-note chord onset crackle: step={onset_step:.4} peak={peak:.4}"
+        );
+        assert!(
+            mono.iter().all(|s| s.is_finite() && s.abs() <= 1.01),
+            "bus clipped to non-finite or hard foldover"
         );
     }
 }
