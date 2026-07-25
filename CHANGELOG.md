@@ -13,6 +13,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- **Docs — ReelAI manual** — musician path documents ReelAI / Noise2Noise / DualCosine / Fit ends bake-before-play flow in [GETTING_STARTED.md](docs/GETTING_STARTED.md), [UI.md](docs/UI.md), and [WORKFLOW.md](docs/WORKFLOW.md).
 - **AI seam / DenoiseOpt v10 freeze** — `FROZEN_THETA` re-locked under the v10.1 **R_blend** objective (α=0.7 discontinuity-local seam heal + mid-cycle body identity), constrained to still pass the harsh-catalog denoise+shape quality gate vs DualCosine. Holdout: R_blend ≈0.807 vs prior frozen ≈0.694 and DualCosine ≈0.478 (`brand/artifacts/denoise_opt_v10_r_blend_freeze.json`; `bench_denoise_opt -- --r-blend`). Neural hybrid_lstm FitCell remains research-only; product path is the in-engine **ReelAI** bake.
 
 ## [0.2.0] - 2026-07-20

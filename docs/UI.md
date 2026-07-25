@@ -54,14 +54,40 @@ A default empty clip is auto-selected on the active track so you can draw immedi
 | **Save** | Write current patch as `.reelpreset` |
 | **Design** / **Compose** | Switch shell mode — sound design vs mini-DAW |
 | **WT** menu | Open/Save `.reelwt`, **factory wavetables** (applies bank to the Design wave stack — promotes a wavetable layer so sound matches the editor), Vital/WAV/Serum import |
-| **ReelAI** | Seam-heal dropdown: Seam·Off / Soft / Adapt, DualCosine, Noise2Noise, or **ReelAI** (DenoiseOpt v10 `R_blend`). Bakes all wavetable frames before playback for A/B. Session-only. Same options as Selected toolbar seam combo. |
+| **ReelAI** | Seam-heal dropdown (see [ReelAI seam heal](#reelai-seam-heal)) |
 | **Piano** | Show/hide on-screen keyboard |
-| **Key / Scale / Layout** | Performance input: root key, scale mode, piano vs scale-fold vs chord row |
+| **Key / Scale / Layout** | Performance input: root key, scale mode, piano vs scale-fold vs chord row. **Piano** layout is chromatic (black keys play); **Scale** folds/snaps to the scale |
 | **Arp** (footer) | Toggle arpeggiator; input mode, style, rate, octaves, gate, latch |
 | **MIDI** combo | Select hardware MIDI input device |
 | **Audio** combo | Select CPAL output device (speakers, headphones, DI / interface) |
 | **Settings** | Header **Settings** dropdown (not a modal): graphics backend, GPU waveforms, auto MIDI, auto audio output, keyboard layout |
 | **Status** | Audio/MIDI state, save confirmations, errors |
+
+### ReelAI seam heal
+
+Wavetable frames must meet at the loop point (`sample[0] ≈ sample[last]`). A cliff there becomes a pitched click under sustain. **ReelAI** and friends fix that by **baking** every frame before you play — same idea as “make periodic” in other synths, with a stronger learned option.
+
+| Mode | Role |
+|------|------|
+| **Seam·Off** | Raw ends — max edit freedom, may click |
+| **Seam·Soft** | Fixed-width fade into the wrap |
+| **Seam·Adapt** | Fade only as much as the discontinuity needs (default Quant path) |
+| **DualCosine** | Classical DualCosine periodize (strong, predictable baseline) |
+| **Noise2Noise** | Embedded Noise2Noise U-Net-lite (paper comparator) |
+| **ReelAI** | Product AI — DenoiseOpt v10 discontinuity-local heal; preserves mid-cycle body |
+
+**Fit ends** (Selected toolbar, beside FFT) is a **one-shot** DualCosine bake of the whole bank. It does not change the Seam dropdown — use it when you want a permanent classical periodize and keep Quant Seam on Adapt/Off for editing.
+
+**How bake works**
+
+- DualCosine / Noise2Noise / ReelAI take a snapshot of the bank, then rewrite all frames.
+- Switching back toward Off/Soft/Adapt can restore that snapshot (until you edit while a bake is active).
+- Not realtime DSP — no stream delay; rebake when you change mode or press Fit ends.
+- Session-only — save `.reelwt` if you want the healed frames on disk.
+
+**Honest limit:** healing is **per frame**. Live morph between frames or heavy layer overlays can still click; Fit ends / ReelAI again after the stack settles, or keep Overtone as a soft safety net on the master bus.
+
+Research write-up: [WHITEPAPER_DENOISE_OPT.md](WHITEPAPER_DENOISE_OPT.md) · [papers/denoise_opt/](papers/denoise_opt/).
 
 ---
 
