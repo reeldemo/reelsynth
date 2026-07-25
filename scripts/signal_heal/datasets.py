@@ -231,7 +231,7 @@ def build_mfpt(
     ideals: list[np.ndarray] = []
     engines: list[np.ndarray] = []
     # MFPT baseline rate often 97656 Hz; shaft 25 Hz → spr ≈ 3906
-    for mat_path in mat_files[:12]:
+    for mat_path in mat_files[:24]:
         try:
             mat = sio.loadmat(str(mat_path))
         except Exception:
@@ -286,7 +286,7 @@ def build_mfpt(
         starts = np.arange(0, max_start, spr)
         if starts.size == 0:
             continue
-        take = min(40, starts.size)
+        take = min(max(80, n_periods // 3), starts.size)
         for s in rng.choice(starts, size=take, replace=False):
             seg = sig[int(s) : int(s) + spr]
             ideal = _zscore(_resample_1d(seg, period_l, kind="cubic"))
@@ -300,6 +300,9 @@ def build_mfpt(
             break
     if len(ideals) < 16:
         return None
+    if len(ideals) < n_periods:
+        # Soft fail: return what we have but mark under-target in meta
+        pass
     return DatasetBundle(
         name="mfpt_bearings",
         ideal=torch.from_numpy(np.stack(ideals[:n_periods], 0)),
@@ -312,6 +315,7 @@ def build_mfpt(
             "citation": "MFPT Fault Data Sets (Society for Machinery Failure Prevention Technology)",
             "seed": seed,
             "label": "classical_board_plus_bad_cot — not a published deep SOTA reimplementation",
+            "requested_n": n_periods,
         },
     )
 

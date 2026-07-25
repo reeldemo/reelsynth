@@ -18,6 +18,9 @@ docs-images.zip
 
 .venv_gpu/
 
+# AKWF OA source clone / zip (copied subset lives under oa_akwf/)
+brand/artifacts/real_wt_cycles/_akwf_src/
+
 # Signal-heal pilot: keep results, skip bulky raw downloads
 brand/artifacts/signal_heal_transfer/raw/
 brand/artifacts/signal_heal_transfer/**/*.pt

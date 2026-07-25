@@ -205,6 +205,24 @@ def build_inventory() -> dict[str, Any]:
 
     real_wt = _load(ART / "real_wt_cycles" / "real_wt_matrix.json")
     meta_wt = real_wt.get("meta", {})
+    export_json = ART / "real_wt_cycles" / "reelsynth_export_cycles.json"
+    export_blob = _load(export_json) if export_json.is_file() else {}
+    oa_dir = ART / "real_wt_cycles" / "oa_akwf"
+    oa_wav_n = len(list(oa_dir.glob("*.wav"))) if oa_dir.is_dir() else 0
+    factory_n = int(
+        export_blob.get("n_cycles")
+        or meta_wt.get("reelsynth_export_n")
+        or real_wt.get("reelsynth_export_primary", {}).get("n_cycles", 25)
+    )
+    akwf_n = int(
+        real_wt.get("oa_akwf_secondary", {}).get("n_cycles")
+        or meta_wt.get("oa_n")
+        or oa_wav_n
+        or 24
+    )
+    # Prefer on-disk OA count when larger than stale scored matrix
+    if oa_wav_n > akwf_n:
+        akwf_n = oa_wav_n
 
     inv: dict[str, Any] = {
         "schema": "denoiseopt.dataset_inventory.v1",
@@ -250,11 +268,10 @@ def build_inventory() -> dict[str, Any]:
             },
         },
         "wavetable_native": {
-            "reelsynth_factory_export_n": int(
-                meta_wt.get("reelsynth_export_n")
-                or real_wt.get("reelsynth_export_primary", {}).get("n_cycles", 25)
-            ),
-            "akwf_oa_n": int(real_wt.get("oa_akwf_secondary", {}).get("n_cycles", 24)),
+            "reelsynth_factory_export_n": factory_n,
+            "reelsynth_factory_dry_n": int(export_blob.get("n_dry") or 0) or None,
+            "reelsynth_factory_fx_n": int(export_blob.get("n_fx") or 0) or None,
+            "akwf_oa_n": akwf_n,
             "procedural_standin_tertiary_n": int(
                 real_wt.get("procedural_standin", {}).get("n_cycles", 24)
             ),
@@ -274,15 +291,17 @@ def build_inventory() -> dict[str, Any]:
             "procedural_metrics_cycles": int(dist.get("n_samples") or 4096),
             "procedural_score_batch": 64,
             "multi_family_cycles": 20 * 64,
-            "factory_export_cycles": int(
-                meta_wt.get("reelsynth_export_n")
-                or real_wt.get("reelsynth_export_primary", {}).get("n_cycles", 25)
-            ),
-            "akwf_cycles": int(real_wt.get("oa_akwf_secondary", {}).get("n_cycles", 24)),
+            "factory_export_cycles": factory_n,
+            "akwf_cycles": akwf_n,
             "transfer_periods_sum": int(
                 sum(int(d.get("n_periods") or 0) for d in transfer_domains)
             ),
         },
+        "plot4_note": (
+            "fig_dataset_size_overview shows comparable ~1280 boards only "
+            "(multi-family / Factory+FX / AKWF / transfer). Holdout-4096 and "
+            "score-batch-64 live under totals but are omitted from that bar chart."
+        ),
     }
     return inv
 
@@ -291,28 +310,24 @@ def plot_dataset_size_overview(inv: dict[str, Any], out_dir: Path) -> list[Path]
     plt = _mpl()
     written: list[Path] = []
 
-    # Panel A: primary corpus sizes (cycles / periods)
+    # Panel A (paper Fig 4): comparable boards only at ~1280 height
     labels = [
-        "Holdout\nmetrics",
-        "Score\nbatch",
-        "Multi-family\n(20x64)",
-        "Factory\nexport",
+        "Multi-family\n(20×64)",
+        "Factory+FX\nexport",
         "AKWF\nOA",
         "Transfer\nperiods",
     ]
     vals = [
-        inv["totals"]["procedural_metrics_cycles"],
-        inv["totals"]["procedural_score_batch"],
         inv["totals"]["multi_family_cycles"],
         inv["totals"]["factory_export_cycles"],
         inv["totals"]["akwf_cycles"],
         inv["totals"]["transfer_periods_sum"],
     ]
-    fig, ax = plt.subplots(figsize=(7.2, 3.6))
-    colors = [C_BLUE, C_SKY, C_GREEN, C_YELLOW, C_PURPLE, C_OURS]
+    fig, ax = plt.subplots(figsize=(6.4, 3.6))
+    colors = [C_GREEN, C_YELLOW, C_PURPLE, C_OURS]
     bars = ax.bar(labels, vals, color=colors, edgecolor="white", linewidth=0.4)
     ax.set_ylabel("Cycles / periods")
-    ax.set_title("DenoiseOpt evaluation corpus sizes")
+    ax.set_title("Comparable evaluation corpora (~1280)")
     for b, v in zip(bars, vals):
         ax.text(
             b.get_x() + b.get_width() / 2,
@@ -322,9 +337,34 @@ def plot_dataset_size_overview(inv: dict[str, Any], out_dir: Path) -> list[Path]
             va="bottom",
             fontsize=8,
         )
-    ax.set_ylim(0, max(vals) * 1.18)
+    ax.set_ylim(0, max(vals) * 1.18 if vals else 1.0)
     fig.tight_layout()
     stem = out_dir / "fig_dataset_size_overview"
+    _save_fig(fig, plt, stem)
+    written.extend([stem.with_suffix(".png"), stem.with_suffix(".pdf")])
+
+    # Supplemental: holdout metrics draw + score batch (not Plot 4 main board)
+    fig, ax = plt.subplots(figsize=(4.8, 3.2))
+    supp_labels = ["Holdout\nmetrics", "Score\nbatch"]
+    supp_vals = [
+        inv["totals"]["procedural_metrics_cycles"],
+        inv["totals"]["procedural_score_batch"],
+    ]
+    bars = ax.bar(supp_labels, supp_vals, color=[C_BLUE, C_SKY], edgecolor="white", linewidth=0.4)
+    ax.set_ylabel("Cycles")
+    ax.set_title("Procedural holdout / score batch (excluded from Fig 4)")
+    for b, v in zip(bars, supp_vals):
+        ax.text(
+            b.get_x() + b.get_width() / 2,
+            b.get_height(),
+            f"{v:,}",
+            ha="center",
+            va="bottom",
+            fontsize=8,
+        )
+    ax.set_ylim(0, max(supp_vals) * 1.18)
+    fig.tight_layout()
+    stem = out_dir / "fig_dataset_procedural_holdout_sizes"
     _save_fig(fig, plt, stem)
     written.extend([stem.with_suffix(".png"), stem.with_suffix(".pdf")])
 
@@ -767,6 +807,8 @@ def main() -> int:
         "fig_dataset_distributions.png",
         "fig_dataset_size_overview.png",
         "fig_dataset_size_overview.pdf",
+        "fig_dataset_procedural_holdout_sizes.png",
+        "fig_dataset_procedural_holdout_sizes.pdf",
         "fig_dataset_transfer_sizes.png",
         "fig_dataset_transfer_sizes.pdf",
         "fig_dataset_family_counts.png",

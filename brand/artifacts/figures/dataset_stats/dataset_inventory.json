@@ -18,10 +18,10 @@
       "cycle_length_N": 256,
       "prolong_tiles": 16,
       "seam_width": 8,
-      "wrap_jump_p75": 1.3868827819824219,
-      "wrap_jump_p90": 1.832109808921814,
+      "wrap_jump_p75": 1.3781352043151855,
+      "wrap_jump_p90": 1.804182767868042,
       "hard_top10pct_n": 410,
-      "hard_top10pct_identity_R_mean": 0.9667258858680725,
+      "hard_top10pct_identity_R_mean": 0.9669341444969177,
       "figure": "fig_dataset_distributions.png"
     },
     "metrics_summary": {
@@ -98,8 +98,10 @@
     }
   },
   "wavetable_native": {
-    "reelsynth_factory_export_n": 25,
-    "akwf_oa_n": 24,
+    "reelsynth_factory_export_n": 1280,
+    "reelsynth_factory_dry_n": 640,
+    "reelsynth_factory_fx_n": 640,
+    "akwf_oa_n": 1280,
     "procedural_standin_tertiary_n": 24,
     "L": 256,
     "protocol_seed": 20260719
@@ -139,7 +141,7 @@
     },
     {
       "name": "mfpt_bearings",
-      "n_periods": 128,
+      "n_periods": 256,
       "period_l": 256,
       "fs_hz": null,
       "domain": "bearings",
@@ -320,8 +322,9 @@
     "procedural_metrics_cycles": 4096,
     "procedural_score_batch": 64,
     "multi_family_cycles": 1280,
-    "factory_export_cycles": 25,
-    "akwf_cycles": 24,
-    "transfer_periods_sum": 1408
-  }
+    "factory_export_cycles": 1280,
+    "akwf_cycles": 1280,
+    "transfer_periods_sum": 1536
+  },
+  "plot4_note": "fig_dataset_size_overview shows comparable ~1280 boards only (multi-family / Factory+FX / AKWF / transfer). Holdout-4096 and score-batch-64 live under totals but are omitted from that bar chart."
 }

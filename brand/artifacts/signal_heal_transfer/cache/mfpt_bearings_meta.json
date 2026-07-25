@@ -1,9 +1,10 @@
 {
   "domain": "bearings",
-  "n": 128,
+  "n": 256,
   "period_l": 256,
   "wrap": "MFPT shaft-rate periods; cubic ideal vs linear+cliff engine.",
   "citation": "MFPT Fault Data Sets (Society for Machinery Failure Prevention Technology)",
   "seed": 1902771841,
-  "label": "classical_board_plus_bad_cot \u2014 not a published deep SOTA reimplementation"
+  "label": "classical_board_plus_bad_cot \u2014 not a published deep SOTA reimplementation",
+  "requested_n": 256
 }
