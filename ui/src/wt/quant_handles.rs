@@ -394,7 +394,7 @@ pub enum QuantSeamMode {
     /// Fade length scales with seam size; skips work when already closed.
     #[default]
     Adaptive,
-    /// Unsupervised DenoiseOpt (fitted denoise+shape loss) — inference only.
+    /// Unsupervised DenoiseOpt (v10 R_blend seam heal) — inference only.
     Opt,
 }
 
@@ -412,7 +412,7 @@ impl QuantSeamMode {
             Self::Soft => "Fixed fade into frame[0] (stronger crackle reduction)",
             Self::Adaptive => "Fade only as much as the wrap discontinuity needs",
             Self::Opt => {
-                "AI DenoiseOpt — fitted once on denoise+shape loss; mid-cycle shape conserved"
+                "AI DenoiseOpt v10 — discontinuity-local heal (R_blend); mid-cycle body conserved"
             }
         }
     }
@@ -574,7 +574,7 @@ pub fn periodize_quant_frame_with_mode(frame: &mut [f32], mode: QuantSeamMode) {
 /// Bake every frame in a bank with the given seam mode (navbar AI seam / Quant path).
 ///
 /// Opt uses in-engine DenoiseOpt with embedded [`reelsynth::denoise_opt::FROZEN_THETA`]
-/// (no Python / FitCell hybrid weights required).
+/// (v10 R_blend freeze; no Python / FitCell hybrid weights required).
 pub fn bake_bank_seams(bank: &mut reelsynth::WavetableBank, mode: QuantSeamMode) {
     set_quant_seam_mode(mode);
     set_crackle_amount(current_crackle_amount());

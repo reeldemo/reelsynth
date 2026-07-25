@@ -1,7 +1,9 @@
-//! Unsupervised crackle denoise: fit θ once on denoise+shape loss, infer with frozen θ.
+//! Unsupervised crackle denoise: fit θ once, infer with frozen θ.
 //!
-//! No labeled data. Offline coordinate descent minimizes
-//! `L = (1 − denoise) + λ(1 − shape)` on the harsh signal matrix.
+//! No labeled data. Offline coordinate descent historically minimized
+//! `L = (1 − denoise) + λ(1 − shape)` on the harsh signal matrix; production
+//! freeze now locks under the v10.1 **R_blend** objective (seam heal + body
+//! identity) via `bench_denoise_opt -- --r-blend`.
 //!
 //! **Shape invariant:** mid-cycle samples are copied from the input; only head/tail
 //! seam zones are rewritten. That is how aggressive denoise stays shape-safe.
@@ -12,22 +14,31 @@ use serde_json::json;
 pub const N_THETA: usize = 12;
 pub const LAMBDA_SHAPE: f32 = 1.0;
 
-/// Frozen after 1500-trial residual-objective bi-level meta (champion meta_top1 /
-/// `evo_explore_515`). Primary score: prolonged residual vs ideal. Regenerate via
-/// `bench_denoise_meta`.
+/// Frozen under v10.1 R_blend protocol (α=0.7 seam / body), subject to the
+/// harsh-catalog denoise+shape quality gate vs DualCosine.
+///
+/// Fitted with `cargo run -p reelsynth --release --bin bench_denoise_opt -- --r-blend`
+/// on the procedural sound bench (gate-constrained ascent). Artifact:
+/// `brand/artifacts/denoise_opt_v10_r_blend_freeze.json`. Neural hybrid_lstm
+/// FitCell champ remains research-only (`brand/artifacts/meta_approach_compare_v10/`);
+/// this θ is the best in-engine DenoiseOpt bake under the discontinuity-local
+/// heal objective (keep mid-cycle body) that still passes the product quality gate.
+///
+/// Prior lineage: 1500-trial residual bi-level meta `evo_explore_515`, then v10
+/// R_blend re-lock.
 pub const FROZEN_THETA: [f32; N_THETA] = [
-    0.6743, // detrend / seam pull
+    0.8993, // detrend / seam pull
     0.3573, // fade length scale
-    0.7695, // dual target blend
-    0.2606, // raised-cosine weight
-    0.7395, // secondary tail fade
-    0.4262, // ease gamma
-    0.2884, // polish wet
+    0.9695, // dual target blend
+    0.0000, // raised-cosine weight
+    0.4895, // secondary tail fade
+    1.0000, // ease gamma
+    0.0000, // polish wet
     0.0,    // reserved (mid always dry)
-    0.4770, // head/tail asymmetry
-    0.6788, // wrap pin
-    0.4341, // base fade scale knob
-    0.4200, // second polish wet
+    0.2770, // head/tail asymmetry
+    0.0000, // wrap pin
+    0.1341, // base fade scale knob
+    0.0950, // second polish wet
 ];
 
 #[derive(Debug, Clone, Copy)]
@@ -524,6 +535,55 @@ pub fn fit_denoise_theta(restarts: usize, sweeps: usize) -> ([f32; N_THETA], f32
     (best, best_l, best_d, best_s, best_q)
 }
 
+pub fn quality_gate_for_theta(theta: &[f32; N_THETA]) -> (bool, f32, f32, f32, f32, f32, f32) {
+    use crate::artifact_reduce::{periodize_with_algo, PeriodizeAlgo};
+    use crate::seam::SeamStyle;
+
+    let cat = catalog(512);
+    let mut sum_opt = [0.0f32; 3];
+    let mut sum_dual = [0.0f32; 3];
+    let mut n = 0u32;
+
+    for id in harsh_ids() {
+        let Some(src) = cat.iter().find(|s| s.id == *id) else {
+            continue;
+        };
+        let raw = &src.samples;
+        let mut opt = raw.clone();
+        apply_denoise_theta(&mut opt, 0.0, theta);
+        let mut dual = raw.clone();
+        periodize_with_algo(&mut dual, 0.0, SeamStyle::Adaptive, PeriodizeAlgo::DualCosine);
+
+        let qo = score_cycle(raw, &opt);
+        let qd = score_cycle(raw, &dual);
+        sum_opt[0] += qo.denoise;
+        sum_opt[1] += qo.shape;
+        sum_opt[2] += qo.quality;
+        sum_dual[0] += qd.denoise;
+        sum_dual[1] += qd.shape;
+        sum_dual[2] += qd.quality;
+        n += 1;
+    }
+    let c = n.max(1) as f32;
+    for s in [&mut sum_opt, &mut sum_dual] {
+        s[0] /= c;
+        s[1] /= c;
+        s[2] /= c;
+    }
+    let pass = sum_opt[2] + 1e-4 >= sum_dual[2] - 0.02
+        && sum_opt[0] + 0.05 >= sum_dual[0]
+        && sum_opt[1] >= 0.95;
+    (
+        pass,
+        sum_opt[0],
+        sum_opt[1],
+        sum_opt[2],
+        sum_dual[0],
+        sum_dual[1],
+        sum_dual[2],
+    )
+}
+
 pub fn run_quality_gate_report() -> serde_json::Value {
     use crate::artifact_reduce::{periodize_with_algo, PeriodizeAlgo};
     use crate::seam::SeamStyle;
@@ -587,6 +647,7 @@ pub fn run_quality_gate_report() -> serde_json::Value {
         "classic": { "denoise": sum_classic[0], "shape": sum_classic[1], "quality": sum_classic[2] },
         "frozen_theta": FROZEN_THETA.as_slice(),
         "fixtures": rows,
+        "protocol_note": "denoise+shape harsh-catalog gate; production freeze also scores v10 R_blend",
     });
 
     // #region agent log

@@ -1,0 +1,152 @@
+{
+  "fit": {
+    "bench_size_requested": 8000,
+    "blend_alpha": 0.699999988079071,
+    "cycle_n": 256,
+    "fit_r_blend": 0.8077351450920105,
+    "fit_seconds": 41.9582794,
+    "meta_champ_ref": "brand/artifacts/meta_approach_compare_v10/hybrid_lstm/checkpoint.json",
+    "objective": "r_blend_gated",
+    "prolong_periods": 16,
+    "protocol": "v10.1 R_blend = \u03b1\u00b7R_seam(ideal,out)+(1-\u03b1)\u00b7R_body(eng,out); constrained by denoise+shape gate",
+    "quality_gate": {
+      "dual_cosine": {
+        "denoise": 0.7601756453514099,
+        "quality": 0.8797209858894348,
+        "shape": 0.9992663264274597
+      },
+      "opt": {
+        "denoise": 0.7194744348526001,
+        "quality": 0.8597372770309448,
+        "shape": 1.0
+      },
+      "pass": true
+    },
+    "refine_denoise_shape": {
+      "denoise": 0.5544233918190002,
+      "quality": 0.7772116661071777,
+      "shape": 1.0
+    },
+    "refine_r_blend": 0.8058302998542786,
+    "restarts": 5,
+    "seam_w": 16,
+    "stride_fit": 8,
+    "sweeps": 2,
+    "theta": [
+      0.8992999792098999,
+      0.3573000133037567,
+      0.9695000052452087,
+      0.0,
+      0.4894999861717224,
+      1.0,
+      0.0,
+      0.0,
+      0.2770000100135803,
+      0.0,
+      0.13409999012947083,
+      0.09499998390674591
+    ]
+  },
+  "fitted_theta": [
+    0.8992999792098999,
+    0.3573000133037567,
+    0.9695000052452087,
+    0.0,
+    0.4894999861717224,
+    1.0,
+    0.0,
+    0.0,
+    0.2770000100135803,
+    0.0,
+    0.13409999012947083,
+    0.09499998390674591
+  ],
+  "gate": {
+    "blend_alpha": 0.699999988079071,
+    "candidate_theta": [
+      0.8992999792098999,
+      0.3573000133037567,
+      0.9695000052452087,
+      0.0,
+      0.4894999861717224,
+      1.0,
+      0.0,
+      0.0,
+      0.2770000100135803,
+      0.0,
+      0.13409999012947083,
+      0.09499998390674591
+    ],
+    "cycle_n": 256,
+    "delta_vs_dual": 0.3291458189487457,
+    "delta_vs_frozen": 0.1133432388305664,
+    "frozen_theta": [
+      0.6743000149726868,
+      0.3573000133037567,
+      0.7695000171661377,
+      0.2606000006198883,
+      0.7394999861717224,
+      0.4262000024318695,
+      0.28839999437332153,
+      0.0,
+      0.47699999809265137,
+      0.6787999868392944,
+      0.4341000020503998,
+      0.41999998688697815
+    ],
+    "holdout_count": 1200,
+    "holdout_start": 80000,
+    "lock_recommended": true,
+    "margin": 0.004999999888241291,
+    "quality_gate": {
+      "dual_cosine": {
+        "denoise": 0.7601756453514099,
+        "quality": 0.8797209858894348,
+        "shape": 0.9992663264274597
+      },
+      "opt": {
+        "denoise": 0.7194744348526001,
+        "quality": 0.8597372770309448,
+        "shape": 1.0
+      },
+      "pass": true
+    },
+    "r_blend_candidate": 0.8069382309913635,
+    "r_blend_dual_cosine": 0.4777924120426178,
+    "r_blend_frozen": 0.6935949921607971,
+    "r_blend_nobake": 0.8590313792228699,
+    "seam_w": 16
+  },
+  "meta_champ_ref": "brand/artifacts/meta_approach_compare_v10/hybrid_lstm/checkpoint.json",
+  "note": "Neural FitCell stays out of engine; gated R_blend ascent locked FROZEN_THETA in src/denoise_opt.rs",
+  "previous_frozen": [
+    0.6743000149726868,
+    0.3573000133037567,
+    0.7695000171661377,
+    0.2606000006198883,
+    0.7394999861717224,
+    0.4262000024318695,
+    0.28839999437332153,
+    0.0,
+    0.47699999809265137,
+    0.6787999868392944,
+    0.4341000020503998,
+    0.41999998688697815
+  ],
+  "protocol": "v10.1 R_blend freeze",
+  "locked_into_source": true,
+  "locked_frozen_theta": [
+    0.8993,
+    0.3573,
+    0.9695,
+    0.0,
+    0.4895,
+    1.0,
+    0.0,
+    0.0,
+    0.277,
+    0.0,
+    0.1341,
+    0.095
+  ]
+}

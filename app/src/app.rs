@@ -949,7 +949,7 @@ impl ReelSynthApp {
             self.state.wt_quant_seam = QuantSeamMode::Opt;
             set_quant_seam_mode(QuantSeamMode::Opt);
             self.state.status =
-                "AI seam on — DenoiseOpt cycle repair (frozen θ)".into();
+                "AI seam on — DenoiseOpt v10 discontinuity-local heal (frozen θ)".into();
         } else if let Some(src) = self.ui_bank_pre_ai.take() {
             bank = src;
             // Header off → Adaptive; toolbar may have Soft/Off — don't clobber.

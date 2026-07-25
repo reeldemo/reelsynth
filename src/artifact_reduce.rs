@@ -34,7 +34,7 @@ pub enum PeriodizeAlgo {
     EnsembleV2,
     /// Final: ensemble v2 + light seam lowpass (3-tap) in fade zone.
     EnsembleV3,
-    /// Unsupervised fit (denoise+shape loss) — frozen θ, inference only.
+    /// Unsupervised DenoiseOpt (v10 R_blend freeze) — frozen θ, inference only.
     DenoiseOpt,
 }
 

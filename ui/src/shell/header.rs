@@ -298,8 +298,9 @@ pub(super) fn draw_header(
 
                         let ai_seam = button_toggle(ui, "AI seam", state.ai_seam_enabled)
                             .on_hover_text(
-                                "Cycle-local seam repair (DenoiseOpt) — closes wrap clicks while \
-                                 keeping mid-cycle shape. Toggle to A/B vs classical DualCosine bake.",
+                                "v10 discontinuity-local seam heal (DenoiseOpt / R_blend) — \
+                                 closes wrap clicks while keeping mid-cycle body. Toggle to A/B \
+                                 vs classical DualCosine bake.",
                             );
                         if ai_seam.clicked() {
                             state.ai_seam_enabled = !state.ai_seam_enabled;
