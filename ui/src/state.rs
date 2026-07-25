@@ -3,16 +3,17 @@ use std::collections::HashSet;
 use reelsynth::{Patch, ScopeLiveTaps, WavetableBank};
 
 use crate::compose::ComposeUi;
-use crate::fx_rack::{effect_slots_from_patch, EffectSlotUi};
-use crate::overtone_rack::OvertoneFilterSlotUi;
 use crate::filter_rack::FilterSlotUi;
+use crate::fx_rack::{effect_slots_from_patch, EffectSlotUi};
 use crate::mod_matrix::{default_mod_slots, ModSlotUi};
 use crate::oscillator_ui::{OscillatorUi, MIN_OSCILLATORS};
+use crate::overtone_rack::OvertoneFilterSlotUi;
+use crate::quant_interp::WtQuantInterp;
 use crate::scope_strip::ScopeStripState;
 use crate::wt::{
-    morph_amount_for_position, position_from_osc_ui, QuantSeamMode, WtCurveViewTransform, WtEditTool,
+    morph_amount_for_position, position_from_osc_ui, QuantSeamMode, WtCurveViewTransform,
+    WtEditTool,
 };
-use crate::quant_interp::WtQuantInterp;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum WtView3dMode {
@@ -151,10 +152,10 @@ pub struct UiState {
     pub wt_bank_name: String,
     pub wt_edit_tool: WtEditTool,
     pub wt_quant_interp: WtQuantInterp,
-    /// Wrap-seam bake after Quant rebuilds (Off / Soft / Adapt / DualCosine / Noise2Noise / ReelAI).
+    /// Wrap-seam bake for **Result heal** (header). Per-layer heal lives on each `WaveLayerUi.seam_mode`.
     pub wt_quant_seam: QuantSeamMode,
-    /// True when DualCosine / Noise2Noise / ReelAI is selected (snapshot full-bank bake).
-    /// Session-only (not in app settings / `.reelpreset`).
+    /// True when Result heal needs a snapshot full-bank bake.
+    /// Session-only for the Result path (not in app settings); layer modes persist in `.reelpreset`.
     pub ai_seam_enabled: bool,
     /// Artistic crackle 0..1 (0 = eliminate / clean default). Synced to patch.crackle.
     pub patch_crackle: f32,

@@ -27,6 +27,8 @@ pub struct WaveLayerUi {
     pub quant_interp: WtQuantInterp,
     /// Per-segment modes (`len = max(0, slot_count−1)`). Segment `i` is knob `i → i+1`.
     pub quant_segment_interps: Vec<WtQuantInterp>,
+    /// Per-layer wrap heal (independent of header Result heal).
+    pub seam_mode: crate::wt::QuantSeamMode,
 }
 
 impl Default for WaveLayerUi {
@@ -44,6 +46,7 @@ impl Default for WaveLayerUi {
             residual: false,
             quant_interp: WtQuantInterp::default(),
             quant_segment_interps: Vec::new(),
+            seam_mode: crate::wt::QuantSeamMode::Adaptive,
         }
     }
 }
@@ -103,6 +106,7 @@ impl WaveLayerUi {
                 .iter()
                 .map(|s| WtQuantInterp::from_patch_str(s))
                 .collect(),
+            seam_mode: crate::wt::QuantSeamMode::from_patch_str(&layer.seam_mode),
         }
     }
 
@@ -122,6 +126,7 @@ impl WaveLayerUi {
                 .iter()
                 .map(|m| m.to_patch_str().into())
                 .collect(),
+            seam_mode: self.seam_mode.to_patch_str().into(),
         }
     }
 
@@ -256,7 +261,11 @@ impl OscillatorUi {
             wave_slot: osc.wave_slot,
             wave_slot_fine: osc.wave_slot_fine,
             wave_slots: osc.wave_slots.clone(),
-            wave_layers: osc.wave_layers.iter().map(WaveLayerUi::from_patch).collect(),
+            wave_layers: osc
+                .wave_layers
+                .iter()
+                .map(WaveLayerUi::from_patch)
+                .collect(),
             stack_mode: osc.stack_mode.clone(),
         };
         out.ensure_layer_segment_interps();

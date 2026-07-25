@@ -1,8 +1,8 @@
 use egui::{Rect, Ui};
 use reelsynth::Patch;
 
-use super::*;
 use super::header::{sync_morph_from_active_tab, sync_osc_from_wt};
+use super::*;
 use crate::audit_registry::{record_region, AuditId};
 use crate::center_layout::compute_center_regions;
 use crate::layout::{embed_piano_in_center, ShellLayoutOptions, UiScale};
@@ -54,41 +54,41 @@ pub(super) fn draw_center(
 
         if scope_rect.is_positive() {
             region(ui, scope_rect, |ui| {
-            if let Some(ctx) = scope {
-                draw_scope_strip(
-                    ui,
-                    scope_rect,
-                    ScopeStripInput {
-                        patch: preview_patch,
-                        banks: ctx.banks,
-                        bank_for_osc: ctx.bank_for_osc,
-                        live: ctx.live,
-                        is_playing: ctx.is_playing,
-                        now_secs: ctx.now_secs,
-                        state: ctx.state,
-                    },
-                );
-            } else if let Some(b) = bank.as_deref() {
-                let bank_for_osc: &dyn Fn(usize) -> usize = &|_| 0;
-                let mut strip_state = ScopeStripState::default();
-                draw_scope_strip(
-                    ui,
-                    scope_rect,
-                    ScopeStripInput {
-                        patch: preview_patch,
-                        banks: std::slice::from_ref(b),
-                        bank_for_osc: &bank_for_osc,
-                        live: None,
-                        is_playing: false,
-                        now_secs: time,
-                        state: &mut strip_state,
-                    },
-                );
-            }
-            let used = ui.min_rect();
-            ui.ctx()
-                .data_mut(|d| d.insert_temp(center_scope_used_rect_id(), used));
-            record_region(ui.ctx(), AuditId::CenterScope, scope_rect, used);
+                if let Some(ctx) = scope {
+                    draw_scope_strip(
+                        ui,
+                        scope_rect,
+                        ScopeStripInput {
+                            patch: preview_patch,
+                            banks: ctx.banks,
+                            bank_for_osc: ctx.bank_for_osc,
+                            live: ctx.live,
+                            is_playing: ctx.is_playing,
+                            now_secs: ctx.now_secs,
+                            state: ctx.state,
+                        },
+                    );
+                } else if let Some(b) = bank.as_deref() {
+                    let bank_for_osc: &dyn Fn(usize) -> usize = &|_| 0;
+                    let mut strip_state = ScopeStripState::default();
+                    draw_scope_strip(
+                        ui,
+                        scope_rect,
+                        ScopeStripInput {
+                            patch: preview_patch,
+                            banks: std::slice::from_ref(b),
+                            bank_for_osc: &bank_for_osc,
+                            live: None,
+                            is_playing: false,
+                            now_secs: time,
+                            state: &mut strip_state,
+                        },
+                    );
+                }
+                let used = ui.min_rect();
+                ui.ctx()
+                    .data_mut(|d| d.insert_temp(center_scope_used_rect_id(), used));
+                record_region(ui.ctx(), AuditId::CenterScope, scope_rect, used);
             });
         }
 
@@ -97,23 +97,23 @@ pub(super) fn draw_center(
             && state.shell_mode != ShellMode::Design
         {
             region(ui, morph_rect, |ui| {
-            let morph = WtMorph {
-                frame_a: &mut state.wt_morph_a,
-                frame_b: &mut state.wt_morph_b,
-                amount: &mut state.wt_morph_amount,
-                position: &mut state.wt_position,
-                wave_quant,
-                wave_slots: &resolved_slots,
-            };
-            if morph.show(ui).changed {
-                sync_osc_from_wt(state, num_frames);
-                sync_morph_from_active_tab(state);
-                actions.params_changed = true;
-            }
-            let used = ui.min_rect().intersect(morph_rect);
-            ui.ctx()
-                .data_mut(|d| d.insert_temp(center_morph_used_rect_id(), used));
-            record_region(ui.ctx(), AuditId::CenterWtMorph, morph_rect, used);
+                let morph = WtMorph {
+                    frame_a: &mut state.wt_morph_a,
+                    frame_b: &mut state.wt_morph_b,
+                    amount: &mut state.wt_morph_amount,
+                    position: &mut state.wt_position,
+                    wave_quant,
+                    wave_slots: &resolved_slots,
+                };
+                if morph.show(ui).changed {
+                    sync_osc_from_wt(state, num_frames);
+                    sync_morph_from_active_tab(state);
+                    actions.params_changed = true;
+                }
+                let used = ui.min_rect().intersect(morph_rect);
+                ui.ctx()
+                    .data_mut(|d| d.insert_temp(center_morph_used_rect_id(), used));
+                record_region(ui.ctx(), AuditId::CenterWtMorph, morph_rect, used);
             });
         }
 
@@ -122,135 +122,134 @@ pub(super) fn draw_center(
             crate::wt::set_quant_seam_mode(state.wt_quant_seam);
             crate::wt::set_crackle_amount(state.patch_crackle);
             region(ui, views_rect, |ui| {
-            ui.set_width(views_rect.width());
-            ui.painter().rect_filled(views_rect, 8.0, Tokens::default().bg);
-            ui.horizontal(|ui| {
-                ui.spacing_mut().item_spacing.x = GRID_UNIT;
-                let idx = state.active_osc_index();
-                let col_w = ((ui.available_width() - GRID_UNIT * 2.0 - 4.0) / 3.0)
-                    .floor()
-                    .max(48.0);
+                ui.set_width(views_rect.width());
+                ui.painter()
+                    .rect_filled(views_rect, 8.0, Tokens::default().bg);
+                ui.horizontal(|ui| {
+                    ui.spacing_mut().item_spacing.x = GRID_UNIT;
+                    let idx = state.active_osc_index();
+                    let col_w = ((ui.available_width() - GRID_UNIT * 2.0 - 4.0) / 3.0)
+                        .floor()
+                        .max(48.0);
 
-                // Col 1 — Result
-                ui.allocate_ui_with_layout(
-                    egui::vec2(col_w, views_h),
-                    egui::Layout::top_down(egui::Align::Min),
-                    |ui| {
-                        let osc = &mut state.oscillators[idx];
-                        let wave_quant = osc.wave_quant;
-                        let view = WtViewResult {
-                            wt_position: &state.wt_position,
-                            bank: bank.as_deref_mut(),
-                            wave_layers: &mut osc.wave_layers,
-                            selected_layer_idx: &mut state.selected_layer_idx,
-                            stack_mode: &mut osc.stack_mode,
-                            wave_quant,
-                            wavetable_id: Some(bank_name.clone()),
-                            active_osc: idx,
-                            curve_view: &mut state.wt_curve_view,
-                        };
-                        let resp = view.show(ui);
-                        if resp.frame_edited {
-                            actions.frame_edited = true;
-                        }
-                        if let Some(hint) = resp.status_hint.as_deref() {
-                            state.status = hint.to_string();
-                        }
-                        if resp.stack_changed {
-                            sync_osc_from_wt(state, num_frames);
-                            sync_morph_from_active_tab(state);
-                            actions.params_changed = true;
-                        }
-                    },
-                );
+                    // Col 1 — Result
+                    ui.allocate_ui_with_layout(
+                        egui::vec2(col_w, views_h),
+                        egui::Layout::top_down(egui::Align::Min),
+                        |ui| {
+                            let osc = &mut state.oscillators[idx];
+                            let wave_quant = osc.wave_quant;
+                            let view = WtViewResult {
+                                wt_position: &state.wt_position,
+                                bank: bank.as_deref_mut(),
+                                wave_layers: &mut osc.wave_layers,
+                                selected_layer_idx: &mut state.selected_layer_idx,
+                                stack_mode: &mut osc.stack_mode,
+                                wave_quant,
+                                wavetable_id: Some(bank_name.clone()),
+                                active_osc: idx,
+                                curve_view: &mut state.wt_curve_view,
+                            };
+                            let resp = view.show(ui);
+                            if resp.frame_edited {
+                                actions.frame_edited = true;
+                            }
+                            if let Some(hint) = resp.status_hint.as_deref() {
+                                state.status = hint.to_string();
+                            }
+                            if resp.stack_changed {
+                                sync_osc_from_wt(state, num_frames);
+                                sync_morph_from_active_tab(state);
+                                actions.params_changed = true;
+                            }
+                        },
+                    );
 
-                // Col 2 — Layers (bank borrow released from col 1)
-                ui.allocate_ui_with_layout(
-                    egui::vec2(col_w, views_h),
-                    egui::Layout::top_down(egui::Align::Min),
-                    |ui| {
-                        let osc = &mut state.oscillators[idx];
-                        let stack_mode = osc.stack_mode.clone();
-                        let wave_quant = osc.wave_quant;
-                        let view_stack = WtView3dStack {
-                            layers: &mut osc.wave_layers,
-                            stack_mode: &stack_mode,
-                            bank: bank.as_deref_mut(),
-                            wt_pos_offset: 0.0,
-                            wt_position: &mut state.wt_position,
-                            selected_layer: &mut state.selected_layer_idx,
-                            view_mode: Some(&mut state.wt_view_3d_mode),
-                            show_mode_toggle: false,
-                            active_osc: idx,
-                            time: 0.0,
-                            wave_quant,
-                            curve_view: &mut state.wt_curve_view,
-                        };
-                        let stack_resp = view_stack.show(ui);
-                        if stack_resp.frame_edited {
-                            actions.frame_edited = true;
-                        }
-                        if let Some(hint) = stack_resp.status_hint.as_deref() {
-                            state.status = hint.to_string();
-                        }
-                        if stack_resp.layer_selected || stack_resp.wt_position_changed {
-                            sync_osc_from_wt(state, num_frames);
-                            sync_morph_from_active_tab(state);
-                            actions.params_changed = true;
-                        }
-                    },
-                );
+                    // Col 2 — Layers (bank borrow released from col 1)
+                    ui.allocate_ui_with_layout(
+                        egui::vec2(col_w, views_h),
+                        egui::Layout::top_down(egui::Align::Min),
+                        |ui| {
+                            let osc = &mut state.oscillators[idx];
+                            let stack_mode = osc.stack_mode.clone();
+                            let wave_quant = osc.wave_quant;
+                            let view_stack = WtView3dStack {
+                                layers: &mut osc.wave_layers,
+                                stack_mode: &stack_mode,
+                                bank: bank.as_deref_mut(),
+                                wt_pos_offset: 0.0,
+                                wt_position: &mut state.wt_position,
+                                selected_layer: &mut state.selected_layer_idx,
+                                view_mode: Some(&mut state.wt_view_3d_mode),
+                                show_mode_toggle: false,
+                                active_osc: idx,
+                                time: 0.0,
+                                wave_quant,
+                                curve_view: &mut state.wt_curve_view,
+                            };
+                            let stack_resp = view_stack.show(ui);
+                            if stack_resp.frame_edited {
+                                actions.frame_edited = true;
+                            }
+                            if let Some(hint) = stack_resp.status_hint.as_deref() {
+                                state.status = hint.to_string();
+                            }
+                            if stack_resp.layer_selected || stack_resp.wt_position_changed {
+                                sync_osc_from_wt(state, num_frames);
+                                sync_morph_from_active_tab(state);
+                                actions.params_changed = true;
+                            }
+                        },
+                    );
 
-                // Col 3 — Selected layer edit
-                ui.allocate_ui_with_layout(
-                    egui::vec2(col_w, views_h),
-                    egui::Layout::top_down(egui::Align::Min),
-                    |ui| {
-                        let osc = &mut state.oscillators[idx];
-                        let wave_quant = osc.wave_quant;
-                        let view_sel = WtSelectedLayerView {
-                            wt_position: &mut state.wt_position,
-                            bank: bank.as_deref_mut(),
-                            tool: &mut state.wt_edit_tool,
-                            wave_quant,
-                            quant_interp: &mut state.wt_quant_interp,
-                            selected_quant_slot: &mut state.selected_quant_slot,
-                            wave_slot: &mut osc.wave_slot,
-                            wave_slots: &mut osc.wave_slots,
-                            wave_layers: &mut osc.wave_layers,
-                            selected_layer_idx: &mut state.selected_layer_idx,
-                            shape_control_points: state.shape_control_points,
-                            analyze_dialog_open: Some(&mut state.analyze_dialog_open),
-                            curve_view: &mut state.wt_curve_view,
-                            quant_seam: &mut state.wt_quant_seam,
-                            ai_seam_enabled: &mut state.ai_seam_enabled,
-                            patch_crackle: &mut state.patch_crackle,
-                        };
-                        let sel_resp = view_sel.show(ui);
-                        if sel_resp.frame_edited {
-                            actions.frame_edited = true;
-                        }
-                        if sel_resp.seam_changed {
-                            actions.ai_seam_changed = true;
-                        }
-                        if let Some(hint) = sel_resp.status_hint.as_deref() {
-                            state.status = hint.to_string();
-                        }
-                        if sel_resp.stack_changed || sel_resp.analyze_requested {
-                            sync_osc_from_wt(state, num_frames);
-                            sync_morph_from_active_tab(state);
-                            actions.params_changed = true;
-                        }
-                        if sel_resp.params_changed {
-                            actions.params_changed = true;
-                        }
-                    },
-                );
-            });
-            let used = ui.min_rect().intersect(views_rect);
-            ui.ctx()
-                .data_mut(|d| d.insert_temp(center_views_used_rect_id(), used));
-            record_region(ui.ctx(), AuditId::CenterWtViews, views_rect, used);
+                    // Col 3 — Selected layer edit
+                    ui.allocate_ui_with_layout(
+                        egui::vec2(col_w, views_h),
+                        egui::Layout::top_down(egui::Align::Min),
+                        |ui| {
+                            let osc = &mut state.oscillators[idx];
+                            let wave_quant = osc.wave_quant;
+                            let view_sel = WtSelectedLayerView {
+                                wt_position: &mut state.wt_position,
+                                bank: bank.as_deref_mut(),
+                                tool: &mut state.wt_edit_tool,
+                                wave_quant,
+                                quant_interp: &mut state.wt_quant_interp,
+                                selected_quant_slot: &mut state.selected_quant_slot,
+                                wave_slot: &mut osc.wave_slot,
+                                wave_slots: &mut osc.wave_slots,
+                                wave_layers: &mut osc.wave_layers,
+                                selected_layer_idx: &mut state.selected_layer_idx,
+                                shape_control_points: state.shape_control_points,
+                                analyze_dialog_open: Some(&mut state.analyze_dialog_open),
+                                curve_view: &mut state.wt_curve_view,
+                                quant_seam: &mut state.wt_quant_seam,
+                                ai_seam_enabled: &mut state.ai_seam_enabled,
+                                patch_crackle: &mut state.patch_crackle,
+                            };
+                            let sel_resp = view_sel.show(ui);
+                            if sel_resp.frame_edited {
+                                actions.frame_edited = true;
+                            }
+                            // Layer heal already baked the frame; don't trigger Result bank rebake.
+                            if let Some(hint) = sel_resp.status_hint.as_deref() {
+                                state.status = hint.to_string();
+                            }
+                            if sel_resp.stack_changed || sel_resp.analyze_requested {
+                                sync_osc_from_wt(state, num_frames);
+                                sync_morph_from_active_tab(state);
+                                actions.params_changed = true;
+                            }
+                            if sel_resp.params_changed {
+                                actions.params_changed = true;
+                            }
+                        },
+                    );
+                });
+                let used = ui.min_rect().intersect(views_rect);
+                ui.ctx()
+                    .data_mut(|d| d.insert_temp(center_views_used_rect_id(), used));
+                record_region(ui.ctx(), AuditId::CenterWtViews, views_rect, used);
             });
         }
 
@@ -286,42 +285,45 @@ pub(super) fn draw_center(
 
         if strip_rect.is_positive() {
             region(ui, strip_rect, |ui| {
-            let idx = state.active_osc_index();
-            let osc = &mut state.oscillators[idx];
-            let strip = WtStrip {
-                position: &mut state.wt_position,
-                wave_quant: osc.wave_quant,
-                wave_slot: &mut osc.wave_slot,
-                wave_slot_fine: &mut osc.wave_slot_fine,
-                wave_slots: &resolved_slots,
-                bank: bank.as_deref(),
-                bank_name: Some(bank_name.as_str()),
-                visible_frames: 16,
-                edit_tool: state.wt_edit_tool,
-                wave_layers: &mut osc.wave_layers,
-                selected_layer_idx: &mut state.selected_layer_idx,
-                strip_mode: if state.shell_mode == ShellMode::Design {
-                    StripMode::Layers
-                } else {
-                    StripMode::Frames
-                },
-                show_layer_chips: true,
-            };
-            let strip_resp = strip.show(ui);
-            if strip_resp.changed {
-                sync_osc_from_wt(state, num_frames);
-                state.wt_morph_amount =
-                    morph_amount_for_position(state.wt_morph_a, state.wt_morph_b, state.wt_position);
-                sync_morph_from_active_tab(state);
-                actions.params_changed = true;
-            }
-            if strip_resp.params_changed {
-                actions.params_changed = true;
-            }
-            let used = ui.min_rect().intersect(strip_rect);
-            ui.ctx()
-                .data_mut(|d| d.insert_temp(center_strip_used_rect_id(), used));
-            record_region(ui.ctx(), AuditId::CenterWtStrip, strip_rect, used);
+                let idx = state.active_osc_index();
+                let osc = &mut state.oscillators[idx];
+                let strip = WtStrip {
+                    position: &mut state.wt_position,
+                    wave_quant: osc.wave_quant,
+                    wave_slot: &mut osc.wave_slot,
+                    wave_slot_fine: &mut osc.wave_slot_fine,
+                    wave_slots: &resolved_slots,
+                    bank: bank.as_deref(),
+                    bank_name: Some(bank_name.as_str()),
+                    visible_frames: 16,
+                    edit_tool: state.wt_edit_tool,
+                    wave_layers: &mut osc.wave_layers,
+                    selected_layer_idx: &mut state.selected_layer_idx,
+                    strip_mode: if state.shell_mode == ShellMode::Design {
+                        StripMode::Layers
+                    } else {
+                        StripMode::Frames
+                    },
+                    show_layer_chips: true,
+                };
+                let strip_resp = strip.show(ui);
+                if strip_resp.changed {
+                    sync_osc_from_wt(state, num_frames);
+                    state.wt_morph_amount = morph_amount_for_position(
+                        state.wt_morph_a,
+                        state.wt_morph_b,
+                        state.wt_position,
+                    );
+                    sync_morph_from_active_tab(state);
+                    actions.params_changed = true;
+                }
+                if strip_resp.params_changed {
+                    actions.params_changed = true;
+                }
+                let used = ui.min_rect().intersect(strip_rect);
+                ui.ctx()
+                    .data_mut(|d| d.insert_temp(center_strip_used_rect_id(), used));
+                record_region(ui.ctx(), AuditId::CenterWtStrip, strip_rect, used);
             });
         }
 
@@ -363,9 +365,7 @@ fn draw_analyze_dialog(
         .resizable(false)
         .show(ui.ctx(), |ui| {
             ui.label(format!("Decompose frame {frame_idx} into sine wave layers"));
-            ui.add(
-                egui::Slider::new(&mut state.analyze_harmonics, 1..=32).text("Harmonics"),
-            );
+            ui.add(egui::Slider::new(&mut state.analyze_harmonics, 1..=32).text("Harmonics"));
             ui.add(
                 egui::Slider::new(&mut state.analyze_min_mag, 0.001..=0.1)
                     .logarithmic(true)

@@ -101,11 +101,12 @@ Single-cycle wavetables loop forever. If the first and last samples disagree, yo
 
 | Control | Where | What it does |
 |---------|--------|--------------|
-| **ReelAI** (dropdown) | Header + Selected toolbar | Best product heal — keeps mid-cycle shape, closes the wrap (`DenoiseOpt` v10) |
-| **Noise2Noise** | Same dropdown | Embedded U-Net-lite baseline — useful A/B vs ReelAI |
-| **DualCosine** | Same dropdown | Classical periodize — fast, predictable |
-| **Fit ends** | Selected WT toolbar (near FFT) | One-shot DualCosine on **all** frames; leaves Seam mode unchanged |
-| Seam·Adapt / Soft / Off | Same dropdown | Light adaptive fade, fixed fade, or raw ends |
+| **Result·ReelAI** (etc.) | Header | Heals the **whole bank** / total Result path |
+| **Layer·…** | Selected toolbar | Heals **this layer’s frame only** — mix DualCosine / ReelAI / Off across layers in one osc |
+| **Noise2Noise** | Either dropdown | Embedded U-Net-lite baseline — useful A/B vs ReelAI |
+| **DualCosine** | Either dropdown | Classical periodize — fast, predictable |
+| **Fit ends** | Selected toolbar (near FFT) | One-shot DualCosine on the **selected layer frame** |
+| Soft / Adapt / Off | Either dropdown | Light fade, adaptive fade, or raw ends |
 
 **Typical flow after an import**
 

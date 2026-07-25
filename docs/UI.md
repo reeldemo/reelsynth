@@ -54,7 +54,9 @@ A default empty clip is auto-selected on the active track so you can draw immedi
 | **Save** | Write current patch as `.reelpreset` |
 | **Design** / **Compose** | Switch shell mode — sound design vs mini-DAW |
 | **WT** menu | Open/Save `.reelwt`, **factory wavetables** (applies bank to the Design wave stack — promotes a wavetable layer so sound matches the editor), Vital/WAV/Serum import |
-| **ReelAI** | Seam-heal dropdown (see [ReelAI seam heal](#reelai-seam-heal)) |
+| **Result heal** | Header dropdown (**Result·…**): Off / Soft / Adapt, DualCosine, Noise2Noise, or **ReelAI**. Bakes the **whole wavetable bank** (total/Result path) before playback. Session snapshot A/B. |
+| **Layer heal** | Selected toolbar (**Layer·…**): same methods, applied only to the **selected layer’s frame**. One oscillator can mix modes across layers (e.g. L1 DualCosine, L2 ReelAI). Persisted on each layer in `.reelpreset`. |
+| **Fit ends** | Selected toolbar one-shot DualCosine on the **selected layer frame** only. |
 | **Piano** | Show/hide on-screen keyboard |
 | **Key / Scale / Layout** | Performance input: root key, scale mode, piano vs scale-fold vs chord row. **Piano** layout is chromatic (black keys play); **Scale** folds/snaps to the scale |
 | **Oct − / +** | Persisted ±3-octave shift for hardware MIDI and the chromatic computer-keyboard play row; on-screen piano keys keep their labeled pitches |
@@ -66,27 +68,30 @@ A default empty clip is auto-selected on the active track so you can draw immedi
 
 ### ReelAI seam heal
 
-Wavetable frames must meet at the loop point (`sample[0] ≈ sample[last]`). A cliff there becomes a pitched click under sustain. **ReelAI** and friends fix that by **baking** every frame before you play — same idea as “make periodic” in other synths, with a stronger learned option.
+Wavetable frames must meet at the loop point (`sample[0] ≈ sample[last]`). A cliff there becomes a pitched click under sustain. ReelSynth heals with a **pre-playback bake** — two scopes:
+
+| Control | Scope |
+|---------|--------|
+| **Result·…** (header) | Whole bank / total Result path — DualCosine, Noise2Noise, or **ReelAI** |
+| **Layer·…** (Selected toolbar) | **This layer’s frame only** — so one oscillator can mix repairs (L1 DualCosine, L2 ReelAI, …) |
+| **Fit ends** | One-shot DualCosine on the **selected layer frame** |
 
 | Mode | Role |
 |------|------|
-| **Seam·Off** | Raw ends — max edit freedom, may click |
-| **Seam·Soft** | Fixed-width fade into the wrap |
-| **Seam·Adapt** | Fade only as much as the discontinuity needs (default Quant path) |
-| **DualCosine** | Classical DualCosine periodize (strong, predictable baseline) |
-| **Noise2Noise** | Embedded Noise2Noise U-Net-lite (paper comparator) |
-| **ReelAI** | Product AI — DenoiseOpt v10 discontinuity-local heal; preserves mid-cycle body |
-
-**Fit ends** (Selected toolbar, beside FFT) is a **one-shot** DualCosine bake of the whole bank. It does not change the Seam dropdown — use it when you want a permanent classical periodize and keep Quant Seam on Adapt/Off for editing.
+| **Off** | Raw ends — max edit freedom, may click |
+| **Soft** | Fixed-width fade into the wrap |
+| **Adapt** | Fade only as much as the discontinuity needs |
+| **DualCosine** | Classical DualCosine periodize |
+| **Noise2Noise** | Embedded Noise2Noise U-Net-lite |
+| **ReelAI** | Product AI — DenoiseOpt v10 discontinuity-local heal |
 
 **How bake works**
 
-- DualCosine / Noise2Noise / ReelAI take a snapshot of the bank, then rewrite all frames.
-- Switching back toward Off/Soft/Adapt can restore that snapshot (until you edit while a bake is active).
-- Not realtime DSP — no stream delay; rebake when you change mode or press Fit ends.
-- Session-only — save `.reelwt` if you want the healed frames on disk.
+- Result heal snapshots the bank then rewrites all frames (session A/B).
+- Layer heal rewrites only that layer’s frame; other layers keep their samples and their own `seam_mode` (saved in `.reelpreset`).
+- Not realtime DSP — no stream delay.
 
-**Honest limit:** healing is **per frame**. Live morph between frames or heavy layer overlays can still click; Fit ends / ReelAI again after the stack settles, or keep Overtone as a soft safety net on the master bus.
+**Honest limit:** live morph between frames can still click; re-run Result or Layer heal after the stack settles.
 
 Research write-up: [WHITEPAPER_DENOISE_OPT.md](WHITEPAPER_DENOISE_OPT.md) · [papers/denoise_opt/](papers/denoise_opt/).
 

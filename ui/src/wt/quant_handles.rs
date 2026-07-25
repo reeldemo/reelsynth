@@ -6,7 +6,7 @@
 
 use egui::{Color32, CursorIcon, Pos2, Rect, Sense, Ui};
 use reelsynth::WavetableBank;
-use reelsynth_ui_theme::{ACCENT_UI, Tokens};
+use reelsynth_ui_theme::{Tokens, ACCENT_UI};
 
 use crate::quant_interp::segment_mode;
 
@@ -127,7 +127,6 @@ pub struct QuantHandleEditor<'a> {
     /// Shared Design curve zoom / pan (identity = no zoom).
     pub view: WtCurveViewTransform,
 }
-
 
 pub struct QuantHandleResponse {
     pub frame_edited: bool,
@@ -296,10 +295,7 @@ impl QuantHandleEditor<'_> {
                 let _ = (focus, hovered_slot, poly);
                 painter.add(egui::Shape::line(
                     dense_pts,
-                    egui::Stroke::new(
-                        curve_w + 0.2,
-                        accent_ui.gamma_multiply(curve_mul.max(0.9)),
-                    ),
+                    egui::Stroke::new(curve_w + 0.2, accent_ui.gamma_multiply(curve_mul.max(0.9))),
                 ));
             }
         }
@@ -325,14 +321,7 @@ impl QuantHandleEditor<'_> {
             } else {
                 tokens.surface2
             };
-            paint_quant_knob(
-                &painter,
-                center,
-                visual,
-                fill,
-                accent_ui,
-                self.plot_rect,
-            );
+            paint_quant_knob(&painter, center, visual, fill, accent_ui, self.plot_rect);
 
             if visual.show_slot_guide {
                 let band_w = self.plot_rect.width() / slot_count as f32;
@@ -464,6 +453,47 @@ impl QuantSeamMode {
     pub fn is_ai_bake(self) -> bool {
         matches!(self, Self::Noise2Noise | Self::ReelAi)
     }
+
+    pub fn to_patch_str(self) -> &'static str {
+        match self {
+            Self::Off => "off",
+            Self::Soft => "soft",
+            Self::Adaptive => "adapt",
+            Self::DualCosine => "dual_cosine",
+            Self::Noise2Noise => "noise2noise",
+            Self::ReelAi => "reelai",
+        }
+    }
+
+    pub fn from_patch_str(s: &str) -> Self {
+        match s.trim().to_ascii_lowercase().as_str() {
+            "off" | "seam·off" | "seam-off" => Self::Off,
+            "soft" | "seam·soft" | "seam-soft" => Self::Soft,
+            "dual_cosine" | "dualcosine" | "dual-cosine" => Self::DualCosine,
+            "noise2noise" | "n2n" | "noise_2_noise" => Self::Noise2Noise,
+            "reelai" | "reel_ai" | "reel-ai" | "opt" | "denoise_opt" => Self::ReelAi,
+            _ => Self::Adaptive,
+        }
+    }
+
+    pub fn result_label(self) -> String {
+        format!("Result·{}", self.short_name())
+    }
+
+    pub fn layer_label(self) -> String {
+        format!("Layer·{}", self.short_name())
+    }
+
+    pub fn short_name(self) -> &'static str {
+        match self {
+            Self::Off => "Off",
+            Self::Soft => "Soft",
+            Self::Adaptive => "Adapt",
+            Self::DualCosine => "DualCos",
+            Self::Noise2Noise => "N2N",
+            Self::ReelAi => "ReelAI",
+        }
+    }
 }
 
 thread_local! {
@@ -583,9 +613,7 @@ pub fn periodize_quant_frame_with_mode(frame: &mut [f32], mode: QuantSeamMode) {
     use reelsynth::{periodize_cycle, SeamStyle};
     match mode {
         QuantSeamMode::Off => periodize_cycle(frame, 1.0, SeamStyle::Raw),
-        QuantSeamMode::Soft => {
-            periodize_cycle(frame, current_crackle_amount(), SeamStyle::Soft)
-        }
+        QuantSeamMode::Soft => periodize_cycle(frame, current_crackle_amount(), SeamStyle::Soft),
         QuantSeamMode::Adaptive => {
             periodize_cycle(frame, current_crackle_amount(), SeamStyle::Adaptive)
         }
@@ -610,7 +638,25 @@ pub fn periodize_quant_frame_with_mode(frame: &mut [f32], mode: QuantSeamMode) {
     }
 }
 
-/// Bake every frame in a bank with the given seam mode (header ReelAI dropdown / Quant path).
+/// Bake a single frame (per-layer heal). Leaves other frames untouched.
+pub fn bake_frame_seam(
+    bank: &mut reelsynth::WavetableBank,
+    frame_idx: usize,
+    mode: QuantSeamMode,
+) {
+    if frame_idx >= bank.num_frames {
+        return;
+    }
+    set_crackle_amount(current_crackle_amount());
+    periodize_quant_frame_with_mode(bank.frame_mut(frame_idx), mode);
+}
+
+/// Permanently close one frame's wrap with DualCosine (Selected **Fit ends**).
+pub fn bake_frame_periodic(bank: &mut reelsynth::WavetableBank, frame_idx: usize) {
+    bake_frame_seam(bank, frame_idx, QuantSeamMode::DualCosine);
+}
+
+/// Bake every frame in a bank with the given seam mode (header Result heal).
 pub fn bake_bank_seams(bank: &mut reelsynth::WavetableBank, mode: QuantSeamMode) {
     set_quant_seam_mode(mode);
     set_crackle_amount(current_crackle_amount());
@@ -744,13 +790,10 @@ fn lagrange_cubic(y0: f32, y1: f32, y2: f32, y3: f32, t: f32) -> f32 {
     y0 * l0 + y1 * l1 + y2 * l2 + y3 * l3
 }
 
-
 /// Control-point amplitudes at each quant slot phase (aligned with [`slot_x`]).
 pub fn quant_control_points(frame: &[f32], slot_count: usize) -> Vec<f32> {
     let n = slot_count.max(1);
-    (0..n)
-        .map(|i| sample_at_quant_phase(frame, i, n))
-        .collect()
+    (0..n).map(|i| sample_at_quant_phase(frame, i, n)).collect()
 }
 
 pub fn sample_at_quant_phase(frame: &[f32], slot: usize, slot_count: usize) -> f32 {
@@ -797,7 +840,10 @@ pub fn nearest_quant_handle(
     let mut best = None;
     let mut best_d = max_dist;
     for (i, &sample) in points.iter().enumerate() {
-        let center = Pos2::new(slot_x(i, n, plot), knob_y_on_curve(sample, display_scale, plot));
+        let center = Pos2::new(
+            slot_x(i, n, plot),
+            knob_y_on_curve(sample, display_scale, plot),
+        );
         let d = pos.distance(center);
         if d <= best_d {
             best_d = d;
@@ -920,7 +966,10 @@ mod tests {
             "scaled Y must differ from full-scale Y"
         );
         let recovered = sample_from_knob_y(y_scaled, scale, plot);
-        assert!((recovered - sample).abs() < 1e-3, "drag Y → sample via scale");
+        assert!(
+            (recovered - sample).abs() < 1e-3,
+            "drag Y → sample via scale"
+        );
     }
 
     /// After shaping a knob, re-sampled control points must stay on the
@@ -966,10 +1015,7 @@ mod tests {
         for sample in [-1.0_f32, -0.5, 0.0, 0.42, 1.0] {
             let y = sample_to_y(sample, plot);
             let back = y_to_sample(y, plot);
-            assert!(
-                (back - sample).abs() < 1e-4,
-                "roundtrip {sample} -> {back}"
-            );
+            assert!((back - sample).abs() < 1e-4, "roundtrip {sample} -> {back}");
         }
     }
 
@@ -1014,7 +1060,13 @@ mod tests {
         let mut bank = WavetableBank::factory_sine();
         let slot_count = 8;
         let before = sample_at_quant_phase(bank.frame(0), 3, slot_count);
-        apply_quant_slot_amplitude_uniform(bank.frame_mut(0), 3, slot_count, 0.85, WtQuantInterp::Hold);
+        apply_quant_slot_amplitude_uniform(
+            bank.frame_mut(0),
+            3,
+            slot_count,
+            0.85,
+            WtQuantInterp::Hold,
+        );
         let after = sample_at_quant_phase(bank.frame(0), 3, slot_count);
         assert!((after - before).abs() > 0.2);
         assert!((after - 0.85).abs() < 1e-3);
@@ -1026,7 +1078,10 @@ mod tests {
         let points = vec![-1.0, 1.0, -1.0, 1.0];
         resample_frame_from_quant_points_uniform(&mut frame, &points, WtQuantInterp::Linear);
         let mid = frame[frame.len() / 4];
-        assert!(mid.abs() < 0.95 && mid.abs() > 0.05, "mid should blend, got {mid}");
+        assert!(
+            mid.abs() < 0.95 && mid.abs() > 0.05,
+            "mid should blend, got {mid}"
+        );
     }
 
     #[test]
@@ -1057,8 +1112,14 @@ mod tests {
         let idle = quant_knob_visual(false, false);
         let hover = quant_knob_visual(true, false);
         let drag = quant_knob_visual(true, true);
-        assert!(hover.radius > idle.radius * 1.3, "hover must enlarge clearly");
-        assert!(drag.radius >= hover.radius, "drag at least as large as hover");
+        assert!(
+            hover.radius > idle.radius * 1.3,
+            "hover must enlarge clearly"
+        );
+        assert!(
+            drag.radius >= hover.radius,
+            "drag at least as large as hover"
+        );
         assert!(hover.glow_radius.is_some(), "hover needs outer glow ring");
         assert!(drag.glow_radius.is_some(), "drag needs outer glow ring");
         assert!(
@@ -1093,13 +1154,7 @@ mod tests {
         let n = 8usize;
         let init: Vec<f32> = (0..n).map(|i| -0.5 + i as f32 / (n - 1) as f32).collect();
         resample_frame_from_quant_points_uniform(&mut frame, &init, WtQuantInterp::Linear);
-        apply_quant_slot_amplitude_uniform(
-            &mut frame,
-            n - 1,
-            n,
-            0.75,
-            WtQuantInterp::Linear,
-        );
+        apply_quant_slot_amplitude_uniform(&mut frame, n - 1, n, 0.75, WtQuantInterp::Linear);
         let points = quant_control_points(&frame, n);
         assert!(
             (points[n - 1] - 0.75).abs() < 0.08,
@@ -1217,7 +1272,11 @@ mod tests {
             WtQuantInterp::Spline,
         ];
         resample_frame_from_quant_points(&mut mixed, &points, &segs, WtQuantInterp::Hold);
-        let diff: f32 = uniform.iter().zip(mixed.iter()).map(|(a, b)| (a - b).abs()).sum();
+        let diff: f32 = uniform
+            .iter()
+            .zip(mixed.iter())
+            .map(|(a, b)| (a - b).abs())
+            .sum();
         assert!(diff > 1.0);
     }
 
@@ -1245,6 +1304,34 @@ mod tests {
             let frame = bank.frame(f);
             let wrap = (frame[63] - frame[0]).abs();
             assert!(wrap < 1e-3, "frame {f} wrap after DualCosine bake: {wrap}");
+        }
+    }
+
+    #[test]
+    fn bake_frame_seam_leaves_other_frames_alone() {
+        let mut bank = reelsynth::WavetableBank::new(2, 64);
+        for i in 0..64 {
+            bank.frame_mut(0)[i] = -0.9 + 1.8 * (i as f32 / 63.0);
+            bank.frame_mut(1)[i] = -0.9 + 1.8 * (i as f32 / 63.0);
+        }
+        let before1: Vec<f32> = bank.frame(1).to_vec();
+        set_crackle_amount(0.0);
+        bake_frame_seam(&mut bank, 0, QuantSeamMode::DualCosine);
+        assert!((bank.frame(0)[63] - bank.frame(0)[0]).abs() < 1e-3);
+        assert_eq!(bank.frame(1), before1.as_slice());
+    }
+
+    #[test]
+    fn layer_seam_modes_roundtrip_patch_str() {
+        for mode in [
+            QuantSeamMode::Off,
+            QuantSeamMode::Soft,
+            QuantSeamMode::Adaptive,
+            QuantSeamMode::DualCosine,
+            QuantSeamMode::Noise2Noise,
+            QuantSeamMode::ReelAi,
+        ] {
+            assert_eq!(QuantSeamMode::from_patch_str(mode.to_patch_str()), mode);
         }
     }
 

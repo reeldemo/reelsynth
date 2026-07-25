@@ -120,11 +120,7 @@ impl WtToolbar {
 
         let painter = ui.painter_at(rect);
         painter.rect_filled(rect, RADIUS_SM, tokens.surface2);
-        painter.rect_stroke(
-            rect,
-            RADIUS_SM,
-            egui::Stroke::new(1.0_f32, tokens.border),
-        );
+        painter.rect_stroke(rect, RADIUS_SM, egui::Stroke::new(1.0_f32, tokens.border));
 
         region(ui, rect.shrink2(egui::vec2(4.0, 2.0)), |ui| {
             ui.set_clip_rect(rect);
@@ -193,7 +189,7 @@ impl WtToolbar {
                     if ui
                         .small_button("Fit ends")
                         .on_hover_text(
-                            "Force wrap continuity (fit ends) — DualCosine periodize on all frames",
+                            "Fit ends on this layer's frame — DualCosine periodize (single wave)",
                         )
                         .clicked()
                     {
@@ -263,14 +259,17 @@ impl WtToolbar {
                             }
                         }
                         if let Some(seam) = seam_mode {
-                            let combo = egui::ComboBox::from_id_salt("wt_quant_seam")
-                                .selected_text(seam.label())
-                                .width(COMBO_W + 8.0)
+                            let combo = egui::ComboBox::from_id_salt("wt_layer_seam")
+                                .selected_text(seam.layer_label())
+                                .width(COMBO_W + 16.0)
                                 .show_ui(ui, |ui| {
-                                    for (idx, &label) in QuantSeamMode::LABELS.iter().enumerate() {
+                                    for (idx, _) in QuantSeamMode::LABELS.iter().enumerate() {
                                         let mode = QuantSeamMode::from_index(idx);
                                         if ui
-                                            .selectable_label(seam.index() == idx, label)
+                                            .selectable_label(
+                                                seam.index() == idx,
+                                                mode.layer_label(),
+                                            )
                                             .on_hover_text(mode.tooltip())
                                             .clicked()
                                             && *seam != mode
@@ -281,7 +280,7 @@ impl WtToolbar {
                                     }
                                 });
                             combo.response.on_hover_text(
-                                "Wrap crackle — Off / Soft / Adapt, DualCosine, Noise2Noise, or ReelAI",
+                                "Layer heal — wrap repair for this wave only (other layers keep their own mode)",
                             );
                         }
                         if let Some(crackle) = crackle_amount {

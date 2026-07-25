@@ -44,6 +44,9 @@ pub struct WaveLayer {
     /// Per-segment interp modes (len = max(0, quant-1)).
     #[serde(default)]
     pub quant_segment_interps: Vec<String>,
+    /// Layer seam heal mode: off|soft|adapt|dual_cosine|noise2noise|reelai.
+    #[serde(default = "default_seam_mode")]
+    pub seam_mode: String,
 }
 
 impl Default for WaveLayer {
@@ -59,6 +62,7 @@ impl Default for WaveLayer {
             invert: false,
             quant_interp: default_quant_interp(),
             quant_segment_interps: Vec::new(),
+            seam_mode: default_seam_mode(),
         }
     }
 }
@@ -193,6 +197,9 @@ pub(crate) fn default_stack_mode() -> String {
 pub(crate) fn default_quant_interp() -> String {
     "hold".into()
 }
+pub(crate) fn default_seam_mode() -> String {
+    "adapt".into()
+}
 fn one() -> f32 {
     1.0
 }
@@ -302,7 +309,10 @@ pub fn filter_type_label(filter_type: &str) -> &'static str {
 
 /// Build the legacy dual-filter chain (Filter 1 → Filter 2).
 pub fn legacy_filter_slots(filter: &Filter, filter2: &Filter) -> Vec<FilterSlot> {
-    vec![FilterSlot::from_filter(filter), FilterSlot::from_filter(filter2)]
+    vec![
+        FilterSlot::from_filter(filter),
+        FilterSlot::from_filter(filter2),
+    ]
 }
 
 pub(crate) fn default_lp() -> String {
