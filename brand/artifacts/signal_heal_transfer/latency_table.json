@@ -1,0 +1,429 @@
+{
+  "finished_at": "20260725T071627Z",
+  "config": {
+    "batch": 64,
+    "warmup": 20,
+    "repeats": 100,
+    "device": "cpu",
+    "gpu_busy_hint": null,
+    "metric_timed": "forward + prolonged residual_score (same as wavetable benches)",
+    "n2n_policy": "wavetable n2n_corrupt_corrupt.pt zero-shot on L=256 domains; null if ckpt missing; no domain-trained N2N"
+  },
+  "table": {
+    "cwru_bearings": {
+      "no_bake": {
+        "ms_per_batch": 0.1864590001059696,
+        "ms_per_period": 0.002913421876655775,
+        "residual_live": 0.8679422736167908,
+        "n_params": 0,
+        "kind": "classical"
+      },
+      "dual_cosine": {
+        "ms_per_batch": 0.561514999717474,
+        "ms_per_period": 0.008773671870585531,
+        "residual_live": 0.7834904789924622,
+        "n_params": 0,
+        "kind": "classical"
+      },
+      "ours_hybrid_lstm": {
+        "ms_per_batch": 38.432521000504494,
+        "ms_per_period": 0.6005081406328827,
+        "residual_live": 0.8742991089820862,
+        "n_params": 223093,
+        "kind": "ours",
+        "champ_raw": 0.8872717916965485,
+        "iters_done": 850,
+        "partial": true,
+        "weights": "champ_cell.pt"
+      },
+      "n2n_corrupt_corrupt": {
+        "ms_per_batch": 3.853073999634944,
+        "ms_per_period": 0.060204281244296,
+        "residual_live": 0.21336127817630768,
+        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\n2n_seam_baselines\\n2n_corrupt_corrupt.pt",
+        "source": "wavetable_n2n_corrupt_corrupt_zero_shot",
+        "n_params": 53506,
+        "kind": "n2n"
+      }
+    },
+    "mfpt_bearings": {
+      "no_bake": {
+        "ms_per_batch": 0.13223899994045496,
+        "ms_per_period": 0.0020662343740696087,
+        "residual_live": 0.8784815073013306,
+        "n_params": 0,
+        "kind": "classical"
+      },
+      "dual_cosine": {
+        "ms_per_batch": 0.5776140000671148,
+        "ms_per_period": 0.00902521875104867,
+        "residual_live": 0.7662346363067627,
+        "n_params": 0,
+        "kind": "classical"
+      },
+      "ours_hybrid_lstm": {
+        "ms_per_batch": 40.249949999852106,
+        "ms_per_period": 0.6289054687476892,
+        "residual_live": 0.8849500417709351,
+        "n_params": 116826,
+        "kind": "ours",
+        "champ_raw": 0.8903567790985107,
+        "iters_done": 200,
+        "partial": false,
+        "weights": "champ_cell.pt"
+      },
+      "n2n_corrupt_corrupt": {
+        "ms_per_batch": 3.4823569998843595,
+        "ms_per_period": 0.05441182812319312,
+        "residual_live": 0.18645648658275604,
+        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\n2n_seam_baselines\\n2n_corrupt_corrupt.pt",
+        "source": "wavetable_n2n_corrupt_corrupt_zero_shot",
+        "n_params": 53506,
+        "kind": "n2n"
+      }
+    },
+    "mitbih_ecg": {
+      "no_bake": {
+        "ms_per_batch": 0.2162280003540218,
+        "ms_per_period": 0.0033785625055315904,
+        "residual_live": 0.6447737812995911,
+        "n_params": 0,
+        "kind": "classical"
+      },
+      "dual_cosine": {
+        "ms_per_batch": 0.7038789999205619,
+        "ms_per_period": 0.01099810937375878,
+        "residual_live": 0.20415443181991577,
+        "n_params": 0,
+        "kind": "classical"
+      },
+      "ours_hybrid_lstm": {
+        "ms_per_batch": 6.620447000022978,
+        "ms_per_period": 0.10344448437535902,
+        "residual_live": 0.8817200064659119,
+        "n_params": 308959,
+        "kind": "ours",
+        "champ_raw": 0.8832423090934753,
+        "iters_done": 250,
+        "partial": false,
+        "weights": "champ_cell.pt"
+      },
+      "n2n_corrupt_corrupt": {
+        "ms_per_batch": 3.862476999638602,
+        "ms_per_period": 0.06035120311935316,
+        "residual_live": 0.5426170825958252,
+        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\n2n_seam_baselines\\n2n_corrupt_corrupt.pt",
+        "source": "wavetable_n2n_corrupt_corrupt_zero_shot",
+        "n_params": 53506,
+        "kind": "n2n"
+      }
+    },
+    "ptbxl_ecg": {
+      "no_bake": {
+        "ms_per_batch": 0.19241900008637458,
+        "ms_per_period": 0.003006546876349603,
+        "residual_live": 0.559010922908783,
+        "n_params": 0,
+        "kind": "classical"
+      },
+      "dual_cosine": {
+        "ms_per_batch": 0.6032929994398728,
+        "ms_per_period": 0.009426453116248013,
+        "residual_live": 0.2588982880115509,
+        "n_params": 0,
+        "kind": "classical"
+      },
+      "ours_hybrid_lstm": {
+        "ms_per_batch": 6.815715000266209,
+        "ms_per_period": 0.10649554687915952,
+        "residual_live": 0.6401631832122803,
+        "n_params": 20362,
+        "kind": "ours",
+        "champ_raw": 0.6863193511962891,
+        "iters_done": 150,
+        "partial": false,
+        "weights": "champ_cell.pt"
+      },
+      "n2n_corrupt_corrupt": {
+        "ms_per_batch": 3.799278999795206,
+        "ms_per_period": 0.05936373437180009,
+        "residual_live": 0.507878303527832,
+        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\n2n_seam_baselines\\n2n_corrupt_corrupt.pt",
+        "source": "wavetable_n2n_corrupt_corrupt_zero_shot",
+        "n_params": 53506,
+        "kind": "n2n"
+      }
+    },
+    "synth_cnc_g01": {
+      "no_bake": {
+        "ms_per_batch": 0.28758400003425777,
+        "ms_per_period": 0.004493500000535278,
+        "residual_live": 0.4075140953063965,
+        "n_params": 0,
+        "kind": "classical"
+      },
+      "dual_cosine": {
+        "ms_per_batch": 0.6463269999949262,
+        "ms_per_period": 0.010098859374920721,
+        "residual_live": 0.41362863779067993,
+        "n_params": 0,
+        "kind": "classical"
+      },
+      "ours_hybrid_lstm": {
+        "ms_per_batch": 26.2464260001434,
+        "ms_per_period": 0.41010040625224065,
+        "residual_live": 0.4677596390247345,
+        "n_params": 26008,
+        "kind": "ours",
+        "champ_raw": 0.4677353501319885,
+        "iters_done": 150,
+        "partial": false,
+        "weights": "champ_cell.pt"
+      },
+      "n2n_corrupt_corrupt": {
+        "ms_per_batch": 3.1404759996803477,
+        "ms_per_period": 0.04906993749500543,
+        "residual_live": 0.47069787979125977,
+        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\n2n_seam_baselines\\n2n_corrupt_corrupt.pt",
+        "source": "wavetable_n2n_corrupt_corrupt_zero_shot",
+        "n_params": 53506,
+        "kind": "n2n"
+      }
+    },
+    "synth_pmu_cycle": {
+      "no_bake": {
+        "ms_per_batch": 0.19610100018326193,
+        "ms_per_period": 0.0030640781278634677,
+        "residual_live": 0.9540901184082031,
+        "n_params": 0,
+        "kind": "classical"
+      },
+      "dual_cosine": {
+        "ms_per_batch": 0.6258149998029694,
+        "ms_per_period": 0.009778359371921397,
+        "residual_live": 0.9387091398239136,
+        "n_params": 0,
+        "kind": "classical"
+      },
+      "ours_hybrid_lstm": {
+        "ms_per_batch": 1.6401899995980784,
+        "ms_per_period": 0.025627968743719975,
+        "residual_live": 0.9654329419136047,
+        "n_params": 32975,
+        "kind": "ours",
+        "champ_raw": 0.9750369191169739,
+        "iters_done": 150,
+        "partial": false,
+        "weights": "champ_cell.pt"
+      },
+      "n2n_corrupt_corrupt": {
+        "ms_per_batch": 3.161854000063613,
+        "ms_per_period": 0.049403968750993954,
+        "residual_live": 0.9562978148460388,
+        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\n2n_seam_baselines\\n2n_corrupt_corrupt.pt",
+        "source": "wavetable_n2n_corrupt_corrupt_zero_shot",
+        "n_params": 53506,
+        "kind": "n2n"
+      }
+    }
+  },
+  "per_dataset": {
+    "cwru_bearings": {
+      "meta": {
+        "domain": "bearings",
+        "files": [
+          "105.mat",
+          "169.mat",
+          "209.mat",
+          "97.mat"
+        ],
+        "n": 256,
+        "period_l": 256,
+        "wrap": "Per-rev windows from CWRU DE @12 kHz; ideal=cubic resample to L; engine=linear (bad-COT proxy) + DenoiseOpt-style wrap cliff+noise.",
+        "fs_hz": 12000.0,
+        "citation": "Case Western Reserve University Bearing Data Center",
+        "seed": 1902771841
+      },
+      "n_cycles": 256
+    },
+    "mfpt_bearings": {
+      "meta": {
+        "domain": "bearings",
+        "n": 128,
+        "period_l": 256,
+        "wrap": "MFPT shaft-rate periods; cubic ideal vs linear+cliff engine.",
+        "citation": "MFPT Fault Data Sets (Society for Machinery Failure Prevention Technology)",
+        "seed": 1902771841,
+        "label": "classical_board_plus_bad_cot \u2014 not a published deep SOTA reimplementation"
+      },
+      "n_cycles": 128
+    },
+    "mitbih_ecg": {
+      "meta": {
+        "domain": "ecg",
+        "records": [
+          "100",
+          "101",
+          "103",
+          "105",
+          "112",
+          "113",
+          "115",
+          "117",
+          "121",
+          "123"
+        ],
+        "n": 256,
+        "period_l": 256,
+        "wrap": "R\u2013R normal beats resampled to L; ideal=local mean template with mild endpoint equalize (SBMM-lite classical); engine=single beat + wrap cliff.",
+        "fs_hz": 360.0,
+        "citation": "MIT-BIH Arrhythmia Database (PhysioNet, ODC-By 1.0)",
+        "seed": 1902771841,
+        "baseline_note": "ECG baselines are classical board + beat-average / spline join \u2014 not Cycle-GAN / BeatDiff SOTA (those need trained weights)."
+      },
+      "n_cycles": 256
+    },
+    "ptbxl_ecg": {
+      "meta": {
+        "domain": "ecg",
+        "records": [
+          "00001_hr",
+          "00002_hr",
+          "00003_hr",
+          "00004_hr",
+          "00005_hr",
+          "00006_hr",
+          "00007_hr",
+          "00008_hr",
+          "00009_hr",
+          "00010_hr",
+          "00011_hr",
+          "00012_hr",
+          "00013_hr",
+          "00014_hr",
+          "00015_hr",
+          "00016_hr",
+          "00017_hr",
+          "00018_hr",
+          "00019_hr",
+          "00020_hr",
+          "00021_hr",
+          "00022_hr",
+          "00023_hr",
+          "00024_hr",
+          "00025_hr",
+          "00026_hr",
+          "00027_hr",
+          "00028_hr",
+          "00029_hr",
+          "00030_hr",
+          "00031_hr",
+          "00032_hr",
+          "00033_hr",
+          "00034_hr",
+          "00035_hr",
+          "00036_hr",
+          "00037_hr",
+          "00038_hr",
+          "00039_hr",
+          "00040_hr",
+          "00041_hr",
+          "00042_hr",
+          "00043_hr",
+          "00044_hr",
+          "00045_hr",
+          "00046_hr",
+          "00047_hr",
+          "00048_hr",
+          "00049_hr",
+          "00050_hr",
+          "00051_hr",
+          "00052_hr",
+          "00053_hr",
+          "00054_hr",
+          "00055_hr",
+          "00056_hr",
+          "00057_hr",
+          "00058_hr",
+          "00059_hr",
+          "00060_hr",
+          "00061_hr",
+          "00062_hr",
+          "00063_hr",
+          "00064_hr",
+          "00065_hr",
+          "00066_hr",
+          "00067_hr",
+          "00068_hr",
+          "00069_hr",
+          "00070_hr",
+          "00071_hr",
+          "00072_hr",
+          "00073_hr",
+          "00074_hr",
+          "00075_hr",
+          "00076_hr",
+          "00077_hr",
+          "00078_hr",
+          "00079_hr",
+          "00080_hr",
+          "00081_hr",
+          "00082_hr",
+          "00083_hr",
+          "00084_hr",
+          "00085_hr",
+          "00086_hr",
+          "00087_hr",
+          "00088_hr",
+          "00089_hr",
+          "00090_hr",
+          "00091_hr",
+          "00092_hr",
+          "00093_hr",
+          "00094_hr"
+        ],
+        "n_records_files": 94,
+        "n_beats_pool": 1035,
+        "n": 256,
+        "period_l": 256,
+        "wrap": "PTB-XL records500 (*_hr, 500 Hz) lead-I R\u2013R windows resampled to L; ideal=local mean template + mild endpoint equalize; engine=beat+cliff.",
+        "fs_hz": 500.0,
+        "citation": "PTB-XL (PhysioNet, CC BY 4.0)",
+        "seed": 1902771841,
+        "subset": "records500 (*_hr, 500 Hz)",
+        "baseline_note": "Classical board + SBMM-lite / spline only. Cycle-GAN / BeatDiff not executed."
+      },
+      "n_cycles": 256
+    },
+    "synth_cnc_g01": {
+      "meta": {
+        "domain": "cnc",
+        "n": 256,
+        "period_l": 256,
+        "wrap": "Synthetic closed G01 contour residual: ideal=wide G2-ish corner blend; engine=sharp corners + DenoiseOpt wrap cliff. KIT CNC real data not fetched.",
+        "citation": "Synthetic CAD proxy per SIGNAL_HEALING_DATASETS.md CNC paragraph",
+        "seed": 1902771841,
+        "label": "synthetic_pilot \u2014 not KIT multimodal CNC recordings"
+      },
+      "n_cycles": 256
+    },
+    "synth_pmu_cycle": {
+      "meta": {
+        "domain": "power",
+        "n": 256,
+        "period_l": 256,
+        "wrap": "Synthetic 1-cycle voltage with harmonics; ideal=clean AC; engine=wrap cliff (+ optional notch). IEEE 39-bus PMU OA not fetched.",
+        "citation": "Synthetic IEEE 1159 / C37.118-style cycle proxy",
+        "seed": 1902771841,
+        "label": "synthetic_pilot \u2014 not DataPort PMU recordings"
+      },
+      "n_cycles": 256
+    }
+  },
+  "method_order": [
+    "no_bake",
+    "dual_cosine",
+    "ours_hybrid_lstm",
+    "n2n_corrupt_corrupt"
+  ]
+}
