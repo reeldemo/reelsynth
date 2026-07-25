@@ -2,7 +2,8 @@
 """Domain adapters: build (ideal, cracked) period batches for wrap/seam transfer.
 
 Period length is fixed to overnight SeamCell ``N=256``.
-Residual metric: same prolonged ``R`` as DenoiseOpt (``overnight_gpu_rl_arch.residual_score``).
+Residual metric: discontinuity-local ``R_seam`` (``overnight_gpu_rl_arch.residual_score_seam``);
+search objective ``J = R_seam - λ·latency_norm`` (v10). Whole-curve ``residual_score`` is debug-only.
 """
 from __future__ import annotations
 
@@ -202,7 +203,7 @@ def build_cwru(
 
 def build_mfpt(
     *,
-    n_periods: int = 128,
+    n_periods: int = 256,
     period_l: int = PERIOD_L,
     seed: int = SEED,
     raw_dir: Path | None = None,
@@ -402,28 +403,43 @@ def build_ptbxl(
     period_l: int = PERIOD_L,
     seed: int = SEED,
     raw_dir: Path | None = None,
+    prefer_hz: int = 500,
 ) -> DatasetBundle | None:
-    """PTB-XL records100 (100 Hz) lead-I beat windows; classical board only."""
+    """PTB-XL lead-I beat windows. Prefer records500 (500 Hz `_hr`); fall back to `_lr`."""
     raw_dir = raw_dir or (RAW / "ptbxl")
     try:
         import wfdb
     except ImportError:
         return None
-    heas = sorted(raw_dir.rglob("*_lr.hea")) + sorted(raw_dir.rglob("*_hr.hea"))
-    if not heas:
+    hr = sorted(raw_dir.rglob("*_hr.hea"))
+    lr = sorted(raw_dir.rglob("*_lr.hea"))
+    if prefer_hz >= 500 and hr:
+        heas = hr
+        subset = "records500 (*_hr, 500 Hz)"
+        default_fs = 500.0
+    elif lr:
+        heas = lr
+        subset = "records100 (*_lr, 100 Hz) fallback"
+        default_fs = 100.0
+    elif hr:
+        heas = hr
+        subset = "records500 (*_hr, 500 Hz)"
+        default_fs = 500.0
+    else:
         return None
     rng = np.random.default_rng(seed + 23)
     beats: list[np.ndarray] = []
     used: list[str] = []
+    fs_seen: list[float] = []
     for hea in heas:
         rec = hea.with_suffix("")  # path without .hea
         try:
             sig, fields = wfdb.rdsamp(str(rec))
         except Exception:
             continue
-        fs = float(fields.get("fs", 100.0))
+        fs = float(fields.get("fs", default_fs))
+        fs_seen.append(fs)
         x = np.asarray(sig[:, 0], dtype=np.float64)
-        # Simple peak pick on z-scored lead (no WFDB annotations in records100 subset).
         xz = _zscore(x)
         thr = 0.55 * float(np.max(xz))
         min_dist = max(12, int(0.28 * fs))
@@ -441,7 +457,7 @@ def build_ptbxl(
                 continue
             beats.append(_zscore(_resample_1d(x[a:b], period_l, kind="cubic")))
         used.append(hea.stem)
-        if len(beats) >= n_periods * 3:
+        if len(beats) >= n_periods * 4:
             break
     if len(beats) < 32:
         return None
@@ -463,6 +479,7 @@ def build_ptbxl(
         eng = _inject_cliff(beats_arr[int(i)], rng)
         ideals.append(_zscore(ideal))
         engines.append(eng)
+    fs_meta = float(np.median(fs_seen)) if fs_seen else default_fs
     return DatasetBundle(
         name="ptbxl_ecg",
         ideal=torch.from_numpy(np.stack(ideals, 0)),
@@ -470,16 +487,18 @@ def build_ptbxl(
         meta={
             "domain": "ecg",
             "records": used,
+            "n_records_files": len(used),
+            "n_beats_pool": int(beats_arr.shape[0]),
             "n": len(ideals),
             "period_l": period_l,
             "wrap": (
-                "PTB-XL records100 (100 Hz) lead-I R–R windows resampled to L; "
+                f"PTB-XL {subset} lead-I R–R windows resampled to L; "
                 "ideal=local mean template + mild endpoint equalize; engine=beat+cliff."
             ),
-            "fs_hz": 100.0,
-            "citation": "PTB-XL (PhysioNet, CC BY 4.0) — low-res subset pilot, not full 500 Hz corpus",
+            "fs_hz": fs_meta,
+            "citation": "PTB-XL (PhysioNet, CC BY 4.0)",
             "seed": seed,
-            "subset": "records100/00000 (~12 records)",
+            "subset": subset,
             "baseline_note": (
                 "Classical board + SBMM-lite / spline only. Cycle-GAN / BeatDiff not executed."
             ),
@@ -632,7 +651,7 @@ def ensure_bundles(
     out: dict[str, DatasetBundle | None] = {}
     builders = {
         "cwru_bearings": lambda: build_cwru(n_periods=n_periods),
-        "mfpt_bearings": lambda: build_mfpt(n_periods=min(128, n_periods)),
+        "mfpt_bearings": lambda: build_mfpt(n_periods=n_periods),
         "mitbih_ecg": lambda: build_mitbih(n_periods=n_periods),
         "ptbxl_ecg": lambda: build_ptbxl(n_periods=n_periods),
         "synth_cnc_g01": lambda: build_synth_cnc(n_periods=n_periods),

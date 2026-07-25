@@ -25,6 +25,7 @@ BLOCKS = [
     "gated",
     "bottleneck",
     "unet",
+    "n2n_unet",  # SeamN2N-parity scale/topology (not TinyUNet1D)
     "conv1d",
     "dilated",
     "attn",
@@ -144,6 +145,65 @@ class DenseBlock(nn.Module):
             feats.append(y)
             h = torch.cat(feats, dim=-1)
         return self.proj(h)
+
+
+class SeamN2NParity(nn.Module):
+    """SeamN2N-scale 1D U-Net (~53k params at L=256). Not TinyUNet1D.
+
+    Mirrors ``baselines.n2n_seam.SeamN2N`` encoder/mid/decoder + wet residual so
+    search can discover nets that compete with the frozen N2N baseline on J.
+    ``width``/``depth``/``act`` are accepted for NAS API compatibility but the
+    topology stays at SeamN2N capacity (channels=32, mid=8, GELU).
+    """
+
+    def __init__(
+        self,
+        length: int,
+        width: int = 32,
+        act: str = "gelu",
+        depth: int = 3,
+        *,
+        channels: int = 32,
+        mid_channels: int = 8,
+    ):
+        super().__init__()
+        del length, width, act, depth  # fixed SeamN2N topology
+        c = int(channels)
+        mc = int(mid_channels)
+        self.enc1 = nn.Sequential(
+            nn.Conv1d(1, c, 5, padding=2),
+            nn.GELU(),
+            nn.Conv1d(c, c, 5, padding=2),
+            nn.GELU(),
+        )
+        self.down = nn.Conv1d(c, c * 2, 4, stride=2, padding=1)
+        self.mid = nn.Sequential(
+            nn.Conv1d(c * 2, c * 2, 3, padding=1),
+            nn.GELU(),
+            nn.Conv1d(c * 2, c * 2, 3, padding=1),
+            nn.GELU(),
+        )
+        self.up = nn.ConvTranspose1d(c * 2, c, 4, stride=2, padding=1)
+        self.dec = nn.Sequential(
+            nn.Conv1d(c * 2, c, 3, padding=1),
+            nn.GELU(),
+            nn.Conv1d(c, mc, 3, padding=1),
+            nn.GELU(),
+            nn.Conv1d(mc, 1, 3, padding=1),
+        )
+        self.wet = nn.Parameter(torch.tensor(0.85))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        h = x.unsqueeze(1)
+        e = self.enc1(h)
+        z = self.down(e)
+        z = self.mid(z)
+        u = self.up(z)
+        if u.shape[-1] != e.shape[-1]:
+            u = F.interpolate(u, size=e.shape[-1], mode="linear", align_corners=False)
+        d = self.dec(torch.cat([u, e], dim=1)).squeeze(1)
+        w = self.wet.clamp(0.0, 1.0)
+        return x * (1.0 - w) + d * w
 
 
 class TinyUNet1D(nn.Module):
@@ -471,6 +531,8 @@ def _make_block(name: str, length: int, w: int, d: int, act: str) -> nn.Module:
         return TinyMLP(length, w, d, act)
     if name == "unet":
         return TinyUNet1D(length, w, act, depth=d)
+    if name == "n2n_unet":
+        return SeamN2NParity(length, w, act, depth=d)
     if name == "conv1d":
         return Conv1dStack(length, w, d, act, dilation=False)
     if name == "dilated":
@@ -606,6 +668,7 @@ def random_block_graph(
         prefer = [
             b
             for b in (
+                "n2n_unet",
                 "unet",
                 "attn",
                 "lstm",

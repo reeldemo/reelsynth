@@ -33,7 +33,6 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 import overnight_gpu_rl_arch as og  # noqa: E402
 from denoise_arch_blocks import BLOCKS, CELL_KINDS  # noqa: E402
-from denoise_meta_evo import depth_mixture_bonus  # noqa: E402
 from signal_heal.baselines_domain import (  # noqa: E402
     BASELINE_LABELS,
     domain_baselines,
@@ -74,31 +73,20 @@ def evaluate(
     fit_steps_default: int,
     batch_default: int,
 ) -> tuple[float, float, og.SeamCell]:
-    cell = og.SeamCell(cfg).to(device)
-    fit_steps = int(hp.fit_steps or fit_steps_default)
-    batch = int(hp.batch or batch_default)
-    r_fit, _ = og.fit_cell(
-        cell,
-        cfg.ops,
+    """Fit + R_seam + latency J; return (r_seam, j_scored, cell)."""
+    r_seam, _j, j_scored, t_ms, cell = og.evaluate_candidate(
+        cfg,
+        hp,
         device,
-        steps=fit_steps,
-        batch=batch,
-        lr=hp.lr,
-        adv_coef=hp.adv_coef if cfg.use_adv_aux else 0.0,
+        baseline=baseline,
+        fit_steps_default=fit_steps_default,
+        batch_default=batch_default,
     )
-    r_eval = og.eval_cell(cell, cfg.ops, device, batch=max(32, batch))
-    residual_raw = og.finite_scalar(0.5 * r_fit + 0.5 * r_eval, 0.0)
-    dmb = og.finite_scalar(
-        depth_mixture_bonus(
-            residual_raw,
-            baseline,
-            cfg.depth,
-            len(cfg.blocks),
-            cfg.moe_mode,
-        ),
-        0.0,
-    )
-    return residual_raw, residual_raw + dmb, cell
+    # Stash for history/checkpoint writers in this module.
+    evaluate.last_t_ms = float(t_ms)  # type: ignore[attr-defined]
+    evaluate.last_r_seam = float(r_seam)  # type: ignore[attr-defined]
+    evaluate.last_j = float(_j)  # type: ignore[attr-defined]
+    return r_seam, j_scored, cell
 
 
 @torch.no_grad()
@@ -108,7 +96,7 @@ def score_method(
     fn,
 ) -> float:
     out = fn(eng)
-    return float(og.residual_score(ideal, out).mean().item())
+    return float(og.residual_score_seam(ideal, out).mean().item())
 
 
 def run_hybrid_lstm_domain(
@@ -139,10 +127,10 @@ def run_hybrid_lstm_domain(
     if device.type == "cuda":
         torch.cuda.manual_seed_all(seed)
 
-    # Classical DualCosine baseline on domain holdout
+    # Classical DualCosine baseline on domain holdout (v10: R_seam)
     hold_i, hold_e = batcher.holdout(64)
-    baseline = float(og.residual_score(hold_i, og.dual_cosine_blend(hold_e)).mean().item())
-    nobake_ref = float(og.residual_score(hold_i, hold_e).mean().item())
+    baseline = float(og.residual_score_seam(hold_i, og.dual_cosine_blend(hold_e)).mean().item())
+    nobake_ref = float(og.residual_score_seam(hold_i, hold_e).mean().item())
 
     policy = og.ActorCritic().to(device)
     policy_opt = torch.optim.Adam(policy.parameters(), lr=3e-4)
@@ -167,6 +155,8 @@ def run_hybrid_lstm_domain(
 
     champ_r = -1.0
     champ_raw = -1.0
+    champ_t_ms = float("nan")
+    champ_j = -1.0
     champ_cfg: og.ArchConfig | None = None
     champ_hp: og.HyperParams | None = None
     champ_cell_sd: dict[str, Any] | None = None
@@ -188,7 +178,8 @@ def run_hybrid_lstm_domain(
 
     log(
         f"hybrid_lstm domain start iters={iters} seed={seed} baseline_dual={baseline:.4f} "
-        f"nobake={nobake_ref:.4f} n_cycles={batcher.n} L={batcher.l}"
+        f"nobake={nobake_ref:.4f} n_cycles={batcher.n} L={batcher.l} "
+        f"metric=r_seam objective=J"
     )
 
     try:
@@ -293,12 +284,14 @@ def run_hybrid_lstm_domain(
                 ind.cfg, ind.hp, ind.score = trial_cfg, trial_hp, r
 
             improved = False
-            if r_raw > champ_raw:
+            if r > champ_r:
                 champ_raw = r_raw
                 champ_r = r
                 champ_cfg = trial_cfg
                 champ_hp = trial_hp
                 champ_cell_sd = {k: v.detach().cpu().clone() for k, v in cell.state_dict().items()}
+                champ_t_ms = float(getattr(evaluate, "last_t_ms", float("nan")))
+                champ_j = float(getattr(evaluate, "last_j", r))
                 iters_since_improve = 0
                 improved = True
             else:
@@ -314,30 +307,47 @@ def run_hybrid_lstm_domain(
                 "branch": branch,
                 "proposal": proposal,
                 "r_raw": r_raw,
+                "r_seam": r_raw,
                 "r": r,
+                "j": float(getattr(evaluate, "last_j", r)),
+                "t_ms": float(getattr(evaluate, "last_t_ms", float("nan"))),
                 "champ_raw": champ_raw,
+                "champ_r": champ_r,
                 "wall_s": time.time() - t0,
+                "primary_metric": "r_seam",
+                "search_objective": "J=R_seam-lambda*latency_norm",
             }
             with hist_path.open("a", encoding="utf-8") as f:
                 f.write(json.dumps(row, separators=(",", ":")) + "\n")
 
-            if it % 10 == 0 or improved or it == 1:
+            if it % 50 == 0 or it == 1 or it == iters:
                 log(
-                    f"it={it}/{iters} branch={branch} R={r_raw:.4f} champ={champ_raw:.4f} "
+                    f"it={it}/{iters} branch={branch} R_seam={r_raw:.4f} "
+                    f"t_ms={getattr(evaluate, 'last_t_ms', float('nan')):.3f} "
+                    f"J={getattr(evaluate, 'last_j', r):.4f} best_J={champ_r:.4f} "
                     f"dR_vs_Dual={champ_raw - baseline:+.4f}"
                 )
+            elif improved:
+                # Quiet: improvements only to history.jsonl; avoid notify spam on "champ"
+                pass
 
             if it % ckpt_every == 0 or it == iters:
                 payload = {
                     "it": it,
                     "champ_raw": champ_raw,
                     "champ_r": champ_r,
+                    "champ_r_seam": champ_raw,
+                    "champ_j": champ_j if champ_j >= 0 else champ_r,
+                    "champ_t_ms": champ_t_ms,
+                    "lambda_latency": og.LAMBDA_LATENCY,
                     "champ_arch": champ_cfg.to_dict() if champ_cfg else None,
                     "champ_hp": champ_hp.to_dict() if champ_hp else None,
                     "baseline_dual_cosine": baseline,
                     "nobake": nobake_ref,
                     "branch_best": branch_best,
                     "wall_s": time.time() - t0,
+                    "primary_metric": "r_seam",
+                    "search_objective": "J=R_seam-lambda*latency_norm",
                 }
                 try:
                     ckpt_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
@@ -349,6 +359,9 @@ def run_hybrid_lstm_domain(
                         "seed": seed,
                         "champ_raw": champ_raw,
                         "champ_r": champ_r,
+                        "champ_r_seam": champ_raw,
+                        "champ_j": champ_j if champ_j >= 0 else champ_r,
+                        "champ_t_ms": champ_t_ms,
                         "baseline_dual_cosine": baseline,
                         "nobake": nobake_ref,
                         "delta_r_vs_dual_cosine": champ_raw - baseline,
@@ -359,8 +372,8 @@ def run_hybrid_lstm_domain(
                         "finished_at": utc_now() if it >= iters else None,
                         "partial": it < iters,
                         "metric": (
-                            "prolonged residual R = clamp(1 - rms(tile(out)-tile(ideal)) / "
-                            "rms(tile(ideal)), 0, 1); same as overnight_gpu_rl_arch.residual_score"
+                            "v10 R_seam = discontinuity-local prolonged residual on SEAM_W wrap "
+                            "neighborhoods; search objective J = R_seam - λ·latency_norm"
                         ),
                     }
                     (out_dir / "summary.json").write_text(json.dumps(mid, indent=2), encoding="utf-8")
@@ -379,6 +392,10 @@ def run_hybrid_lstm_domain(
         "seed": seed,
         "champ_raw": champ_raw,
         "champ_r": champ_r,
+        "champ_r_seam": champ_raw,
+        "champ_j": champ_j if champ_j >= 0 else champ_r,
+        "champ_t_ms": champ_t_ms,
+        "lambda_latency": og.LAMBDA_LATENCY,
         "baseline_dual_cosine": baseline,
         "nobake": nobake_ref,
         "delta_r_vs_dual_cosine": champ_raw - baseline,
@@ -389,12 +406,14 @@ def run_hybrid_lstm_domain(
         "finished_at": utc_now(),
         "partial": False,
         "metric": (
-            "prolonged residual R = clamp(1 - rms(tile(out)-tile(ideal)) / rms(tile(ideal)), 0, 1); "
-            "same as overnight_gpu_rl_arch.residual_score; periods=PROLONG"
+            "v10 R_seam on SEAM_W wrap neighborhoods after tiling; "
+            "search objective J = R_seam - λ·latency_norm (λ=0.02)"
         ),
+        "primary_metric": "r_seam",
+        "search_objective": "J=R_seam-lambda*latency_norm",
     }
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
-    log(f"done champ_raw={champ_raw:.4f} wall_s={summary['wall_s']:.1f}")
+    log(f"done champ_r_seam={champ_raw:.4f} champ_j={champ_r:.4f} wall_s={summary['wall_s']:.1f}")
     return summary
 
 
@@ -423,7 +442,7 @@ def refit_and_score(
         )
         cell.eval()
         ideal, eng = batcher.holdout(96)
-        r = float(og.residual_score(ideal, og.apply_ops(eng, cell, cfg.ops)).mean().item())
+        r = float(og.residual_score_seam(ideal, og.apply_ops(eng, cell, cfg.ops)).mean().item())
     finally:
         og.make_batch = orig
     return r, cell, cfg

@@ -35,7 +35,6 @@ import torch.nn as nn
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import overnight_gpu_rl_arch as og  # noqa: E402
 from denoise_arch_blocks import BLOCKS, CELL_KINDS, MAX_GRAPH_LEN, MAX_SEARCH_DEPTH, MAX_WIDTH  # noqa: E402
-from denoise_meta_evo import depth_mixture_bonus  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 META_ROOT = ROOT.parent / "denoise-opt-meta"
@@ -112,6 +111,29 @@ def maybe_inject_recurrent(cfg: og.ArchConfig, rng: random.Random, p: float = 0.
     return cfg
 
 
+def maybe_inject_n2n(cfg: og.ArchConfig, rng: random.Random, p: float = 0.18) -> og.ArchConfig:
+    """With probability p, inject SeamN2N-parity n2n_unet into the bake graph."""
+    if rng.random() >= p:
+        return cfg
+    if "n2n_unet" in cfg.blocks and cfg.cell_kind == "n2n_unet":
+        return cfg
+    if rng.random() < 0.45:
+        cfg.cell_kind = "n2n_unet"
+    cfg.blocks = og.normalize_graph(list(cfg.blocks) + ["n2n_unet"], cfg.cell_kind)
+    if "cycle_net" not in cfg.ops:
+        cfg.ops = og.ensure_trainable_ops(list(cfg.ops) + ["cycle_net"])
+    return cfg
+
+
+def inject_search_priors(cfg: og.ArchConfig, rng: random.Random) -> og.ArchConfig:
+    cfg = maybe_inject_recurrent(cfg, rng, p=0.18)
+    cfg = maybe_inject_n2n(cfg, rng, p=0.2)
+    return cfg
+
+
+_LAST_EVAL_METRICS: dict[str, float] = {"r_seam": 0.0, "j": 0.0, "t_ms": 0.0}
+
+
 def evaluate(
     cfg: og.ArchConfig,
     hp: og.HyperParams,
@@ -121,32 +143,19 @@ def evaluate(
     fit_steps_default: int,
     batch_default: int,
 ) -> tuple[float, float, og.SeamCell]:
-    """Fit + eval; return (residual_raw, residual_with_bonus, cell)."""
-    cell = og.SeamCell(cfg).to(device)
-    fit_steps = int(hp.fit_steps or fit_steps_default)
-    batch = int(hp.batch or batch_default)
-    r_fit, _ = og.fit_cell(
-        cell,
-        cfg.ops,
+    """Fit + R_seam + latency J; return (r_seam, j_scored, cell)."""
+    r_seam, j, j_scored, t_ms, cell = og.evaluate_candidate(
+        cfg,
+        hp,
         device,
-        steps=fit_steps,
-        batch=batch,
-        lr=hp.lr,
-        adv_coef=hp.adv_coef if cfg.use_adv_aux else 0.0,
+        baseline=baseline,
+        fit_steps_default=fit_steps_default,
+        batch_default=batch_default,
     )
-    r_eval = og.eval_cell(cell, cfg.ops, device, batch=max(64, batch))
-    residual_raw = og.finite_scalar(0.5 * r_fit + 0.5 * r_eval, 0.0)
-    dmb = og.finite_scalar(
-        depth_mixture_bonus(
-            residual_raw,
-            baseline,
-            cfg.depth,
-            len(cfg.blocks),
-            cfg.moe_mode,
-        ),
-        0.0,
-    )
-    return residual_raw, residual_raw + dmb, cell
+    _LAST_EVAL_METRICS["r_seam"] = float(r_seam)
+    _LAST_EVAL_METRICS["j"] = float(j)
+    _LAST_EVAL_METRICS["t_ms"] = float(t_ms)
+    return r_seam, j_scored, cell
 
 
 def append_hist(path: Path, row: dict[str, Any]) -> None:
@@ -555,7 +564,7 @@ def aging_step(
         parent = max(pop, key=lambda x: x.score)
     action = rng.randrange(og.N_ACTIONS)
     child_cfg = og.mutate_arch(parent.cfg, action, rng, None)
-    child_cfg = maybe_inject_recurrent(child_cfg, rng, p=0.22)
+    child_cfg = inject_search_priors(child_cfg, rng)
     child_hp = og.mutate_hp(parent.hp, rng)
     r_raw, r, cell = evaluate(
         child_cfg, child_hp, device, baseline=baseline, fit_steps_default=fit_steps, batch_default=batch
@@ -766,7 +775,7 @@ def run_approach(
     for it in range(start_it, iters + 1):
         proposal = name
         if name == "random":
-            trial_cfg = maybe_inject_recurrent(og.random_arch(rng), rng, p=0.2)
+            trial_cfg = inject_search_priors(og.random_arch(rng), rng)
             trial_hp = og.random_hp(rng)
             r_raw, r, cell = evaluate(
                 trial_cfg,
@@ -824,7 +833,7 @@ def run_approach(
             action = int(action_t.item())
             logprob = dist.log_prob(action_t)
             trial_cfg = og.mutate_arch(cur_cfg, action, rng, None)
-            trial_cfg = maybe_inject_recurrent(trial_cfg, rng, p=0.18)
+            trial_cfg = inject_search_priors(trial_cfg, rng)
             trial_hp = og.mutate_hp(cur_hp, rng)
             r_raw, r, cell = evaluate(
                 trial_cfg,
@@ -905,7 +914,7 @@ def run_approach(
                 trial_cfg = og.mutate_arch(cfg, action, rng, plateau)
                 trial_hp = og.mutate_hp(hp, rng)
                 proposal = "PPO_MUTATION"
-            trial_cfg = maybe_inject_recurrent(trial_cfg, rng, p=0.18)
+            trial_cfg = inject_search_priors(trial_cfg, rng)
             r_raw, r, cell = evaluate(
                 trial_cfg,
                 trial_hp,
@@ -976,6 +985,9 @@ def run_approach(
             "approach": name,
             "proposal": proposal,
             "residual": r_raw,
+            "r_seam": _LAST_EVAL_METRICS.get("r_seam", r_raw),
+            "t_ms": _LAST_EVAL_METRICS.get("t_ms"),
+            "j": _LAST_EVAL_METRICS.get("j"),
             "residual_scored": r,
             "champ": champ_r,
             "champ_raw": champ_raw,
@@ -983,12 +995,16 @@ def run_approach(
             "xlstm_in_trial": trial_flags["xlstm"],
             "lstm_in_champ": champ_lstm,
             "xlstm_in_champ": champ_xlstm,
+            "n2n_unet_in_trial": "n2n_unet" in trial_cfg.blocks or trial_cfg.cell_kind == "n2n_unet",
             "baseline_dual_cosine": baseline,
             "baseline_nobake": nobake_ref,
             "reward_mode": getattr(trial_hp, "reward_mode", None),
             "wall_s": elapsed_prev + (time.time() - t0),
             "arch": trial_cfg.to_dict(),
             "hp": trial_hp.to_dict(),
+            "primary_metric": "r_seam",
+            "search_objective": "J=R_seam-lambda*latency_norm",
+            "lambda_latency": og.LAMBDA_LATENCY,
         }
         append_hist(hist_path, row)
         tb_log(

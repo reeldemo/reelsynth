@@ -107,6 +107,64 @@ pub fn residual_score_prolonged(ideal_cycle: &[f32], out_cycle: &[f32], periods:
     residual_score(&ideal, &rendered)
 }
 
+/// Discontinuity-local R (v10 primary): after tiling, RMS only on wrap neighborhoods
+/// of width `seam_w` at each period head/tail (`[0:W] ∪ [L-W:L]` per tile).
+pub fn residual_score_seam(
+    ideal: &[f32],
+    rendered: &[f32],
+    n_cycle: usize,
+    periods: usize,
+    seam_w: usize,
+) -> f32 {
+    let n = ideal.len().min(rendered.len());
+    if n == 0 || n_cycle == 0 || periods == 0 {
+        return 0.0;
+    }
+    let w = seam_w.max(1).min(n_cycle / 2).max(1);
+    let mut e_res = 0.0f32;
+    let mut e_id = 0.0f32;
+    let mut count = 0usize;
+    for k in 0..periods {
+        let base = k * n_cycle;
+        if base + n_cycle > n {
+            break;
+        }
+        for i in 0..w {
+            let hi = base + i;
+            let lo = base + n_cycle - w + i;
+            for idx in [hi, lo] {
+                let r = rendered[idx] - ideal[idx];
+                e_res += r * r;
+                e_id += ideal[idx] * ideal[idx];
+                count += 1;
+            }
+        }
+    }
+    if count == 0 {
+        return 0.0;
+    }
+    let inv = 1.0 / count as f32;
+    let residual_rms = (e_res * inv).sqrt();
+    let ideal_rms = (e_id * inv).sqrt();
+    (1.0 - residual_rms / ideal_rms.max(1e-6)).clamp(0.0, 1.0)
+}
+
+/// Prolonged seam residual: tile then score wrap neighborhoods.
+pub fn residual_score_seam_prolonged(
+    ideal_cycle: &[f32],
+    out_cycle: &[f32],
+    periods: usize,
+    seam_w: usize,
+) -> f32 {
+    let n = ideal_cycle.len().min(out_cycle.len());
+    if n == 0 {
+        return 0.0;
+    }
+    let ideal = tile_cycle(&ideal_cycle[..n], periods);
+    let rendered = tile_cycle(&out_cycle[..n], periods);
+    residual_score_seam(&ideal, &rendered, n, periods, seam_w)
+}
+
 pub fn score_cycle(raw: &[f32], out: &[f32]) -> QualityScores {
     let c_raw = crackle_c(raw);
     let c_out = crackle_c(out);
@@ -532,6 +590,32 @@ mod tests {
         let ms = t0.elapsed().as_secs_f64() * 1000.0;
         eprintln!("200×2048 denoise_opt: {ms:.2} ms");
         assert!(ms < 500.0, "inference too slow: {ms} ms");
+    }
+
+    #[test]
+    fn residual_score_seam_perfect_match_is_one() {
+        let wave: Vec<f32> = (0..128)
+            .map(|i| (i as f32 / 128.0 * std::f32::consts::TAU).sin())
+            .collect();
+        let s = residual_score_seam_prolonged(&wave, &wave, 16, 8);
+        assert!((s - 1.0).abs() < 1e-5, "got {s}");
+    }
+
+    #[test]
+    fn residual_score_seam_wrap_cliff_hurts_more_than_mid() {
+        let ideal: Vec<f32> = (0..128)
+            .map(|i| (i as f32 / 128.0 * std::f32::consts::TAU).sin())
+            .collect();
+        let mut cliff = ideal.clone();
+        cliff[0] = -3.0;
+        cliff[127] = 3.0;
+        let mut mid = ideal.clone();
+        mid[64] = 3.0;
+        let s_cliff = residual_score_seam_prolonged(&ideal, &cliff, 16, 8);
+        let s_mid = residual_score_seam_prolonged(&ideal, &mid, 16, 8);
+        assert!(s_cliff < s_mid, "seam cliff {s_cliff} should score below mid damage {s_mid}");
+        assert!(s_cliff < 0.99);
+        assert!((0.0..=1.0).contains(&s_cliff));
     }
 
     #[test]

@@ -1,0 +1,14 @@
+﻿{
+    "updated_at":  "20260725T073947Z",
+    "cancelled_at":  "20260725T073947Z",
+    "killed_pids":  [
+                        95728,
+                        99772,
+                        48728
+                    ],
+    "prior_phase":  "search",
+    "prior_detail":  "hybrid GA-PPO search cwru_bearings iters=2000 pop=12",
+    "reason":  "v10 protocol change",
+    "phase":  "cancelled",
+    "detail":  "Cancelled for paper v10 protocol: discontinuity-local R_seam + latency multi-objective; do not continue DualCosine-era whole-curve transfer search."
+}
