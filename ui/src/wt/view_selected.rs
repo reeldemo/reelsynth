@@ -460,6 +460,7 @@ impl WtSelectedLayerView<'_> {
             segment_interp_changed,
             seam_changed,
             crackle_changed,
+            periodic_requested,
             ..
         } = toolbar_resp;
         if seam_changed {
@@ -470,6 +471,13 @@ impl WtSelectedLayerView<'_> {
         if crackle_changed {
             params_changed = true;
             crate::wt::set_crackle_amount(*self.patch_crackle);
+        }
+        if periodic_requested {
+            if let Some(bank) = self.bank.as_mut() {
+                crate::wt::bake_bank_periodic(bank);
+                frame_edited = true;
+                status_hint = Some("Fit ends — DualCosine baked all frames".into());
+            }
         }
 
         if req {

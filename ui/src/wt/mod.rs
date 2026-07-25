@@ -27,7 +27,7 @@ pub use view_result::{WtViewResult, WtViewResultResponse};
 pub use view_selected::{WtSelectedLayerView, WtSelectedLayerResponse};
 pub use morph::{morph_amount_for_position, morph_position, WtMorph, WtMorphResponse};
 pub use quant_handles::{
-    apply_quant_slot_amplitude, bake_bank_seams, frame_to_y, knob_y_on_curve, nearest_quant_handle,
+    apply_quant_slot_amplitude, bake_bank_periodic, bake_bank_seams, frame_to_y, knob_y_on_curve, nearest_quant_handle,
     nearest_slot, paint_quant_knob, periodize_quant_frame, periodize_quant_frame_with_mode,
     quant_control_points, quant_curve_stroke, quant_hover_status_label, quant_knob_visual,
     quantized_curve_polyline, resample_frame_from_quant_points,

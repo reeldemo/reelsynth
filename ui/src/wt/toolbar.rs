@@ -63,6 +63,8 @@ pub struct WtToolbarResponse {
     pub seam_changed: bool,
     /// Artistic crackle amount (patch.crackle) changed.
     pub crackle_changed: bool,
+    /// Apply a one-shot DualCosine end fit to the loaded bank.
+    pub periodic_requested: bool,
 }
 
 pub struct WtToolbar;
@@ -101,6 +103,7 @@ impl WtToolbar {
         let mut segment_interp_changed = false;
         let mut seam_changed = false;
         let mut crackle_changed = false;
+        let mut periodic_requested = false;
 
         if !ui.is_rect_visible(rect) {
             return WtToolbarResponse {
@@ -111,6 +114,7 @@ impl WtToolbar {
                 segment_interp_changed,
                 seam_changed,
                 crackle_changed,
+                periodic_requested,
             };
         }
 
@@ -185,6 +189,15 @@ impl WtToolbar {
                         .clicked()
                     {
                         analyze_requested = true;
+                    }
+                    if ui
+                        .small_button("Fit ends")
+                        .on_hover_text(
+                            "Force wrap continuity (fit ends) — DualCosine periodize on all frames",
+                        )
+                        .clicked()
+                    {
+                        periodic_requested = true;
                     }
                 });
                 if wave_quant > 0 {
@@ -291,6 +304,7 @@ impl WtToolbar {
             segment_interp_changed,
             seam_changed,
             crackle_changed,
+            periodic_requested,
         }
     }
 }

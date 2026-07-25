@@ -8,6 +8,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Fit ends** — Selected WT toolbar one-shot classical **DualCosine** bake closes wrap continuity across every loaded wavetable frame without changing the Seam mode.
 - **ReelAI seam dropdown** — header + Selected toolbar choose Seam·Off / Soft / Adapt, classical **DualCosine**, embedded **Noise2Noise**, or branded **ReelAI** (DenoiseOpt v10 `R_blend` freeze). Snapshot full-bank bake for DualCosine / Noise2Noise / ReelAI; Off restores the pre-bake bank. Session-only (not in app settings / presets).
 
 ### Changed

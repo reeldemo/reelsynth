@@ -619,6 +619,16 @@ pub fn bake_bank_seams(bank: &mut reelsynth::WavetableBank, mode: QuantSeamMode)
     }
 }
 
+/// Permanently close every frame's wrap with the classical DualCosine end fit.
+///
+/// Unlike [`bake_bank_seams`], this one-shot operation leaves the selected seam
+/// mode unchanged so it can be used as an explicit "Fit ends" edit.
+pub fn bake_bank_periodic(bank: &mut reelsynth::WavetableBank) {
+    for i in 0..bank.num_frames {
+        periodize_quant_frame_with_mode(bank.frame_mut(i), QuantSeamMode::DualCosine);
+    }
+}
+
 /// Uniform-mode resample (all segments share `mode`).
 pub fn resample_frame_from_quant_points_uniform(
     frame: &mut [f32],
@@ -1235,6 +1245,25 @@ mod tests {
             let frame = bank.frame(f);
             let wrap = (frame[63] - frame[0]).abs();
             assert!(wrap < 1e-3, "frame {f} wrap after DualCosine bake: {wrap}");
+        }
+    }
+
+    #[test]
+    fn bake_bank_periodic_closes_every_frame_without_changing_mode() {
+        let mut bank = reelsynth::WavetableBank::new(2, 64);
+        for i in 0..64 {
+            bank.frame_mut(0)[i] = -0.9 + 1.8 * (i as f32 / 63.0);
+            bank.frame_mut(1)[i] = if i < 32 { 0.8 } else { -0.8 };
+        }
+        set_crackle_amount(0.0);
+        set_quant_seam_mode(QuantSeamMode::Soft);
+        bake_bank_periodic(&mut bank);
+
+        assert_eq!(current_quant_seam_mode(), QuantSeamMode::Soft);
+        for f in 0..2 {
+            let frame = bank.frame(f);
+            let wrap = (frame[63] - frame[0]).abs();
+            assert!(wrap < 1e-3, "frame {f} wrap after periodic bake: {wrap}");
         }
     }
 
