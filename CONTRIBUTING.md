@@ -1,8 +1,8 @@
-# Contributing to ReelSynth
+# Contributing
 
-Thank you for contributing to ReelSynth (MIT). This doc covers documentation, screenshots, and release assets.
+MIT project. This covers docs, screenshots, and release assets.
 
-## Development setup
+## Setup
 
 ```bash
 git clone https://github.com/reeldemo/reelsynth.git
@@ -11,26 +11,27 @@ cargo test
 cargo run -p reelsynth-app --bin reelsynth-app
 ```
 
-Rust ≥ 1.85 recommended. Python bindings: `maturin develop --features python`.
+Rust ≥ 1.85. Python: `maturin develop --features python`.
 
-## Documentation structure
+## Docs
 
-| File | Purpose |
-|------|---------|
+| File | Role |
+|------|------|
 | [docs/README.md](docs/README.md) | Index |
 | [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) | Install, first sound |
-| [docs/UI.md](docs/UI.md) | UI regions + screenshots |
+| [docs/UI.md](docs/UI.md) | Regions + screenshots |
 | [docs/WORKFLOW.md](docs/WORKFLOW.md) | DAW handoff |
+| [docs/ABLETON.md](docs/ABLETON.md) | Live install / VST3 |
 | [docs/FREE_STACK.md](docs/FREE_STACK.md) | Free tools |
 | [docs/SDK.md](docs/SDK.md) | Rust / Python / CLI / FFI |
-| [docs/REELDEMO_INTEGRATION.md](docs/REELDEMO_INTEGRATION.md) | Commercial Studio integration |
-| [AGENTS.md](AGENTS.md) | Cursor agent guidance |
+| [docs/REELDEMO_INTEGRATION.md](docs/REELDEMO_INTEGRATION.md) | Studio |
+| [AGENTS.md](AGENTS.md) | Agent notes |
 
-When changing behavior, update the relevant doc and [CHANGELOG.md](CHANGELOG.md).
+Behavior change → update the matching doc and [CHANGELOG.md](CHANGELOG.md).
 
-## Screenshot capture (release assets)
+## Screenshots (release assets)
 
-Screenshots are **not committed** to keep the repo lean. They ship as GitHub Release assets versioned with the app (e.g. `v0.1.0`).
+Not committed. They ship on GitHub Releases next to the app version (e.g. `v0.1.0`).
 
 ### Staging directory
 

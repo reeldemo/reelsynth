@@ -1,6 +1,6 @@
 # Agent API & MCP
 
-Headless Design automation for Cursor agents (no egui window).
+Headless Design automation (no egui window) for Cursor agents.
 
 ## Rust API
 

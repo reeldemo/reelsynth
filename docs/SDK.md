@@ -1,15 +1,15 @@
-# ReelSynth SDK and API reference
+# SDK
 
-Integration surfaces for embedding ReelSynth in applications, scripts, and future plugin hosts.
+Embed or script ReelSynth from Rust, Python, CLI, or C.
 
-## Quick start by language
+## Pick a surface
 
-| Surface | Build | Best for |
-|---------|-------|----------|
-| **Rust crate** | `cargo build` | Native apps, tests, custom hosts |
-| **Python (PyO3)** | `maturin develop --features python` | Offline render, batch export |
-| **CLI** | `cargo run --bin reelsynth-export` | Shell scripts, CI |
-| **C FFI** | `cdylib` feature | Future VST/CLAP bridges |
+| Surface | Build | Use for |
+|---------|-------|---------|
+| Rust crate | `cargo build` | Native apps, tests, hosts |
+| Python (PyO3) | `maturin develop --features python` | Offline render, batch export |
+| CLI | `cargo run --bin reelsynth-export` | Shell / CI |
+| C FFI | `cdylib` | Thin host bridges |
 
 Generate Rust docs locally:
 
@@ -158,7 +158,7 @@ Header-less C ABI in `src/ffi/mod.rs`. Link `libreelsynth` as `cdylib`.
 | `reelsynth_note_off` | `(handle, note)` | Note off ch 0 |
 | `reelsynth_destroy` | `(handle)` | Free instance |
 
-**Status:** Minimal stub for future plugin hosts. No preset load, stereo, or MIDI event stream yet.
+**Status:** Minimal C ABI. Prefer the Rust crate or the VST3 plugin for real hosts. No preset load / stereo / full MIDI stream on this FFI yet.
 
 ---
 
@@ -297,7 +297,7 @@ Constants: `SCOPE_RING_LEN`, `SCOPE_DISPLAY_LEN`, `PREVIEW_ROOT_NOTE`, `PREVIEW_
 | `reelsynth-app` | Standalone egui + cpal + midir |
 | `reelsynth-ui` | Shared editor UI |
 | `reelsynth-ui-theme` | Design tokens |
-| `reelsynth-plugin` | CLAP stub + editor spike (S7: real host) |
+| `reelsynth-plugin` | nih-plug VST3/CLAP + external editor |
 
 ---
 

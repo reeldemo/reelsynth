@@ -13,6 +13,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- **Docs voice pass** — README and musician/dev docs trimmed for shorter prose; plugin/status claims aligned with VST3 + external editor; hardcoded local paths removed from Ableton install examples.
 - **Ableton export v2** — schema `reelsynth-ableton-wt-v2` adds `live_param_aliases` + `frames` metadata; reelpack writes `synth/ableton/table_multicycle.wav`.
 - **Header density** — moved **input octave** into the Perf dropdown (shows as `· Oct ±N` when non-zero) and tightened Result/MIDI/Audio combo widths so left/right header clusters no longer overlap at 1280px (layout-audit CI).
 

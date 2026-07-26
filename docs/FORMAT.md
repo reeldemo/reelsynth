@@ -1,4 +1,4 @@
-# ReelSynth file formats
+# File formats
 
 ## `.reelwt` — wavetable bank (binary)
 

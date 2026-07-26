@@ -1,88 +1,84 @@
-# Ableton Live — ReelSynth integration
+# Ableton Live
 
-Musician-facing Ableton path. **Studio** handoff comes later.
+How to get ReelSynth into Live. Studio handoff is separate — [REELDEMO_INTEGRATION.md](REELDEMO_INTEGRATION.md).
 
-## OS support
+## OS
 
-| OS | Ableton Live | Installer |
-|----|--------------|-----------|
-| **Windows** | Yes | [`scripts/install-ableton.ps1`](../scripts/install-ableton.ps1) |
-| **macOS** | Yes | [`scripts/install-ableton.sh`](../scripts/install-ableton.sh) |
-| **Linux** | No (Ableton does not support Linux) | — use another DAW / CLAP elsewhere |
+| OS | Live | Installer |
+|----|------|-----------|
+| Windows | Yes | [`scripts/install-ableton.ps1`](../scripts/install-ableton.ps1) |
+| macOS | Yes | [`scripts/install-ableton.sh`](../scripts/install-ableton.sh) |
+| Linux | No — Ableton isn’t on Linux | Use another host / CLAP elsewhere |
 
-## Recommended setup (plugin + external editor)
+## Plugin + external editor
 
-Ableton’s plug-in pane stays slim. Live hosts sound + MIDI; the **full Design UI** opens in a connected window.
+Live’s plug-in pane stays small on purpose. Sound and MIDI stay in Live; the full Design UI opens in another window.
 
 ```text
 Ableton Live                    External window
 ┌─────────────────┐            ┌──────────────────────────┐
 │ ReelSynth VST3  │◄── IPC ──►│ reelsynth-plugin-editor  │
-│ (sound + MIDI)  │  localhost │ (full Design UI)         │
+│ (sound + MIDI)  │  localhost │ (Design UI)              │
 └─────────────────┘            └──────────────────────────┘
 ```
 
-### One-shot install
+### Install
 
-**Windows** (PowerShell; Admin recommended for system VST3 folder):
+**Windows** (PowerShell; Admin if you want the system VST3 folder):
 
 ```powershell
-cd C:\Users\Julian\Documents\Programming\github\reeldemo\reelsynth
+cd path\to\reelsynth
 .\scripts\install-ableton.ps1
-# If Program Files is locked, use:
+# If Program Files is locked / Live has the DLL open:
 # .\scripts\install-ableton.ps1 -UserVst3
 ```
 
-**macOS**:
+Quit Live before overwriting an installed VST3.
+
+**macOS:**
 
 ```bash
-cd /path/to/reelsynth
+cd path/to/reelsynth
 chmod +x scripts/install-ableton.sh
 ./scripts/install-ableton.sh
 ```
 
-What the installer does:
+The script:
 
-1. `cargo build -p reelsynth-plugin --release` (unless `-SkipBuild` / `--skip-build`)
-2. Installs VST3 where Live looks
-3. Installs `reelsynth-plugin-editor` under user App Support / LocalAppData
-4. Writes `config.json` with `auto_editor: true` so loading the plug-in opens the full UI
+1. Builds `reelsynth-plugin` release (unless `-SkipBuild` / `--skip-build`)
+2. Drops the VST3 where Live looks
+3. Installs `reelsynth-plugin-editor` under LocalAppData / Application Support
+4. Writes `config.json` with `auto_editor: true`
 
-Then in Live: **Preferences → Plug-ins → Rescan** → put **ReelSynth** on a MIDI track.
+Then: **Preferences → Plug-ins → Rescan**, add **ReelSynth** on a MIDI track. Editor should open with the plug-in.
 
-### Manual editor
-
-If auto-open fails:
+### Editor won’t open
 
 - Windows: `%LOCALAPPDATA%\ReelSynth\bin\reelsynth-plugin-editor.exe`
 - macOS: `~/Library/Application Support/ReelSynth/bin/reelsynth-plugin-editor`
 
-Config: `%LOCALAPPDATA%\ReelSynth\config.json` (Win) or `~/Library/Application Support/ReelSynth/config.json` (Mac). Set `"auto_editor": false` to disable auto-launch.
+Config: same `ReelSynth` folder → `config.json`. Set `"auto_editor": false` to stop auto-launch.
 
-### What works vs not
+### What works
 
 | Feature | Status |
 |---------|--------|
-| MIDI notes → sound in Live | Yes |
-| Full Design UI in external window | Yes (connected) |
-| Auto-open editor after install | Yes (`auto_editor`) |
-| Automate 5 params from Live | Yes |
-| Save/reload Live set | Yes |
-| Full UI *inside* the Ableton pane | Intentionally not |
-| Ableton on Linux | Not supported |
+| MIDI → sound in Live | Yes |
+| Full Design UI in external window | Yes |
+| Auto-open after install | Yes (`auto_editor`) |
+| Automate a handful of params from Live | Yes |
+| Save / reload Live set | Yes |
+| Full UI inside Live’s pane | No (by design) |
+| Ableton on Linux | No |
 
 ## Path A — Send (no plugin)
 
-Standalone app → header **Ableton** → drag `table_multicycle.wav` onto Wavetable. See inbox README.
+Standalone → header **Ableton** → drag `table_multicycle.wav` onto Wavetable. Inbox README has the rest.
 
-## Live QA checklist
+## Quick check
 
-- [ ] Installer completes without error
-- [ ] Rescan finds ReelSynth VST3
+- [ ] Installer finishes clean
+- [ ] Rescan finds ReelSynth
 - [ ] Load track → editor opens (or launch manually)
-- [ ] Edit filter in editor → hear change in Live
-- [ ] Save/reopen Live set
-
-## Studio (later)
-
-See [REELDEMO_INTEGRATION.md](REELDEMO_INTEGRATION.md).
+- [ ] Filter move in editor → hear it in Live
+- [ ] Save and reopen the set

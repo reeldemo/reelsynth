@@ -1,34 +1,34 @@
-# Reeldemo Studio integration
+# Reeldemo Studio
 
-ReelSynth is the **MIT open-source wavetable engine**. [Reeldemo Studio](https://github.com/reeldemo/reeldemo-ableton) is the **commercial agent layer** that composes, renders, and hands off editable sessions to Ableton Live.
+ReelSynth is the MIT wavetable engine. [Reeldemo Studio](https://github.com/reeldemo/reeldemo-ableton) is the commercial agent that composes, renders, and hands sessions to Ableton.
 
-You do not need Reeldemo Studio to use ReelSynth standalone. This doc is for users who want the full agent → DAW pipeline.
+You don’t need Studio for the standalone app. This page is for the agent → DAW pipeline.
 
-## OSS vs commercial
+## Who owns what
 
-| Component | Repo | License |
-|-----------|------|---------|
-| DSP engine, `.reelwt` / `.reelpreset`, importers, export CLI | `reelsynth` | MIT |
-| Python wrapper, factory tables, import CLI | `reeldemo-ableton` | Commercial |
+| Piece | Repo | License |
+|-------|------|---------|
+| DSP, formats, importers, export CLI | `reelsynth` | MIT |
+| Python wrappers, factory tables used by Studio | `reeldemo-ableton` | Commercial |
 | Agent compose, text-to-wavetable, session handoff | `reeldemo-ableton` | Commercial |
 
-## Architecture
+## Shape
 
 ```mermaid
 flowchart LR
   Agent[Reeldemo agent] --> Plan[instrument_plan]
   Plan --> Composer[track_composer.py]
-  Composer --> RS[ReelSynth PyO3 render]
+  Composer --> RS[ReelSynth PyO3]
   RS --> Stems[Layer stems + reelpack]
   Stems --> Grade[Layer grades]
-  Grade --> Handover[Ableton handoff]
+  Grade --> Handover[Ableton]
 ```
 
-**AI never renders audio directly.** WAVs come from `engine/track_composer.py` + ReelSynth offline rendering.
+Audio comes from `track_composer.py` + ReelSynth offline render — not from the LLM inventing WAV bytes.
 
-## Using ReelSynth in recipes
+## Recipes
 
-Set `engine: "reelsynth"` on programmatic delivery recipes:
+Set `engine: "reelsynth"`:
 
 ```json
 {
@@ -41,9 +41,7 @@ Set `engine: "reelsynth"` on programmatic delivery recipes:
 }
 ```
 
-Factory wavetables live in `reeldemo-ableton/data/wavetables/` (`saw_morph`, `formant`, `bright_lead`, …).
-
-Build the native module:
+Factory tables: `reeldemo-ableton/data/wavetables/` (`saw_morph`, `formant`, `bright_lead`, …).
 
 ```bash
 cd ../reelsynth
@@ -52,7 +50,7 @@ PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --features python
 
 ## Compose contract
 
-The agent must return distinct layer plans. **Melody must use `synthesis: lead`** — not the same prompt as chords.
+Layers must be distinct. Melody uses `synthesis: lead` — not the chord prompt.
 
 ```json
 {
@@ -69,47 +67,47 @@ The agent must return distinct layer plans. **Melody must use `synthesis: lead`*
 }
 ```
 
-## Agent workflow loop
+## Loop
 
 ```
 compose → compose_view → evolve → layer_grades → handover_plan → handover
 ```
 
-1. **Compose** — stems + `instrument_plan`
-2. **Design layers** — batch-render agent instrument choices
-3. **Grade** — isolated traces (not the full master mix)
-4. **Handover** — push winning layers to Ableton
+1. Compose — stems + plan  
+2. Design layers — batch render  
+3. Grade — isolated traces (not the master mix)  
+4. Handover — push winners to Ableton  
 
 ## Ableton handoff
 
-### Standalone Send (OSS, no Studio)
+### Standalone Send (OSS)
 
-Header **Ableton** in `reelsynth-app` writes `~/…/Ableton/User Library/ReelSynth/inbox/<patch>_<ts>/` with `reelsynth-ableton-wt-v2` + `table_multicycle.wav`. Optional AbletonOSC push creates a Wavetable track and applies params. **One drag** of the multicycle WAV onto the Wavetable sprite is still required for custom tables.
+Header **Ableton** writes under `~/…/Ableton/User Library/ReelSynth/inbox/<patch>_<ts>/` (`reelsynth-ableton-wt-v2` + `table_multicycle.wav`). AbletonOSC can create a Wavetable track and apply params. Custom tables still need **one drag** onto the sprite.
 
-### Extension import (Live 12)
+### Live 12 Extension
 
 From `reeldemo-ableton/extensions/reeldemo-handover/`:
 
-1. Python writes `session_handover.json` + WAVs to `~/Music/Ableton/Reeldemo/inbox/<bundle_id>/`
+1. Python drops `session_handover.json` + WAVs in `~/Music/Ableton/Reeldemo/inbox/<bundle_id>/`
 2. Live menu: **Import Reeldemo session**
-3. Creates tracks, loads devices, writes MIDI + automation
+3. Tracks, devices, MIDI, automation land
 
-### Handover modes
+### Modes
 
-| Mode | Live receives |
-|------|---------------|
+| Mode | Live gets |
+|------|-----------|
 | `audio` | WAV clip |
 | `midi` | Raw MIDI |
 | `midi_device` | MIDI + device param JSON |
 | `midi_drum_rack` | Drum Rack + MIDI |
 
-Environment: `REELDEMO_HANDOVER_MODE=osc` (default) or `sdk` for Extension inbox.
+`REELDEMO_HANDOVER_MODE=osc` (default) or `sdk` for Extension inbox.
 
-## Export from Reeldemo sessions
+## Export from Studio sessions
 
-ReelSynth export logic is OSS; batch session export is commercial.
+Export code is OSS; batch session export is commercial.
 
-**CLI (OSS):**
+**CLI:**
 
 ```bash
 cargo run --bin reelsynth-export -- reelpack patch.reelpreset -o out/ \
@@ -123,36 +121,32 @@ from engine.reelsynth_export import export_layer, export_session
 report = export_layer(recipe, targets=["vital", "reelpack"], out_dir="/tmp/out")
 ```
 
-**API / MCP (license-gated):**
+**API / MCP (license-gated):** `POST /api/v1/synth/export`, MCP `reeldemo_export_sound`, `export_targets` on `instrument_plan`.
 
-- `POST /api/v1/synth/export?session_id=…`
-- MCP: `reeldemo_export_sound`
-- `instrument_plan` field: `export_targets: ["ableton", "vital", "reelpack"]`
-
-Handover bundles may include `synth_exports/` reelpack subtrees when recipes use `engine=reelsynth`.
+Handover bundles may include `synth_exports/` when recipes use `engine=reelsynth`.
 
 ## Text-to-wavetable (commercial)
 
-- `POST /api/v1/synth/text-to-wavetable?session_id=…`
+- `POST /api/v1/synth/text-to-wavetable`
 - MCP: `reeldemo_text_to_wavetable`
-- Output: `sessions/{id}/wavetables/{hash}.reelwt`
+- Writes `sessions/{id}/wavetables/{hash}.reelwt`
 
-When GPU is unavailable, a factory formant fallback satisfies the integration contract (not silent saw substitution).
+No GPU → factory formant fallback (not a silent saw swap).
 
-## Further reading (reeldemo-ableton repo)
+## More in reeldemo-ableton
 
 | Doc | Topic |
 |-----|-------|
-| `docs/REELSYNTH.md` | Integration details |
-| `docs/CURSOR_REMOTE_HANDOVER.md` | Full compose → handoff loop |
-| `docs/INSTRUMENT_API.md` | Layer delivery defaults |
-| `docs/PRODUCT.md` | Product vision |
+| `docs/REELSYNTH.md` | Integration |
+| `docs/CURSOR_REMOTE_HANDOVER.md` | Compose → handoff |
+| `docs/INSTRUMENT_API.md` | Layer defaults |
+| `docs/PRODUCT.md` | Product notes |
 | `extensions/reeldemo-handover/README.md` | Live 12 Extension |
 
-## Standalone vs Studio
+## When to use what
 
 | Task | Use |
 |------|-----|
-| Hand-play melody, tweak one lead sound | ReelSynth standalone — [WORKFLOW.md](WORKFLOW.md) Path A |
-| Agent composes full track, push to Ableton | Reeldemo Studio — this doc |
-| Script offline render in your own tool | [SDK.md](SDK.md) |
+| Hand-play one lead | Standalone — [WORKFLOW.md](WORKFLOW.md) Path A |
+| Agent track → Ableton | Studio — this doc |
+| Your own offline tools | [SDK.md](SDK.md) |

@@ -1,19 +1,19 @@
-# SDD layout (ReelSynth)
+# SDD layout
 
 ```
 docs/sdd/
   CONSTITUTION.md
   specs/<feature>/
-    requirements.md   # what (user stories + AC)
-    spec.md           # how (technical architecture) — NOT visual design
-    tasks.md          # ordered implementation units
-    design.md         # OPTIONAL — visual/UI/UX only
+    requirements.md   # what (stories + AC)
+    spec.md           # how (tech) — not visual design
+    tasks.md          # ordered work
+    design.md         # optional UI/UX only
     analyze.md        # optional drift report
 ```
 
-| File | Meaning |
-|------|---------|
-| `spec.md` | Technical plan / architecture (`sdd-plan`) |
-| `design.md` | Visual / UI design only — do not put technical architecture here |
-| `requirements.md` | User stories + acceptance criteria (`sdd-specify`) |
-| `tasks.md` | Executable task table (`sdd-tasks`) |
+| File | Role |
+|------|------|
+| `spec.md` | Technical plan (`sdd-plan`) |
+| `design.md` | Visual / UI only — keep architecture out |
+| `requirements.md` | Stories + AC (`sdd-specify`) |
+| `tasks.md` | Task table (`sdd-tasks`) |

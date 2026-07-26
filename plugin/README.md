@@ -1,28 +1,29 @@
-# ReelSynth plugin (Rust + egui)
+# ReelSynth plugin
 
-**UI:** [egui](https://github.com/emilk/egui) via shared `reelsynth/ui` crate — same editor as the standalone app. **No JUCE.**
+Shared **egui** editor (`reelsynth/ui`) — same Design UI as the standalone app. No JUCE.
 
-**Host:** S7 target — **nih-plug** VST3 (+ CLAP for other DAWs). Ableton Live requires **VST3** (not CLAP).
+**Hosts:** nih-plug **VST3** (Ableton Live) and **CLAP** (other DAWs). Live does not load CLAP.
 
-## License wall
+## License
 
-- Core `reelsynth` / standalone app: **MIT**
-- This `reelsynth-plugin` crate: becomes **GPL-3.0-or-later** when linking nih-plug VST3 (`vst3-sys`). Do not relicense the whole tree.
+- Core / standalone: **MIT**
+- This crate: **GPL-3.0-or-later** when linking nih-plug VST3 (`vst3-sys`). Don’t relicense the whole tree.
 
 ## Status
 
-| Item | State |
-|------|-------|
-| Standalone app | `app/` — egui + cpal + `SynthEngine` + **Send to Ableton** bridge |
-| Plugin shell | `plugin/` — CLAP entry stub + editor spike (`reelsynth-plugin-editor`) |
-| nih-plug VST3/CLAP instrument | **S7 — in progress** (see `docs/sdd/specs/ableton-live-integration/`) |
-| JUCE CMake scaffold | **Retired** — do not use |
+| Piece | State |
+|-------|--------|
+| Standalone | `app/` — egui + cpal + engine + Send to Ableton |
+| VST3 / CLAP | `plugin/` — nih-plug instrument; Live QA + polish ongoing |
+| External editor | `reelsynth-plugin-editor` — full Design UI over localhost IPC |
+| In-host full UI | Not the goal — pane stays slim |
+| JUCE scaffold | Retired |
 
-## Offline / agent use (today)
+Ableton install (Win/macOS): [docs/ABLETON.md](../docs/ABLETON.md) → `scripts/install-ableton.ps1` / `.sh`.
 
-No plugin required:
+## Without a plugin
 
-- PyO3: `maturin develop --features python`
-- CLI export: `cargo run --bin reelsynth-export -- --help`
-- Standalone UI: `cargo run -p reelsynth-app --bin reelsynth-app`
-- Ableton bridge: header **Ableton** → inbox + optional AbletonOSC
+- Python: `maturin develop --features python`
+- CLI: `cargo run --bin reelsynth-export -- --help`
+- App: `cargo run -p reelsynth-app --bin reelsynth-app`
+- Ableton Send: header **Ableton** → inbox + optional AbletonOSC

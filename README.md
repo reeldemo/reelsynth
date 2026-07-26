@@ -1,54 +1,51 @@
 # ReelSynth
 
-Open-source wavetable synthesizer engine (MIT). Powers offline rendering in [Reeldemo Studio](https://github.com/reeldemo/reeldemo-ableton) and targets VST3/AU in a future plugin build.
+MIT wavetable synth — Rust DSP, standalone egui app, Python bindings, export CLI. Also powers offline render in [Reeldemo Studio](https://github.com/reeldemo/reeldemo-ableton).
 
-## Documentation
+## Docs
 
-| I want to… | Read |
-|------------|------|
-| Install and play my first sound | [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) |
-| Compose a melody and use it in a DAW | [docs/WORKFLOW.md](docs/WORKFLOW.md) |
-| Use only free tools (Vital, LMMS, …) | [docs/FREE_STACK.md](docs/FREE_STACK.md) |
-| Learn the UI | [docs/UI.md](docs/UI.md) |
-| Integrate in code (Rust, Python, CLI) | [docs/SDK.md](docs/SDK.md) |
-| Use with Reeldemo Studio + Ableton | [docs/REELDEMO_INTEGRATION.md](docs/REELDEMO_INTEGRATION.md) |
+| Goal | Doc |
+|------|-----|
+| Install and play | [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) |
+| Melody + DAW handoff | [docs/WORKFLOW.md](docs/WORKFLOW.md) |
+| Free tools only | [docs/FREE_STACK.md](docs/FREE_STACK.md) |
+| Ableton Live | [docs/ABLETON.md](docs/ABLETON.md) |
+| UI map | [docs/UI.md](docs/UI.md) |
+| Rust / Python / CLI | [docs/SDK.md](docs/SDK.md) |
+| Reeldemo Studio | [docs/REELDEMO_INTEGRATION.md](docs/REELDEMO_INTEGRATION.md) |
 
-Full index: [docs/README.md](docs/README.md)
+Index: [docs/README.md](docs/README.md)
 
-## Capability matrix (v0.1)
+## What works (roughly v0.3)
 
-| Works today | Not yet |
-|-------------|---------|
-| Standalone app — live MIDI, piano, QWERTY | VST3 / AU / CLAP plugin (S7) |
-| Save/load `.reelpreset` + `.reelwt` | In-app MIDI recording |
-| Export to Vital, Serum, Ableton JSON, SFZ, `reelpack/` | Export your live performance as MIDI |
-| Python + CLI offline render | |
+| Yes | Not yet / partial |
+|-----|-------------------|
+| Standalone — MIDI, piano, QWERTY, Compose clips | Full SMF export of your Compose performance |
+| Save/load `.reelpreset` + `.reelwt` | Perfect 1:1 Vital/Serum/Ableton round-trip |
+| Export Vital, Serum, Ableton, SFZ, `reelpack/` | — |
+| VST3 in Live (Win/macOS) + external Design UI | Full editor *inside* Live’s tiny pane |
+| Python + CLI offline render | Signed installers / AU |
 
-## Features
+## Features (engine)
 
-- **WavetableBank** — 256 frames × 2048 samples, linear + spectral crossfade
-- **Voice** — multi-osc wavetable, ADSR, state-variable filter, modulation matrix
-- **Import** — Vital `.vitaltable`, WAV single-cycle folders, Serum `.fxp` (wavetable subset v1)
-- **Export** — Vital, WAV frames, Serum RSWT, Ableton param JSON, SFZ, MIDI, 24-bit audio, `reelpack/` bundle
-- **Formats** — `.reelwt` (binary bank), `.reelpreset` (JSON patch) — see [docs/FORMAT.md](docs/FORMAT.md)
+- **WavetableBank** — 256 × 2048, linear + spectral crossfade
+- **Voice** — multi-osc, ADSR, SVF, mod matrix
+- **Import** — Vital `.vitaltable`, WAV cycle folders, Serum `.fxp` (WT subset)
+- **Export** — Vital, WAV frames, Serum RSWT, Ableton map, SFZ, MIDI demo note, 24-bit stem, `reelpack/`
+- **Formats** — [docs/FORMAT.md](docs/FORMAT.md)
 
 ## Build
 
 ```bash
-# Rust library + tests
 cargo test
-
-# Standalone playable app
 cargo run -p reelsynth-app --bin reelsynth-app
-
-# Export CLI
 cargo run --bin reelsynth-export -- --help
-
-# Python wheel (PyO3)
 maturin develop --features python
 ```
 
-Keyboard: **Z S X D C V G B H N J M** (one octave) or click the on-screen piano. MIDI controller via header dropdown.
+Keys: **Z S X D C V G B H N J M**, or the on-screen piano. MIDI via the header dropdown.
+
+Ableton (Win/macOS): [docs/ABLETON.md](docs/ABLETON.md) — `scripts/install-ableton.ps1` / `.sh`.
 
 ## Quick export
 
@@ -57,9 +54,9 @@ cargo run --bin reelsynth-export -- reelpack my_patch.reelpreset -o out/ \
   --targets vital,wav,serum,ableton,sfz,midi,audio
 ```
 
-See [docs/WORKFLOW.md](docs/WORKFLOW.md) for the full DAW handoff workflow.
+DAW steps: [docs/WORKFLOW.md](docs/WORKFLOW.md).
 
-## Python API
+## Python
 
 ```python
 import reelsynth
@@ -75,9 +72,11 @@ audio = reelsynth.render_note_py(
 
 Full API: [docs/SDK.md](docs/SDK.md)
 
-## Plugin (S6 shell)
+## Plugin
 
-Rust CLAP/VST3/AU + **egui** editor — see [plugin/README.md](plugin/README.md). UI spike only; no host audio/MIDI yet (S7).
+nih-plug **VST3** (+ CLAP for other hosts). Live uses VST3; Design UI opens in a separate window over IPC. Details: [plugin/README.md](plugin/README.md), [docs/ABLETON.md](docs/ABLETON.md).
+
+Plugin crate is GPL when linking VST3; core engine stays MIT.
 
 ## Contributing
 
@@ -85,8 +84,8 @@ Rust CLAP/VST3/AU + **egui** editor — see [plugin/README.md](plugin/README.md)
 
 ## Brand
 
-Visual identity via [Majico](https://github.com/cap-jmk-launchpad/majico.xyz) — see [brand/BRAND.md](brand/BRAND.md) and [brand/MAJICO.md](brand/MAJICO.md).
+[Majico](https://github.com/cap-jmk-launchpad/majico.xyz) — [brand/BRAND.md](brand/BRAND.md), [brand/MAJICO.md](brand/MAJICO.md).
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Reeldemo agent, text-to-wavetable, and compose integration are commercial and live in the Reeldemo repo.
+MIT — [LICENSE](LICENSE). Agent compose / text-to-wavetable / Studio live in the Reeldemo commercial repo.

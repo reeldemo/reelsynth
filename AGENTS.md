@@ -1,12 +1,10 @@
 # AGENTS.md — ReelSynth
 
-Guidance for Cursor agents and contributors working in this repo.
+Notes for Cursor agents and people hacking on this repo.
 
-## What this repo is
+## What this is
 
-MIT wavetable synthesizer: Rust DSP core, standalone egui app, Python/PyO3 bindings, export CLI. **Not** a loadable DAW plugin yet (S7 roadmap).
-
-Commercial Reeldemo Studio integration lives in `reeldemo-ableton` — see [docs/REELDEMO_INTEGRATION.md](docs/REELDEMO_INTEGRATION.md).
+MIT wavetable synth: Rust DSP, standalone egui app, PyO3, export CLI. VST3/CLAP plugin crate is separate (GPL when linking nih-plug). Studio agent work lives in `reeldemo-ableton` — [docs/REELDEMO_INTEGRATION.md](docs/REELDEMO_INTEGRATION.md).
 
 ## Doc map
 
@@ -14,61 +12,57 @@ Commercial Reeldemo Studio integration lives in `reeldemo-ableton` — see [docs
 |----------|-------|
 | Musicians | [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) → [docs/WORKFLOW.md](docs/WORKFLOW.md) |
 | Free tools | [docs/FREE_STACK.md](docs/FREE_STACK.md) |
+| Ableton | [docs/ABLETON.md](docs/ABLETON.md) |
 | Developers | [docs/SDK.md](docs/SDK.md) |
-| UI layout | [docs/UI.md](docs/UI.md) |
+| UI | [docs/UI.md](docs/UI.md) |
 | Formats | [docs/FORMAT.md](docs/FORMAT.md), [docs/INTEROP.md](docs/INTEROP.md) |
 
 Index: [docs/README.md](docs/README.md)
 
-## Agent skills in this repo
+## Skills in this repo
 
-| Skill | Path | Use when |
-|-------|------|----------|
-| **reelsynth-workflow** | `.cursor/skills/reelsynth-workflow/SKILL.md` | User asks how to use synth, export, DAW handoff |
-| **audit-reelsynth-ui** | `.cursor/skills/audit-reelsynth-ui/SKILL.md` | Visual parity vs mockups, screenshot audit |
+| Skill | Path | When |
+|-------|------|------|
+| reelsynth-workflow | `.cursor/skills/reelsynth-workflow/SKILL.md` | How to use synth, export, DAW handoff |
+| audit-reelsynth-ui | `.cursor/skills/audit-reelsynth-ui/SKILL.md` | Mockup parity / screenshot audit |
 
-## Hard constraints (do not mislead users)
+## Don’t mislead users
 
-1. **Compose mode** — in-app MIDI clip editing, recording, and transport playback of scheduled clip notes through the synth.
-2. **Export `daw/midi/melody.mid`** — demo note until full `SequenceProject` SMF export lands.
-3. **Plugin is UI-only** — no host audio/MIDI I/O until S7.
-4. **Exports to Vital/Serum/Ableton are lossy** — cite [docs/INTEROP.md](docs/INTEROP.md).
-5. **Canonical state** is `.reelpreset` + `.reelwt` — sequence data will embed in patch schema.
+1. **Compose mode** — in-app clip edit, record, transport through the synth.
+2. **`daw/midi/melody.mid`** — demo note until full SequenceProject SMF export.
+3. **Plugin** — VST3 plays in Live with external Design UI; full UI inside Live’s pane is not the plan. Cite [docs/ABLETON.md](docs/ABLETON.md).
+4. **Exports** to Vital/Serum/Ableton are lossy — [docs/INTEROP.md](docs/INTEROP.md).
+5. **Canonical state** — `.reelpreset` + `.reelwt`; sequence data will embed in the patch schema.
 
-## Build commands
+## Build
 
 ```bash
-cargo test                          # core tests
-cargo run -p reelsynth-app --bin reelsynth-app   # standalone
-cargo run --bin reelsynth-export -- --help       # CLI
-maturin develop --features python   # Python wheel
+cargo test
+cargo run -p reelsynth-app --bin reelsynth-app
+cargo run --bin reelsynth-export -- --help
+maturin develop --features python
 ```
 
-## Screenshot / release assets
+## Screenshots
 
-- UI screenshots are **not** in the repo.
-- Stored on [GitHub Releases](https://github.com/reeldemo/reelsynth/releases) tagged to `Cargo.toml` version.
-- Capture process: [CONTRIBUTING.md](CONTRIBUTING.md)
-- Docs reference: `https://github.com/reeldemo/reelsynth/releases/download/v0.1.0/<name>.png`
+Not in the repo. On [GitHub Releases](https://github.com/reeldemo/reelsynth/releases) tagged to the app version. Capture: [CONTRIBUTING.md](CONTRIBUTING.md). Docs use URLs like `…/releases/download/v0.1.0/<name>.png`.
 
-## Code layout
+## Layout
 
 ```
-src/           # DSP engine, export, import, ffi
-app/           # Standalone (cpal + midir)
-ui/            # egui editor (shared with plugin)
-plugin/        # CLAP stub + editor spike
-docs/          # User + SDK documentation
-brand/         # Design spec, mockups, audits
+src/      DSP, export, import, ffi
+app/      Standalone (cpal + midir)
+ui/       Shared egui editor
+plugin/   nih-plug VST3/CLAP + external editor
+docs/     Musician + SDK docs
+brand/    Design spec, mockups, audits
 ```
 
-## Sprint status
+Sprint log: [brand/mockups/audits/IMPLEMENTATION_LOG.md](brand/mockups/audits/IMPLEMENTATION_LOG.md).
 
-See [brand/mockups/audits/IMPLEMENTATION_LOG.md](brand/mockups/audits/IMPLEMENTATION_LOG.md). S6 plugin shell done; S7 host bindings next.
+## Editing docs
 
-## When editing docs
-
-- Keep musician and developer tracks separate ([docs/README.md](docs/README.md)).
-- Update CHANGELOG.md for user-visible doc or behavior changes.
-- Re-capture release screenshots when UI layout changes (header, center, WT editor).
-- Do not commit PNGs to main — use release assets.
+- Keep musician vs developer tracks separate ([docs/README.md](docs/README.md)).
+- Update CHANGELOG for user-visible doc or behavior changes.
+- Re-capture release screenshots when header/center/WT layout changes.
+- Don’t commit PNGs to main — release assets only.
