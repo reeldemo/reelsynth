@@ -1,6 +1,6 @@
 {
   "schema": "denoiseopt.signal_heal_deep_sota_status.v3",
-  "updated_at": "20260726T072459Z",
+  "updated_at": "20260726T080951Z",
   "paper_table": "tab:transfer-sota-status (Table 14)",
   "honesty": "Do not invent scores. Clinical ECG restore != wrap-R. Only report measured values from this tree.",
   "what_did_run": "Classical boards + Ours hybrid_lstm (250 iters) + domain N2N. Paderborn full Ours. PTB-XL expanded board classical+N2N (+Ours in flight). Cycle-GAN OOD wrap-R scored. BeatDiff blocked.",
@@ -120,10 +120,25 @@
       "status": "blocked",
       "executable_now": false,
       "blocker": {
-        "kind": "missing_diffusion_checkpoints",
-        "detail": "HF lbedin/BeatDiff auth/empty; Google Drive prior tree not a loadable single checkpoint for L=256 wrap-R adapter; retrain exceeds session."
+        "kind": "missing_usable_diffusion_checkpoint",
+        "detail": "Still blocked after re-probe 2026-07-26. (1) Hugging Face https://huggingface.co/lbedin/BeatDiff returns HTTP 401 Unauthorized without login (hf auth whoami: Not logged in); public search api/models?search=BeatDiff returns []. Paper cites this repo as pretrained host; no alternate public HF IDs found (LisaBedin/BeatDiff etc. also 401/404). User auth steps: create HF token at https://huggingface.co/settings/tokens ; run hf auth login ; open https://huggingface.co/lbedin/BeatDiff and accept any gate; then hf download lbedin/BeatDiff --local-dir <dir>. (2) GitHub LisaBedin/BeatDiff ships code only \u2014 no .pt/.ckpt/orbax weights in-tree; README Pre-trained models points solely to Google Drive folder https://drive.google.com/drive/folders/1m2OvyYebvnirh1CraCrnSOyjihSkSkLG (subfolders beatdiff_prior id=1QN6mZXnBpYJFxwUNYV5PXbkhd4HYw3Xh and baselines). Expected hydra path is results/models/beat_diff with Orbax model/ + .hydra/config.yaml (see configs/paths/beat_no_norm.yaml). Drive beatdiff_prior has model/{7920,9360,9890}/ + train.log but NO .hydra/config.yaml. Partial gdown of model/7920 leaves are zstd shards that decompress to all-zero arrays (unusable trained prior). Prior is JAX/Flax/Orbax (not a single PyTorch .pt); R-adapter needs full EM-BeatDiff stack + beat DB. Retrain from PhysioNet Challenge-2021 exceeds session.",
+        "hf_repo": "lbedin/BeatDiff",
+        "hf_auth_url": "https://huggingface.co/lbedin/BeatDiff",
+        "hf_status_unauthenticated": "HTTP 401 Unauthorized",
+        "hf_user_steps": [
+          "https://huggingface.co/settings/tokens \u2014 create read token",
+          "hf auth login",
+          "Open https://huggingface.co/lbedin/BeatDiff and accept gate if prompted",
+          "hf download lbedin/BeatDiff --local-dir brand/artifacts/signal_heal_transfer/external/weights/beatdiff_hf"
+        ],
+        "drive_folder_url": "https://drive.google.com/drive/folders/1m2OvyYebvnirh1CraCrnSOyjihSkSkLG",
+        "drive_prior_folder_id": "1QN6mZXnBpYJFxwUNYV5PXbkhd4HYw3Xh",
+        "drive_prior_name": "beatdiff_prior",
+        "missing_required_file": ".hydra/config.yaml (alongside Orbax model/ under results/models/beat_diff)",
+        "git_repo_demo_weights": "none (code-only clone)",
+        "stack": "JAX/Flax Orbax CheckpointManager \u2014 not a single .pt for thin wrap-R adapter"
       },
-      "paper_note_draft": "Not run \u2014 no usable diffusion checkpoint under wrap-R protocol"
+      "paper_note_draft": "Not run \u2014 no usable diffusion checkpoint under wrap-R protocol (HF 401; Drive prior missing .hydra/config.yaml + zeroed Orbax shards)"
     },
     {
       "id": "paderborn_kat_deep",
