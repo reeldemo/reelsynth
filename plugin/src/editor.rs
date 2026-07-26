@@ -1,12 +1,14 @@
-//! Shared egui editor host for plugin + minimal spike binary (S6).
+//! Shared egui external editor — full ReelSynth UI connected to the Live VST via IPC.
 
+use crate::ipc::IpcClient;
+use crate::plugin_state::PluginStateV1;
 use eframe::egui;
-use reelsynth::Patch;
+use reelsynth::{Patch, WavetableBank};
 use reelsynth_ui::{
-    draw_shell, ShellAudioDevices, ShellConfig, ShellMidiDevices, UiState, APP_HEIGHT_FULL,
+    draw_shell, patch_from_state, sync_state_from_patch, ShellAudioDevices, ShellConfig,
+    ShellMidiDevices, UiState, APP_HEIGHT_FULL,
 };
 
-/// Configuration for the plugin editor surface.
 #[derive(Debug, Clone)]
 pub struct PluginEditorConfig {
     pub show_wt_editor: bool,
@@ -23,29 +25,67 @@ impl Default for PluginEditorConfig {
             show_osc_column: true,
             show_mod_matrix: true,
             show_fx_rack: true,
-            title: "ReelSynth (plugin editor spike)".into(),
+            title: "ReelSynth Editor (Ableton)".into(),
         }
     }
 }
 
-/// Minimal egui host embedding the shared `reelsynth-app` S1 shell.
 pub struct PluginEditorApp {
     pub state: UiState,
     pub config: PluginEditorConfig,
     midi_names: Vec<String>,
     audio_names: Vec<String>,
+    client: Option<IpcClient>,
+    patch: Patch,
+    bank: WavetableBank,
+    push_cooldown: u8,
+    reconnect_tick: u32,
 }
 
 impl PluginEditorApp {
     pub fn new(config: PluginEditorConfig) -> Self {
-        Self {
+        let mut app = Self {
             state: UiState {
-                status: "Plugin editor spike — UI only (no audio I/O)".into(),
+                status: "Connecting to Ableton ReelSynth…".into(),
                 ..UiState::default()
             },
             config,
-            midi_names: vec!["None".into()],
-            audio_names: vec!["Speakers".into()],
+            midi_names: vec!["Host MIDI".into()],
+            audio_names: vec!["Host audio".into()],
+            client: None,
+            patch: Patch::default_mono(),
+            bank: WavetableBank::factory_saw_morph(),
+            push_cooldown: 0,
+            reconnect_tick: 0,
+        };
+        app.try_connect();
+        app
+    }
+
+    fn try_connect(&mut self) {
+        match IpcClient::connect_from_manifest() {
+            Ok(mut client) => match client.get_state() {
+                Ok(state) => {
+                    if let Ok((patch, bank)) = PluginStateV1::from_json(
+                        &state.to_json().unwrap_or_else(|_| "{}".into()),
+                    ) {
+                        sync_state_from_patch(&mut self.state, &patch);
+                        self.patch = patch;
+                        self.bank = bank;
+                    }
+                    self.state.status =
+                        "Connected to Ableton — edits push to the Live instrument.".into();
+                    self.client = Some(client);
+                }
+                Err(e) => {
+                    self.state.status = format!("Connected but GetState failed: {e}");
+                    self.client = Some(client);
+                }
+            },
+            Err(e) => {
+                self.state.status = format!("{e}  |  Retry: click status or relaunch editor.");
+                self.client = None;
+            }
         }
     }
 
@@ -67,10 +107,35 @@ impl PluginEditorApp {
             }),
         )
     }
+
+    fn push_state(&mut self) {
+        let state = PluginStateV1::from_patch_bank(&self.patch, &self.bank);
+        if let Some(client) = self.client.as_mut() {
+            match client.set_state(state) {
+                Ok(()) => {
+                    self.state.status = "Pushed patch to Ableton instrument.".into();
+                }
+                Err(e) => {
+                    self.state.status = format!("Push failed: {e} — reconnecting…");
+                    self.client = None;
+                }
+            }
+        }
+    }
 }
 
 impl eframe::App for PluginEditorApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        if self.client.is_none() {
+            self.reconnect_tick = self.reconnect_tick.wrapping_add(1);
+            if self.reconnect_tick % 120 == 0 {
+                self.try_connect();
+            }
+        }
+        if self.push_cooldown > 0 {
+            self.push_cooldown -= 1;
+        }
+
         egui::CentralPanel::default()
             .frame(egui::Frame {
                 fill: reelsynth_ui_theme::Tokens::default().bg,
@@ -91,13 +156,12 @@ impl eframe::App for PluginEditorApp {
                     show_mod_matrix: self.config.show_mod_matrix,
                     show_fx_rack: self.config.show_fx_rack,
                 };
-                let preview = Patch::default_mono();
                 let actions = draw_shell(
                     ui,
                     ui.max_rect(),
                     &mut self.state,
-                    None,
-                    &preview,
+                    Some(&mut self.bank),
+                    &self.patch,
                     &midi,
                     &audio,
                     &shell,
@@ -105,13 +169,25 @@ impl eframe::App for PluginEditorApp {
                     None,
                     None,
                 );
-
-                if let Some(n) = actions.note_on {
-                    self.state.keys_down.insert(n);
+                if actions.params_changed || actions.frame_edited {
+                    self.patch = patch_from_state(&self.state, &self.patch);
+                    if self.push_cooldown == 0 {
+                        self.push_state();
+                        self.push_cooldown = 3;
+                    }
                 }
-                if let Some(n) = actions.note_off {
-                    self.state.keys_down.remove(&n);
+                if ui
+                    .interact(
+                        ui.max_rect(),
+                        ui.id().with("reconnect_click"),
+                        egui::Sense::click(),
+                    )
+                    .clicked()
+                    && self.client.is_none()
+                {
+                    self.try_connect();
                 }
             });
+        ctx.request_repaint_after(std::time::Duration::from_millis(33));
     }
 }

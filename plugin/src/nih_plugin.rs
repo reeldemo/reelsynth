@@ -1,5 +1,6 @@
-//! ReelSynth nih-plug instrument (VST3 + CLAP) — audio/MIDI + DAW state; shared egui later.
+//! ReelSynth nih-plug instrument — slim DAW surface + IPC to external full editor.
 
+use crate::ipc::{IpcEngineState, IpcServer};
 use crate::plugin_state::{PluginStateV1, PLUGIN_STATE_SCHEMA};
 use nih_plug::prelude::*;
 use parking_lot::Mutex;
@@ -12,6 +13,8 @@ struct ReelSynthPlugin {
     patch: Patch,
     bank: WavetableBank,
     sample_rate: u32,
+    ipc_shared: Arc<Mutex<IpcEngineState>>,
+    _ipc: Option<IpcServer>,
 }
 
 #[derive(Params)]
@@ -27,7 +30,6 @@ struct ReelSynthParams {
     #[id = "amp_release"]
     pub amp_release: FloatParam,
 
-    /// Full canonical patch + wavetable for Ableton set save/reload.
     #[persist = "canonical"]
     pub canonical: Arc<Mutex<PluginStateV1>>,
 }
@@ -36,16 +38,20 @@ impl Default for ReelSynthPlugin {
     fn default() -> Self {
         let patch = Patch::default_mono();
         let bank = WavetableBank::factory_saw_morph();
+        let ipc_shared = Arc::new(Mutex::new(IpcEngineState::new(patch.clone(), bank.clone())));
         let params = ReelSynthParams {
             canonical: Arc::new(Mutex::new(PluginStateV1::from_patch_bank(&patch, &bank))),
             ..ReelSynthParams::default_params_only()
         };
+        let ipc = IpcServer::start(ipc_shared.clone()).ok();
         Self {
             params: Arc::new(params),
             engine: None,
             patch,
             bank,
             sample_rate: 44100,
+            ipc_shared,
+            _ipc: ipc,
         }
     }
 }
@@ -128,6 +134,12 @@ impl Plugin for ReelSynthPlugin {
     ) -> bool {
         self.sample_rate = buffer_config.sample_rate as u32;
         self.hydrate_from_persisted();
+        {
+            let mut g = self.ipc_shared.lock();
+            g.patch = self.patch.clone();
+            g.bank = self.bank.clone();
+            g.dirty = false;
+        }
         self.rebuild_engine();
         true
     }
@@ -142,6 +154,18 @@ impl Plugin for ReelSynthPlugin {
         _aux: &mut AuxiliaryBuffers,
         context: &mut impl ProcessContext<Self>,
     ) -> ProcessStatus {
+        // Pull edits from the external full editor.
+        {
+            let mut g = self.ipc_shared.lock();
+            if g.dirty {
+                self.patch = g.patch.clone();
+                self.bank = g.bank.clone();
+                g.dirty = false;
+                drop(g);
+                self.rebuild_engine();
+            }
+        }
+
         self.apply_params_to_engine();
         let Some(engine) = self.engine.as_mut() else {
             return ProcessStatus::Normal;
@@ -176,8 +200,14 @@ impl Plugin for ReelSynthPlugin {
             }
         }
 
-        // Keep persisted blob in sync for the next set save.
         *self.params.canonical.lock() = PluginStateV1::from_patch_bank(&self.patch, &self.bank);
+        {
+            let mut g = self.ipc_shared.lock();
+            if !g.dirty {
+                g.patch = self.patch.clone();
+                g.bank = self.bank.clone();
+            }
+        }
 
         ProcessStatus::Normal
     }
@@ -215,8 +245,10 @@ impl ReelSynthPlugin {
         let t = self.params.filter_cutoff.smoothed.next().clamp(0.0, 1.0);
         let min = 20.0f32.ln();
         let max = 20000.0f32.ln();
-        engine.set_filter_cutoff((min + t * (max - min)).exp());
-        engine.set_filter_resonance(self.params.filter_res.smoothed.next());
+        let cutoff = (min + t * (max - min)).exp();
+        engine.set_filter_cutoff(cutoff);
+        let res = self.params.filter_res.smoothed.next();
+        engine.set_filter_resonance(res);
         let mut env = self.patch.envelope.clone();
         env.attack = self.params.amp_attack.smoothed.next() * 5.0;
         env.release = self.params.amp_release.smoothed.next() * 8.0;
@@ -224,15 +256,16 @@ impl ReelSynthPlugin {
         if let Some(osc) = self.patch.oscillators.get_mut(0) {
             osc.position = pos;
         }
-        self.patch.filter.cutoff = (min + t * (max - min)).exp();
-        self.patch.filter.resonance = self.params.filter_res.smoothed.next();
+        self.patch.filter.cutoff = cutoff;
+        self.patch.filter.resonance = res;
         engine.set_envelope(env);
     }
 }
 
 impl ClapPlugin for ReelSynthPlugin {
     const CLAP_ID: &'static str = "xyz.reelsynth";
-    const CLAP_DESCRIPTION: Option<&'static str> = Some("Open-source wavetable synthesizer");
+    const CLAP_DESCRIPTION: Option<&'static str> =
+        Some("Wavetable synth — use reelsynth-plugin-editor for the full UI");
     const CLAP_MANUAL_URL: Option<&'static str> = Some(Self::URL);
     const CLAP_SUPPORT_URL: Option<&'static str> = None;
     const CLAP_FEATURES: &'static [ClapFeature] = &[
