@@ -29,7 +29,7 @@ Index: [docs/README.md](../../docs/README.md)
 
 1. **`daw/midi/melody.mid` is a demo note** — not their performance.
 2. **Compose** can record clips in-app; full SMF export of that song is still landing — for a finished DAW session, record or copy MIDI into the DAW when needed.
-3. **VST3** works in Ableton on Win/macOS with an external Design UI ([ABLETON.md](../../docs/ABLETON.md)). Elsewhere, export → Vital / SFZ is the usual path.
+3. **VST3** works in Ableton on Win/macOS — slim host pane **Open Editor** + external Design UI ([ABLETON.md](../../docs/ABLETON.md)). Elsewhere, export → Vital / SFZ is the usual path.
 4. **Exports are lossy** — truth is `.reelpreset` + `.reelwt`.
 5. **Reeldemo Studio is commercial** — optional; standalone is MIT.
 
@@ -88,7 +88,7 @@ Point at [FREE_STACK.md](../../docs/FREE_STACK.md). Vital is the usual free synt
 | MIDI silent | MIDI dropdown; cable/driver |
 | Export missing WT | Sibling `.reelwt` next to preset |
 | Sound differs in Vital | Expected — `export_report.json`, tweak by ear |
-| Wants Ableton plugin | [ABLETON.md](../../docs/ABLETON.md) installers; or Send + one drag |
+| Wants Ableton plugin | [ABLETON.md](../../docs/ABLETON.md) — install, then **Open Editor** in Live (or auto-open) |
 
 ## UI issues
 

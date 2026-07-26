@@ -363,7 +363,7 @@ CI runs the kittest suite on every push/PR (`.github/workflows/ci.yml`).
 
 ## Plugin editor
 
-`reelsynth-plugin-editor` is the same Design UI, connected to the VST3/CLAP process over localhost IPC. Audio and MIDI stay in the host; the window edits the live plug-in. Ableton install: [ABLETON.md](ABLETON.md). Crate notes: [plugin/README.md](../plugin/README.md).
+`reelsynth-plugin-editor` is the same Design UI, connected to the VST3/CLAP process over localhost IPC. Audio and MIDI stay in the host. In Live, the plug-in pane stays slim — use **Open Editor** (or auto-open from the installer) to launch the full window. Ableton install: [ABLETON.md](ABLETON.md). Crate notes: [plugin/README.md](../plugin/README.md).
 
 ---
 

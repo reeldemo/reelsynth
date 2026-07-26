@@ -54,16 +54,19 @@ Then: **Preferences → Plug-ins → Rescan**, add **ReelSynth** on a MIDI track
 
 ### Editor won’t open
 
+Open the plug-in window in Live and click **Open Editor**, or launch manually:
+
 - Windows: `%LOCALAPPDATA%\ReelSynth\bin\reelsynth-plugin-editor.exe`
 - macOS: `~/Library/Application Support/ReelSynth/bin/reelsynth-plugin-editor`
 
-Config: same `ReelSynth` folder → `config.json`. Set `"auto_editor": false` to stop auto-launch.
+Config: same `ReelSynth` folder → `config.json`. Set `"auto_editor": false` to stop auto-launch (the Live **Open Editor** button still works).
 
 ### What works
 
 | Feature | Status |
 |---------|--------|
 | MIDI → sound in Live | Yes |
+| Slim Live pane + **Open Editor** | Yes |
 | Full Design UI in external window | Yes |
 | Auto-open after install | Yes (`auto_editor`) |
 | Automate a handful of params from Live | Yes |
@@ -79,6 +82,6 @@ Standalone → header **Ableton** → drag `table_multicycle.wav` onto Wavetable
 
 - [ ] Installer finishes clean
 - [ ] Rescan finds ReelSynth
-- [ ] Load track → editor opens (or launch manually)
+- [ ] Load track → editor opens, or click **Open Editor** in the Live pane
 - [ ] Filter move in editor → hear it in Live
 - [ ] Save and reopen the set

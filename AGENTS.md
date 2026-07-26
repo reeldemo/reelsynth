@@ -30,7 +30,7 @@ Index: [docs/README.md](docs/README.md)
 
 1. **Compose mode** — in-app clip edit, record, transport through the synth.
 2. **`daw/midi/melody.mid`** — demo note until full SequenceProject SMF export.
-3. **Plugin** — VST3 plays in Live with external Design UI; full UI inside Live’s pane is not the plan. Cite [docs/ABLETON.md](docs/ABLETON.md).
+3. **Plugin** — VST3 plays in Live with a slim host pane (**Open Editor**) plus external Design UI; stuffing the full UI into Live’s pane is not the plan. Cite [docs/ABLETON.md](docs/ABLETON.md).
 4. **Exports** to Vital/Serum/Ableton are lossy — [docs/INTEROP.md](docs/INTEROP.md).
 5. **Canonical state** — `.reelpreset` + `.reelwt`; sequence data will embed in the patch schema.
 

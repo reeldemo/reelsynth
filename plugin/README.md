@@ -15,6 +15,7 @@ Shared **egui** editor (`reelsynth/ui`) — same Design UI as the standalone app
 |-------|--------|
 | Standalone | `app/` — egui + cpal + engine + Send to Ableton |
 | VST3 / CLAP | `plugin/` — nih-plug instrument; Live QA + polish ongoing |
+| Host pane | Slim egui panel — **Open Editor** launches external Design UI |
 | External editor | `reelsynth-plugin-editor` — full Design UI over localhost IPC |
 | In-host full UI | Not the goal — pane stays slim |
 | JUCE scaffold | Retired |

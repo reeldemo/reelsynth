@@ -1,8 +1,9 @@
 //! ReelSynth nih-plug instrument — slim DAW surface + IPC to external full editor.
 
-use crate::ipc::{IpcEngineState, IpcServer};
+use crate::ipc::{launch_external_editor, IpcEngineState, IpcServer};
 use crate::plugin_state::{PluginStateV1, PLUGIN_STATE_SCHEMA};
 use nih_plug::prelude::*;
+use nih_plug_egui::{create_egui_editor, egui, widgets, EguiState};
 use parking_lot::Mutex;
 use reelsynth::{Patch, SynthEngine, WavetableBank};
 use std::sync::Arc;
@@ -19,6 +20,9 @@ struct ReelSynthPlugin {
 
 #[derive(Params)]
 struct ReelSynthParams {
+    #[persist = "editor-state"]
+    editor_state: Arc<EguiState>,
+
     #[id = "wt_position"]
     pub wt_position: FloatParam,
     #[id = "filter_cutoff"]
@@ -32,6 +36,10 @@ struct ReelSynthParams {
 
     #[persist = "canonical"]
     pub canonical: Arc<Mutex<PluginStateV1>>,
+}
+
+struct HostPanelState {
+    status: String,
 }
 
 impl Default for ReelSynthPlugin {
@@ -59,6 +67,7 @@ impl Default for ReelSynthPlugin {
 impl ReelSynthParams {
     fn default_params_only() -> Self {
         Self {
+            editor_state: EguiState::from_size(320, 140),
             wt_position: FloatParam::new(
                 "WT Position",
                 0.25,
@@ -124,6 +133,51 @@ impl Plugin for ReelSynthPlugin {
 
     fn params(&self) -> Arc<dyn Params> {
         self.params.clone()
+    }
+
+    fn editor(&mut self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
+        let params = self.params.clone();
+        create_egui_editor(
+            self.params.editor_state.clone(),
+            HostPanelState {
+                status: String::new(),
+            },
+            |_, _| {},
+            move |egui_ctx, setter, state| {
+                egui::CentralPanel::default().show(egui_ctx, |ui| {
+                    ui.heading("ReelSynth");
+                    ui.label("Sound + MIDI stay in Live. Full Design UI opens externally.");
+                    ui.add_space(8.0);
+
+                    let open = ui.add_sized(
+                        egui::vec2(ui.available_width().max(200.0), 32.0),
+                        egui::Button::new("Open Editor"),
+                    );
+                    if open.clicked() {
+                        state.status = match launch_external_editor() {
+                            Ok(()) => "Launched external editor.".into(),
+                            Err(e) => e,
+                        };
+                    }
+
+                    ui.add_space(6.0);
+                    if !state.status.is_empty() {
+                        ui.label(&state.status);
+                    } else {
+                        ui.label("Or enable auto_editor in config.json / installer.");
+                    }
+
+                    ui.add_space(10.0);
+                    ui.collapsing("Host params", |ui| {
+                        ui.add(widgets::ParamSlider::for_param(&params.wt_position, setter));
+                        ui.add(widgets::ParamSlider::for_param(&params.filter_cutoff, setter));
+                        ui.add(widgets::ParamSlider::for_param(&params.filter_res, setter));
+                        ui.add(widgets::ParamSlider::for_param(&params.amp_attack, setter));
+                        ui.add(widgets::ParamSlider::for_param(&params.amp_release, setter));
+                    });
+                });
+            },
+        )
     }
 
     fn initialize(
@@ -265,7 +319,7 @@ impl ReelSynthPlugin {
 impl ClapPlugin for ReelSynthPlugin {
     const CLAP_ID: &'static str = "xyz.reelsynth";
     const CLAP_DESCRIPTION: Option<&'static str> =
-        Some("Wavetable synth — use reelsynth-plugin-editor for the full UI");
+        Some("Wavetable synth — Open Editor for the full Design UI");
     const CLAP_MANUAL_URL: Option<&'static str> = Some(Self::URL);
     const CLAP_SUPPORT_URL: Option<&'static str> = None;
     const CLAP_FEATURES: &'static [ClapFeature] = &[

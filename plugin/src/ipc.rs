@@ -126,7 +126,8 @@ impl IpcServer {
             })?;
 
         // Installer sets auto_editor in config.json; env REELSYNTH_AUTO_EDITOR=1 also works.
-        spawn_external_editor();
+        // Host GUI "Open Editor" always launches via `launch_external_editor`.
+        maybe_auto_spawn_external_editor();
 
         Ok(Self {
             port: port_atom,
@@ -203,24 +204,33 @@ fn handle_client(stream: TcpStream, shared: Arc<Mutex<IpcEngineState>>) {
     }
 }
 
-fn spawn_external_editor() {
-    use crate::ableton_config::{editor_candidates, load_config};
+fn maybe_auto_spawn_external_editor() {
+    use crate::ableton_config::load_config;
 
     let cfg = load_config();
     let env_force = std::env::var("REELSYNTH_AUTO_EDITOR").ok().as_deref() == Some("1");
     if !cfg.auto_editor && !env_force {
         return;
     }
+    let _ = launch_external_editor();
+}
 
+/// Spawn the full Design UI (`reelsynth-plugin-editor`). Used by auto-open and the host button.
+pub fn launch_external_editor() -> Result<(), String> {
+    use crate::ableton_config::{editor_candidates, load_config};
+
+    let cfg = load_config();
     for path in editor_candidates(&cfg) {
         if path.is_file() {
-            let _ = std::process::Command::new(&path).spawn();
-            return;
+            std::process::Command::new(&path)
+                .spawn()
+                .map_err(|e| format!("Failed to start {}: {e}", path.display()))?;
+            return Ok(());
         }
     }
 
     if let Ok(root) = std::env::var("REELSYNTH_ROOT") {
-        let _ = std::process::Command::new("cargo")
+        std::process::Command::new("cargo")
             .args([
                 "run",
                 "-p",
@@ -229,9 +239,16 @@ fn spawn_external_editor() {
                 "--bin",
                 "reelsynth-plugin-editor",
             ])
-            .current_dir(root)
-            .spawn();
+            .current_dir(&root)
+            .spawn()
+            .map_err(|e| format!("cargo run editor failed: {e}"))?;
+        return Ok(());
     }
+
+    Err(
+        "Editor not found. Run scripts/install-ableton.ps1 (or .sh), or set REELSYNTH_EDITOR / editor_path in config.json."
+            .into(),
+    )
 }
 
 /// Client used by the external editor process.
