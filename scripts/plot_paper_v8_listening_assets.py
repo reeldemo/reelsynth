@@ -41,6 +41,11 @@ V10_FIG = (
     / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v10"
     / "figures"
 )
+V11_FIG = (
+    META_PAPER
+    / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v11"
+    / "figures"
+)
 
 C_ENGINE = "#D55E00"
 C_DUAL = "#0072B2"
@@ -168,7 +173,7 @@ def plot_wt_gallery(export_json: Path, akwf_dir: Path, out_dir: Path, *paper_dir
     blob = json.loads(export_json.read_text(encoding="utf-8"))
     cycles = blob["cycles"]
     manifest = blob["manifest"]
-    # Prefer one dry mid-morph frame per bank, then fill up to 7 with other dry morphs.
+    # One dry mid-morph frame per unique bank only (no duplicate bank pads).
     by_bank: dict[str, list[int]] = {}
     for i, m in enumerate(manifest):
         by_bank.setdefault(m["bank"], []).append(i)
@@ -178,44 +183,29 @@ def plot_wt_gallery(export_json: Path, akwf_dir: Path, out_dir: Path, *paper_dir
         pool = dry or idxs
         best = min(pool, key=lambda i: abs(float(manifest[i].get("morph_frac", 0.5)) - 0.5))
         chosen.append(best)
-    if len(chosen) < 7:
-        used = set(chosen)
-        candidates = [
-            i
-            for i, m in enumerate(manifest)
-            if i not in used and "_fx_" not in str(m.get("id", ""))
-        ]
-        candidates.sort(key=lambda i: float(manifest[i].get("morph_frac", 0.5)))
-        need = 7 - len(chosen)
-        if candidates and need > 0:
-            picks = np.linspace(0, len(candidates) - 1, num=need, dtype=int)
-            for pi in picks:
-                idx = int(candidates[int(pi)])
-                if idx not in used:
-                    chosen.append(idx)
-                    used.add(idx)
-                if len(chosen) >= 7:
-                    break
-    chosen = chosen[:7]
+    n_cols = len(chosen)
+    if n_cols < 1:
+        raise SystemExit("no factory export cycles found for WT gallery")
 
-    akwf_files = sorted(akwf_dir.glob("AKWF_*.wav"))[:7] if akwf_dir.is_dir() else []
+    # Match column count; spread across OA set so early consecutive AKWFs are not near-duplicates.
+    akwf_all = sorted(akwf_dir.glob("AKWF_*.wav")) if akwf_dir.is_dir() else []
+    if len(akwf_all) >= n_cols:
+        picks = np.linspace(0, len(akwf_all) - 1, num=n_cols, dtype=int)
+        akwf_files = [akwf_all[int(i)] for i in picks]
+    else:
+        akwf_files = akwf_all[:n_cols]
 
-    n_rows = 2
-    n_cols = max(len(chosen), len(akwf_files), 1)
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(1.45 * n_cols, 3.35), sharey=True)
+    fig, axes = plt.subplots(2, n_cols, figsize=(1.55 * n_cols, 3.45), sharey=True)
     if n_cols == 1:
         axes = np.array([[axes[0]], [axes[1]]])
 
     for col in range(n_cols):
         ax = axes[0, col]
-        if col < len(chosen):
-            i = chosen[col]
-            y = np.asarray(cycles[i], dtype=np.float64)
-            ax.plot(y, color="#333333", lw=0.9)
-            ax.set_title(manifest[i]["bank"].replace("_", " "), fontsize=7.5)
-            ax.set_xlim(0, len(y) - 1)
-        else:
-            ax.axis("off")
+        i = chosen[col]
+        y = np.asarray(cycles[i], dtype=np.float64)
+        ax.plot(y, color="#333333", lw=0.9)
+        ax.set_title(manifest[i]["bank"].replace("_", " "), fontsize=7.5)
+        ax.set_xlim(0, len(y) - 1)
         if col == 0:
             ax.set_ylabel("ReelSynth export", fontsize=8)
 
@@ -237,7 +227,7 @@ def plot_wt_gallery(export_json: Path, akwf_dir: Path, out_dir: Path, *paper_dir
             ax.set_ylim(-1.15, 1.15)
 
     fig.suptitle(
-        "Compact wavetable diversity gallery (existing exports only — no new NAS)",
+        "Compact wavetable diversity gallery (existing exports only; no new NAS)",
         fontsize=10,
         y=1.02,
     )
@@ -256,12 +246,13 @@ def plot_wt_gallery(export_json: Path, akwf_dir: Path, out_dir: Path, *paper_dir
         "export_indices": chosen,
         "export_ids": [manifest[i]["id"] for i in chosen],
         "export_banks": [manifest[i]["bank"] for i in chosen],
+        "n_cols": n_cols,
         "akwf_files": [p.name for p in akwf_files],
         "akwf_dir": str(akwf_dir.resolve()) if akwf_dir.is_dir() else None,
-        "matrix_fold": "paper/Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v10/figures/real_wt_matrix.json",
+        "matrix_fold": "paper/Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v11/figures/real_wt_matrix.json",
         "png": str(png.resolve()),
         "pdf": str(pdf.resolve()),
-        "note": "Gallery only; scores remain in real_wt_matrix.json. No new meta search.",
+        "note": "One mid-morph dry frame per unique factory bank; AKWF row matched to same column count. No new meta search.",
     }
     jp = out_dir / "fig_wt_diversity_gallery.json"
     jp.write_text(json.dumps(meta, indent=2), encoding="utf-8")
@@ -275,8 +266,9 @@ def main() -> int:
     ap.add_argument("--export-json", type=Path, default=EXPORT_JSON)
     ap.add_argument("--akwf-dir", type=Path, default=AKWF_DIR)
     ap.add_argument("--out-dir", type=Path, default=OUT_DIR)
-    ap.add_argument("--paper-fig-dir", type=Path, default=V8_FIG)
+    ap.add_argument("--paper-fig-dir", type=Path, default=V11_FIG)
     ap.add_argument("--paper-fig-dir-v10", type=Path, default=V10_FIG)
+    ap.add_argument("--paper-fig-dir-v9", type=Path, default=V8_FIG)
     args = ap.parse_args()
 
     out_resolved = args.out_dir.resolve()
@@ -284,7 +276,11 @@ def main() -> int:
     if out_resolved == forbidden or forbidden in out_resolved.parents:
         raise SystemExit(f"refusing --out-dir under meta_approach_compare/: {out_resolved}")
 
-    paper_dirs = [d for d in (args.paper_fig_dir, args.paper_fig_dir_v10) if d is not None]
+    paper_dirs = [
+        d
+        for d in (args.paper_fig_dir, args.paper_fig_dir_v10, args.paper_fig_dir_v9)
+        if d is not None
+    ]
     args.out_dir.mkdir(parents=True, exist_ok=True)
     hear_meta = plot_hear_panel(args.hear_dir, args.out_dir, *paper_dirs)
     gallery_meta = plot_wt_gallery(args.export_json, args.akwf_dir, args.out_dir, *paper_dirs)

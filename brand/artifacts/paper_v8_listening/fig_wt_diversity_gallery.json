@@ -6,40 +6,33 @@
     382,
     638,
     894,
-    1150,
-    0,
-    1278
+    1150
   ],
   "export_ids": [
     "saw_morph_frame126_dry",
     "square_morph_frame126_dry",
     "sine_frame126_dry",
     "formant_frame126_dry",
-    "metallic_frame126_dry",
-    "saw_morph_frame000_dry",
-    "metallic_frame255_dry"
+    "metallic_frame126_dry"
   ],
   "export_banks": [
     "saw_morph",
     "square_morph",
     "sine",
     "formant",
-    "metallic",
-    "saw_morph",
     "metallic"
   ],
+  "n_cols": 5,
   "akwf_files": [
     "AKWF_0001.wav",
-    "AKWF_0002.wav",
-    "AKWF_0003.wav",
-    "AKWF_0004.wav",
-    "AKWF_0005.wav",
-    "AKWF_0006.wav",
-    "AKWF_0007.wav"
+    "AKWF_0320.wav",
+    "AKWF_0640.wav",
+    "AKWF_0960.wav",
+    "AKWF_1280.wav"
   ],
   "akwf_dir": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\real_wt_cycles\\oa_akwf",
-  "matrix_fold": "paper/Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v10/figures/real_wt_matrix.json",
+  "matrix_fold": "paper/Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v11/figures/real_wt_matrix.json",
   "png": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\paper_v8_listening\\fig_wt_diversity_gallery.png",
   "pdf": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\paper_v8_listening\\fig_wt_diversity_gallery.pdf",
-  "note": "Gallery only; scores remain in real_wt_matrix.json. No new meta search."
+  "note": "One mid-morph dry frame per unique factory bank; AKWF row matched to same column count. No new meta search."
 }
