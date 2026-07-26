@@ -1,24 +1,17 @@
-# Table 14 (	ab:transfer-sota-status) — Note draft
+# Table 14 (tab:transfer-sota-status) — Note draft
 
-Source of truth: DEEP_SOTA_NOT_EXECUTED.json + 
-esults_table.json.
+Source of truth: DEEP_SOTA_NOT_EXECUTED.json + deep_sota_adapters/
 
-| Scope | Note |
-|-------|------|
-| Domain-trained Noise2Noise | Scored on seven boards (Paderborn N2N R=0.8387; expanded PTB-XL N2N R=0.5702) |
-| Cycle-GAN (ECG) | OOD wrap-R scored (MIT-BIH 0.0700; PTB-XL 0.1480) — clinical restore ≠ wrap-R |
-| BeatDiff | Not run — HF `lbedin/BeatDiff` 401 without auth; Drive `beatdiff_prior` missing `.hydra/config.yaml` (Orbax shards unusable) |
-| Paderborn KAt deep | Deep unwired; classical + full Ours R=0.9270 + N2N |
-| Expanded PTB-XL | records500 lead-I expanded (≈2137 records / ≈23094 beat pool); board n=256 |
-| Real KIT CNC / IEEE PMU | Synthetic pilots only (download walls) |
-| Formal MOS / MUSHRA | Not collected |
+| Scope | Status |
+|-------|--------|
+| Domain-trained Noise2Noise (SeamN2N) | Scored on seven boards (Paderborn N2N R=0.8387; expanded PTB-XL N2N R=0.5702). Our SeamN2N, not Lehtinen code. |
+| Cycle-GAN (ECG) author | OOD wrap-R scored (MIT-BIH R=0.0700; PTB-XL R=0.1555) — clinical restore ≠ wrap-R |
+| BeatDiff (Bedin) | Not run — HF huggingface-cli login + download OR browser Drive folder required |
+| Paderborn KAt deep (Al Firdausi CNN) | Author weights loaded; K001 healthy→Normal rate=1.0 (n=256); wrap-R refused (classifier ≠ denoise). Wrap board: Ours 0.9270 / SeamN2N 0.8387 / DualCosine 0.4710 |
 
-## Deltas vs prior smoke
-
-| Item | Before | After |
-|------|--------|-------|
-| Paderborn Ours | 0.8932 (iters=20 smoke) | **0.9270** (iters=250) |
-| PTB-XL N2N | 0.5605 | **0.5702** (expanded board) |
-| PTB-XL records | ~94–200 | **≈2137** *_hr in pool build |
-| Cycle-GAN | not run | MIT-BIH R=0.0700; PTB-XL R=0.1480 |
-| BeatDiff | not run | still blocked (HF 401; Drive prior incomplete) |
+## BeatDiff user action
+`
+huggingface-cli login
+huggingface-cli download lbedin/BeatDiff --local-dir brand/artifacts/signal_heal_transfer/external/weights/beatdiff_hf
+`
+Or browser: https://drive.google.com/drive/folders/1m2OvyYebvnirh1CraCrnSOyjihSkSkLG

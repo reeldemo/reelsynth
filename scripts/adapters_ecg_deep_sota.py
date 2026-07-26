@@ -167,6 +167,7 @@ def find_beatdiff_weights() -> Path | None:
 
 
 def try_hf_beatdiff(dest: Path) -> tuple[Path | None, str]:
+    """Fetch author BeatDiff prior from HF. Stops cleanly if gated/unauthenticated."""
     dest.mkdir(parents=True, exist_ok=True)
     try:
         from huggingface_hub import hf_hub_download, list_repo_files
@@ -175,9 +176,28 @@ def try_hf_beatdiff(dest: Path) -> tuple[Path | None, str]:
     try:
         files = list_repo_files("lbedin/BeatDiff")
     except Exception as e:
+        msg = str(e)
+        gated = "401" in msg or "gated" in msg.lower() or "authenticated" in msg.lower()
+        if gated:
+            return None, (
+                "HF_GATED_OR_AUTH_REQUIRED: repo lbedin/BeatDiff returns 401 without a token. "
+                "User must run:  huggingface-cli login   "
+                "then:  huggingface-cli download lbedin/BeatDiff "
+                f"--local-dir {dest}"
+            )
         return None, f"HF list_repo_files(lbedin/BeatDiff) failed: {type(e).__name__}: {e}"
     ckpts = [f for f in files if f.endswith((".pt", ".ckpt", ".pth", ".safetensors"))]
+    # Also accept orbax / flax directory markers
     if not ckpts:
+        orbaxish = [f for f in files if "checkpoint" in f.lower() or f.endswith((".msgpack", ".orbax"))]
+        if not orbaxish and files:
+            return None, f"HF repo listed but no weight files (n_files={len(files)}; sample={files[:12]})"
+        if orbaxish:
+            try:
+                local = hf_hub_download("lbedin/BeatDiff", orbaxish[0], local_dir=str(dest))
+                return Path(local), f"downloaded {orbaxish[0]}"
+            except Exception as e:
+                return None, f"HF download failed: {type(e).__name__}: {e}"
         return None, f"HF repo listed but no weight files (n_files={len(files)})"
     try:
         local = hf_hub_download("lbedin/BeatDiff", ckpts[0], local_dir=str(dest))
@@ -287,12 +307,55 @@ def run_beatdiff(domains: list[str], device: torch.device, fetch: bool) -> dict[
         "scores": {},
         "blocker": None,
     }
+    # Detect incomplete Drive/Orbax stubs (gdown quota → ~18-byte placeholders).
+    stub_tree = WEIGHTS / "beatdiff" / "beatdiff_prior"
+    if stub_tree.is_dir():
+        files = [p for p in stub_tree.rglob("*") if p.is_file()]
+        big = [p for p in files if p.stat().st_size > 10_000]
+        row["notes"].append(
+            f"Drive tree present n_files={len(files)} n_gt10k={len(big)} "
+            "(Orbax param shards; gdown FileURLRetrievalError left mostly empty stubs)"
+        )
+        if len(big) <= 1:
+            row["blocker"] = (
+                "BEATDIFF_WEIGHTS_INCOMPLETE: Google Drive folder "
+                "https://drive.google.com/drive/folders/1m2OvyYebvnirh1CraCrnSOyjihSkSkLG "
+                "listed but gdown cannot fetch Orbax shards (FileURLRetrievalError / quota). "
+                "HF mirror lbedin/BeatDiff requires login (401 without token). "
+                "USER ACTION: (1) huggingface-cli login  then  "
+                "huggingface-cli download lbedin/BeatDiff "
+                f"--local-dir {WEIGHTS / 'beatdiff_hf'}   "
+                "OR (2) manually download the Drive folder in a browser to "
+                f"{WEIGHTS / 'beatdiff'} and re-run this adapter. "
+                "No wrap-R / native BeatDiff scores until a complete prior checkpoint lands."
+            )
+            row["status"] = "blocked_needs_user_auth_or_manual_drive"
+            row["user_must"] = {
+                "hf_login": "huggingface-cli login",
+                "hf_download": (
+                    f"huggingface-cli download lbedin/BeatDiff --local-dir {WEIGHTS / 'beatdiff_hf'}"
+                ),
+                "drive_url": "https://drive.google.com/drive/folders/1m2OvyYebvnirh1CraCrnSOyjihSkSkLG",
+            }
+            return row
     if w is None:
         row["blocker"] = (
             "No BeatDiff diffusion checkpoint under external/weights. "
-            "HF lbedin/BeatDiff returned auth/empty; Drive folder requires interactive download; "
-            "retrain from PhysioNet beat DB exceeds this session."
+            "HF lbedin/BeatDiff: 401 without token — run `huggingface-cli login` then "
+            f"`huggingface-cli download lbedin/BeatDiff --local-dir {WEIGHTS / 'beatdiff_hf'}`. "
+            "Drive prior+baselines: "
+            "https://drive.google.com/drive/folders/1m2OvyYebvnirh1CraCrnSOyjihSkSkLG "
+            "(browser download; gdown FileURLRetrievalError). "
+            "Retrain from PhysioNet beat DB exceeds this session."
         )
+        row["status"] = "blocked_needs_user_auth_or_manual_drive"
+        row["user_must"] = {
+            "hf_login": "huggingface-cli login",
+            "hf_download": (
+                f"huggingface-cli download lbedin/BeatDiff --local-dir {WEIGHTS / 'beatdiff_hf'}"
+            ),
+            "drive_url": "https://drive.google.com/drive/folders/1m2OvyYebvnirh1CraCrnSOyjihSkSkLG",
+        }
         return row
     # Honest stop: loading a full BeatDiff sampling stack needs hydra configs +
     # trained prior; if a .pt exists we try a minimal torch.load smoke only.
@@ -302,8 +365,8 @@ def run_beatdiff(domains: list[str], device: torch.device, fetch: bool) -> dict[
         row["notes"].append(f"torch.load ok keys/type={keys}")
         row["blocker"] = (
             f"Checkpoint found at {w} but BeatDiff inference requires the full "
-            "hydra sampling stack (EMbeat_diff_denoising) + matching beat DB — "
-            "not adapted to L=256 wrap-R in this thin adapter. No wrap-R scores emitted."
+            "hydra+JAX sampling stack (EMbeat_diff_denoising) + matching beat DB — "
+            "not yet adapted to L=256 wrap-R in this thin adapter. No wrap-R scores emitted."
         )
         row["status"] = "weights_present_infer_not_wired"
     except Exception as e:

@@ -1,5 +1,5 @@
 {
-  "finished_at": "20260726T074617Z",
+  "finished_at": "20260726T082343Z",
   "config": {
     "iters": 250,
     "fit_steps": 40,
@@ -26,18 +26,18 @@
   "skipped": {
     "kit_cnc_real": "awaiting user drop under raw/kit_cnc/ (kit_cnc_README.txt); synth_cnc_g01 proxy still scored",
     "ieee_pmu_real": "S3 URI known but anonymous GET 403; drop IEEE-39-bus_10_generator_PMU.mat into raw/ieee_pmu/; synth_pmu_cycle proxy still scored",
-    "paderborn_kat": "K001 extracted; classical paderborn_kat board cached \u2014 deep SOTA still not executed",
+    "paderborn_kat": "K001 extracted; classical+Ours+SeamN2N scored; author CNN native healthy\u2192N rate scored (wrap-R N/A)",
     "bmrb_nmr": "skipped \u2014 BMRB FID deferred",
-    "deep_sota_cyclegan_beatdiff": "not executed \u2014 no trained Cycle-GAN / BeatDiff weights under residual protocol",
+    "deep_sota_cyclegan_beatdiff": "Cycle-GAN OOD wrap-R scored; BeatDiff blocked \u2014 HF 401 / Drive Orbax stubs incomplete",
     "kit_cnc": "awaiting user drop under raw/kit_cnc/ (kit_cnc_README.txt); synth_cnc_g01 proxy still scored",
     "ieee_pmu": "S3 URI known but anonymous GET 403; drop IEEE-39-bus_10_generator_PMU.mat into raw/ieee_pmu/; synth_pmu_cycle proxy still scored"
   },
   "skipped_optional": {
     "kit_cnc_real": "awaiting user drop under raw/kit_cnc/ (kit_cnc_README.txt); synth_cnc_g01 proxy still scored",
     "ieee_pmu_real": "S3 URI known but anonymous GET 403; drop IEEE-39-bus_10_generator_PMU.mat into raw/ieee_pmu/; synth_pmu_cycle proxy still scored",
-    "paderborn_kat": "K001 extracted; classical paderborn_kat board cached \u2014 deep SOTA still not executed",
+    "paderborn_kat": "K001 extracted; classical+Ours+SeamN2N scored; author CNN native healthy\u2192N rate scored (wrap-R N/A)",
     "bmrb_nmr": "skipped \u2014 BMRB FID deferred",
-    "deep_sota_cyclegan_beatdiff": "not executed \u2014 no trained Cycle-GAN / BeatDiff weights under residual protocol",
+    "deep_sota_cyclegan_beatdiff": "Cycle-GAN OOD wrap-R scored; BeatDiff blocked \u2014 HF 401 / Drive Orbax stubs incomplete",
     "kit_cnc": "awaiting user drop under raw/kit_cnc/ (kit_cnc_README.txt); synth_cnc_g01 proxy still scored",
     "ieee_pmu": "S3 URI known but anonymous GET 403; drop IEEE-39-bus_10_generator_PMU.mat into raw/ieee_pmu/; synth_pmu_cycle proxy still scored"
   },
@@ -88,7 +88,7 @@
         "protocol": "operational_cyclegan_pretrained_L256_holdout_20260719",
         "weight": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\cyclegan\\model_weights_16NQ3.pth",
         "n_holdout": 64,
-        "footnote": "Clinical restore \u2260 wrap-R; OOD transfer probe only."
+        "footnote": "Clinical restore \u2260 wrap-R; OOD transfer probe only. Author Operational Cycle-GAN weights."
       }
     },
     "ptbxl_ecg": {
@@ -111,13 +111,13 @@
         "steps": 4000
       },
       "cycle_gan_ecg": {
-        "R": 0.14803940057754517,
-        "R_blend": 0.22339724004268646,
+        "R": 0.15552377700805664,
+        "R_blend": 0.2104691118001938,
         "kind": "cycle_gan_ecg_ood_wrapR",
         "protocol": "operational_cyclegan_pretrained_L256_holdout_20260719",
         "weight": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\cyclegan\\model_weights_16NQ3.pth",
         "n_holdout": 64,
-        "footnote": "Clinical restore \u2260 wrap-R; OOD transfer probe only."
+        "footnote": "Clinical restore \u2260 wrap-R; OOD transfer probe only. Author Operational Cycle-GAN weights."
       }
     },
     "synth_cnc_g01": {
@@ -196,6 +196,19 @@
         "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\paderborn_kat\\n2n_corrupt_corrupt.pt",
         "n_holdout": 64,
         "steps": 4000
+      },
+      "paderborn_deep_alfirdausi_cnn": {
+        "kind": "author_fault_classifier_native",
+        "wrap_R": null,
+        "healthy_Normal_rate": 1.0,
+        "n_segments": 256,
+        "metric": "healthy_K001_segment_Normal_rate",
+        "citation": {
+          "paper": "Al Firdausi & Ahmad, Comm. Sci. Tech. 7(1):62\u201372, 2022",
+          "github": "https://github.com/mdzalfirdausi/CNN-for-Paderborn-Bearing-Dataset",
+          "weight": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\paderborn_cnn\\model.pth"
+        },
+        "footnote": "Author CNN (Al Firdausi 2022) is fault classification \u2014 wrap-R refused."
       }
     }
   },
@@ -2575,5 +2588,10 @@
     "paderborn_deep": "not_executed",
     "note": "Literature comparison only; no invented scores."
   },
-  "ptbxl_expanded_note": "ptbxl_ecg board rebuilt from expanded records500 lead-I pool; Ours/N2N/classical rescored"
+  "ptbxl_expanded_note": "ptbxl_ecg board rebuilt from expanded records500 lead-I pool; Ours/N2N/classical rescored",
+  "deep_sota": {
+    "cycle_gan": "executed_ood_wrapR",
+    "beatdiff": "blocked_needs_user_auth_or_manual_drive",
+    "paderborn_deep": "executed_native_healthy_only_alfirdausi_cnn"
+  }
 }
