@@ -14,14 +14,14 @@ Ordered implementation units. Technical plan: [spec.md](spec.md). Requirements: 
 | T7 | Docs (reelsynth): INTEROP, WORKFLOW, REELDEMO_INTEGRATION, CHANGELOG for bridge | T6 | **Done** AC-5.1, AC-5.3 (Send) |
 | T8 | **Human gate / other repo:** clone `reeldemo-ableton`; alias apply prefers wavetable_map; stage multicycle in handover inbox | T2 | AC-3.1, AC-3.2 (OSC path) |
 | T9 | Implement Extension `importHandoverBundle` for `midi_device` (or document OSC-only if Extension blocked) | T8 | AC-3.3, AC-3.4 |
-| T10 | Plugin crate: adopt nih-plug, set license GPL-3.0-or-later, `nih_export_vst3!` + `nih_export_clap!`, remove null clap stub | T0 | Builds cdylib; README license wall; AC-4.6, AC-4.7 |
-| T11 | Plugin processor: wrap `SynthEngine`, host MIDI → notes, stereo process, SR re-init | T10 | AC-4.2; offline render/smoke test without Live |
-| T12 | Plugin params subset + state blob (preset + bank) save/restore | T11 | AC-4.4, AC-4.5 round-trip test |
-| T13 | Embed `draw_shell` via `nih_plug_egui`; plugin host mode hides devices; Compose disabled/noted | T11 | AC-4.3, AC-4.8 |
-| T14 | Bundle `.vst3`; document install; Live 12 manual QA checklist | T12, T13 | AC-4.1; checklist checked in docs |
-| T15 | Docs: VST3 primary path; bridge = fallback; capability matrix update; CHANGELOG | T14 | AC-5.1, AC-5.3, AC-5.4 |
-| T16 | Studio: `midi_reelsynth_vst3` handover mode with Wavetable fallback | T9, T14 | AC-3.5 |
-| T17 | SDD analyze + checklist against AC; fix drift | T7, T15, T16 | `analyze.md` or checklist pass; no open MVP AC |
+| T10 | Plugin crate: adopt nih-plug, set license GPL-3.0-or-later, `nih_export_vst3!` + `nih_export_clap!`, remove null clap stub | T0 | **Done** (stub kept for IDs; nih_plugin exports real entries) |
+| T11 | Plugin processor: wrap `SynthEngine`, host MIDI → notes, stereo process, SR re-init | T10 | **Done** compile-time; Live smoke pending |
+| T12 | Plugin params subset + state blob (preset + bank) save/restore | T11 | Params done; **state blob open** |
+| T13 | Embed `draw_shell` via `nih_plug_egui`; plugin host mode hides devices; Compose disabled/noted | T11 | **Blocked** egui 0.30 vs adapter 0.34 |
+| T14 | Bundle `.vst3`; document install; Live 12 manual QA checklist | T12, T13 | **Open** |
+| T15 | Docs: VST3 primary path; bridge = fallback; capability matrix update; CHANGELOG | T14 | Partial CHANGELOG; matrix hold |
+| T8–T9, T16 | Studio Extension | — | **Deferred** (other repo) |
+| T17 | SDD analyze | — | **analyze.md** written; reopen when T12–T16 land |
 
 ## Deferred
 

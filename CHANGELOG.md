@@ -9,6 +9,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - **Send to Ableton** — header **Ableton** button writes a User Library inbox bundle (`REELSYNTH_ABLETON_INBOX` override) with `reelsynth-ableton-wt-v2` map, `table_multicycle.wav`, frames, and README; probes AbletonOSC `:11000` and best-effort creates a Wavetable track. Custom sprites still require one drag (Live API limit).
+- **VST3/CLAP instrument scaffold** — `reelsynth-plugin` links nih-plug (`GPL-3.0-or-later`), wraps `SynthEngine` with MIDI + 5 automatable params. Shared egui host embed and preset state blob still pending (egui version bump).
 
 ### Changed
 
