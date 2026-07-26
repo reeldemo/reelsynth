@@ -54,7 +54,7 @@ Then: **Preferences → Plug-ins → Rescan**, add **ReelSynth** on a MIDI track
 
 ### Editor won’t open
 
-Open the plug-in window in Live and click **Open Editor**, or launch manually:
+Open the plug-in window in Live and click **Open Editor**, or flip the **Open Editor** switch on the device itself (no floating window needed). Manual launch:
 
 - Windows: `%LOCALAPPDATA%\ReelSynth\bin\reelsynth-plugin-editor.exe`
 - macOS: `~/Library/Application Support/ReelSynth/bin/reelsynth-plugin-editor`
@@ -66,7 +66,8 @@ Config: same `ReelSynth` folder → `config.json`. Set `"auto_editor": false` to
 | Feature | Status |
 |---------|--------|
 | MIDI → sound in Live | Yes |
-| Slim Live pane + **Open Editor** | Yes |
+| Slim Live pane + **Open Editor** | Yes (plug-in window) |
+| **Open Editor** switch on device | Yes (Live device rack — toggle on) |
 | Full Design UI in external window | Yes |
 | Auto-open after install | Yes (`auto_editor`) |
 | Automate a handful of params from Live | Yes |

@@ -23,6 +23,10 @@ struct ReelSynthParams {
     #[persist = "editor-state"]
     editor_state: Arc<EguiState>,
 
+    /// Visible in Live's device rack (no custom window needed). Toggle on to launch.
+    #[id = "open_editor"]
+    pub open_editor: BoolParam,
+
     #[id = "wt_position"]
     pub wt_position: FloatParam,
     #[id = "filter_cutoff"]
@@ -67,7 +71,24 @@ impl Default for ReelSynthPlugin {
 impl ReelSynthParams {
     fn default_params_only() -> Self {
         Self {
-            editor_state: EguiState::from_size(320, 140),
+            editor_state: EguiState::from_size(360, 160),
+            open_editor: BoolParam::new("Open Editor", false)
+                .with_callback(Arc::new(|on| {
+                    if on {
+                        // Don't block the host/audio thread on process spawn.
+                        std::thread::spawn(|| {
+                            let _ = launch_external_editor();
+                        });
+                    }
+                }))
+                .non_automatable()
+                .with_value_to_string(Arc::new(|on| {
+                    if on {
+                        "launched".into()
+                    } else {
+                        "off".into()
+                    }
+                })),
             wt_position: FloatParam::new(
                 "WT Position",
                 0.25,
@@ -146,11 +167,11 @@ impl Plugin for ReelSynthPlugin {
             move |egui_ctx, setter, state| {
                 egui::CentralPanel::default().show(egui_ctx, |ui| {
                     ui.heading("ReelSynth");
-                    ui.label("Sound + MIDI stay in Live. Full Design UI opens externally.");
+                    ui.label("Full Design UI opens in a separate window.");
                     ui.add_space(8.0);
 
                     let open = ui.add_sized(
-                        egui::vec2(ui.available_width().max(200.0), 32.0),
+                        egui::vec2(ui.available_width().max(220.0), 36.0),
                         egui::Button::new("Open Editor"),
                     );
                     if open.clicked() {
@@ -164,11 +185,14 @@ impl Plugin for ReelSynthPlugin {
                     if !state.status.is_empty() {
                         ui.label(&state.status);
                     } else {
-                        ui.label("Or enable auto_editor in config.json / installer.");
+                        ui.small(
+                            "In Live's device rack: toggle the Open Editor switch (no plug-in window needed).",
+                        );
                     }
 
                     ui.add_space(10.0);
                     ui.collapsing("Host params", |ui| {
+                        ui.add(widgets::ParamSlider::for_param(&params.open_editor, setter));
                         ui.add(widgets::ParamSlider::for_param(&params.wt_position, setter));
                         ui.add(widgets::ParamSlider::for_param(&params.filter_cutoff, setter));
                         ui.add(widgets::ParamSlider::for_param(&params.filter_res, setter));

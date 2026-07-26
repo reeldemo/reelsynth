@@ -10,7 +10,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **Send to Ableton** — header **Ableton** button writes a User Library inbox bundle (`REELSYNTH_ABLETON_INBOX` override) with `reelsynth-ableton-wt-v2` map, `table_multicycle.wav`, frames, and README; probes AbletonOSC `:11000` and best-effort creates a Wavetable track. Custom sprites still require one drag (Live API limit).
 - **Ableton installer (Win/macOS)** — `scripts/install-ableton.ps1` / `scripts/install-ableton.sh` build and install VST3 + external editor and enable `auto_editor` in user config. Linux is not an Ableton target.
-- **Open Editor in Live** — slim nih-plug egui host panel with an **Open Editor** button that launches `reelsynth-plugin-editor` (same path as auto-open / installer).
+- **Open Editor in Live** — slim nih-plug egui host panel with an **Open Editor** button, plus an **Open Editor** bool on the device rack (toggle on) that launches `reelsynth-plugin-editor` without opening the custom plug-in window.
 
 ### Changed
 
