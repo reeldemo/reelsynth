@@ -16,7 +16,7 @@ MIT wavetable synth — Rust DSP, standalone egui app, Python bindings, export C
 
 Index: [docs/README.md](docs/README.md)
 
-## What works (roughly v0.3)
+## What works (roughly v0.4)
 
 | Yes | Not yet / partial |
 |-----|-------------------|

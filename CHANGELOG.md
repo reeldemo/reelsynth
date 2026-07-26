@@ -6,6 +6,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-26
+
 ### Added
 
 - **Send to Ableton** — header **Ableton** button writes a User Library inbox bundle (`REELSYNTH_ABLETON_INBOX` override) with `reelsynth-ableton-wt-v2` map, `table_multicycle.wav`, frames, and README; probes AbletonOSC `:11000` and best-effort creates a Wavetable track. Custom sprites still require one drag (Live API limit).
@@ -13,7 +15,6 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Open Editor in Live** — slim nih-plug egui host panel with an **Open Editor** button, plus an **Open Editor** bool on the device rack (toggle on) that launches `reelsynth-plugin-editor` without opening the custom plug-in window.
 - **External editor notes** — piano strip and Z–M computer keys in `reelsynth-plugin-editor` send NoteOn/Off to the Live VST over IPC so you can audition without focusing Ableton.
 - **External editor I/O labels** — header shows **Audio · Live** / **MIDI · Live** instead of a fake one-item device list; pick real devices in Ableton Preferences.
-- **Ableton audio hot path** — stop cloning/encoding the full wavetable bank every process buffer (was stalling Live’s audio thread so MIDI + editor keys appeared silent); hot-apply editor patches and return `KeepAlive`.
 
 ### Changed
 
@@ -22,6 +23,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Header density** — moved **input octave** into the Perf dropdown (shows as `· Oct ±N` when non-zero) and tightened Result/MIDI/Audio combo widths so left/right header clusters no longer overlap at 1280px (layout-audit CI).
 
 ### Fixed
+
+- **Ableton silent / stuck transport** — stop cloning/encoding the wavetable bank on the audio thread; IPC decode/encode runs off-thread with `try_lock` + a lock-free note queue so Live can start playback and play MIDI/editor notes through the VST.
 
 ## [0.3.0] - 2026-07-25
 
@@ -122,7 +125,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Python PyO3 bindings for render and export
 - Plugin UI shell (CLAP entry stub, no host I/O)
 
-[Unreleased]: https://github.com/reeldemo/reelsynth/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/reeldemo/reelsynth/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/reeldemo/reelsynth/releases/tag/v0.4.0
 [0.3.0]: https://github.com/reeldemo/reelsynth/releases/tag/v0.3.0
 [0.2.0]: https://github.com/reeldemo/reelsynth/releases/tag/v0.2.0
 [0.1.0]: https://github.com/reeldemo/reelsynth/releases/tag/v0.1.0
