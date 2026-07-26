@@ -77,7 +77,10 @@ impl SynthEngine {
     pub fn new(bank: WavetableBank, patch: Patch, sample_rate: u32) -> Self {
         let params = EngineParams::new(&patch, sample_rate as f32);
         let pool = VoicePool::new(&patch);
-        let fx = FxChain::new(sample_rate);
+        // FxChain::new seeds default_effects(); always bind the patch rack so
+        // custom mix/bypass/order (and plugin hydrate) actually sound.
+        let mut fx = FxChain::new(sample_rate);
+        fx.set_effects(patch.effects.clone());
         let overtone = OvertoneFilterChain::new(sample_rate);
         let crackle_l = CrackleVoice::default();
         let crackle_r = CrackleVoice::default();
@@ -139,7 +142,10 @@ impl SynthEngine {
         self.sequencer.sync_from_project(&patch.sequence);
         self.params.sync_from_patch(&patch);
         self.banks = BankSet::from_primary(self.banks.primary().clone(), &patch);
-        if patch.effects != self.patch.effects {
+        // Always rebind when the rack changes. Also covers the case where
+        // `self.patch.effects` already matched but FxChain was still on defaults
+        // (e.g. older `new()` without set_effects).
+        if patch.effects != self.patch.effects || patch.effects != *self.fx.slots() {
             self.fx.set_effects(patch.effects.clone());
         }
         self.patch = patch;
@@ -395,6 +401,11 @@ impl SynthEngine {
     pub fn set_effects(&mut self, effects: Vec<crate::fx::EffectSlot>) {
         self.patch.effects = effects.clone();
         self.fx.set_effects(effects);
+    }
+
+    /// Active post-voice FX rack (must match `patch.effects` after `new` / hot apply).
+    pub fn effect_slots(&self) -> &[crate::fx::EffectSlot] {
+        self.fx.slots()
     }
 
     /// Session-only overtone / anti-crackle chain (not persisted in `.reelpreset`).
@@ -930,5 +941,23 @@ mod tests {
                 "staggered {n}-note hard-clipped or non-finite"
             );
         }
+    }
+
+    #[test]
+    fn new_binds_custom_effects_rack() {
+        let bank = WavetableBank::factory_sine();
+        let mut patch = Patch::default_mono();
+        let mut dist = crate::fx::EffectSlot::distortion();
+        dist.bypassed = false;
+        dist.mix = 0.9;
+        dist.drive = 0.7;
+        patch.effects = vec![dist];
+        let eng = SynthEngine::new(bank, patch.clone(), 44_100);
+        assert_eq!(eng.effect_slots(), patch.effects.as_slice());
+        assert_eq!(eng.effect_slots().len(), 1);
+        assert_eq!(
+            eng.effect_slots()[0].effect_type,
+            crate::fx::EffectType::Distortion
+        );
     }
 }
