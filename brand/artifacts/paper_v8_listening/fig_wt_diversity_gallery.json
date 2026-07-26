@@ -25,10 +25,10 @@
   "n_cols": 5,
   "akwf_files": [
     "AKWF_0001.wav",
-    "AKWF_0320.wav",
-    "AKWF_0640.wav",
-    "AKWF_0960.wav",
-    "AKWF_1280.wav"
+    "AKWF_0257.wav",
+    "AKWF_0513.wav",
+    "AKWF_0769.wav",
+    "AKWF_1025.wav"
   ],
   "akwf_dir": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\real_wt_cycles\\oa_akwf",
   "matrix_fold": "paper/Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v11/figures/real_wt_matrix.json",

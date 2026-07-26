@@ -187,13 +187,37 @@ def plot_wt_gallery(export_json: Path, akwf_dir: Path, out_dir: Path, *paper_dir
     if n_cols < 1:
         raise SystemExit("no factory export cycles found for WT gallery")
 
-    # Match column count; spread across OA set so early consecutive AKWFs are not near-duplicates.
+    # Match column count; spread across OA set and skip near-sine clones of the factory sine bank.
     akwf_all = sorted(akwf_dir.glob("AKWF_*.wav")) if akwf_dir.is_dir() else []
-    if len(akwf_all) >= n_cols:
-        picks = np.linspace(0, len(akwf_all) - 1, num=n_cols, dtype=int)
-        akwf_files = [akwf_all[int(i)] for i in picks]
-    else:
-        akwf_files = akwf_all[:n_cols]
+    sine_ref = np.sin(np.linspace(0.0, 2.0 * np.pi, 256, endpoint=False))
+
+    def _too_sine(path: Path) -> bool:
+        y = load_akwf_cycle(path)
+        if y.size != sine_ref.size:
+            y = np.interp(np.linspace(0, 1, sine_ref.size), np.linspace(0, 1, y.size), y)
+        peak = float(np.max(np.abs(y))) + 1e-9
+        corr = float(np.corrcoef(y / peak, sine_ref)[0, 1])
+        return abs(corr) > 0.92
+
+    akwf_files: list[Path] = []
+    if akwf_all:
+        step = max(1, len(akwf_all) // n_cols)
+        i = 0
+        while len(akwf_files) < n_cols and i < len(akwf_all) * 2:
+            cand = akwf_all[i % len(akwf_all)]
+            i += step
+            if any(cand.name == p.name for p in akwf_files):
+                continue
+            if _too_sine(cand):
+                continue
+            akwf_files.append(cand)
+        # Fallback fill if filters were too strict.
+        for cand in akwf_all:
+            if len(akwf_files) >= n_cols:
+                break
+            if any(cand.name == p.name for p in akwf_files):
+                continue
+            akwf_files.append(cand)
 
     fig, axes = plt.subplots(2, n_cols, figsize=(1.55 * n_cols, 3.45), sharey=True)
     if n_cols == 1:
