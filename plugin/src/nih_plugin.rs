@@ -1,6 +1,6 @@
 //! ReelSynth nih-plug instrument — slim DAW surface + IPC to external full editor.
 
-use crate::ipc::{launch_external_editor, IpcEngineState, IpcServer};
+use crate::ipc::{launch_external_editor, IpcEngineState, IpcServer, PendingNote};
 use crate::plugin_state::{PluginStateV1, PLUGIN_STATE_SCHEMA};
 use nih_plug::prelude::*;
 use nih_plug_egui::{create_egui_editor, egui, widgets, EguiState};
@@ -232,15 +232,30 @@ impl Plugin for ReelSynthPlugin {
         _aux: &mut AuxiliaryBuffers,
         context: &mut impl ProcessContext<Self>,
     ) -> ProcessStatus {
-        // Pull edits from the external full editor.
-        {
+        // Pull edits / notes from the external full editor.
+        let (dirty, notes) = {
             let mut g = self.ipc_shared.lock();
-            if g.dirty {
+            let dirty = g.dirty;
+            if dirty {
                 self.patch = g.patch.clone();
                 self.bank = g.bank.clone();
                 g.dirty = false;
-                drop(g);
-                self.rebuild_engine();
+            }
+            (dirty, g.drain_notes())
+        };
+        if dirty {
+            self.rebuild_engine();
+        }
+        if let Some(engine) = self.engine.as_mut() {
+            for n in notes {
+                match n {
+                    PendingNote::On { note, velocity } => {
+                        engine.note_on(0, note, velocity);
+                    }
+                    PendingNote::Off { note } => {
+                        engine.note_off(0, note);
+                    }
+                }
             }
         }
 

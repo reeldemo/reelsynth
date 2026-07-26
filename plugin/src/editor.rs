@@ -2,7 +2,7 @@
 
 use crate::ipc::IpcClient;
 use crate::plugin_state::PluginStateV1;
-use eframe::egui;
+use eframe::egui::{self, Key};
 use reelsynth::{Patch, WavetableBank};
 use reelsynth_ui::{
     draw_shell, patch_from_state, sync_state_from_patch, ShellAudioDevices, ShellConfig,
@@ -50,8 +50,8 @@ impl PluginEditorApp {
                 ..UiState::default()
             },
             config,
-            midi_names: vec!["Host MIDI".into()],
-            audio_names: vec!["Host audio".into()],
+            midi_names: vec!["Host MIDI (Live)".into()],
+            audio_names: vec!["Host audio (Live)".into()],
             client: None,
             patch: Patch::default_mono(),
             bank: WavetableBank::factory_saw_morph(),
@@ -74,7 +74,8 @@ impl PluginEditorApp {
                         self.bank = bank;
                     }
                     self.state.status =
-                        "Connected to Ableton — edits push to the Live instrument.".into();
+                        "Connected — piano / Z–M keys play through Live. Edits push to the instrument."
+                            .into();
                     self.client = Some(client);
                 }
                 Err(e) => {
@@ -113,7 +114,8 @@ impl PluginEditorApp {
         if let Some(client) = self.client.as_mut() {
             match client.set_state(state) {
                 Ok(()) => {
-                    self.state.status = "Pushed patch to Ableton instrument.".into();
+                    self.state.status =
+                        "Pushed patch to Ableton · piano / Z–M play through Live.".into();
                 }
                 Err(e) => {
                     self.state.status = format!("Push failed: {e} — reconnecting…");
@@ -122,6 +124,86 @@ impl PluginEditorApp {
             }
         }
     }
+
+    fn send_note_on(&mut self, note: u8, velocity: f32) {
+        self.state.keys_down.insert(note);
+        if let Some(client) = self.client.as_mut() {
+            if let Err(e) = client.note_on(note, velocity) {
+                self.state.status = format!("NoteOn failed: {e}");
+                self.client = None;
+            }
+        }
+    }
+
+    fn send_note_off(&mut self, note: u8) {
+        self.state.keys_down.remove(&note);
+        if let Some(client) = self.client.as_mut() {
+            if let Err(e) = client.note_off(note) {
+                self.state.status = format!("NoteOff failed: {e}");
+                self.client = None;
+            }
+        }
+    }
+
+    fn handle_computer_keys(&mut self, ctx: &egui::Context) {
+        let octave = self.state.performance.input_octave_offset;
+        let events: Vec<(Key, bool)> = ctx.input(|i| {
+            i.events
+                .iter()
+                .filter_map(|e| match e {
+                    egui::Event::Key {
+                        key,
+                        pressed,
+                        repeat,
+                        ..
+                    } if !*repeat => Some((*key, *pressed)),
+                    _ => None,
+                })
+                .collect()
+        });
+        for (key, pressed) in events {
+            let Some(base) = qwerty_note(key) else {
+                continue;
+            };
+            let note = shift_note(base, octave);
+            if pressed {
+                self.send_note_on(note, 0.9);
+            } else {
+                self.send_note_off(note);
+            }
+        }
+    }
+}
+
+fn qwerty_note(key: Key) -> Option<u8> {
+    match key {
+        Key::Z => Some(48),
+        Key::S => Some(49),
+        Key::X => Some(50),
+        Key::D => Some(51),
+        Key::C => Some(52),
+        Key::V => Some(53),
+        Key::G => Some(54),
+        Key::B => Some(55),
+        Key::H => Some(56),
+        Key::N => Some(57),
+        Key::J => Some(58),
+        Key::M => Some(59),
+        _ => None,
+    }
+}
+
+fn shift_note(note: u8, octave_offset: i8) -> u8 {
+    let shifted = i16::from(note) + i16::from(octave_offset) * 12;
+    shifted.clamp(0, 127) as u8
+}
+
+fn freq_to_midi(freq: f32) -> u8 {
+    if freq <= 0.0 {
+        return 69;
+    }
+    let midi = 69.0 + 12.0 * (freq / 440.0).log2();
+    midi.round().clamp(0.0, 127.0) as u8
 }
 
 impl eframe::App for PluginEditorApp {
@@ -135,6 +217,8 @@ impl eframe::App for PluginEditorApp {
         if self.push_cooldown > 0 {
             self.push_cooldown -= 1;
         }
+
+        self.handle_computer_keys(ctx);
 
         egui::CentralPanel::default()
             .frame(egui::Frame {
@@ -176,6 +260,15 @@ impl eframe::App for PluginEditorApp {
                         self.push_cooldown = 3;
                     }
                 }
+                if let Some(n) = actions.note_on {
+                    self.send_note_on(n, 0.9);
+                }
+                if let Some(n) = actions.note_off {
+                    self.send_note_off(n);
+                }
+                if let Some((freq, vel)) = actions.note_on_freq {
+                    self.send_note_on(freq_to_midi(freq), vel);
+                }
                 if ui
                     .interact(
                         ui.max_rect(),
@@ -188,6 +281,6 @@ impl eframe::App for PluginEditorApp {
                     self.try_connect();
                 }
             });
-        ctx.request_repaint_after(std::time::Duration::from_millis(33));
+        ctx.request_repaint_after(std::time::Duration::from_millis(16));
     }
 }

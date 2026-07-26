@@ -3,6 +3,7 @@
 use parking_lot::Mutex;
 use reelsynth::{Patch, WavetableBank};
 use serde::{Deserialize, Serialize};
+use std::collections::VecDeque;
 use std::io::{BufRead, BufReader, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
@@ -19,6 +20,8 @@ pub enum IpcRequest {
     Ping,
     GetState,
     SetState { state: PluginStateV1 },
+    NoteOn { note: u8, velocity: f32 },
+    NoteOff { note: u8 },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -68,6 +71,14 @@ pub struct IpcEngineState {
     pub patch: Patch,
     pub bank: WavetableBank,
     pub dirty: bool,
+    /// Note events from the external editor (drained on the audio thread).
+    pub pending_notes: VecDeque<PendingNote>,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum PendingNote {
+    On { note: u8, velocity: f32 },
+    Off { note: u8 },
 }
 
 impl IpcEngineState {
@@ -76,6 +87,7 @@ impl IpcEngineState {
             patch,
             bank,
             dirty: false,
+            pending_notes: VecDeque::new(),
         }
     }
 
@@ -90,6 +102,22 @@ impl IpcEngineState {
         self.bank = bank;
         self.dirty = true;
         Ok(())
+    }
+
+    pub fn push_note_on(&mut self, note: u8, velocity: f32) {
+        self.pending_notes.push_back(PendingNote::On {
+            note: note.min(127),
+            velocity: velocity.clamp(0.0, 1.0),
+        });
+    }
+
+    pub fn push_note_off(&mut self, note: u8) {
+        self.pending_notes
+            .push_back(PendingNote::Off { note: note.min(127) });
+    }
+
+    pub fn drain_notes(&mut self) -> Vec<PendingNote> {
+        self.pending_notes.drain(..).collect()
     }
 }
 
@@ -193,6 +221,14 @@ fn handle_client(stream: TcpStream, shared: Arc<Mutex<IpcEngineState>>) {
                 }
                 Err(message) => IpcResponse::Err { message },
             },
+            Ok(IpcRequest::NoteOn { note, velocity }) => {
+                shared.lock().push_note_on(note, velocity);
+                IpcResponse::Ok { state: None }
+            }
+            Ok(IpcRequest::NoteOff { note }) => {
+                shared.lock().push_note_off(note);
+                IpcResponse::Ok { state: None }
+            }
             Err(e) => IpcResponse::Err {
                 message: e.to_string(),
             },
@@ -306,6 +342,20 @@ impl IpcClient {
 
     pub fn set_state(&mut self, state: PluginStateV1) -> Result<(), String> {
         match self.request(&IpcRequest::SetState { state })? {
+            IpcResponse::Ok { .. } => Ok(()),
+            IpcResponse::Err { message } => Err(message),
+        }
+    }
+
+    pub fn note_on(&mut self, note: u8, velocity: f32) -> Result<(), String> {
+        match self.request(&IpcRequest::NoteOn { note, velocity })? {
+            IpcResponse::Ok { .. } => Ok(()),
+            IpcResponse::Err { message } => Err(message),
+        }
+    }
+
+    pub fn note_off(&mut self, note: u8) -> Result<(), String> {
+        match self.request(&IpcRequest::NoteOff { note })? {
             IpcResponse::Ok { .. } => Ok(()),
             IpcResponse::Err { message } => Err(message),
         }

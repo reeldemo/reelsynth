@@ -69,6 +69,7 @@ Config: same `ReelSynth` folder → `config.json`. Set `"auto_editor": false` to
 | Slim Live pane + **Open Editor** | Yes (plug-in window) |
 | **Open Editor** switch on device | Yes (Live device rack — toggle on) |
 | Full Design UI in external window | Yes |
+| Piano / Z–M keys in external editor | Yes (notes → Live VST via IPC) |
 | Auto-open after install | Yes (`auto_editor`) |
 | Automate a handful of params from Live | Yes |
 | Save / reload Live set | Yes |
