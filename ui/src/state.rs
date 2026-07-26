@@ -94,6 +94,8 @@ pub struct ShellActions {
     pub note_off: Option<u8>,
     pub open_preset: bool,
     pub save_preset: bool,
+    /// Export patch to Ableton User Library inbox (+ OSC when available).
+    pub send_to_ableton: bool,
     pub import_wt_file: bool,
     pub save_wt_file: bool,
     pub import_factory_wt: Option<String>,

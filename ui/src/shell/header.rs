@@ -64,6 +64,14 @@ pub(super) fn draw_header(
                     }
                     record_used(ui.ctx(), AuditId::HeaderSaveBtn, save.rect);
 
+                    let send_ab = button_ghost(ui, "Ableton");
+                    if send_ab.clicked() {
+                        actions.send_to_ableton = true;
+                    }
+                    send_ab.on_hover_text(
+                        "Send to Ableton inbox (drag multicycle WAV onto Wavetable; OSC if online)",
+                    );
+
                     ui.add_space(GRID_UNIT);
 
                     let design = button_toggle(ui, "Design", state.shell_mode == ShellMode::Design);

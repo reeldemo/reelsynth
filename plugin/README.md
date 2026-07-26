@@ -2,36 +2,21 @@
 
 **UI:** [egui](https://github.com/emilk/egui) via shared `reelsynth/ui` crate — same editor as the standalone app. **No JUCE.**
 
-**Host:** Custom Rust CLAP + VST3 + AU bindings (MIT). Planned for S6 public release.
+**Host:** S7 target — **nih-plug** VST3 (+ CLAP for other DAWs). Ableton Live requires **VST3** (not CLAP).
+
+## License wall
+
+- Core `reelsynth` / standalone app: **MIT**
+- This `reelsynth-plugin` crate: becomes **GPL-3.0-or-later** when linking nih-plug VST3 (`vst3-sys`). Do not relicense the whole tree.
 
 ## Status
 
 | Item | State |
-|------|--------|
-| Standalone app | `app/` — egui + cpal + `SynthEngine` |
+|------|-------|
+| Standalone app | `app/` — egui + cpal + `SynthEngine` + **Send to Ableton** bridge |
 | Plugin shell | `plugin/` — CLAP entry stub + editor spike (`reelsynth-plugin-editor`) |
+| nih-plug VST3/CLAP instrument | **S7 — in progress** (see `docs/sdd/specs/ableton-live-integration/`) |
 | JUCE CMake scaffold | **Retired** — do not use |
-
-## Planned layout (S6)
-
-```
-plugin/
-  Cargo.toml
-  src/
-    lib.rs
-    clap_entry.rs
-    vst3_entry.rs
-    au_entry.rs          # macOS
-    editor.rs            # egui editor (shared with app/)
-```
-
-## Build (when implemented)
-
-```bash
-cargo build -p reelsynth-plugin --release
-```
-
-Artifacts: `.clap`, `.vst3`, `.component` (AU) — see [docs/UI.md](../docs/UI.md).
 
 ## Offline / agent use (today)
 
@@ -40,3 +25,4 @@ No plugin required:
 - PyO3: `maturin develop --features python`
 - CLI export: `cargo run --bin reelsynth-export -- --help`
 - Standalone UI: `cargo run -p reelsynth-app --bin reelsynth-app`
+- Ableton bridge: header **Ableton** → inbox + optional AbletonOSC

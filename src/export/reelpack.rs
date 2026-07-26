@@ -112,25 +112,22 @@ pub fn export_reelpack_with(
         output_path: out_dir.display().to_string(),
         dropped: merged_dropped,
         warnings,
-        errors: children
-            .iter()
-            .flat_map(|c| c.errors.clone())
-            .collect(),
+        errors: children.iter().flat_map(|c| c.errors.clone()).collect(),
         children,
     };
 
     // Universal floor: ensure MIDI + audio even if synth exports fail
-    let has_midi = report.children.iter().any(|c| c.target == "midi" && c.success);
-    let has_audio = report.children.iter().any(|c| c.target == "audio" && c.success);
+    let has_midi = report
+        .children
+        .iter()
+        .any(|c| c.target == "midi" && c.success);
+    let has_audio = report
+        .children
+        .iter()
+        .any(|c| c.target == "audio" && c.success);
     if !has_midi {
         let midi_path = daw.join("midi").join("melody.mid");
-        let floor = export_preset(
-            preset,
-            bank,
-            ExportTarget::Midi,
-            &midi_path,
-            opts,
-        );
+        let floor = export_preset(preset, bank, ExportTarget::Midi, &midi_path, opts);
         if floor.success {
             report.warnings.push("universal floor: emitted MIDI".into());
             report.children.push(floor);
@@ -138,15 +135,11 @@ pub fn export_reelpack_with(
     }
     if !has_audio {
         let audio_path = daw.join("audio").join("melody.wav");
-        let floor = export_preset(
-            preset,
-            bank,
-            ExportTarget::Audio,
-            &audio_path,
-            opts,
-        );
+        let floor = export_preset(preset, bank, ExportTarget::Audio, &audio_path, opts);
         if floor.success {
-            report.warnings.push("universal floor: emitted audio WAV".into());
+            report
+                .warnings
+                .push("universal floor: emitted audio WAV".into());
             report.children.push(floor);
         }
     }
@@ -177,8 +170,19 @@ fn export_target_in_bundle(
             export_preset(preset, bank, target, &path, opts)
         }
         ExportTarget::Ableton => {
-            let path = out_dir.join("synth/ableton/wavetable_map.json");
-            export_preset(preset, bank, target, &path, opts)
+            let map_path = out_dir.join("synth/ableton/wavetable_map.json");
+            let mut report = export_preset(preset, bank, target, &map_path, opts);
+            let multi_path = out_dir.join("synth/ableton/table_multicycle.wav");
+            let multi = crate::export::ableton::export_ableton_multicycle_wav(bank, &multi_path);
+            if !multi.success {
+                report.success = false;
+                report.errors.extend(multi.errors);
+            } else {
+                report
+                    .warnings
+                    .push(format!("wrote {}", multi_path.display()));
+            }
+            report
         }
         ExportTarget::Sfz => {
             let path = out_dir.join("daw/sfz/patch.sfz");
@@ -270,6 +274,9 @@ mod tests {
             &[ExportTarget::Serum],
             &ExportOptions::default(),
         );
-        assert!(report.dropped.iter().any(|d| d.path.starts_with("mod_matrix[")));
+        assert!(report
+            .dropped
+            .iter()
+            .any(|d| d.path.starts_with("mod_matrix[")));
     }
 }

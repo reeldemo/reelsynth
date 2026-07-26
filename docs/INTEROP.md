@@ -10,7 +10,7 @@ Canonical export always starts from `.reelwt` + `.reelpreset`. Foreign formats a
 | Vital `.vitaltable` | Frames + name | Not embedded | Not embedded | No | JSON `{name, samples[][]}` only |
 | WAV folder | One file per frame | N/A | N/A | N/A | `frame_NNN.wav`, 16-bit PCM mono |
 | Serum `.fxp` WT subset | RSWT embedded blob | WT position, cutoff, ADSR | 4 slots max | No | See [SERUM_FXP.md](SERUM_FXP.md) |
-| Ableton Wavetable map | Manual load from `wav_frames/` | 5 param IDs | 4 macro hints | No | Offline JSON; Live API separate |
+| Ableton Wavetable map v2 | Multi-cycle WAV + `wav_frames/` | 5 param IDs + aliases | 4 macro hints | No | One-drag sprite; OSC/Send applies params; see WORKFLOW |
 | SFZ | Rendered sample WAV | Filter opcodes subset | Dropped | No | One region per export |
 | MIDI `.mid` | N/A | N/A | N/A | N/A | Type 0, single note default |
 | Audio WAV stem | N/A | N/A | N/A | Post-synth | 24-bit PCM offline render |
@@ -32,7 +32,7 @@ Every `reelpack/` export emits **MIDI + 24-bit audio WAV** even when synth-speci
 
 - Surge `.wt`, Vital full `.vital` preset, CLAP/VST3 preset blob, FL Studio `.fst`
 - Full Serum mod matrix and FX chain
-- Ableton Live API wavetable load (today: frames + JSON map)
+- Ableton Live API wavetable **sprite** load (still unavailable; bridge uses multi-cycle drag + OSC params; VST3 is the seamless path)
 
 ## `export_report.json`
 

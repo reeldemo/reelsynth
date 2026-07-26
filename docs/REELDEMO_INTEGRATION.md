@@ -82,6 +82,10 @@ compose → compose_view → evolve → layer_grades → handover_plan → hando
 
 ## Ableton handoff
 
+### Standalone Send (OSS, no Studio)
+
+Header **Ableton** in `reelsynth-app` writes `~/…/Ableton/User Library/ReelSynth/inbox/<patch>_<ts>/` with `reelsynth-ableton-wt-v2` + `table_multicycle.wav`. Optional AbletonOSC push creates a Wavetable track and applies params. **One drag** of the multicycle WAV onto the Wavetable sprite is still required for custom tables.
+
 ### Extension import (Live 12)
 
 From `reeldemo-ableton/extensions/reeldemo-handover/`:

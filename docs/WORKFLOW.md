@@ -116,9 +116,16 @@ This is standard professional workflow.
 2. Import `synth/vital/table.vitaltable`.
 3. Match filter and ADSR from your preset by ear (or read `.reelpreset` JSON).
 
-**Ableton Wavetable:**
+**Ableton Wavetable (Send button or export):**
 
-1. Load wav frames from `synth/wav_frames/` into Wavetable.
+1. In the app, click header **Ableton** (or export reelpack with `--targets …,ableton,…`).
+2. Open the inbox folder (auto-opened when possible). Drag `synth/ableton/table_multicycle.wav` onto the Wavetable sprite.
+3. If AbletonOSC is running, Send may already have created a MIDI track and applied mapped params from `wavetable_map.json` (`reelsynth-ableton-wt-v2`).
+4. Frames are **not** auto-loaded (Ableton API limit). For seamless play, use the ReelSynth VST3 when available (S7).
+
+**Ableton Wavetable (manual legacy):**
+
+1. Load wav frames from `synth/wav_frames/` into Wavetable (or use multicycle WAV).
 2. Use `synth/ableton/wavetable_map.json` as a param reference.
 
 **Audio-only (least flexible):**

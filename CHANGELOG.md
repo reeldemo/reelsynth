@@ -6,11 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Send to Ableton** — header **Ableton** button writes a User Library inbox bundle (`REELSYNTH_ABLETON_INBOX` override) with `reelsynth-ableton-wt-v2` map, `table_multicycle.wav`, frames, and README; probes AbletonOSC `:11000` and best-effort creates a Wavetable track. Custom sprites still require one drag (Live API limit).
+
 ### Changed
 
+- **Ableton export v2** — schema `reelsynth-ableton-wt-v2` adds `live_param_aliases` + `frames` metadata; reelpack writes `synth/ableton/table_multicycle.wav`.
 - **Header density** — moved **input octave** into the Perf dropdown (shows as `· Oct ±N` when non-zero) and tightened Result/MIDI/Audio combo widths so left/right header clusters no longer overlap at 1280px (layout-audit CI).
-
-### Added
 
 ### Fixed
 

@@ -1,68 +1,70 @@
-pub mod wavetable;
-pub mod performance;
-pub mod patch;
-pub mod osc;
-pub mod fm;
-pub mod fx;
-pub mod overtone;
+pub mod analysis;
+pub mod artifact_reduce;
 pub mod crackle_diag;
 pub mod crackle_eam;
-pub mod artifact_reduce;
-pub mod denoise_opt;
-pub mod n2n_seam;
 pub mod denoise_meta;
 pub mod denoise_meta_overnight;
-pub mod sound_bench;
-pub mod seam;
-pub mod signal_library;
-pub mod voice;
-pub mod scope;
-pub mod import;
-pub mod export;
+pub mod denoise_opt;
 pub mod engine;
+pub mod export;
 pub mod ffi;
+pub mod fm;
+pub mod fx;
+pub mod import;
 pub mod lfo;
-pub mod wt_quant;
 pub mod modulation;
+pub mod n2n_seam;
+pub mod osc;
 pub mod oversample;
+pub mod overtone;
+pub mod patch;
+pub mod performance;
+pub mod scope;
+pub mod seam;
 pub mod sequence;
-pub mod analysis;
+pub mod signal_library;
+pub mod sound_bench;
+pub mod voice;
+pub mod wavetable;
+pub mod wt_quant;
 
+pub use analysis::{decompose_frame, resynthesis_error, resynthesize_frame};
+pub use engine::{BankSet, MidiEvent, SynthEngine, VoiceMpe};
+pub use export::{
+    default_ableton_inbox_root, export_ableton_map, export_ableton_map_v2,
+    export_ableton_multicycle_wav, export_preset, export_reelpack, export_wavetable, load_preset,
+    parse_targets, resolve_bank_for_preset, write_ableton_send_bundle, ExportOptions, ExportReport,
+    ExportTarget, ABLETON_MAP_SCHEMA, INBOX_ENV,
+};
+pub use fx::{default_effects, effects_from_bypass, EffectSlot, EffectType, FxBypass, FxChain};
+pub use lfo::{lfo_value, LfoRuntime};
+pub use modulation::{
+    apply_mods_to_patch, compute_macro_mods, compute_mods, merge_mods, ModSources,
+};
+pub use overtone::{curve_harshness, OvertoneFilterChain, OvertoneFilterSlot, OvertoneFilterType};
+pub use patch::{
+    filter_type_label, legacy_filter_slots, normalize_filter_type, Envelope, Filter, FilterSlot,
+    Macro, ModSlot, Oscillator, Patch, WaveLayer, WaveSlot, FILTER_TYPES,
+};
 pub use performance::{
     build_pool, note_in_scale, resolve_chord, resolve_diatonic_chord, scale_degree_to_midi,
     snap_note, ArpDirection, ArpEngine, ArpEvent, ArpInputMode, ArpRate, ArpSettings, ArpStep,
     ChordQuality, ChordSet, ChordVoicing, PerformanceLayout, PerformanceSettings, Scale,
     ScaleBehavior,
 };
-pub use wavetable::WavetableBank;
-pub use fx::{default_effects, effects_from_bypass, EffectSlot, EffectType, FxBypass, FxChain};
-pub use overtone::{
-    curve_harshness, OvertoneFilterChain, OvertoneFilterSlot, OvertoneFilterType,
-};
-pub use seam::{periodize_cycle, seam_mode_to_crackle, CrackleVoice, SeamStyle};
-pub use patch::{
-    filter_type_label, legacy_filter_slots, normalize_filter_type, Envelope, Filter, FilterSlot,
-    FILTER_TYPES, Macro, ModSlot, Oscillator, Patch, WaveLayer, WaveSlot,
-};
-pub use wt_quant::{generate_even_wave_slots, resolve_wt_position, resolved_wave_slots};
-pub use voice::{render_note, render_note_single_bank};
 pub use scope::{
     render_combined_osc_cycle, render_osc_cycle_at_index, render_scope_previews,
     spectrum_magnitudes, ScopePreviews, ScopeTap, PREVIEW_FIFTH_NOTE, PREVIEW_ROOT_NOTE,
 };
 pub use scope::{ScopeLiveTaps, ScopeMonitor, ScopeRingBuffer, SCOPE_DISPLAY_LEN, SCOPE_RING_LEN};
-pub use engine::{BankSet, MidiEvent, SynthEngine, VoiceMpe};
-pub use lfo::{lfo_value, LfoRuntime};
-pub use modulation::{apply_mods_to_patch, compute_macro_mods, compute_mods, merge_mods, ModSources};
+pub use seam::{periodize_cycle, seam_mode_to_crackle, CrackleVoice, SeamStyle};
 pub use sequence::{
     AutomationLane, AutomationPoint, Clip, ClipRef, MidiNote, QuantizeDivision, QuantizeGrid,
     Scene, SequenceProject, Track, TransportState,
 };
-pub use export::{
-    export_preset, export_reelpack, export_wavetable, load_preset, parse_targets,
-    resolve_bank_for_preset, ExportOptions, ExportReport, ExportTarget,
-};
-pub use analysis::{decompose_frame, resynthesis_error, resynthesize_frame};
+pub use voice::{render_note, render_note_single_bank};
+pub use wavetable::WavetableBank;
+pub use wt_quant::{generate_even_wave_slots, resolve_wt_position, resolved_wave_slots};
 
 #[cfg(feature = "python")]
 use numpy::{PyArray1, PyReadonlyArray1};
@@ -105,8 +107,8 @@ fn render_note_py<'py>(
 ) -> PyResult<Bound<'py, PyArray1<f32>>> {
     let bank = WavetableBank::read_file(bank_path)
         .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e))?;
-    let patch = Patch::from_json(patch_json)
-        .map_err(|e| pyo3::exceptions::PyValueError::new_err(e))?;
+    let patch =
+        Patch::from_json(patch_json).map_err(|e| pyo3::exceptions::PyValueError::new_err(e))?;
     let audio = render_note_single_bank(&bank, freq, duration, sample_rate, &patch);
     Ok(PyArray1::from_vec_bound(py, audio))
 }
@@ -144,8 +146,8 @@ fn import_wavetable(source: &str, input_path: &str, output_path: &str) -> PyResu
 #[cfg(feature = "python")]
 #[pyfunction]
 fn bank_info(path: &str) -> PyResult<(usize, usize)> {
-    let bank = WavetableBank::read_file(path)
-        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e))?;
+    let bank =
+        WavetableBank::read_file(path).map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e))?;
     Ok((bank.num_frames, bank.frame_size))
 }
 
@@ -167,8 +169,9 @@ fn export_wavetable_py(
     output_path: &str,
     table_name: Option<&str>,
 ) -> PyResult<PyObject> {
-    let target = export::ExportTarget::parse(format)
-        .ok_or_else(|| pyo3::exceptions::PyValueError::new_err(format!("unknown target: {format}")))?;
+    let target = export::ExportTarget::parse(format).ok_or_else(|| {
+        pyo3::exceptions::PyValueError::new_err(format!("unknown target: {format}"))
+    })?;
     let bank = WavetableBank::read_file(input_path)
         .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e))?;
     let opts = export::ExportOptions {
@@ -188,13 +191,13 @@ fn export_preset_py(
     output_path: &str,
     bank_path: Option<&str>,
 ) -> PyResult<PyObject> {
-    let target = export::ExportTarget::parse(format)
-        .ok_or_else(|| pyo3::exceptions::PyValueError::new_err(format!("unknown target: {format}")))?;
+    let target = export::ExportTarget::parse(format).ok_or_else(|| {
+        pyo3::exceptions::PyValueError::new_err(format!("unknown target: {format}"))
+    })?;
     let preset = export::load_preset(std::path::Path::new(preset_path))
         .map_err(|e| pyo3::exceptions::PyValueError::new_err(e))?;
     let bank = if let Some(bp) = bank_path {
-        WavetableBank::read_file(bp)
-            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e))?
+        WavetableBank::read_file(bp).map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e))?
     } else {
         export::resolve_bank_for_preset(std::path::Path::new(preset_path), &preset)
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(e))?
@@ -213,7 +216,10 @@ fn export_preset_py(
 #[pyfunction]
 fn export_reelpack_py(
     py: Python<'_>,
-    preset_path: &str, out_dir: &str, targets_json: Option<&str>) -> PyResult<PyObject> {
+    preset_path: &str,
+    out_dir: &str,
+    targets_json: Option<&str>,
+) -> PyResult<PyObject> {
     let targets: Vec<export::ExportTarget> = if let Some(raw) = targets_json {
         let parsed: Vec<String> = serde_json::from_str(raw)
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
