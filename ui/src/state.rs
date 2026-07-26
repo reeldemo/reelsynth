@@ -36,6 +36,8 @@ pub struct ShellConfig {
     pub show_osc_column: bool,
     pub show_mod_matrix: bool,
     pub show_fx_rack: bool,
+    /// External plugin editor: audio/MIDI are owned by the DAW — show labels, not device pickers.
+    pub host_io_only: bool,
 }
 
 /// App-level settings shown in the header **Settings** dropdown (not a modal).
@@ -94,6 +96,8 @@ pub struct ShellActions {
     pub note_off: Option<u8>,
     pub open_preset: bool,
     pub save_preset: bool,
+    /// Export patch to Ableton User Library inbox (+ OSC when available).
+    pub send_to_ableton: bool,
     pub import_wt_file: bool,
     pub save_wt_file: bool,
     pub import_factory_wt: Option<String>,

@@ -1,0 +1,42 @@
+{
+  "updated_at": "20260726T082028Z",
+  "method": "paderborn_kat_deep_alfirdausi_cnn",
+  "device": "cuda",
+  "weight": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\paderborn_cnn\\model.pth",
+  "load_note": "loaded C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\paderborn_cnn\\model.pth as CNN_1D_2L (L=516)",
+  "honesty": "Author published deep model on Paderborn = fault classifier. SeamN2N / Ours wrap-R remain separate. Do not rename classification as denoise.",
+  "status": "scored_native_healthy_only",
+  "native": {
+    "status": "scored_native_healthy_only",
+    "metric": "healthy_K001_segment_Normal_rate",
+    "metric_note": "Author model is 4-class fault diagnosis (N/B/IR/OR). Only healthy K001 is extracted here \u2014 report fraction of segments predicted Normal. Not multi-class accuracy; wrap-R not applicable (classifier \u2260 denoise).",
+    "n_segments": 256,
+    "n_mats": 8,
+    "files": [
+      "N09_M07_F10_K001_1.mat",
+      "N09_M07_F10_K001_10.mat",
+      "N09_M07_F10_K001_11.mat",
+      "N09_M07_F10_K001_12.mat",
+      "N09_M07_F10_K001_13.mat",
+      "N09_M07_F10_K001_14.mat",
+      "N09_M07_F10_K001_15.mat",
+      "N09_M07_F10_K001_16.mat"
+    ],
+    "class_counts": {
+      "N": 256,
+      "B": 0,
+      "IR": 0,
+      "OR": 0
+    },
+    "healthy_Normal_rate": 1.0,
+    "mode_class": "N",
+    "seg_len": 516,
+    "wrap_R": null,
+    "wrap_R_blocker": "Refused: fault-classifier head cannot honestly produce DenoiseOpt wrap-R. Native classification metric only.",
+    "citation": {
+      "paper": "Al Firdausi & Ahmad, Comm. Sci. Tech. 7(1):62\u201372, 2022",
+      "github": "https://github.com/mdzalfirdausi/CNN-for-Paderborn-Bearing-Dataset",
+      "weight": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\paderborn_cnn\\model.pth"
+    }
+  }
+}

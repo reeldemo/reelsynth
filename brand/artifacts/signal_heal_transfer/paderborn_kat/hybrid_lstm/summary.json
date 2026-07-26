@@ -1,0 +1,84 @@
+{
+  "approach": "hybrid_lstm",
+  "iters": 250,
+  "iters_done": 250,
+  "seed": 1902771841,
+  "champ_raw": 0.9369480609893799,
+  "champ_r": 0.9288187361777287,
+  "champ_r_seam": 0.9369480609893799,
+  "champ_j": 0.9250687361777287,
+  "champ_t_ms": 9.333299996796995,
+  "lambda_latency": 0.02,
+  "baseline_dual_cosine": 0.47300949692726135,
+  "nobake": 0.8415272235870361,
+  "delta_r_vs_dual_cosine": 0.46393856406211853,
+  "champ_arch": {
+    "depth": 11,
+    "width": 28,
+    "act": "silu",
+    "ops": [
+      "cycle_net",
+      "mlp_seam",
+      "asym_wet"
+    ],
+    "wet": 0.4566143019476044,
+    "fir": [
+      0.3756849737163496,
+      0.21957120011140804,
+      0.44132761287995137,
+      0.17514967020867975,
+      0.5675647353529433
+    ],
+    "cell_kind": "dilated",
+    "soft_logits": [
+      -0.38137125936737737,
+      -0.5776276198171927,
+      -0.17791941212338458,
+      -0.3657660450084334,
+      0.08955275423104134,
+      -0.5229907088557968,
+      -0.124893988827324,
+      -0.018385500340867153,
+      0.27001664470183734,
+      -0.46901870450420724,
+      0.5288376848682412,
+      -0.372008581059705,
+      0.5686527695732106,
+      1.028102427861724,
+      0.5504815727445715
+    ],
+    "blocks": [
+      "dilated",
+      "dual_path",
+      "attn",
+      "n2n_unet",
+      "mlp",
+      "dense"
+    ],
+    "use_adv_aux": false,
+    "moe_mode": "moe_parallel"
+  },
+  "champ_hp": {
+    "lr": 0.012176931000631537,
+    "fit_steps": 64,
+    "batch": 64,
+    "entropy_coef": 0.011206430114910662,
+    "ppo_clip": 0.05000000000000007,
+    "adv_coef": 0.018104031103663536,
+    "reward_mode": "vs_dualcosine"
+  },
+  "branch_best": {
+    "ppo": 0.9324005842208862,
+    "ga": 0.9369480609893799,
+    "pbt": 0.9311933517456055,
+    "nas": 0.9165756702423096,
+    "combo": 0.9314461648464203
+  },
+  "wall_s": 1617.7777588367462,
+  "finished_at": "20260726T065823Z",
+  "partial": false,
+  "metric": "v10.1 R_blend=\u03b1\u00b7R_seam+(1-\u03b1)\u00b7R_body (\u03b1=0.7); search objective J = R_blend - \u03bb\u00b7latency_norm (\u03bb=0.02)",
+  "primary_metric": "r_blend",
+  "search_objective": "J=R_blend-lambda*latency_norm",
+  "holdout_refit_R": 0.9270495772361755
+}

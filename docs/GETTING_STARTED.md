@@ -1,14 +1,14 @@
-# Getting started with ReelSynth
+# Getting started
 
-ReelSynth is a free (MIT) wavetable synthesizer. The standalone app lets you play, tweak, and save sounds. Export tools send those sounds to other synths and DAWs.
+ReelSynth is a free (MIT) wavetable synth. Play and tweak in the standalone app, then export to other synths or a DAW.
 
 ## Requirements
 
-- **Rust** ≥ 1.85 (for `cargo run`)
-- **macOS / Linux / Windows** — standalone uses `cpal` for audio and `midir` for MIDI
-- Optional: **Python 3** + `maturin` for offline rendering (see [SDK.md](SDK.md))
+- Rust ≥ 1.85 (for `cargo run`)
+- macOS / Linux / Windows — audio via `cpal`, MIDI via `midir`
+- Optional: Python 3 + `maturin` for offline render ([SDK.md](SDK.md))
 
-## Install and run
+## Run it
 
 ```bash
 git clone https://github.com/reeldemo/reelsynth.git
@@ -16,123 +16,116 @@ cd reelsynth
 cargo run -p reelsynth-app --bin reelsynth-app
 ```
 
-You should hear audio when you play notes. If audio fails, the UI still runs (status shows the error). Pick the output device in the header **Audio** combo (speakers, headphones, or a newly plugged DI / interface). With **Auto-select new audio output** enabled in Settings (default), freshly connected outputs are selected automatically.
+Play a note — you should hear audio. If the device fails, the UI still opens and the status line shows why. Pick output in the header **Audio** combo. With **Auto-select new audio output** on (Settings, default), a newly plugged interface gets selected for you.
 
 ![ReelSynth main window](https://github.com/reeldemo/reelsynth/releases/download/v0.1.0/01-full-window.png)
 
-*Screenshot: [GitHub Release v0.1.0](https://github.com/reeldemo/reelsynth/releases/tag/v0.1.0) — numbered regions match [UI.md](UI.md).*
+*From [Release v0.1.0](https://github.com/reeldemo/reelsynth/releases/tag/v0.1.0) — numbered regions match [UI.md](UI.md).*
 
-## Play your first note
-
-Three ways to trigger notes:
+## Play a note
 
 | Method | How |
 |--------|-----|
-| **QWERTY keyboard** | `Z S X D C V G B H N J M` — layout depends on **Layout** (piano / scale / chords) |
-| **On-screen piano** | Toggle **Piano** in the header; click keys (3 octaves from C3) |
-| **MIDI controller** | Select your device in the **MIDI** dropdown; enable scale lock to snap incoming notes |
+| QWERTY | `Z S X D C V G B H N J M` — depends on **Layout** (piano / scale / chords) |
+| On-screen piano | Header **Piano**; click keys (3 octaves from C3, or 88-key strip when expanded) |
+| MIDI | Header **MIDI** dropdown; scale lock snaps incoming notes if you want it |
 
 ![Header: save, MIDI, piano](https://github.com/reeldemo/reelsynth/releases/download/v0.1.0/02-header-midi-save.png)
 
-### Connect a MIDI controller
+### MIDI
 
-1. Plug in the controller before or after launch.
-2. Open the **MIDI** combo box in the header.
-3. Pick your device (not "MIDI" / disconnected).
-4. Status line should show `MIDI: <device name>`.
-5. Play — notes route to the synth engine.
+1. Plug in the controller (before or after launch).
+2. Open **MIDI** in the header.
+3. Pick your device (not the disconnected placeholder).
+4. Status should read `MIDI: <name>`.
+5. Play.
 
-Supported MIDI: Note On/Off, pitch bend, channel pressure, poly aftertouch, control change (CC1 = mod wheel).
+Supported: Note On/Off, pitch bend, channel pressure, poly aftertouch, CC (CC1 = mod wheel).
 
-### Select an audio output
+### Audio out
 
-1. Open the **Audio** combo in the header (next to MIDI).
-2. Pick speakers, headphones, or an interface / DI box.
-3. Status shows `Audio: <device name>`.
-4. Plug in a new device with **Auto-select new audio output** on (Settings) — ReelSynth switches to the newly appeared device and updates the status line.
+1. Open **Audio** next to MIDI.
+2. Pick speakers, headphones, or an interface.
+3. Status: `Audio: <name>`.
+4. With auto-select on, a new device that appears gets chosen automatically.
 
-The last selected device name is remembered in app settings. If that device is missing at launch, ReelSynth falls back to the system default (or UI-only if no outputs exist).
+Last device name is remembered. Missing at launch → system default, or UI-only if nothing is there.
 
-## Shape a basic sound
+## Shape the sound
 
 While holding a note:
 
-1. **Wavetable position** — move the WT strip or rail knob; hear timbre change.
-2. **Filter cutoff** — center column; lower = darker.
-3. **ADSR envelope** — short attack + decay = pluck; long release = pad.
+1. **Wavetable position** — WT strip or rail knob.
+2. **Filter cutoff** — center column; lower is darker.
+3. **ADSR** — short attack/decay = pluck; long release = pad.
 4. **Unison / detune** — oscillator column for width.
 
 ![Oscillator, filter, ADSR](https://github.com/reeldemo/reelsynth/releases/download/v0.1.0/03-osc-filter-adsr.png)
 
-See [UI.md](UI.md) for every region.
+Full map: [UI.md](UI.md).
 
-## Save your work
+## Save
 
-ReelSynth splits **sound design** into two files:
+Two files:
 
-| File | Contains |
-|------|----------|
-| **`.reelpreset`** | Patch: oscillators, filter, envelopes, LFO, mod matrix, FX |
-| **`.reelwt`** | Wavetable bank: the raw morphable waves |
+| File | Holds |
+|------|-------|
+| `.reelpreset` | Patch — oscs, filter, envelopes, LFO, mod matrix, FX |
+| `.reelwt` | Wavetable bank |
 
-**Save patch:** header **Save** → choose `my_sound.reelpreset`.
+**Save patch:** header **Save** → `my_sound.reelpreset`.  
+**Save wavetable:** **WT → Save .reelwt…**
 
-**Save wavetable:** header **WT** menu → **Save .reelwt…**
+Keep them together. The preset points at the table by `wavetable_id` or `wavetable_path` ([FORMAT.md](FORMAT.md)).
 
-Keep both in the same folder. The preset references the table by `wavetable_id` or `wavetable_path` (see [FORMAT.md](FORMAT.md)).
+**Open:** header **Open** — loads `.reelpreset` and finds a sibling `.reelwt` when it can.
 
-**Open patch:** header **Open** → picks `.reelpreset`; app resolves sibling `.reelwt` automatically.
+## Import tables
 
-## Import wavetables from other synths
-
-**WT** menu → **Import**:
+**WT → Import:**
 
 - Vital (`.vitaltable`)
-- WAV folder (single-cycle waves, sorted by filename)
+- WAV folder (single-cycle waves, sorted by name)
 - Serum (`.fxp` — wavetable subset only)
 
-Imported tables save as `.reelwt`. Factory banks (Saw Morph, Formant, …) are under **WT → Factory banks**.
+Imports become `.reelwt`. Factory banks: **WT → Factory banks**.
 
 ![Wavetable editor](https://github.com/reeldemo/reelsynth/releases/download/v0.1.0/04-wt-editor-2d-3d.png)
 
-## Clean wrap crackle with ReelAI
+## Clean wrap crackle (ReelAI)
 
-Single-cycle wavetables loop forever. If the first and last samples disagree, you hear a **wrap click** (especially on sustained notes and after imports). ReelSynth heals that with a **pre-playback bake** — it rewrites the frames once, then the synth plays normally (no realtime neural delay).
+Single-cycle tables loop forever. If first and last samples disagree, you get a wrap click on sustained notes (common after imports). ReelSynth fixes that with a **bake before play** — rewrite frames once, then play as usual (no realtime neural lag).
 
-| Control | Where | What it does |
-|---------|--------|--------------|
-| **Result·ReelAI** (etc.) | Header | Heals the **whole bank** / total Result path |
-| **Layer·…** | Selected toolbar | Heals **this layer’s frame only** — mix DualCosine / ReelAI / Off across layers in one osc |
-| **Noise2Noise** | Either dropdown | Embedded U-Net-lite baseline — useful A/B vs ReelAI |
+| Control | Where | Effect |
+|---------|--------|--------|
+| **Result·ReelAI** (etc.) | Header | Heals the whole bank |
+| **Layer·…** | Selected toolbar | Heals this layer’s frame only — mix DualCosine / ReelAI / Off per layer |
+| **Noise2Noise** | Either dropdown | Embedded U-Net-lite baseline for A/B |
 | **DualCosine** | Either dropdown | Classical periodize — fast, predictable |
-| **Fit ends** | Selected toolbar (near FFT) | One-shot DualCosine on the **selected layer frame** |
+| **Fit ends** | Selected toolbar | One-shot DualCosine on the selected layer frame |
 | Soft / Adapt / Off | Either dropdown | Light fade, adaptive fade, or raw ends |
 
-**Typical flow after an import**
+After an import: load the bank → hold a note → if you hear a tick each cycle, set header **ReelAI** (or **Fit ends**). A/B with DualCosine / Noise2Noise; Off / Adapt restores from snapshot where applicable.
 
-1. Load the bank (**WT → Import** or Factory).
-2. Hold a note — if you hear a tick each cycle, open the header **ReelAI** combo and pick **ReelAI** (or **Fit ends** for a classical fix).
-3. A/B with **DualCosine** or **Noise2Noise**; restore with **Seam·Off** / **Seam·Adapt** (snapshot restore for the AI/classical bake modes).
+Seam mode is session-only (not written into `.reelpreset`). Big morph/stack edits can reopen discontinuities — run Fit ends or re-pick ReelAI if clicks come back. More: [UI.md § ReelAI](UI.md#reelai-seam-heal).
 
-Seam mode is **session-only** (not written into `.reelpreset`). Morphing or stacking layers can open new discontinuities — run **Fit ends** or re-select ReelAI after big stack edits if clicks return. Details: [UI.md § ReelAI seam heal](UI.md#reelai-seam-heal).
+## Next
 
-## What to do next
+| Goal | Doc |
+|------|-----|
+| Compose / DAW handoff | [WORKFLOW.md](WORKFLOW.md) |
+| Free DAWs only | [FREE_STACK.md](FREE_STACK.md) |
+| Ableton | [ABLETON.md](ABLETON.md) |
+| Script / embed | [SDK.md](SDK.md) |
+| Reeldemo Studio | [REELDEMO_INTEGRATION.md](REELDEMO_INTEGRATION.md) |
 
-| Goal | Next doc |
-|------|----------|
-| Record a melody and use this sound in a DAW | [WORKFLOW.md](WORKFLOW.md) |
-| Use only free DAWs and synths | [FREE_STACK.md](FREE_STACK.md) |
-| Export to Vital / Ableton / Serum | [WORKFLOW.md § Export](WORKFLOW.md#export-a-daw-ready-bundle) |
-| Script rendering or build a tool | [SDK.md](SDK.md) |
-| Reeldemo Studio + Ableton handoff | [REELDEMO_INTEGRATION.md](REELDEMO_INTEGRATION.md) |
+## Limits worth knowing
 
-## Honest limits (v0.1)
+| Works | Not yet / watch out |
+|-------|---------------------|
+| Live play (MIDI, piano, QWERTY), Compose clips | `daw/midi/melody.mid` in export is a **demo note**, not your performance |
+| Save/load preset + table | Lossy export to Vital / Serum / Ableton — see [INTEROP.md](INTEROP.md) |
+| CLI / Python `reelpack` | Full SMF of Compose songs still landing |
+| VST3 in Ableton (Win/macOS) + external UI | Editor stuffed into Live’s small pane (won’t do that) |
 
-| Works today | Not yet |
-|-------------|---------|
-| Live play (MIDI, piano, QWERTY) | VST3 / AU / CLAP plugin in DAW (S7 roadmap) |
-| Save/load `.reelpreset` + `.reelwt` | In-app MIDI recording |
-| CLI / Python export to `reelpack/` | Export of your live performance as MIDI |
-| Offline single-note audio render | |
-
-Always record **melody MIDI in your DAW** until in-app recording ships. See [WORKFLOW.md](WORKFLOW.md).
+Until Compose SMF export ships, record arrangement MIDI in the DAW when you need a full session there. See [WORKFLOW.md](WORKFLOW.md).

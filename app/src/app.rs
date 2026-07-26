@@ -855,6 +855,17 @@ impl ReelSynthApp {
         }
     }
 
+    fn send_to_ableton(&mut self) {
+        self.current_patch = patch_from_state(&self.state, &self.current_patch);
+        let bank = self
+            .bank_for_ui()
+            .unwrap_or_else(|| self.ui_bank.clone());
+        match crate::send_ableton::send_to_ableton(&self.current_patch, &bank, None) {
+            Ok(r) => self.state.status = r.status,
+            Err(e) => self.state.status = format!("Send to Ableton failed: {e}"),
+        }
+    }
+
     fn load_bank(&mut self, bank: WavetableBank, name: String, wt_id: Option<String>) {
         if let Some(id) = wt_id.clone() {
             self.current_patch.wavetable_id = Some(id);
@@ -1412,6 +1423,7 @@ impl eframe::App for ReelSynthApp {
                     show_osc_column: true,
                     show_mod_matrix: true,
                     show_fx_rack: true,
+                    host_io_only: false,
                 };
 
                 let preview_patch = patch_from_state(&self.state, &self.current_patch);
@@ -1548,6 +1560,9 @@ impl eframe::App for ReelSynthApp {
                 }
                 if actions.save_preset {
                     self.save_preset();
+                }
+                if actions.send_to_ableton {
+                    self.send_to_ableton();
                 }
                 if actions.import_wt_file {
                     self.import_wt_file();

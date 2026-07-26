@@ -8,7 +8,7 @@ Builds:
 No new NAS. Does not modify/wipe meta_approach_compare/ (read-only).
 
 Writes under brand/artifacts/paper_v8_listening/ and copies to
-denoise-opt-meta/paper/Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v9/figures/.
+denoise-opt-meta paper v9/v10 figures folders.
 """
 from __future__ import annotations
 
@@ -30,7 +30,22 @@ HEAR_DIR = ROOT / "brand" / "artifacts" / "meta_approach_compare" / "hear_sample
 EXPORT_JSON = ROOT / "brand" / "artifacts" / "real_wt_cycles" / "reelsynth_export_cycles.json"
 AKWF_DIR = ROOT / "brand" / "artifacts" / "real_wt_cycles" / "oa_akwf"
 OUT_DIR = ROOT / "brand" / "artifacts" / "paper_v8_listening"
-V8_FIG = ROOT.parent / "denoise-opt-meta" / "paper" / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v9" / "figures"
+META_PAPER = ROOT.parent / "denoise-opt-meta" / "paper"
+V8_FIG = (
+    META_PAPER
+    / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v9"
+    / "figures"
+)
+V10_FIG = (
+    META_PAPER
+    / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v10"
+    / "figures"
+)
+V11_FIG = (
+    META_PAPER
+    / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v11"
+    / "figures"
+)
 
 C_ENGINE = "#D55E00"
 C_DUAL = "#0072B2"
@@ -65,14 +80,18 @@ def load_akwf_cycle(path: Path, L: int = 256) -> np.ndarray:
     return y
 
 
-def copy_to_paper(src: Path, paper_dir: Path) -> Path:
-    paper_dir.mkdir(parents=True, exist_ok=True)
-    dst = paper_dir / src.name
-    shutil.copy2(src, dst)
+def copy_to_paper(src: Path, *paper_dirs: Path) -> Path:
+    dst = src
+    for paper_dir in paper_dirs:
+        if paper_dir is None:
+            continue
+        paper_dir.mkdir(parents=True, exist_ok=True)
+        dst = paper_dir / src.name
+        shutil.copy2(src, dst)
     return dst
 
 
-def plot_hear_panel(hear_dir: Path, out_dir: Path, paper_dir: Path) -> dict:
+def plot_hear_panel(hear_dir: Path, out_dir: Path, *paper_dirs: Path) -> dict:
     man_path = hear_dir / "manifest.json"
     if not man_path.is_file():
         raise SystemExit(f"missing hear manifest: {man_path}")
@@ -126,8 +145,8 @@ def plot_hear_panel(hear_dir: Path, out_dir: Path, paper_dir: Path) -> dict:
     fig.savefig(png, dpi=200, bbox_inches="tight")
     fig.savefig(pdf, bbox_inches="tight")
     plt.close(fig)
-    copy_to_paper(png, paper_dir)
-    copy_to_paper(pdf, paper_dir)
+    copy_to_paper(png, *paper_dirs)
+    copy_to_paper(pdf, *paper_dirs)
     meta = {
         "schema": "denoiseopt.hear_samples_panel.v1",
         "hear_dir": str(hear_dir.resolve()),
@@ -146,43 +165,71 @@ def plot_hear_panel(hear_dir: Path, out_dir: Path, paper_dir: Path) -> dict:
     }
     jp = out_dir / "fig_hear_samples_panel.json"
     jp.write_text(json.dumps(meta, indent=2), encoding="utf-8")
-    copy_to_paper(jp, paper_dir)
+    copy_to_paper(jp, *paper_dirs)
     return meta
 
 
-def plot_wt_gallery(export_json: Path, akwf_dir: Path, out_dir: Path, paper_dir: Path) -> dict:
+def plot_wt_gallery(export_json: Path, akwf_dir: Path, out_dir: Path, *paper_dirs: Path) -> dict:
     blob = json.loads(export_json.read_text(encoding="utf-8"))
     cycles = blob["cycles"]
     manifest = blob["manifest"]
-    # One morph mid-point per bank (compact)
+    # One dry mid-morph frame per unique bank only (no duplicate bank pads).
     by_bank: dict[str, list[int]] = {}
     for i, m in enumerate(manifest):
         by_bank.setdefault(m["bank"], []).append(i)
     chosen: list[int] = []
-    for bank, idxs in by_bank.items():
-        # prefer morph_frac closest to 0.5
-        best = min(idxs, key=lambda i: abs(float(manifest[i].get("morph_frac", 0.5)) - 0.5))
+    for _bank, idxs in by_bank.items():
+        dry = [i for i in idxs if "_dry" in str(manifest[i].get("id", ""))]
+        pool = dry or idxs
+        best = min(pool, key=lambda i: abs(float(manifest[i].get("morph_frac", 0.5)) - 0.5))
         chosen.append(best)
-    chosen = chosen[:6]
+    n_cols = len(chosen)
+    if n_cols < 1:
+        raise SystemExit("no factory export cycles found for WT gallery")
 
-    akwf_files = sorted(akwf_dir.glob("AKWF_*.wav"))[:6] if akwf_dir.is_dir() else []
+    # Match column count; spread across OA set and skip near-sine clones of the factory sine bank.
+    akwf_all = sorted(akwf_dir.glob("AKWF_*.wav")) if akwf_dir.is_dir() else []
+    sine_ref = np.sin(np.linspace(0.0, 2.0 * np.pi, 256, endpoint=False))
 
-    n_rows = 2
-    n_cols = max(len(chosen), len(akwf_files), 1)
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(1.55 * n_cols, 3.2), sharey=True)
+    def _too_sine(path: Path) -> bool:
+        y = load_akwf_cycle(path)
+        if y.size != sine_ref.size:
+            y = np.interp(np.linspace(0, 1, sine_ref.size), np.linspace(0, 1, y.size), y)
+        peak = float(np.max(np.abs(y))) + 1e-9
+        corr = float(np.corrcoef(y / peak, sine_ref)[0, 1])
+        return abs(corr) > 0.92
+
+    akwf_files: list[Path] = []
+    if akwf_all:
+        step = max(1, len(akwf_all) // n_cols)
+        i = 0
+        while len(akwf_files) < n_cols and i < len(akwf_all) * 2:
+            cand = akwf_all[i % len(akwf_all)]
+            i += step
+            if any(cand.name == p.name for p in akwf_files):
+                continue
+            if _too_sine(cand):
+                continue
+            akwf_files.append(cand)
+        # Fallback fill if filters were too strict.
+        for cand in akwf_all:
+            if len(akwf_files) >= n_cols:
+                break
+            if any(cand.name == p.name for p in akwf_files):
+                continue
+            akwf_files.append(cand)
+
+    fig, axes = plt.subplots(2, n_cols, figsize=(1.55 * n_cols, 3.45), sharey=True)
     if n_cols == 1:
         axes = np.array([[axes[0]], [axes[1]]])
 
     for col in range(n_cols):
         ax = axes[0, col]
-        if col < len(chosen):
-            i = chosen[col]
-            y = np.asarray(cycles[i], dtype=np.float64)
-            ax.plot(y, color="#333333", lw=0.9)
-            ax.set_title(manifest[i]["bank"].replace("_", " "), fontsize=7.5)
-            ax.set_xlim(0, len(y) - 1)
-        else:
-            ax.axis("off")
+        i = chosen[col]
+        y = np.asarray(cycles[i], dtype=np.float64)
+        ax.plot(y, color="#333333", lw=0.9)
+        ax.set_title(manifest[i]["bank"].replace("_", " "), fontsize=7.5)
+        ax.set_xlim(0, len(y) - 1)
         if col == 0:
             ax.set_ylabel("ReelSynth export", fontsize=8)
 
@@ -204,7 +251,7 @@ def plot_wt_gallery(export_json: Path, akwf_dir: Path, out_dir: Path, paper_dir:
             ax.set_ylim(-1.15, 1.15)
 
     fig.suptitle(
-        "Compact wavetable diversity gallery (existing exports only — no new NAS)",
+        "Compact wavetable diversity gallery (existing exports only; no new NAS)",
         fontsize=10,
         y=1.02,
     )
@@ -214,8 +261,8 @@ def plot_wt_gallery(export_json: Path, akwf_dir: Path, out_dir: Path, paper_dir:
     fig.savefig(png, dpi=200, bbox_inches="tight")
     fig.savefig(pdf, bbox_inches="tight")
     plt.close(fig)
-    copy_to_paper(png, paper_dir)
-    copy_to_paper(pdf, paper_dir)
+    copy_to_paper(png, *paper_dirs)
+    copy_to_paper(pdf, *paper_dirs)
 
     meta = {
         "schema": "denoiseopt.wt_diversity_gallery.v1",
@@ -223,16 +270,17 @@ def plot_wt_gallery(export_json: Path, akwf_dir: Path, out_dir: Path, paper_dir:
         "export_indices": chosen,
         "export_ids": [manifest[i]["id"] for i in chosen],
         "export_banks": [manifest[i]["bank"] for i in chosen],
+        "n_cols": n_cols,
         "akwf_files": [p.name for p in akwf_files],
         "akwf_dir": str(akwf_dir.resolve()) if akwf_dir.is_dir() else None,
-        "matrix_fold": "paper/Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v9/figures/real_wt_matrix.json",
+        "matrix_fold": "paper/Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v11/figures/real_wt_matrix.json",
         "png": str(png.resolve()),
         "pdf": str(pdf.resolve()),
-        "note": "Gallery only; scores remain in real_wt_matrix.json. No new meta search.",
+        "note": "One mid-morph dry frame per unique factory bank; AKWF row matched to same column count. No new meta search.",
     }
     jp = out_dir / "fig_wt_diversity_gallery.json"
     jp.write_text(json.dumps(meta, indent=2), encoding="utf-8")
-    copy_to_paper(jp, paper_dir)
+    copy_to_paper(jp, *paper_dirs)
     return meta
 
 
@@ -242,7 +290,9 @@ def main() -> int:
     ap.add_argument("--export-json", type=Path, default=EXPORT_JSON)
     ap.add_argument("--akwf-dir", type=Path, default=AKWF_DIR)
     ap.add_argument("--out-dir", type=Path, default=OUT_DIR)
-    ap.add_argument("--paper-fig-dir", type=Path, default=V8_FIG)
+    ap.add_argument("--paper-fig-dir", type=Path, default=V11_FIG)
+    ap.add_argument("--paper-fig-dir-v10", type=Path, default=V10_FIG)
+    ap.add_argument("--paper-fig-dir-v9", type=Path, default=V8_FIG)
     args = ap.parse_args()
 
     out_resolved = args.out_dir.resolve()
@@ -250,9 +300,14 @@ def main() -> int:
     if out_resolved == forbidden or forbidden in out_resolved.parents:
         raise SystemExit(f"refusing --out-dir under meta_approach_compare/: {out_resolved}")
 
+    paper_dirs = [
+        d
+        for d in (args.paper_fig_dir, args.paper_fig_dir_v10, args.paper_fig_dir_v9)
+        if d is not None
+    ]
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    hear_meta = plot_hear_panel(args.hear_dir, args.out_dir, args.paper_fig_dir)
-    gallery_meta = plot_wt_gallery(args.export_json, args.akwf_dir, args.out_dir, args.paper_fig_dir)
+    hear_meta = plot_hear_panel(args.hear_dir, args.out_dir, *paper_dirs)
+    gallery_meta = plot_wt_gallery(args.export_json, args.akwf_dir, args.out_dir, *paper_dirs)
 
     summary = {
         "hear_panel": hear_meta,

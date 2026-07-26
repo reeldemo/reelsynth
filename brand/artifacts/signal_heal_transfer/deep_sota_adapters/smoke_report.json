@@ -1,0 +1,94 @@
+{
+  "updated_at": "20260726T082427Z",
+  "metric_footnote": "Clinical ECG restoration (Cycle-GAN / BeatDiff) optimizes different objectives (artifact removal, beat morph, inpainting) than DenoiseOpt prolonged wrap residual R. Even when weights load, wrap-R is an out-of-distribution transfer probe \u2014 not a claim that the method was designed for wavetable seam repair.",
+  "device": "cuda",
+  "external_clones": {
+    "cyclegan": true,
+    "beatdiff": true
+  },
+  "methods": {
+    "cycle_gan_ecg": {
+      "method": "cycle_gan_ecg",
+      "status": "scored",
+      "metric_footnote": "Clinical ECG restoration (Cycle-GAN / BeatDiff) optimizes different objectives (artifact removal, beat morph, inpainting) than DenoiseOpt prolonged wrap residual R. Even when weights load, wrap-R is an out-of-distribution transfer probe \u2014 not a claim that the method was designed for wavetable seam repair.",
+      "weight": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\cyclegan\\model_weights_16NQ3.pth",
+      "notes": [
+        "loaded C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\cyclegan\\model_weights_16NQ3.pth via cyclegan_arch_minimal"
+      ],
+      "scores": {
+        "mitbih_ecg": {
+          "R": 0.0699673593044281,
+          "R_blend": 0.10628266632556915,
+          "no_bake_R": 0.6447737812995911,
+          "status": "scored",
+          "n_holdout": 64
+        },
+        "ptbxl_ecg": {
+          "R": 0.15552377700805664,
+          "R_blend": 0.2104691118001938,
+          "no_bake_R": 0.5687443614006042,
+          "status": "scored",
+          "n_holdout": 64
+        }
+      }
+    },
+    "beatdiff": {
+      "method": "beatdiff",
+      "status": "blocked_needs_user_auth_or_manual_drive",
+      "metric_footnote": "Clinical ECG restoration (Cycle-GAN / BeatDiff) optimizes different objectives (artifact removal, beat morph, inpainting) than DenoiseOpt prolonged wrap residual R. Even when weights load, wrap-R is an out-of-distribution transfer probe \u2014 not a claim that the method was designed for wavetable seam repair.",
+      "weight": null,
+      "notes": [
+        "Drive tree present n_files=48 n_gt10k=1 (Orbax stubs)"
+      ],
+      "scores": {},
+      "blocker": "BEATDIFF_WEIGHTS_INCOMPLETE: HF 401 without token; Drive gdown FileURLRetrievalError. USER: huggingface-cli login then huggingface-cli download lbedin/BeatDiff --local-dir brand/artifacts/signal_heal_transfer/external/weights/beatdiff_hf OR browser https://drive.google.com/drive/folders/1m2OvyYebvnirh1CraCrnSOyjihSkSkLG",
+      "user_must": {
+        "hf_login": "huggingface-cli login",
+        "hf_download": "huggingface-cli download lbedin/BeatDiff --local-dir brand/artifacts/signal_heal_transfer/external/weights/beatdiff_hf",
+        "drive_url": "https://drive.google.com/drive/folders/1m2OvyYebvnirh1CraCrnSOyjihSkSkLG"
+      }
+    },
+    "paderborn_deep_alfirdausi_cnn": {
+      "updated_at": "20260726T082028Z",
+      "method": "paderborn_kat_deep_alfirdausi_cnn",
+      "device": "cuda",
+      "weight": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\paderborn_cnn\\model.pth",
+      "load_note": "loaded C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\paderborn_cnn\\model.pth as CNN_1D_2L (L=516)",
+      "honesty": "Author published deep model on Paderborn = fault classifier. SeamN2N / Ours wrap-R remain separate. Do not rename classification as denoise.",
+      "status": "scored_native_healthy_only",
+      "native": {
+        "status": "scored_native_healthy_only",
+        "metric": "healthy_K001_segment_Normal_rate",
+        "metric_note": "Author model is 4-class fault diagnosis (N/B/IR/OR). Only healthy K001 is extracted here \u2014 report fraction of segments predicted Normal. Not multi-class accuracy; wrap-R not applicable (classifier \u2260 denoise).",
+        "n_segments": 256,
+        "n_mats": 8,
+        "files": [
+          "N09_M07_F10_K001_1.mat",
+          "N09_M07_F10_K001_10.mat",
+          "N09_M07_F10_K001_11.mat",
+          "N09_M07_F10_K001_12.mat",
+          "N09_M07_F10_K001_13.mat",
+          "N09_M07_F10_K001_14.mat",
+          "N09_M07_F10_K001_15.mat",
+          "N09_M07_F10_K001_16.mat"
+        ],
+        "class_counts": {
+          "N": 256,
+          "B": 0,
+          "IR": 0,
+          "OR": 0
+        },
+        "healthy_Normal_rate": 1.0,
+        "mode_class": "N",
+        "seg_len": 516,
+        "wrap_R": null,
+        "wrap_R_blocker": "Refused: fault-classifier head cannot honestly produce DenoiseOpt wrap-R. Native classification metric only.",
+        "citation": {
+          "paper": "Al Firdausi & Ahmad, Comm. Sci. Tech. 7(1):62\u201372, 2022",
+          "github": "https://github.com/mdzalfirdausi/CNN-for-Paderborn-Bearing-Dataset",
+          "weight": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\paderborn_cnn\\model.pth"
+        }
+      }
+    }
+  }
+}

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import shutil
 import sys
 import time
@@ -155,8 +156,17 @@ def plot_latency(table: dict[str, dict[str, Any]], out_png: Path, out_pdf: Path,
     datasets = [d for d in DOMAINS if d in table]
     methods = [m for m in METHOD_ORDER if any(m in table[d] for d in datasets)]
     n_ds = max(len(datasets), 1)
-    fig, axes = plt.subplots(1, n_ds, figsize=(max(10.0, 2.2 * n_ds), 4.4), squeeze=False)
-    for ax, ds in zip(axes[0], datasets):
+    n_cols = 3 if n_ds >= 3 else n_ds
+    n_rows = int(math.ceil(n_ds / n_cols))
+    fig, axes = plt.subplots(
+        n_rows,
+        n_cols,
+        figsize=(max(10.0, 3.5 * n_cols), max(6.2, 3.4 * n_rows)),
+        squeeze=False,
+    )
+    flat = list(axes.ravel())
+    for i, ds in enumerate(datasets):
+        ax = flat[i]
         vals = []
         cols = []
         labels = []
@@ -171,15 +181,17 @@ def plot_latency(table: dict[str, dict[str, Any]], out_png: Path, out_pdf: Path,
         ax.set_xticks(list(xs))
         ax.set_xticklabels(labels, rotation=40, ha="right", fontsize=8)
         ax.set_ylabel(f"ms / batch={batch}")
-        ax.set_title(ds.replace("_", "\n"), fontsize=9)
+        ax.set_title(ds.replace("_", " "), fontsize=10)
         ax.grid(axis="y", alpha=0.3)
+    for j in range(len(datasets), len(flat)):
+        flat[j].axis("off")
     fig.suptitle(
-        f"Transfer-domain inference latency (device in JSON; warmup/timed fixed)",
-        fontsize=11,
+        "Transfer-domain inference latency (device in JSON; warmup/timed fixed)",
+        fontsize=12,
     )
     fig.tight_layout()
     out_png.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out_png, dpi=160)
+    fig.savefig(out_png, dpi=180)
     fig.savefig(out_pdf)
     plt.close(fig)
 

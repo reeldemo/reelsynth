@@ -45,23 +45,24 @@ fn performance_summary(state: &UiState) -> String {
     summary
 }
 
-/// Compact Performance dropdown: key, scale, layout, and chord degree when applicable.
+/// Compact Performance dropdown: key, scale, layout, input octave, and chord degree.
 pub fn draw_performance_header(ui: &mut Ui, state: &mut UiState) -> PerformanceHeaderActions {
     let tokens = Tokens::default();
     let mut actions = PerformanceHeaderActions::default();
     let summary = performance_summary(state);
+    let oct = state.performance.input_octave_offset;
+    let combo_label = if oct == 0 {
+        summary
+    } else {
+        format!("{summary} · Oct {oct:+}")
+    };
 
     let perf_start = ui.cursor().min;
-    ui.label(
-        egui::RichText::new("Perf")
-            .size(10.0)
-            .color(tokens.text_muted),
-    );
     let combo = reel_combo(
         ui,
         "perf_settings",
-        select_value_text(&summary),
-        110.0,
+        select_value_text(&combo_label),
+        128.0,
         |ui| {
             styled_menu_body(ui, |ui| {
                 let perf = &mut state.performance;
@@ -92,6 +93,25 @@ pub fn draw_performance_header(ui: &mut Ui, state: &mut UiState) -> PerformanceH
                     }
                 }
 
+                menu_divider(ui);
+                menu_section_label(ui, "Input octave");
+                ui.horizontal(|ui| {
+                    let tooltip = "Shift MIDI + computer keyboard by octaves. On-screen piano pitches stay fixed.";
+                    if button_ghost(ui, "−").on_hover_text(tooltip).clicked() {
+                        perf.input_octave_offset = (perf.input_octave_offset - 1).max(-3);
+                        actions.params_changed = true;
+                    }
+                    ui.label(
+                        egui::RichText::new(format!("{:+}", perf.input_octave_offset))
+                            .color(tokens.text),
+                    )
+                    .on_hover_text(tooltip);
+                    if button_ghost(ui, "+").on_hover_text(tooltip).clicked() {
+                        perf.input_octave_offset = (perf.input_octave_offset + 1).min(3);
+                        actions.params_changed = true;
+                    }
+                });
+
                 if perf.layout == 2 {
                     menu_divider(ui);
                     menu_section_label(ui, "Chord degree");
@@ -113,30 +133,12 @@ pub fn draw_performance_header(ui: &mut Ui, state: &mut UiState) -> PerformanceH
                 }
             });
         },
-    );
-    let octave_controls = ui.horizontal(|ui| {
-        let tooltip =
-            "Shift MIDI + computer keyboard by octaves. On-screen piano pitches stay fixed.";
-        if button_ghost(ui, "−").on_hover_text(tooltip).clicked() {
-            state.performance.input_octave_offset =
-                (state.performance.input_octave_offset - 1).max(-3);
-            actions.params_changed = true;
-        }
-        ui.label(format!("Oct {:+}", state.performance.input_octave_offset))
-            .on_hover_text(tooltip);
-        if button_ghost(ui, "+").on_hover_text(tooltip).clicked() {
-            state.performance.input_octave_offset =
-                (state.performance.input_octave_offset + 1).min(3);
-            actions.params_changed = true;
-        }
-    });
+    )
+    .response
+    .on_hover_text("Performance: key, scale, layout, input octave");
     let perf_rect = egui::Rect::from_min_max(
         egui::pos2(perf_start.x, ui.min_rect().min.y),
-        octave_controls
-            .response
-            .rect
-            .max
-            .max(combo.response.rect.max),
+        combo.rect.max,
     );
     if perf_rect.is_positive() {
         record_region(ui.ctx(), AuditId::HeaderPerformance, perf_rect, perf_rect);

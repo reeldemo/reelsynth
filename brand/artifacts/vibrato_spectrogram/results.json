@@ -20,28 +20,28 @@
   "R_cycle_tile": {
     "no_bake": 0.9503467082977295,
     "dual_cosine": 0.6029019951820374,
-    "ours_hybrid": 0.9943400621414185
+    "ours_hybrid": 0.9916303157806396
   },
   "R_cycle_holdout_mean": {
     "no_bake": 0.9717606902122498,
     "dual_cosine": 0.8248767852783203,
-    "ours_hybrid": 0.9915754795074463,
+    "ours_hybrid": 0.9911626577377319,
     "n": 64
   },
   "R_modulated_tile": {
     "no_bake": 0.9537080018640848,
     "dual_cosine": 0.6171139876768619,
-    "ours_hybrid": 0.9952813808114935
+    "ours_hybrid": 0.992581334031714
   },
   "R_modulated_mean_top_wrap": {
     "no_bake": 0.967655664246744,
     "dual_cosine": 0.6556272345453609,
-    "ours_hybrid": 0.9932518381948641
+    "ours_hybrid": 0.9929269885954813
   },
   "R_modulated_std_top_wrap": {
     "no_bake": 0.017745524461400933,
     "dual_cosine": 0.02948037895959956,
-    "ours_hybrid": 0.0019727085661328477
+    "ours_hybrid": 0.0014062650492974475
   },
   "modulated_tile_indices": [
     21,
@@ -59,9 +59,9 @@
     "lr": 0.06844036093419292,
     "adv_coef": 0.0,
     "converged": false,
-    "train_r_last": 0.9914011359214783
+    "train_r_last": 0.9785851836204529
   },
-  "train_r_last": 0.9914011359214783,
+  "train_r_last": 0.9785851836204529,
   "champ_arch": {
     "depth": 12,
     "width": 48,
@@ -112,8 +112,8 @@
   "png": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\vibrato_spectrogram\\fig_vibrato_spectrogram.png",
   "pdf": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\vibrato_spectrogram\\fig_vibrato_spectrogram.pdf",
   "paper_copies": [
-    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\denoise-opt-meta\\paper\\v8\\figures\\fig_vibrato_spectrogram.png",
-    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\denoise-opt-meta\\paper\\v8\\figures\\fig_vibrato_spectrogram.pdf"
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\denoise-opt-meta\\paper\\Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v11\\figures\\fig_vibrato_spectrogram.png",
+    "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\denoise-opt-meta\\paper\\Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v10\\figures\\fig_vibrato_spectrogram.png"
   ],
   "note": "Cycle R is the standard prolonged residual on L=256 periods. Modulated R applies the same clamp(1 - rms(out-ideal)/rms(ideal)) formula to vibrato-rendered audio under a shared pitch envelope. No formal listening study; spectrogram + downloadable WAVs only."
 }

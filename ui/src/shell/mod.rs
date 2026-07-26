@@ -23,22 +23,18 @@ pub use crate::state::{
 };
 
 // Re-exports for shell submodules (`use super::*`).
-pub(super) use egui::{Color32, FontId};
-pub(super) use reelsynth::WavetableBank;
-pub(super) use reelsynth_ui_theme::heading_font;
-pub(super) use crate::layout::{
-    GRID_UNIT, SPACE_SM, WT_VIEW_MIN_HEIGHT,
-};
-pub(super) use crate::scope_strip::{
-    draw_scope_strip, ScopeStripInput, ScopeStripState,
-};
+pub(super) use crate::layout::{GRID_UNIT, SPACE_SM, WT_VIEW_MIN_HEIGHT};
+pub(super) use crate::scope_strip::{draw_scope_strip, ScopeStripInput, ScopeStripState};
 pub(super) use crate::widgets::{
     adsr_graph, format_depth, format_env_time, format_lfo_rate, format_sustain, PianoKeyboard,
 };
 pub(super) use crate::wt::{
-    morph_amount_for_position, StripMode, WtMorph, WtStrip, WtSelectedLayerView, WtViewResult,
-    WtView3dStack, FACTORY_BANKS,
+    morph_amount_for_position, StripMode, WtMorph, WtSelectedLayerView, WtStrip, WtView3dStack,
+    WtViewResult, FACTORY_BANKS,
 };
+pub(super) use egui::{Color32, FontId};
+pub(super) use reelsynth::WavetableBank;
+pub(super) use reelsynth_ui_theme::heading_font;
 
 pub fn draw_shell(
     ui: &mut Ui,
@@ -82,17 +78,11 @@ pub fn draw_shell(
     painter.rect_filled(layout.main, 0.0, tokens.bg);
     if layout.osc.is_positive() {
         painter.rect_filled(layout.osc, 0.0, tokens.bg);
-        painter.line_segment(
-            [layout.osc.right_top(), layout.osc.right_bottom()],
-            border,
-        );
+        painter.line_segment([layout.osc.right_top(), layout.osc.right_bottom()], border);
     }
     painter.rect_filled(layout.rail, 0.0, tokens.bg);
     if layout.rail.is_positive() {
-        painter.line_segment(
-            [layout.rail.left_top(), layout.rail.left_bottom()],
-            border,
-        );
+        painter.line_segment([layout.rail.left_top(), layout.rail.left_bottom()], border);
     }
     if layout.mod_matrix.is_positive() {
         painter.rect_filled(layout.mod_matrix, 0.0, tokens.bg_muted);
@@ -121,7 +111,16 @@ pub fn draw_shell(
         border,
     );
 
-    draw_header(ui, layout.header, state, midi, audio, &mut actions, app_settings);
+    draw_header(
+        ui,
+        layout.header,
+        state,
+        midi,
+        audio,
+        &mut actions,
+        app_settings,
+        config.host_io_only,
+    );
 
     if compose_mode {
         draw_compose_shell(ui, layout.main, state, &mut actions, layout.scale);
@@ -193,9 +192,7 @@ pub fn draw_shell(
         });
     }
 
-    if state.piano_visible
-        && layout.piano_wrap.is_positive()
-        && !embed_piano_in_center(layout_opts)
+    if state.piano_visible && layout.piano_wrap.is_positive() && !embed_piano_in_center(layout_opts)
     {
         draw_piano_wrap(ui, layout.piano_wrap, state, &mut actions, layout.scale);
     }
@@ -207,20 +204,29 @@ pub fn draw_shell(
     record_region(ctx, AuditId::ShellMain, layout.main, layout.main);
     record_region(ctx, AuditId::ShellFooter, layout.footer, layout.footer);
     if layout.mod_matrix.is_positive() {
-        record_region(ctx, AuditId::ShellModStrip, layout.mod_matrix, layout.mod_matrix);
+        record_region(
+            ctx,
+            AuditId::ShellModStrip,
+            layout.mod_matrix,
+            layout.mod_matrix,
+        );
     }
     if layout.fx_rack.is_positive() {
         record_region(ctx, AuditId::ShellFxStrip, layout.fx_rack, layout.fx_rack);
     }
     if state.piano_visible && layout.piano_wrap.is_positive() {
-        record_region(ctx, AuditId::ShellPianoWrap, layout.piano_wrap, layout.piano_wrap);
+        record_region(
+            ctx,
+            AuditId::ShellPianoWrap,
+            layout.piano_wrap,
+            layout.piano_wrap,
+        );
     }
 
     actions
 }
 
-
-use header::{draw_header, draw_osc};
 use center::draw_center;
-use rail::draw_rail;
 use footer::{draw_footer, draw_piano_wrap};
+use header::{draw_header, draw_osc};
+use rail::draw_rail;

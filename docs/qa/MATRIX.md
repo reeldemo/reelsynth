@@ -1,6 +1,6 @@
-# ReelSynth QA Matrix
+# QA matrix
 
-Automated pitch × parameter coverage for the signature platform. Integration tests live in [`tests/qa_matrix.rs`](../../tests/qa_matrix.rs); modules under [`tests/qa/`](../../tests/qa/).
+Pitch × parameter coverage. Tests: [`tests/qa_matrix.rs`](../../tests/qa_matrix.rs), modules under [`tests/qa/`](../../tests/qa/).
 
 ## Pitch tiers
 

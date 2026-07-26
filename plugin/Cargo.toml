@@ -1,9 +1,9 @@
 [package]
 name = "reelsynth-plugin"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
-description = "ReelSynth CLAP/VST3/AU plugin shell (egui editor)"
-license = "MIT"
+description = "ReelSynth VST3/CLAP instrument (nih-plug; GPL when VST3 linked)"
+license = "GPL-3.0-or-later"
 
 [lib]
 name = "reelsynth_plugin"
@@ -19,3 +19,13 @@ reelsynth-ui = { path = "../ui" }
 reelsynth-ui-theme = { path = "../ui-theme" }
 eframe = { version = "0.30", default-features = true }
 egui = "0.30"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+base64 = "0.22"
+crossbeam = "0.8"
+parking_lot = "0.12"
+nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git", rev = "f36931f7af4646065488a9845d8f8c2f95252c23", features = ["vst3"] }
+nih_plug_egui = { git = "https://github.com/robbert-vdh/nih-plug.git", rev = "f36931f7af4646065488a9845d8f8c2f95252c23" }
+
+[features]
+default = []

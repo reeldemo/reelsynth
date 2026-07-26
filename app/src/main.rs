@@ -2,12 +2,14 @@
 
 mod app;
 mod app_settings;
+mod ableton_osc;
 mod audio_commands;
 mod audio_devices;
 mod audio_host;
 mod keyboard_layout;
 mod midi_host;
 mod midi_input;
+mod send_ableton;
 
 use app::ReelSynthApp;
 use app_settings::AppSettings;

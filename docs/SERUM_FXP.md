@@ -1,6 +1,6 @@
-# Serum `.fxp` wavetable subset (ReelSynth v1)
+# Serum `.fxp` (wavetable subset)
 
-ReelSynth export/import symmetry for Serum uses an embedded **`RSWT`** chunk inside a minimal FXP wrapper. This is **not** a full Xfer Serum preset — it carries wavetable frames plus a small scalar param block for round-trip testing and WT handoff.
+Export/import uses an embedded **`RSWT`** chunk in a minimal FXP wrapper. Not a full Xfer preset — frames plus a small scalar block for round-trip / WT handoff.
 
 ## FXP wrapper
 

@@ -1,0 +1,23 @@
+{
+  "updated_at": "20260726T080951Z",
+  "campaign": "table14_continue",
+  "paderborn_ours_R": 0.9270495772361755,
+  "paderborn_ours_iters": 250,
+  "paderborn_n2n_R": 0.8386802077293396,
+  "ptbxl_ours_R": 0.9378750324249268,
+  "ptbxl_n2n_R": 0.5701605081558228,
+  "ptbxl_no_bake": 0.761685848236084,
+  "ptbxl_n_records": 2137,
+  "ptbxl_n_beats_pool": 23094,
+  "cyclegan_mitbih_R": 0.0699673593044281,
+  "cyclegan_ptbxl_R": 0.14803940057754517,
+  "beatdiff": "blocked_no_checkpoint",
+  "kit_pmu": "blocked_login_walls",
+  "beatdiff_blocker": "Still blocked after re-probe 2026-07-26. (1) Hugging Face https://huggingface.co/lbedin/BeatDiff returns HTTP 401 Unauthorized without login (hf auth whoami: Not logged in); public search api/models?search=BeatDiff returns []. Paper cites this repo as pretrained host; no alternate public HF IDs found (LisaBedin/BeatDiff etc. also 401/404). User auth steps: create HF token at https://huggingface.co/settings/tokens ; run hf auth login ; open https://huggingface.co/lbedin/BeatDiff and accept any ga",
+  "paderborn_alfirdausi": {
+    "updated_at": "20260726T093858Z",
+    "classifier_holdout_acc": 0.858984375,
+    "wrap_backbone_R": 0.8390061259269714,
+    "status": "trained"
+  }
+}

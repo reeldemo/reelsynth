@@ -1,6 +1,6 @@
-# ReelSynth Naming Conventions
+# Naming
 
-Single source of truth for code naming across the ReelSynth workspace.
+Code naming for the ReelSynth workspace.
 
 ## Layer rules
 
@@ -28,19 +28,19 @@ Use **`Effect*`** prefix for effect-related types (matches `EffectSlot`, `Effect
 - `EffectRackState` — FX rack panel state
 - `draw_effect_rack` — FX rack draw entrypoint (file may remain `fx_rack.rs`)
 
-## Modulation vocabulary
+## Modulation
 
-- `ModSlotUi` — UI bridge for a modulation route (was `ModSlotUi`)
+- `ModSlotUi` — UI bridge for a modulation route
 - `ModMatrixState` — mod matrix panel state
 
 ## Legacy fields
 
-- `fx_bypass` on `Patch` — deprecated; kept with `#[serde(alias)]` + migration into `effects`
+- `fx_bypass` on `Patch` — deprecated; `#[serde(alias)]` + migrate into `effects`
 
 ## Shell / UI state
 
-- `UiState` — top-level UI state (was `UiState`)
-- `draw_shell` — main shell draw entrypoint (was `draw_shell`)
+- `UiState` — top-level UI state
+- `draw_shell` — main shell draw entrypoint
 - `ShellConfig`, `ShellActions`, `ShellLayout` — shell configuration types
 
 ## Bin names

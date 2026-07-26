@@ -4,38 +4,36 @@ description: >-
   Guide users through ReelSynth sound design, export, and DAW handoff. Use when
   the user asks how to use the synth, compose melodies, connect MIDI, export
   reelpack, move sounds to Vital/Ableton, or integrate with Reeldemo Studio.
-  Covers honest limits (no MIDI recording, no plugin yet) and free-tool paths.
 ---
 
 # ReelSynth workflow skill
 
-Help users design sounds in ReelSynth and hand off to a DAW — without overpromising features that do not exist yet.
+Help users design sounds and get them into a DAW. Don’t overpromise SMF export or perfect foreign-format round-trips.
 
-## Doc map (read before answering)
+## Doc map
 
-| Question type | Doc |
-|---------------|-----|
-| Install, first note, save preset | [docs/GETTING_STARTED.md](../../docs/GETTING_STARTED.md) |
-| UI regions, MIDI/Audio dropdowns, piano | [docs/UI.md](../../docs/UI.md) |
+| Question | Doc |
+|----------|-----|
+| Install, first note, save | [docs/GETTING_STARTED.md](../../docs/GETTING_STARTED.md) |
+| UI, MIDI/Audio, piano | [docs/UI.md](../../docs/UI.md) |
 | Melody + sound in DAW | [docs/WORKFLOW.md](../../docs/WORKFLOW.md) |
-| Free DAWs and Vital | [docs/FREE_STACK.md](../../docs/FREE_STACK.md) |
-| Python, CLI, Rust API | [docs/SDK.md](../../docs/SDK.md) |
-| Reeldemo Studio + Ableton | [docs/REELDEMO_INTEGRATION.md](../../docs/REELDEMO_INTEGRATION.md) |
+| Free DAWs / Vital | [docs/FREE_STACK.md](../../docs/FREE_STACK.md) |
+| Ableton VST3 / Send | [docs/ABLETON.md](../../docs/ABLETON.md) |
+| Python, CLI, Rust | [docs/SDK.md](../../docs/SDK.md) |
+| Reeldemo Studio | [docs/REELDEMO_INTEGRATION.md](../../docs/REELDEMO_INTEGRATION.md) |
 | Export loss | [docs/INTEROP.md](../../docs/INTEROP.md) |
 
 Index: [docs/README.md](../../docs/README.md)
 
-## Hard rules (never contradict)
+## Hard rules
 
-1. **No in-app MIDI recording** — user records melody in their DAW.
-2. **`daw/midi/melody.mid` is one demo note** — not their performance.
-3. **No VST/AU/CLAP in DAW yet** — S7 roadmap; use export + Vital today.
-4. **Exports are lossy** — canonical state is `.reelpreset` + `.reelwt`.
-5. **Reeldemo Studio is commercial** — optional; standalone is fully MIT/free.
+1. **`daw/midi/melody.mid` is a demo note** — not their performance.
+2. **Compose** can record clips in-app; full SMF export of that song is still landing — for a finished DAW session, record or copy MIDI into the DAW when needed.
+3. **VST3** works in Ableton on Win/macOS — slim host pane **Open Editor** + external Design UI ([ABLETON.md](../../docs/ABLETON.md)). Elsewhere, export → Vital / SFZ is the usual path.
+4. **Exports are lossy** — truth is `.reelpreset` + `.reelwt`.
+5. **Reeldemo Studio is commercial** — optional; standalone is MIT.
 
-## Standard workflow (Path A — manual)
-
-Walk the user through these steps:
+## Path A — manual
 
 ### 1. Launch
 
@@ -43,21 +41,21 @@ Walk the user through these steps:
 cargo run -p reelsynth-app --bin reelsynth-app
 ```
 
-### 2. Connect input
+### 2. Input
 
-- MIDI controller → header **MIDI** dropdown
-- Audio output → header **Audio** dropdown (auto-selects newly connected DI / interface when enabled in Settings)
-- Or QWERTY `Z–M` / on-screen **Piano**
+- MIDI → header **MIDI**
+- Audio → header **Audio** (auto-select new outputs when Settings allow)
+- Or QWERTY `Z–M` / **Piano**
 
-### 3. Design sound
+### 3. Design
 
-While playing notes: WT position, filter, ADSR, LFO, mod matrix, FX.
+WT position, filter, ADSR, LFO, mod matrix, FX while playing.
 
 ### 4. Save
 
 - **Save** → `.reelpreset`
-- **WT → Save .reelwt** (if table edited)
-- Keep both files together
+- **WT → Save .reelwt** if the table changed
+- Keep both together
 
 ### 5. Export
 
@@ -66,49 +64,45 @@ cargo run --bin reelsynth-export -- reelpack my_patch.reelpreset -o out/ \
   --targets vital,wav,serum,ableton,sfz,midi,audio
 ```
 
-Point user to `synth/vital/table.vitaltable` for free Vital path.
+Free path: `synth/vital/table.vitaltable`.
 
 ### 6. DAW
 
-- Record MIDI melody on a DAW track (any placeholder synth)
-- Load Vital (or Wavetable) with exported assets on same track
-- Edit piano roll, arrange, mix
+- MIDI on a track (Compose and/or DAW record)
+- Vital / Wavetable / Live VST3 with the exported (or installed) sound
+- Arrange and mix
 
-## Path B — Reeldemo Studio
+## Path B — Studio
 
-If user has Reeldemo Studio: compose → grade → handover to Ableton. See [REELDEMO_INTEGRATION.md](../../docs/REELDEMO_INTEGRATION.md).
+Compose → grade → Ableton handoff. [REELDEMO_INTEGRATION.md](../../docs/REELDEMO_INTEGRATION.md). Studio is not required for ReelSynth.
 
-Do not imply Studio is required for ReelSynth.
+## Free stack
 
-## Free stack guidance
-
-Present [FREE_STACK.md](../../docs/FREE_STACK.md) options **equally** — Reaper, LMMS, Ardour, Cakewalk, etc. Vital is the usual free synth target for `reelpack` export.
+Point at [FREE_STACK.md](../../docs/FREE_STACK.md). Vital is the usual free synth target for `reelpack`.
 
 ## Troubleshooting
 
 | Symptom | Check |
 |---------|-------|
 | No audio | Status line; cpal device; UI-only fallback |
-| MIDI silent | MIDI dropdown selection; cable/driver |
+| MIDI silent | MIDI dropdown; cable/driver |
 | Export missing WT | Sibling `.reelwt` next to preset |
-| Sound differs in Vital | Expected — read `export_report.json`, tweak by ear |
-| Wants plugin in DAW | Explain S7; offer Vital export path |
+| Sound differs in Vital | Expected — `export_report.json`, tweak by ear |
+| Wants Ableton plugin | [ABLETON.md](../../docs/ABLETON.md) — install, then **Open Editor** in Live (or auto-open) |
 
-## UI troubleshooting
+## UI issues
 
-For visual/layout issues, use `@audit-reelsynth-ui` skill — not this workflow skill.
+Use `@audit-reelsynth-ui` — not this skill.
 
 ## Screenshots
 
-Docs use GitHub Release URLs (`releases/download/v0.1.0/...`). Not in repo. Re-capture per [CONTRIBUTING.md](../../CONTRIBUTING.md).
+Release URLs (`releases/download/v0.1.0/...`). Capture: [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
-## Agent checklist
+## Checklist (“how do I use this with my DAW?”)
 
-When user asks "how do I use reelsynth with my DAW":
-
-- [ ] Explain MIDI vs sound separation
-- [ ] Standalone for sound design only
-- [ ] DAW for MIDI recording
-- [ ] Export reelpack for sound transfer
-- [ ] Mention limits honestly
-- [ ] Link relevant doc section
+- [ ] Sound vs notes are separate
+- [ ] Standalone (or VST3) for the sound
+- [ ] Compose and/or DAW for MIDI
+- [ ] `reelpack` / Vital / Ableton paths as needed
+- [ ] Link the right doc
+- [ ] Don’t claim lossless foreign export or finished SMF export

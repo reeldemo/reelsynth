@@ -1,35 +1,33 @@
-# DAW workflow — melody + sound handoff
+# DAW workflow
 
-This guide explains how to compose a melody, design the sound in ReelSynth, and get **both** into a DAW for arrangement and mixing.
+Design the sound in ReelSynth, get notes into a DAW, load the sound on that track. Compose mode sketches clips in-app; a DAW still wins for full arrange/mix/collab.
 
-ReelSynth now includes a **Compose mode** (header toggle) for sketching clips in-app. Export to a DAW remains optional for full arrangement, mixing, and collaboration.
+## Two pieces
 
-## The two things you need
+| Asset | What | Where |
+|-------|------|-------|
+| Performance | Notes, timing, velocity | Compose clips *or* a MIDI clip in the DAW |
+| Sound | Wavetable + patch | `.reelpreset` + `.reelwt`, or export → Vital / Wavetable |
 
-| Asset | What it is | Where it lives |
-|-------|------------|----------------|
-| **Performance** | Notes, timing, velocity | Compose clips in ReelSynth *or* MIDI clip in your DAW |
-| **Sound** | Wavetable + patch settings | `.reelpreset` + `.reelwt`, or export to Vital / Wavetable |
-
-Keep them separate. Change the melody without re-tweaking the synth, or swap sounds without re-playing.
+Keep them separate so you can swap melody or sound without rebuilding both.
 
 ```mermaid
 flowchart LR
   subgraph design [Sound design]
-    RS[ReelSynth standalone]
+    RS[ReelSynth]
     Preset[".reelpreset + .reelwt"]
     RS --> Preset
   end
 
-  subgraph compose [Composition]
-    MIDIctrl[MIDI controller]
+  subgraph compose [Notes]
+    MIDIctrl[MIDI / Compose]
     MIDIf[MIDI clip in DAW]
     MIDIctrl --> MIDIf
   end
 
   subgraph daw [DAW]
     Track[MIDI track]
-    Synth[Synth plugin]
+    Synth[Host synth / VST3]
     Preset --> Synth
     MIDIf --> Track
     Track --> Synth
@@ -38,49 +36,41 @@ flowchart LR
 
 ---
 
-## Path A1 — Compose in ReelSynth (new)
+## Path A1 — Compose in ReelSynth
 
-1. Launch the standalone app and toggle **Compose** in the header.
-2. **Design** your sound first (switch back to Design mode), then return to Compose.
-3. Double-click the arrangement to create clips; draw notes in the piano roll.
-4. Arm a track ( **R** ), press record **●** , and play via the 88-key strip, QWERTY, or MIDI.
-5. Use scenes for session-style clip launch; arrangement playhead for linear playback.
-6. Save `.reelpreset` — sequence data will embed in the patch schema (backend in progress).
-7. Optional: export reelpack for DAW handoff when full SMF export lands.
+1. Toggle **Compose** in the header.
+2. Design the sound in Design mode, then come back to Compose.
+3. Double-click the arrangement for clips; draw notes in the piano roll.
+4. Arm (**R**), record **●**, play via the 88-key strip, QWERTY, or MIDI.
+5. Scenes for clip launch; arrangement playhead for linear playback.
+6. Save `.reelpreset` — sequence embedding in the patch schema is in progress.
+7. Optional reelpack when full SMF export lands.
 
 ---
 
-## Path A — Manual (standalone + any DAW)
+## Path A — Standalone + any DAW
 
-### Step 1 — Launch and connect MIDI
+### 1. Launch and MIDI
 
 ```bash
 cargo run -p reelsynth-app --bin reelsynth-app
 ```
 
-1. Select your MIDI device in the header dropdown.
-2. Play notes to audition the default patch.
-3. See [GETTING_STARTED.md](GETTING_STARTED.md) for QWERTY and piano input.
+Pick MIDI in the header, audition the default patch. QWERTY / piano: [GETTING_STARTED.md](GETTING_STARTED.md).
 
-### Step 2 — Design and save the sound
+### 2. Design and save
 
-Tweak while playing:
+Tweak oscs, filter, ADSR, LFO, mod matrix, FX. Wrap ticks after import/Quant → header **ReelAI** or Selected **Fit ends** ([GETTING_STARTED.md](GETTING_STARTED.md#clean-wrap-crackle-with-reelai)).
 
-- Oscillators, filter, ADSR, LFO, mod matrix, FX
-- If imports or Quant edits tick at the loop, use header **ReelAI** or Selected **Fit ends** ([GETTING_STARTED.md § Clean wrap crackle](GETTING_STARTED.md#clean-wrap-crackle-with-reelai))
 - **Save** → `my_lead.reelpreset`
-- **WT → Save .reelwt** if you edited the table (includes any seam bake you want to keep)
+- **WT → Save .reelwt** if you edited the table (keeps a seam bake you want)
 
-See [UI.md](UI.md) for every control.
-
-### Step 3 — Export a DAW-ready bundle
+### 3. Export
 
 ```bash
 cargo run --bin reelsynth-export -- reelpack my_lead.reelpreset -o out/ \
   --targets vital,wav,serum,ableton,sfz,midi,audio
 ```
-
-Output layout:
 
 ```
 out/my_lead.reelpack/
@@ -90,99 +80,85 @@ out/my_lead.reelpack/
   synth/wav_frames/frame_000.wav …
   synth/ableton/wavetable_map.json
   synth/serum/patch_export.fxp
-  daw/midi/melody.mid          ← single demo note, NOT your performance
-  daw/audio/melody.wav         ← single-note preview stem
-  export_report.json           ← what was lost in export
+  daw/midi/melody.mid          ← demo note, not your performance
+  daw/audio/melody.wav         ← single-note preview
+  export_report.json           ← what was dropped
 ```
 
-Read [INTEROP.md](INTEROP.md) before expecting 1:1 sound in Vital or Ableton — mod matrix and FX may not transfer.
+Read [INTEROP.md](INTEROP.md) before expecting identical sound in Vital or Ableton.
 
-### Step 4 — Record melody in the DAW
+### 4. Record melody in the DAW
 
-**ReelSynth cannot record your live performance yet.** Record MIDI in the DAW:
+Export MIDI is not your live take. In the DAW:
 
-1. Create a MIDI track.
-2. Arm record, select any placeholder instrument.
-3. Play your melody on the MIDI controller.
-4. Edit in the piano roll — fix notes, quantize, adjust velocity.
+1. New MIDI track, arm, any placeholder instrument.
+2. Record the melody.
+3. Edit in the piano roll.
 
-This is standard professional workflow.
+### 5. Put the sound on that track
 
-### Step 5 — Load your ReelSynth sound on that track
+**Vital (free):**
 
-**Vital (free, any DAW with VST):**
-
-1. Load Vital on the MIDI track.
+1. Vital on the MIDI track.
 2. Import `synth/vital/table.vitaltable`.
-3. Match filter and ADSR from your preset by ear (or read `.reelpreset` JSON).
+3. Match filter/ADSR by ear (or read the JSON preset).
 
-**Ableton Wavetable:**
+**Ableton — Send or export:**
 
-1. Load wav frames from `synth/wav_frames/` into Wavetable.
-2. Use `synth/ableton/wavetable_map.json` as a param reference.
+1. Header **Ableton**, or reelpack with `ableton` in `--targets`.
+2. Drag `synth/ableton/table_multicycle.wav` onto the Wavetable sprite (inbox opens when it can).
+3. With AbletonOSC up, Send may create a MIDI track and apply mapped params (`reelsynth-ableton-wt-v2`).
+4. Frames still need that one drag (Live API). For play-in-Live without the bridge, use the VST3 — [ABLETON.md](ABLETON.md).
 
-**Audio-only (least flexible):**
+**Ableton — manual:**
 
-1. Bounce MIDI through Vital/Wavetable to a WAV clip.
-2. Do not use `daw/audio/melody.wav` as your melody — it is one reference note.
+1. Load `synth/wav_frames/` or the multicycle WAV into Wavetable.
+2. Use `wavetable_map.json` as a param cheat sheet.
 
-### Step 6 — Arrange and mix
+**Audio only:** bounce MIDI through Vital/Wavetable. Don’t treat `daw/audio/melody.wav` as the song — it’s one reference note.
 
-- Duplicate clips, layer harmonies, automate filter cutoff.
-- Freeze/flatten to audio when the sound is final.
+### 6. Arrange
 
-More free-tool options: [FREE_STACK.md](FREE_STACK.md).
-
----
-
-## Path B — Reeldemo Studio (automated)
-
-If you use **[Reeldemo Studio](https://github.com/reeldemo/reeldemo-ableton)** (commercial), the agent composes layers and hands off MIDI + audio to Ableton without manual MIDI recording.
-
-Full detail: [REELDEMO_INTEGRATION.md](REELDEMO_INTEGRATION.md).
-
-Summary:
-
-1. **Compose** — agent returns BPM, key, mode, `instrument_plan[]` (`melody` → `synthesis: lead`).
-2. **Render** — ReelSynth engine (`engine: "reelsynth"`) generates stems offline.
-3. **Grade** — listen to isolated layer traces.
-4. **Hand off** — push to Ableton (OSC or Live 12 Extension).
-
-| `handover_mode` | What lands in Live |
-|-----------------|-------------------|
-| `audio` | WAV clip |
-| `midi` | Raw MIDI clip |
-| `midi_device` | MIDI + Wavetable param JSON |
-| `midi_drum_rack` | Drums → Drum Rack |
+Duplicate clips, layer, automate. Freeze when the sound is done. Free-tool options: [FREE_STACK.md](FREE_STACK.md).
 
 ---
 
-## Capability matrix (honest)
+## Path B — Reeldemo Studio
 
-| Capability | Today | Future |
-|------------|-------|--------|
-| Live MIDI play in standalone | Yes | — |
-| Save/load patch + wavetable | Yes | — |
-| Export `reelpack` | Yes | Richer round-trips |
-| Record performance to MIDI in app | **No** | Planned |
-| Load as DAW plugin | **No** | S7 CLAP/VST3/AU |
-| Export your melody as MIDI | **No** | With MIDI recording |
+Commercial agent composes layers and pushes MIDI/audio to Ableton. Details: [REELDEMO_INTEGRATION.md](REELDEMO_INTEGRATION.md).
+
+Short version: compose → render with `engine: "reelsynth"` → grade layers → hand off (`audio` / `midi` / `midi_device` / `midi_drum_rack`).
 
 ---
 
-## Common mistakes
+## Status
 
-1. Expecting in-app MIDI recording — use the DAW.
-2. Treating `daw/midi/melody.mid` as your performance — it is a pipeline demo note.
-3. Exporting to Serum/Ableton and expecting identical sound — check `export_report.json`.
-4. Saving only `.reelpreset` without the sibling `.reelwt`.
-5. Waiting for a plugin instead of using Vital + export today.
+| Thing | Today |
+|-------|--------|
+| Live MIDI in standalone | Yes |
+| Save/load patch + table | Yes |
+| Export `reelpack` | Yes (lossy to foreign formats) |
+| Compose clips + record in-app | Yes |
+| Export Compose song as SMF | Not yet |
+| DAW plugin | VST3 preview (Win/macOS Ableton); polish ongoing |
+| `daw/midi/melody.mid` | Demo note only |
+
+Ableton install + VST3: [ABLETON.md](ABLETON.md).
 
 ---
 
-## Quick reference
+## Easy mistakes
 
-**Sound design:** ReelSynth standalone → Save preset + WT  
-**Melody:** DAW MIDI track (Path A) or Reeldemo compose (Path B)  
-**Sound in DAW:** `reelpack` → Vital / Wavetable / SFZ  
-**Canonical state:** `canonical/patch.reelpreset` + `canonical/table.reelwt`
+1. Treating `daw/midi/melody.mid` as your performance.
+2. Expecting Serum/Ableton export to sound identical — check `export_report.json`.
+3. Saving `.reelpreset` without the sibling `.reelwt`.
+4. Waiting on a plugin when Vital + export already works.
+
+---
+
+## Cheat sheet
+
+- **Sound:** standalone → Save preset + WT  
+- **Notes:** Compose or DAW MIDI (Path A), Studio compose (Path B)  
+- **In DAW:** `reelpack` → Vital / Wavetable / SFZ, or Live VST3  
+- **Source of truth:** `canonical/patch.reelpreset` + `canonical/table.reelwt`

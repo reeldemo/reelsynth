@@ -1,0 +1,23 @@
+{
+  "domain": "bearings",
+  "files": [
+    "N09_M07_F10_K001_1.mat",
+    "N09_M07_F10_K001_10.mat",
+    "N09_M07_F10_K001_11.mat",
+    "N09_M07_F10_K001_12.mat",
+    "N09_M07_F10_K001_13.mat",
+    "N09_M07_F10_K001_14.mat",
+    "N09_M07_F10_K001_15.mat"
+  ],
+  "n": 256,
+  "period_l": 256,
+  "wrap": "Paderborn K001 vibration_1 (~64 kHz); shaft angle from Mech_4kHz speed when available (equal-angle rev windows); ideal=cubic resample to L; engine=linear (bad-COT) + DenoiseOpt wrap cliff+noise.",
+  "fs_hz": 64000.318436129346,
+  "citation": "Paderborn KAt Bearing Data Center (Lessmeier et al., PHME 2016); CC BY-NC 4.0",
+  "seed": 1902771841,
+  "bearing_code": "K001",
+  "n_angle_revs": 256,
+  "n_fixed_rpm_revs": 0,
+  "label": "classical_board_plus_bad_cot \u2014 not a published deep Paderborn denoise reimplementation (deep SOTA still blocked)",
+  "requested_n": 256
+}

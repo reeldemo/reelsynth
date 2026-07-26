@@ -43,7 +43,15 @@ from plot_meta_heal_samples import (  # noqa: E402
 )
 
 OUT_DIR = ROOT / "brand" / "artifacts" / "vibrato_spectrogram"
-V8_FIG = ROOT.parent / "denoise-opt-meta" / "paper" / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v9" / "figures"
+PAPER_FIG_V11 = (
+    ROOT.parent
+    / "denoise-opt-meta"
+    / "paper"
+    / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v11"
+    / "figures"
+)
+# Legacy alias kept for older call sites / docs.
+V8_FIG = PAPER_FIG_V11
 
 C_ENGINE = "#D55E00"
 C_DUAL = "#0072B2"
@@ -240,34 +248,61 @@ def main() -> int:
     dlim = float(np.percentile(np.abs(np.concatenate([diff_ours.ravel(), diff_dual.ravel()])), 99))
     dlim = max(dlim, 1.0)
 
-    fig = plt.figure(figsize=(11.2, 8.4))
-    gs = fig.add_gridspec(3, 3, height_ratios=[1.0, 1.0, 0.85], hspace=0.42, wspace=0.28)
+    # Wider canvas + shared colorbars so per-panel dB strips do not collide with neighbors.
+    fig = plt.figure(figsize=(13.2, 10.8))
+    gs = fig.add_gridspec(
+        3,
+        3,
+        height_ratios=[1.0, 1.0, 1.35],
+        hspace=0.95,
+        wspace=0.45,
+        left=0.06,
+        right=0.82,
+        top=0.91,
+        bottom=0.10,
+    )
 
     titles = [
-        ("(a) no-bake (cracked)", "nobake", C_ENGINE),
-        ("(b) DualCosine", "dualcosine", C_DUAL),
-        ("(c) Ours (hybrid GA–PPO)", "ours", C_OURS),
+        ("(a) no-bake (cracked)", "nobake"),
+        ("(b) DualCosine", "dualcosine"),
+        ("(c) Ours (hybrid GA-PPO)", "ours"),
     ]
-    for col, (title, key, _c) in enumerate(titles):
+    axes_sp = []
+    im_last = None
+    for col, (title, key) in enumerate(titles):
         ax = fig.add_subplot(gs[0, col])
-        im = ax.imshow(sp[key], origin="lower", aspect="auto", cmap="magma", vmin=vmin, vmax=vmax)
-        ax.set_title(title, fontsize=9)
-        ax.set_xlabel("frame")
+        im_last = ax.imshow(sp[key], origin="lower", aspect="auto", cmap="magma", vmin=vmin, vmax=vmax)
+        ax.set_title(title, fontsize=9, pad=6)
+        ax.set_xlabel("frame", fontsize=8)
+        ax.tick_params(labelsize=7)
         if col == 0:
-            ax.set_ylabel("freq bin")
-        fig.colorbar(im, ax=ax, fraction=0.046, pad=0.03, label="dB")
+            ax.set_ylabel("freq bin", fontsize=8)
+        else:
+            ax.set_ylabel("")
+            ax.tick_params(labelleft=False)
+        axes_sp.append(ax)
+    cbar0 = fig.colorbar(im_last, ax=axes_sp, fraction=0.022, pad=0.04)
+    cbar0.set_label("dB", fontsize=8)
+    cbar0.ax.tick_params(labelsize=7)
 
     ax_d0 = fig.add_subplot(gs[1, 0])
     ax_d1 = fig.add_subplot(gs[1, 1])
     ax_wave = fig.add_subplot(gs[1, 2])
-    im0 = ax_d0.imshow(diff_dual, origin="lower", aspect="auto", cmap="coolwarm", vmin=-dlim, vmax=dlim)
+    ax_d0.imshow(diff_dual, origin="lower", aspect="auto", cmap="coolwarm", vmin=-dlim, vmax=dlim)
     im1 = ax_d1.imshow(diff_ours, origin="lower", aspect="auto", cmap="coolwarm", vmin=-dlim, vmax=dlim)
-    ax_d0.set_title("(d) DualCosine − no-bake (dB)", fontsize=9)
-    ax_d1.set_title("(e) Ours − no-bake (dB)", fontsize=9)
-    for ax, im in ((ax_d0, im0), (ax_d1, im1)):
-        ax.set_xlabel("frame")
-        ax.set_ylabel("freq bin")
-        fig.colorbar(im, ax=ax, fraction=0.046, pad=0.03)
+    ax_d0.set_title("(d) DualCosine - no-bake", fontsize=9, pad=6)
+    ax_d1.set_title("(e) Ours - no-bake", fontsize=9, pad=6)
+    for i, ax in enumerate((ax_d0, ax_d1)):
+        ax.set_xlabel("frame", fontsize=8)
+        ax.tick_params(labelsize=7)
+        if i == 0:
+            ax.set_ylabel("freq bin", fontsize=8)
+        else:
+            ax.set_ylabel("")
+            ax.tick_params(labelleft=False)
+    cbar1 = fig.colorbar(im1, ax=[ax_d0, ax_d1], fraction=0.03, pad=0.05)
+    cbar1.set_label(r"$\Delta$ dB", fontsize=8)
+    cbar1.ax.tick_params(labelsize=7)
 
     # Short waveform excerpt (~4 vibrato periods worth of samples at start)
     n_show = min(len(audio["ideal"]), int(args.sr * 0.08))
@@ -275,10 +310,21 @@ def main() -> int:
     ax_wave.plot(t, audio["ideal"][:n_show], color=C_IDEAL, lw=0.9, label="ideal")
     ax_wave.plot(t, audio["nobake"][:n_show], color=C_ENGINE, lw=0.85, ls="--", label="no-bake")
     ax_wave.plot(t, audio["ours"][:n_show], color=C_OURS, lw=1.0, label="Ours")
-    ax_wave.set_title("(f) Waveform excerpt (ms)", fontsize=9)
-    ax_wave.set_xlabel("time (ms)")
-    ax_wave.set_ylabel("amp")
-    ax_wave.legend(fontsize=7, frameon=False, loc="upper right")
+    ax_wave.set_title("(f) Waveform excerpt", fontsize=9, pad=6)
+    ax_wave.set_xlabel("time (ms)", fontsize=8)
+    ax_wave.set_ylabel("amp", fontsize=8)
+    ax_wave.tick_params(labelsize=7)
+    ax_wave.legend(
+        fontsize=7,
+        frameon=True,
+        fancybox=False,
+        edgecolor="#666",
+        facecolor="white",
+        framealpha=1.0,
+        loc="upper left",
+        bbox_to_anchor=(1.06, 1.0),
+        borderaxespad=0.0,
+    )
     ax_wave.grid(True, alpha=0.25)
 
     ax_bar = fig.add_subplot(gs[2, :])
@@ -287,25 +333,71 @@ def main() -> int:
     mod_vals = [scores_mod["no_bake"], scores_mod["dual_cosine"], scores_mod["ours_hybrid"]]
     mod_mean = [scores_mod_mean["no_bake"], scores_mod_mean["dual_cosine"], scores_mod_mean["ours_hybrid"]]
     x = np.arange(3)
-    w = 0.25
-    b0 = ax_bar.bar(x - w, cycle_vals, width=w, color=[C_ENGINE, C_DUAL, C_OURS], edgecolor="#333", label="cycle $R$ (tile)")
-    b1 = ax_bar.bar(x, mod_vals, width=w, color=[C_ENGINE, C_DUAL, C_OURS], alpha=0.55, edgecolor="#333", hatch="//", label="modulated $R$ (tile)")
-    b2 = ax_bar.bar(x + w, mod_mean, width=w, color=[C_ENGINE, C_DUAL, C_OURS], alpha=0.35, edgecolor="#333", hatch="\\\\", label=f"modulated $R$ mean (n={len(top_idx)})")
+    w = 0.24
+    b0 = ax_bar.bar(
+        x - w,
+        cycle_vals,
+        width=w,
+        color=[C_ENGINE, C_DUAL, C_OURS],
+        edgecolor="#333",
+        label="cycle $R$ (tile)",
+    )
+    b1 = ax_bar.bar(
+        x,
+        mod_vals,
+        width=w,
+        color=[C_ENGINE, C_DUAL, C_OURS],
+        alpha=0.55,
+        edgecolor="#333",
+        hatch="//",
+        label="modulated $R$ (tile)",
+    )
+    b2 = ax_bar.bar(
+        x + w,
+        mod_mean,
+        width=w,
+        color=[C_ENGINE, C_DUAL, C_OURS],
+        alpha=0.35,
+        edgecolor="#333",
+        hatch="\\\\",
+        label=f"modulated $R$ mean (n={len(top_idx)})",
+    )
     ax_bar.set_xticks(x)
-    ax_bar.set_xticklabels(labels)
-    ax_bar.set_ylabel("$R$ (higher better)")
-    ax_bar.set_ylim(min(cycle_vals + mod_vals + mod_mean) - 0.05, 1.02)
-    ax_bar.legend(fontsize=8, frameon=False, ncol=3, loc="lower right")
+    ax_bar.set_xticklabels(labels, fontsize=9)
+    ax_bar.set_ylabel("$R$ (higher better)", fontsize=9)
+    ax_bar.tick_params(labelsize=8)
+    y_lo = min(cycle_vals + mod_vals + mod_mean) - 0.08
+    ax_bar.set_ylim(y_lo, 1.06)
+    ax_bar.legend(
+        fontsize=8,
+        frameon=True,
+        fancybox=False,
+        edgecolor="#666",
+        facecolor="white",
+        framealpha=1.0,
+        ncol=3,
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.28),
+        borderaxespad=0.0,
+    )
     ax_bar.grid(True, axis="y", alpha=0.28)
     ax_bar.set_title(
-        f"(g) Absolute $R$ | vibrato rate={args.vib_rate} Hz, depth=±{100 * args.vib_depth:.1f}%, "
+        f"(g) Absolute $R$ | rate={args.vib_rate} Hz, depth=+/-{100 * args.vib_depth:.1f}%, "
         f"base={args.base_hz} Hz | tile={idx}",
         fontsize=9,
+        pad=8,
     )
     for bars in (b0, b1, b2):
         for bar in bars:
             h = bar.get_height()
-            ax_bar.text(bar.get_x() + bar.get_width() / 2, h + 0.004, f"{h:.3f}", ha="center", va="bottom", fontsize=6.5)
+            ax_bar.text(
+                bar.get_x() + bar.get_width() / 2,
+                h + 0.006,
+                f"{h:.3f}",
+                ha="center",
+                va="bottom",
+                fontsize=6.5,
+            )
 
     wrap_abs = float((eng[0, 0] - eng[0, -1]).abs().item())
     fig.suptitle(
@@ -313,18 +405,29 @@ def main() -> int:
         f"holdout seed={EVAL_SEED}, tile={idx}, |wrap|={wrap_abs:.3f} | "
         f"search seed={SEARCH_SEED}",
         fontsize=10,
-        y=0.995,
+        y=0.985,
     )
 
     png = args.out_dir / "fig_vibrato_spectrogram.png"
     pdf = args.out_dir / "fig_vibrato_spectrogram.pdf"
-    fig.savefig(png, dpi=200, bbox_inches="tight")
-    fig.savefig(pdf, bbox_inches="tight")
+    fig.savefig(png, dpi=200, bbox_inches="tight", pad_inches=0.25)
+    fig.savefig(pdf, bbox_inches="tight", pad_inches=0.25)
     plt.close(fig)
 
-    args.paper_fig_dir.mkdir(parents=True, exist_ok=True)
-    for src in (png, pdf):
-        shutil.copy2(src, args.paper_fig_dir / src.name)
+    paper_dirs = [args.paper_fig_dir]
+    v10_fig = (
+        ROOT.parent
+        / "denoise-opt-meta"
+        / "paper"
+        / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v10"
+        / "figures"
+    )
+    if v10_fig.resolve() != args.paper_fig_dir.resolve():
+        paper_dirs.append(v10_fig)
+    for pdir in paper_dirs:
+        pdir.mkdir(parents=True, exist_ok=True)
+        for src in (png, pdf):
+            shutil.copy2(src, pdir / src.name)
 
     meta = {
         "schema": "denoiseopt.vibrato_spectrogram.v1",
@@ -358,8 +461,15 @@ def main() -> int:
         "png": str(png.resolve()),
         "pdf": str(pdf.resolve()),
         "paper_copies": [
-            str((args.paper_fig_dir / "fig_vibrato_spectrogram.png").resolve()),
-            str((args.paper_fig_dir / "fig_vibrato_spectrogram.pdf").resolve()),
+            str((pdir / "fig_vibrato_spectrogram.png").resolve())
+            for pdir in (
+                [args.paper_fig_dir]
+                + (
+                    [v10_fig]
+                    if v10_fig.resolve() != args.paper_fig_dir.resolve()
+                    else []
+                )
+            )
         ],
         "note": (
             "Cycle R is the standard prolonged residual on L=256 periods. "
@@ -370,19 +480,20 @@ def main() -> int:
     }
     json_path = args.out_dir / "results.json"
     json_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
-    shutil.copy2(json_path, args.paper_fig_dir / "fig_vibrato_spectrogram.json")
+    for pdir in paper_dirs:
+        shutil.copy2(json_path, pdir / "fig_vibrato_spectrogram.json")
 
-    readme = f"""# Vibrato / dynamic-pitch spectrogram (paper v8 W2)
+    readme = f"""# Vibrato / dynamic-pitch spectrogram
 
 Slow vibrato playback of cracked / DualCosine / Ours on holdout tile **{idx}**.
 
 - Sample rate: **{args.sr} Hz**
 - Base pitch: **{args.base_hz} Hz**
-- Vibrato: **{args.vib_rate} Hz** rate, **±{100 * args.vib_depth:.1f}%** depth
+- Vibrato: **{args.vib_rate} Hz** rate, **+/-{100 * args.vib_depth:.1f}%** depth
 - Duration: **{args.duration} s**
 - Seeds: eval **{EVAL_SEED}**, search/refit **{SEARCH_SEED}**
 
-Figures: `fig_vibrato_spectrogram.{{png,pdf}}` (mirrored to `paper/Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v9/figures/`).
+Figures: `fig_vibrato_spectrogram.{{png,pdf}}` (mirrored to paper v11/v10 `figures/`).
 
 Rebuild:
 

@@ -1,6 +1,6 @@
-# ReelSynth UI reference
+# UI
 
-The standalone app (`reelsynth-app`) uses a fixed **1280×880** layout (see `ui/src/layout.rs`). Regions match [brand/mockups/COMPONENT_SPEC.md](../brand/mockups/COMPONENT_SPEC.md).
+Standalone app (`reelsynth-app`) is a fixed **1280×880** shell (`ui/src/layout.rs`). Regions follow [brand/mockups/COMPONENT_SPEC.md](../brand/mockups/COMPONENT_SPEC.md).
 
 ![Full window with numbered regions](https://github.com/reeldemo/reelsynth/releases/download/v0.1.0/01-full-window.png)
 
@@ -17,7 +17,7 @@ The standalone app (`reelsynth-app`) uses a fixed **1280×880** layout (see `ui/
 
 ## Compose mode
 
-Toggle **Compose** in the header for an Ableton-style **clip editor**:
+Header **Compose** — Ableton-style clip editor:
 
 | Region | ~Height | Purpose |
 |--------|---------|---------|
@@ -58,8 +58,7 @@ A default empty clip is auto-selected on the active track so you can draw immedi
 | **Layer heal** | Selected toolbar (**Layer·…**): same methods, applied only to the **selected layer’s frame**. One oscillator can mix modes across layers (e.g. L1 DualCosine, L2 ReelAI). Persisted on each layer in `.reelpreset`. |
 | **Fit ends** | Selected toolbar one-shot DualCosine on the **selected layer frame** only. |
 | **Piano** | Show/hide on-screen keyboard |
-| **Key / Scale / Layout** | Performance input: root key, scale mode, piano vs scale-fold vs chord row. **Piano** layout is chromatic (black keys play); **Scale** folds/snaps to the scale |
-| **Oct − / +** | Persisted ±3-octave shift for hardware MIDI and the chromatic computer-keyboard play row; on-screen piano keys keep their labeled pitches |
+| **Perf** combo | Performance input: root key, scale, piano vs scale-fold vs chord row, and **input octave** (±3). **Piano** layout is chromatic (black keys play); **Scale** folds/snaps to the scale. Non-zero octave shows as `· Oct ±N` on the combo. MIDI + computer keyboard shift; on-screen piano pitches stay fixed. |
 | **Arp** (footer) | Toggle arpeggiator; input mode, style, rate, octaves, gate, latch |
 | **MIDI** combo | Select hardware MIDI input device |
 | **Audio** combo | Select CPAL output device (speakers, headphones, DI / interface) |
@@ -362,12 +361,12 @@ CI runs the kittest suite on every push/PR (`.github/workflows/ci.yml`).
 
 ---
 
-## Plugin editor (preview only)
+## Plugin editor
 
-`reelsynth-plugin-editor` shares this UI but **does not process audio or MIDI** yet. Message: *"Plugin editor spike — UI only (no audio I/O)"*. Real host bindings: S7 roadmap — see [plugin/README.md](../plugin/README.md).
+`reelsynth-plugin-editor` is the same Design UI, connected to the VST3/CLAP process over localhost IPC. Audio and MIDI stay in the host. In Live, the plug-in pane stays slim — use **Open Editor** (or auto-open from the installer) to launch the full window. Ableton install: [ABLETON.md](ABLETON.md). Crate notes: [plugin/README.md](../plugin/README.md).
 
 ---
 
 ## Screenshots
 
-Images load from [GitHub Releases](https://github.com/reeldemo/reelsynth/releases) (not committed to the repo). Re-capture when UI sprints change layout — see [CONTRIBUTING.md](../CONTRIBUTING.md).
+From [GitHub Releases](https://github.com/reeldemo/reelsynth/releases) — not in git. Re-capture when layout changes — [CONTRIBUTING.md](../CONTRIBUTING.md).

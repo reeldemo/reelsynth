@@ -6,17 +6,31 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-26
+
 ### Added
+
+- **Send to Ableton** — header **Ableton** button writes a User Library inbox bundle (`REELSYNTH_ABLETON_INBOX` override) with `reelsynth-ableton-wt-v2` map, `table_multicycle.wav`, frames, and README; probes AbletonOSC `:11000` and best-effort creates a Wavetable track. Custom sprites still require one drag (Live API limit).
+- **Ableton installer (Win/macOS)** — `scripts/install-ableton.ps1` / `scripts/install-ableton.sh` build and install VST3 + external editor and enable `auto_editor` in user config. Linux is not an Ableton target.
+- **Open Editor in Live** — slim nih-plug egui host panel with an **Open Editor** button, plus an **Open Editor** bool on the device rack (toggle on) that launches `reelsynth-plugin-editor` without opening the custom plug-in window.
+- **External editor notes** — piano strip and Z–M computer keys in `reelsynth-plugin-editor` send NoteOn/Off to the Live VST over IPC so you can audition without focusing Ableton.
+- **External editor I/O labels** — header shows **Audio · Live** / **MIDI · Live** instead of a fake one-item device list; pick real devices in Ableton Preferences.
 
 ### Changed
 
+- **Docs voice pass** — README and musician/dev docs trimmed for shorter prose; plugin/status claims aligned with VST3 + external editor; hardcoded local paths removed from Ableton install examples.
+- **Ableton export v2** — schema `reelsynth-ableton-wt-v2` adds `live_param_aliases` + `frames` metadata; reelpack writes `synth/ableton/table_multicycle.wav`.
+- **Header density** — moved **input octave** into the Perf dropdown (shows as `· Oct ±N` when non-zero) and tightened Result/MIDI/Audio combo widths so left/right header clusters no longer overlap at 1280px (layout-audit CI).
+
 ### Fixed
+
+- **Ableton silent / stuck transport** — stop cloning/encoding the wavetable bank on the audio thread; IPC decode/encode runs off-thread with `try_lock` + a lock-free note queue so Live can start playback and play MIDI/editor notes through the VST.
 
 ## [0.3.0] - 2026-07-25
 
 ### Added
 
-- **Input octave shift** — header **Oct −/+** control persists with the preset and shifts hardware MIDI plus the chromatic computer-keyboard play row by ±3 octaves. The painted on-screen piano remains at its labeled pitches.
+- **Input octave shift** — ±3-octave shift for hardware MIDI and the chromatic computer-keyboard play row (on-screen piano stays at labeled pitches). In 0.3.0 this lived as header **Oct −/+**; later moved into the Perf menu for header density.
 - **Result vs Layer heal** — header **Result·…** bakes the whole bank (total mix path); Selected **Layer·…** + **Fit ends** heal only the selected layer’s frame so one oscillator can use different mechanisms per layer (`WaveLayer.seam_mode` in `.reelpreset`).
 - **Fit ends** — Selected WT toolbar one-shot classical **DualCosine** bake on the **selected layer frame** (was whole-bank).
 - **ReelAI seam dropdown** — header + Selected toolbar choose Seam·Off / Soft / Adapt, classical **DualCosine**, embedded **Noise2Noise**, or branded **ReelAI** (DenoiseOpt v10 `R_blend` freeze). Snapshot full-bank bake for DualCosine / Noise2Noise / ReelAI; Off restores the pre-bake bank. Session-only (not in app settings / presets).
@@ -111,7 +125,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Python PyO3 bindings for render and export
 - Plugin UI shell (CLAP entry stub, no host I/O)
 
-[Unreleased]: https://github.com/reeldemo/reelsynth/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/reeldemo/reelsynth/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/reeldemo/reelsynth/releases/tag/v0.4.0
 [0.3.0]: https://github.com/reeldemo/reelsynth/releases/tag/v0.3.0
 [0.2.0]: https://github.com/reeldemo/reelsynth/releases/tag/v0.2.0
 [0.1.0]: https://github.com/reeldemo/reelsynth/releases/tag/v0.1.0

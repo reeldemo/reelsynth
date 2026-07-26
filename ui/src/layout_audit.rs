@@ -454,11 +454,7 @@ pub fn audit_rail_panels(ctx: &egui::Context, rail_bounds: Rect) {
 }
 
 /// Audit center-column sub-regions inside the shrunk inner bounds.
-pub fn audit_center(
-    center: Rect,
-    regions: &CenterRegions,
-    scale: f32,
-) {
+pub fn audit_center(center: Rect, regions: &CenterRegions, scale: f32) {
     let inner = center.shrink(SPACE_SM * scale);
     for (name, rect) in regions.named() {
         assert_within("center", inner, rect, name);
@@ -503,6 +499,7 @@ mod tests {
             show_osc_column: true,
             show_mod_matrix: true,
             show_fx_rack: true,
+        host_io_only: false,
         }
     }
 
@@ -567,8 +564,7 @@ mod tests {
                                     show_mod_matrix: mod_on,
                                     show_fx_rack: fx_on,
                                 };
-                                let inner =
-                                    layout.center.shrink(SPACE_SM * layout.scale.ui());
+                                let inner = layout.center.shrink(SPACE_SM * layout.scale.ui());
                                 let regions = compute_center_regions(
                                     inner,
                                     &config,

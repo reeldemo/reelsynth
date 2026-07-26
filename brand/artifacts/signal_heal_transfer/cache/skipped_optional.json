@@ -1,9 +1,9 @@
 {
-  "kit_cnc_real": "skipped \u2014 KIT CNC DOI needs browser/login; ran synth_cnc_g01 instead",
-  "ieee_pmu_real": "skipped \u2014 IEEE DataPort free-account wall; ran synth_pmu_cycle instead",
-  "paderborn_kat": "downloaded K001.rar (OA mirror) but extraction blocked \u2014 no CLI UnRAR; SFX installer GUI hung; scores not claimed",
+  "kit_cnc_real": "awaiting user drop under raw/kit_cnc/ (kit_cnc_README.txt); synth_cnc_g01 proxy still scored",
+  "ieee_pmu_real": "S3 URI known but anonymous GET 403; drop IEEE-39-bus_10_generator_PMU.mat into raw/ieee_pmu/; synth_pmu_cycle proxy still scored",
+  "paderborn_kat": "K001 extracted; classical paderborn_kat board cached \u2014 deep SOTA still not executed",
   "bmrb_nmr": "skipped \u2014 BMRB FID deferred",
   "deep_sota_cyclegan_beatdiff": "not executed \u2014 no trained Cycle-GAN / BeatDiff weights under residual protocol",
-  "kit_cnc": "skipped \u2014 KIT CNC DOI needs browser/login flow; synthetic_cnc_wrap used as proxy",
-  "ieee_pmu": "skipped \u2014 IEEE DataPort free-account wall; synthetic_power_wrap used as proxy"
+  "kit_cnc": "awaiting user drop under raw/kit_cnc/ (kit_cnc_README.txt); synth_cnc_g01 proxy still scored",
+  "ieee_pmu": "S3 URI known but anonymous GET 403; drop IEEE-39-bus_10_generator_PMU.mat into raw/ieee_pmu/; synth_pmu_cycle proxy still scored"
 }

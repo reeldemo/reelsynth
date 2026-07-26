@@ -484,42 +484,55 @@ def plot_bars(table: dict[str, dict[str, float]], out_png: Path, out_pdf: Path) 
     datasets = list(table.keys())
     methods = []
     for m in prefer:
-        if any(m in table[d] for d in datasets):
+        if any(
+            m in table[d] and isinstance(table[d].get(m), (int, float)) for d in datasets
+        ):
             methods.append(m)
-    # add any leftovers
+    # add any leftovers (numeric columns only — skip nested n2n blobs etc.)
     for d in datasets:
-        for m in table[d]:
-            if m not in methods:
+        for m, v in table[d].items():
+            if m not in methods and isinstance(v, (int, float)):
                 methods.append(m)
 
     n_ds = len(datasets)
     n_m = len(methods)
-    fig_w = max(8.0, 1.1 * n_m * n_ds)
-    fig, axes = plt.subplots(1, n_ds, figsize=(fig_w, 4.2), squeeze=False)
+    # Tall 2×3 board so column-width / text-width embeds stay readable.
+    n_cols = 3 if n_ds >= 3 else max(n_ds, 1)
+    n_rows = int(math.ceil(n_ds / n_cols)) if n_ds else 1
+    fig_w = max(10.0, 3.4 * n_cols)
+    fig_h = max(6.5, 3.6 * n_rows)
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(fig_w, fig_h), squeeze=False)
     colors = {
         "ours_hybrid_lstm": "#D55E00",
         "dual_cosine": "#0072B2",
         "no_bake": "#999999",
     }
-    for ax, ds in zip(axes[0], datasets):
-        vals = [table[ds].get(m, float("nan")) for m in methods]
+    flat = list(axes.ravel())
+    for i, ds in enumerate(datasets):
+        ax = flat[i]
+        vals = []
+        for m in methods:
+            v = table[ds].get(m, float("nan"))
+            vals.append(float(v) if isinstance(v, (int, float)) else float("nan"))
         cols = [colors.get(m, "#56B4E9") for m in methods]
         xs = range(len(methods))
         ax.bar(xs, vals, color=cols)
         ax.set_xticks(list(xs))
         ax.set_xticklabels(methods, rotation=55, ha="right", fontsize=8)
         ax.set_ylim(0.0, 1.02)
-        ax.set_ylabel("prolonged $R$")
-        ax.set_title(ds)
+        ax.set_ylabel(r"$R_{\mathrm{blend}}$")
+        ax.set_title(ds.replace("_", " "), fontsize=10)
         ax.axhline(0.0, color="k", lw=0.5)
         ax.grid(axis="y", alpha=0.3)
+    for j in range(len(datasets), len(flat)):
+        flat[j].axis("off")
     fig.suptitle(
         "Signal-heal transfer pilot — Ours (hybrid GA–PPO) vs classical board",
-        fontsize=11,
+        fontsize=12,
     )
     fig.tight_layout()
     out_png.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out_png, dpi=160)
+    fig.savefig(out_png, dpi=180)
     fig.savefig(out_pdf)
     plt.close(fig)
 
@@ -543,6 +556,8 @@ def write_readme(path: Path, results: dict[str, Any]) -> None:
         "- **CWRU bearings:** DE @12 kHz; per-rev windows via RPM; **ideal** = cubic resample to $L$; "
         "**engine** = linear resample (bad-COT proxy) + DenoiseOpt-style wrap cliff + seam noise.",
         "- **MFPT:** same protocol when zip available; fixed shaft-rate periods.",
+        "- **Paderborn KAt (K001):** vibration_1 @~64 kHz; speed→angle equal-rev windows when "
+        "Mech_4kHz tach available; same cubic ideal / linear+cliff engine (classical board only).",
         "- **MIT-BIH / PTB-XL ECG:** R–R beats → $L$; **ideal** = local mean template + mild endpoint "
         "equalize (SBMM-lite classical); **engine** = single beat + wrap cliff.",
         "- **synth_cnc_g01 / synth_pmu_cycle:** synthetic CNC / power-cycle proxies when KIT / DataPort blocked.",
@@ -558,7 +573,13 @@ def write_readme(path: Path, results: dict[str, Any]) -> None:
         "We do **not** claim BeatDiff / Cycle-GAN / deep order-tracking SOTA unless those weights ran.",
         "- See `DEEP_SOTA_NOT_EXECUTED.json` and `LISTENING_PROTOCOL_MAIN.md` (no invented MOS).",
         "- Do not wipe `brand/artifacts/meta_approach_compare/`.",
-        "- Optional KIT CNC / IEEE PMU / Paderborn / BMRB NMR skipped if login/paywall.",
+        "- Optional KIT CNC / IEEE PMU / BMRB NMR skipped if login/paywall. "
+        "Paderborn K001 is extracted; deep Paderborn models remain unwired.",
+        "",
+        "### Login-walled downloads (user must open)",
+        "",
+        "- KIT CNC: https://doi.org/10.35097/hvvwn1kfwf7qt48z",
+        "- IEEE 39-bus PMU: https://ieee-dataport.org/open-access/pmu-measurements-ieee-39-bus-power-system-model",
         "",
         "### Skipped optional",
         "",
@@ -605,9 +626,24 @@ def write_paper_note(path: Path, results: dict[str, Any]) -> None:
         lines.append("")
         lines.append("| Method | $R$ | Label |")
         lines.append("|--------|-----|-------|")
-        for m, r in sorted(row.items(), key=lambda kv: (-(kv[1] if kv[1] == kv[1] else -1), kv[0])):
+        def _sort_key(kv: tuple[str, Any]) -> tuple[float, str]:
+            v = kv[1]
+            if isinstance(v, dict):
+                v = v.get("R", float("nan"))
+            if not isinstance(v, (int, float)) or v != v:
+                return (1.0, kv[0])
+            return (-float(v), kv[0])
+
+        for m, r in sorted(row.items(), key=_sort_key):
             lab = BASELINE_LABELS.get(m, m)
-            lines.append(f"| `{m}` | {r:.4f} | {lab} |")
+            if isinstance(r, dict):
+                rv = r.get("R")
+                if isinstance(rv, (int, float)):
+                    lines.append(f"| `{m}` | {float(rv):.4f} | {lab} (nested R) |")
+                continue
+            if not isinstance(r, (int, float)):
+                continue
+            lines.append(f"| `{m}` | {float(r):.4f} | {lab} |")
         lines.append("")
     lines += [
         "## Caveats",
@@ -637,7 +673,10 @@ def main() -> int:
     ap.add_argument(
         "--datasets",
         type=str,
-        default="cwru_bearings,mitbih_ecg,mfpt_bearings,ptbxl_ecg,synth_cnc_g01,synth_pmu_cycle",
+        default=(
+            "cwru_bearings,mitbih_ecg,mfpt_bearings,paderborn_kat,"
+            "ptbxl_ecg,synth_cnc_g01,synth_pmu_cycle"
+        ),
         help="comma list; missing downloads are skipped",
     )
     ap.add_argument(
@@ -711,7 +750,16 @@ def main() -> int:
                 json.dumps(summary, indent=2), encoding="utf-8"
             )
         row = dict(base_scores)
-        row["ours_hybrid_lstm"] = ours_r if ours_r == ours_r else float(summary["champ_raw"]) if summary else float("nan")
+        if ours_r == ours_r:
+            row["ours_hybrid_lstm"] = ours_r
+        elif summary is not None:
+            row["ours_hybrid_lstm"] = float(summary["champ_raw"])
+        # else: leave for prior-row preserve below (skip-search / failed search)
+        # Preserve prior nested columns (e.g. n2n_domain_trained) when re-running Ours only.
+        prior_row = prior_table.get(name) or {}
+        for pk, pv in prior_row.items():
+            if pk not in row:
+                row[pk] = pv
         table[name] = row
         per_ds[name] = {
             "meta": bundle.meta,

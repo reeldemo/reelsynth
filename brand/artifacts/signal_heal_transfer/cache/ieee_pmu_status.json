@@ -1,0 +1,46 @@
+{
+  "schema": "denoiseopt.ieee_pmu_status.v1",
+  "updated_at": "20260726T063822Z",
+  "s3_uri": "s3://ieee-dataport/open/11968/IEEE-39-bus_10_generator_PMU.mat",
+  "dataport_page": "https://ieee-dataport.org/open-access/pmu-measurements-ieee-39-bus-power-system-model",
+  "dest_dir": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\raw\\ieee_pmu",
+  "download_attempts": [
+    {
+      "ok": false,
+      "method": "boto3_unsigned",
+      "error": "An error occurred (403) when calling the HeadObject operation: Forbidden",
+      "uri": "s3://ieee-dataport/open/11968/IEEE-39-bus_10_generator_PMU.mat"
+    },
+    {
+      "ok": false,
+      "method": "https",
+      "error": "https://ieee-dataport.s3.amazonaws.com/open/11968/IEEE-39-bus_10_generator_PMU.mat: HTTP Error 403: Forbidden; https://s3.amazonaws.com/ieee-dataport/open/11968/IEEE-39-bus_10_generator_PMU.mat: HTTP Error 403: Forbidden"
+    },
+    {
+      "ok": false,
+      "method": "manual_drop",
+      "error": "no .mat under C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\raw\\ieee_pmu; browser-download from https://ieee-dataport.org/open-access/pmu-measurements-ieee-39-bus-power-system-model"
+    }
+  ],
+  "download_ok": false,
+  "bytes": null,
+  "mat_path": null,
+  "anonymous_s3_note": "aws/boto3 --no-sign-request and public HTTPS GETs return 403 without IEEE DataPort session/credentials; OA still needs free IEEE login or manual drop.",
+  "structure": {
+    "content_kind": "expected_phasors_not_downloaded",
+    "from_docs": "aws/boto3 --no-sign-request and public HTTPS GETs return 403 without IEEE DataPort session/credentials; OA still needs free IEEE login or manual drop.",
+    "dataport_expected": {
+      "generators": 10,
+      "frames_per_gen": 5197,
+      "duration_s": 86.6,
+      "fields": [
+        "V/I mag\u2220",
+        "f",
+        "ROCOF",
+        "timestamps",
+        "quality"
+      ]
+    }
+  },
+  "scored_board": false
+}

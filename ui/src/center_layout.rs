@@ -128,10 +128,7 @@ pub fn compute_center_regions(
         };
         let strip_needed = if config.show_wt_editor { strip_h } else { 0.0 };
         let chrome_below = if config.show_wt_editor {
-            strip_needed
-                + morph_h
-                + gap
-                + if morph_h > EPS { gap } else { 0.0 }
+            strip_needed + morph_h + gap + if morph_h > EPS { gap } else { 0.0 }
         } else {
             0.0
         };
@@ -199,10 +196,10 @@ fn rect_row(inner: Rect, y: f32, height: f32) -> Rect {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::layout_audit::{audit_center, overlap_area};
     use crate::layout::{
-        APP_HEIGHT_FULL, APP_MIN_WIDTH, CENTER_GAP, ShellLayout, ShellLayoutOptions, SPACE_SM,
+        ShellLayout, ShellLayoutOptions, APP_HEIGHT_FULL, APP_MIN_WIDTH, CENTER_GAP, SPACE_SM,
     };
+    use crate::layout_audit::{audit_center, overlap_area};
 
     #[test]
     fn center_regions_no_overlap_at_min_window() {
@@ -224,6 +221,7 @@ mod tests {
             show_osc_column: true,
             show_mod_matrix: true,
             show_fx_rack: true,
+        host_io_only: false,
         };
         let scale = layout.scale.ui();
         let inner = layout.center.shrink(SPACE_SM * scale);
@@ -269,6 +267,7 @@ mod tests {
             show_osc_column: false,
             show_mod_matrix: false,
             show_fx_rack: false,
+        host_io_only: false,
         };
         let scale = layout.scale.ui();
         let inner = layout.center.shrink(SPACE_SM * scale);

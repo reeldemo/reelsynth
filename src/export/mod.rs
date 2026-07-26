@@ -7,7 +7,10 @@ mod sfz;
 mod vital;
 mod wav;
 
-pub use ableton::export_ableton_map;
+pub use ableton::{
+    default_ableton_inbox_root, export_ableton_map, export_ableton_map_v2,
+    export_ableton_multicycle_wav, write_ableton_send_bundle, ABLETON_MAP_SCHEMA, INBOX_ENV,
+};
 pub use midi::export_midi;
 pub use reelpack::export_reelpack;
 pub use serum::export_serum_wt;
@@ -190,18 +193,20 @@ pub fn export_preset(
         ExportTarget::Vital => vital::export_vital(bank, out_path, &opts.table_name),
         ExportTarget::Wav => wav::export_wav_folder(bank, out_path),
         ExportTarget::Serum => serum::export_serum_wt(bank, preset, out_path, &opts.table_name),
-        ExportTarget::Ableton => ableton::export_ableton_map(preset, out_path),
+        ExportTarget::Ableton => ableton::export_ableton_map_v2(preset, Some(bank), out_path),
         ExportTarget::Sfz => sfz::export_sfz(preset, bank, out_path, opts),
         ExportTarget::Midi => midi::export_midi(preset, out_path, opts),
         ExportTarget::Audio => audio::export_audio_wav(preset, bank, out_path, opts),
-        ExportTarget::Reelpack => ExportReport::fail(
-            "reelpack",
-            "use export_reelpack() for bundle export",
-        ),
+        ExportTarget::Reelpack => {
+            ExportReport::fail("reelpack", "use export_reelpack() for bundle export")
+        }
     }
 }
 
-pub fn resolve_bank_for_preset(preset_path: &Path, preset: &Patch) -> Result<WavetableBank, String> {
+pub fn resolve_bank_for_preset(
+    preset_path: &Path,
+    preset: &Patch,
+) -> Result<WavetableBank, String> {
     let preset_dir = preset_path
         .parent()
         .map(|p| p.to_path_buf())
@@ -270,6 +275,9 @@ mod tests {
         );
         assert!(report.success);
         assert_eq!(report.dropped.len(), 12);
-        assert!(report.dropped.iter().all(|d| d.path.starts_with("mod_matrix[")));
+        assert!(report
+            .dropped
+            .iter()
+            .all(|d| d.path.starts_with("mod_matrix[")));
     }
 }

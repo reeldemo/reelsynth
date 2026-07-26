@@ -1,6 +1,14 @@
 {
-    "path":  "brand/artifacts/signal_heal_transfer/raw/paderborn/K001.rar",
-    "ok_download":  true,
-    "bytes":  173881721,
-    "extract":  "skipped — no CLI UnRAR/7z RAR support in session; SFX installer GUI hung; do not claim Paderborn scores"
+  "path": "brand/artifacts/signal_heal_transfer/raw/paderborn/K001.rar",
+  "ok_download": true,
+  "bytes": 173881721,
+  "extract": "done",
+  "extractor": "repo-root UnRAR.exe (absolute path)",
+  "extract_dir": "brand/artifacts/signal_heal_transfer/raw/paderborn/K001",
+  "n_mat": 80,
+  "mat_bytes_approx": 698208104,
+  "updated_at": "20260726T061900Z",
+  "classical_board": "paderborn_kat via scripts/signal_heal/datasets.py::build_paderborn",
+  "deep_models": "still pending — published Paderborn deep fault/denoise pipelines not wired to prolonged-R wrap boards",
+  "note": "UnRAR unblocked; K001 extracted. Do not invent deep-Paderborn scores. Classical / Ours / optional domain N2N may score the wrap board when run."
 }

@@ -1,6 +1,6 @@
 [package]
 name = "reelsynth-mcp"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 description = "MCP stdio server for ReelSynth Design agent automation"
 license = "MIT"

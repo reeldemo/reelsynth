@@ -1,0 +1,223 @@
+{
+  "updated_at": "20260726T093858Z",
+  "device": "cuda",
+  "classifier": {
+    "kind": "authors_cnn_classifier_trained",
+    "architecture": "CNN_1D_2L",
+    "seg_len": 516,
+    "class_map": {
+      "0": "NORMAL",
+      "1": "IR",
+      "2": "OR",
+      "3": "OR+IR"
+    },
+    "file_split_seed": 20260726,
+    "train_seed": 42,
+    "bearings_found": [
+      "K001",
+      "KA04",
+      "KB23",
+      "KI04"
+    ],
+    "n_mats": 320,
+    "labels_present": [
+      "NORMAL",
+      "IR",
+      "OR",
+      "OR+IR"
+    ],
+    "citation": {
+      "paper": "Al Firdausi & Ahmad, Comm. Sci. Tech. 7(1):62\u201372, 2022",
+      "github": "https://github.com/mdzalfirdausi/CNN-for-Paderborn-Bearing-Dataset"
+    },
+    "honesty": "Trained from scratch on local Paderborn mats with author CNN_1D_2L arch and author helper.py labels (NORMAL/IR/OR/OR+IR). Not author model.pth. Not a wrap denoiser.",
+    "n_train_mats": 256,
+    "n_holdout_mats": 64,
+    "n_train_segments": 8000,
+    "n_holdout_segments": 2560,
+    "train_class_counts": {
+      "NORMAL": 2000,
+      "IR": 2000,
+      "OR": 2000,
+      "OR+IR": 2000
+    },
+    "holdout_class_counts": {
+      "NORMAL": 640,
+      "IR": 640,
+      "OR": 640,
+      "OR+IR": 640
+    },
+    "status": "trained_and_scored",
+    "epochs": 20,
+    "batch": 64,
+    "lr": 0.001,
+    "n_params": 106116,
+    "elapsed_sec": 6.151624899997842,
+    "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\deep_sota_adapters\\alfirdausi_trained\\cnn_1d_2l_classifier.pt",
+    "train_metrics": {
+      "n_segments": 8000,
+      "accuracy": 0.9955,
+      "loss": 0.025993724524974823,
+      "per_class": {
+        "NORMAL": {
+          "n": 2000,
+          "acc": 0.999
+        },
+        "IR": {
+          "n": 2000,
+          "acc": 0.998
+        },
+        "OR": {
+          "n": 2000,
+          "acc": 0.9885
+        },
+        "OR+IR": {
+          "n": 2000,
+          "acc": 0.9965
+        }
+      },
+      "confusion_matrix": [
+        [
+          1998,
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          1996,
+          1,
+          3
+        ],
+        [
+          0,
+          0,
+          1977,
+          23
+        ],
+        [
+          0,
+          0,
+          7,
+          1993
+        ]
+      ],
+      "class_order": [
+        "NORMAL",
+        "IR",
+        "OR",
+        "OR+IR"
+      ]
+    },
+    "holdout_metrics": {
+      "n_segments": 2560,
+      "accuracy": 0.858984375,
+      "loss": 0.4810258044861257,
+      "per_class": {
+        "NORMAL": {
+          "n": 640,
+          "acc": 0.8578125
+        },
+        "IR": {
+          "n": 640,
+          "acc": 0.8421875
+        },
+        "OR": {
+          "n": 640,
+          "acc": 0.9171875
+        },
+        "OR+IR": {
+          "n": 640,
+          "acc": 0.81875
+        }
+      },
+      "confusion_matrix": [
+        [
+          549,
+          77,
+          3,
+          11
+        ],
+        [
+          45,
+          539,
+          12,
+          44
+        ],
+        [
+          1,
+          7,
+          587,
+          45
+        ],
+        [
+          0,
+          29,
+          87,
+          524
+        ]
+      ],
+      "class_order": [
+        "NORMAL",
+        "IR",
+        "OR",
+        "OR+IR"
+      ]
+    },
+    "history_tail": [
+      {
+        "epoch": 16,
+        "train_loss": 0.08538287627696992,
+        "holdout_acc": 0.874609375
+      },
+      {
+        "epoch": 17,
+        "train_loss": 0.07288123550266028,
+        "holdout_acc": 0.84296875
+      },
+      {
+        "epoch": 18,
+        "train_loss": 0.058942285001277926,
+        "holdout_acc": 0.864453125
+      },
+      {
+        "epoch": 19,
+        "train_loss": 0.050106398705393074,
+        "holdout_acc": 0.8671875
+      },
+      {
+        "epoch": 20,
+        "train_loss": 0.046061808198690414,
+        "holdout_acc": 0.858984375
+      }
+    ],
+    "wrap_R": null,
+    "wrap_R_note": "Classifier head \u2014 wrap-R not applicable. See alfirdausi_backbone_wrap_residual for architecture-reuse bake."
+  },
+  "wrap_residual": {
+    "kind": "alfirdausi_backbone_wrap_residual",
+    "architecture": "CNN_1D_2L_conv_backbone + residual_head",
+    "period_l": 256,
+    "holdout_seed": 20260719,
+    "train_seed": 424242,
+    "honesty": "NOT the published Al Firdausi method. Reuses author conv backbone as a trainable residual wrap-repair cell on paderborn_kat for prolonged-R comparison only. Label separately from authors_cnn_classifier.",
+    "status": "trained_and_scored",
+    "steps": 4000,
+    "batch": 48,
+    "lr": 0.002,
+    "n_params": 4106113,
+    "n_train": 192,
+    "elapsed_sec": 12.847447999985889,
+    "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\deep_sota_adapters\\alfirdausi_trained\\cnn_1d_2l_wrap_residual.pt",
+    "loss_first": 0.03722948580980301,
+    "loss_last": 0.0007183169946074486,
+    "holdout": {
+      "R": 0.8390061259269714,
+      "R_blend": 0.8415248394012451,
+      "no_bake_R": 0.8390013575553894,
+      "dual_cosine_R": 0.7592579126358032,
+      "n_holdout": 64
+    },
+    "wrap_R": 0.8390061259269714
+  }
+}

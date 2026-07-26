@@ -1,42 +1,30 @@
-# ReelSynth plugin (Rust + egui)
+# ReelSynth plugin
 
-**UI:** [egui](https://github.com/emilk/egui) via shared `reelsynth/ui` crate — same editor as the standalone app. **No JUCE.**
+Shared **egui** editor (`reelsynth/ui`) — same Design UI as the standalone app. No JUCE.
 
-**Host:** Custom Rust CLAP + VST3 + AU bindings (MIT). Planned for S6 public release.
+**Hosts:** nih-plug **VST3** (Ableton Live) and **CLAP** (other DAWs). Live does not load CLAP.
+
+## License
+
+- Core / standalone: **MIT**
+- This crate: **GPL-3.0-or-later** when linking nih-plug VST3 (`vst3-sys`). Don’t relicense the whole tree.
 
 ## Status
 
-| Item | State |
-|------|--------|
-| Standalone app | `app/` — egui + cpal + `SynthEngine` |
-| Plugin shell | `plugin/` — CLAP entry stub + editor spike (`reelsynth-plugin-editor`) |
-| JUCE CMake scaffold | **Retired** — do not use |
+| Piece | State |
+|-------|--------|
+| Standalone | `app/` — egui + cpal + engine + Send to Ableton |
+| VST3 / CLAP | `plugin/` — nih-plug instrument; Live QA + polish ongoing |
+| Host pane | Slim egui panel — **Open Editor** launches external Design UI |
+| External editor | `reelsynth-plugin-editor` — full Design UI over localhost IPC |
+| In-host full UI | Not the goal — pane stays slim |
+| JUCE scaffold | Retired |
 
-## Planned layout (S6)
+Ableton install (Win/macOS): [docs/ABLETON.md](../docs/ABLETON.md) → `scripts/install-ableton.ps1` / `.sh`.
 
-```
-plugin/
-  Cargo.toml
-  src/
-    lib.rs
-    clap_entry.rs
-    vst3_entry.rs
-    au_entry.rs          # macOS
-    editor.rs            # egui editor (shared with app/)
-```
+## Without a plugin
 
-## Build (when implemented)
-
-```bash
-cargo build -p reelsynth-plugin --release
-```
-
-Artifacts: `.clap`, `.vst3`, `.component` (AU) — see [docs/UI.md](../docs/UI.md).
-
-## Offline / agent use (today)
-
-No plugin required:
-
-- PyO3: `maturin develop --features python`
-- CLI export: `cargo run --bin reelsynth-export -- --help`
-- Standalone UI: `cargo run -p reelsynth-app --bin reelsynth-app`
+- Python: `maturin develop --features python`
+- CLI: `cargo run --bin reelsynth-export -- --help`
+- App: `cargo run -p reelsynth-app --bin reelsynth-app`
+- Ableton Send: header **Ableton** → inbox + optional AbletonOSC

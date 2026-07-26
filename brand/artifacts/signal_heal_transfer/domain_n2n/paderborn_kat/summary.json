@@ -1,0 +1,22 @@
+{
+  "domain": "paderborn_kat",
+  "protocol": "n2n_corrupt_corrupt_domain",
+  "train_seed": 424242,
+  "holdout_seed": 20260719,
+  "steps": 4000,
+  "batch": 48,
+  "lr": 0.002,
+  "n_params": 53506,
+  "n_train": 192,
+  "eval": {
+    "R": 0.8386802077293396,
+    "R_blend": 0.8421123027801514,
+    "no_bake_R": 0.8390013575553894,
+    "dual_cosine_R": 0.7592579126358032,
+    "n_holdout": 64
+  },
+  "loss_first": 0.7250232100486755,
+  "loss_last": 0.0009281091624870896,
+  "elapsed_sec": 26.527546400029678,
+  "finished_at": "20260726T062526Z"
+}

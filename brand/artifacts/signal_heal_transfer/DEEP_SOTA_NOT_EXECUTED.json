@@ -1,39 +1,208 @@
 {
-  "schema": "denoiseopt.signal_heal_deep_sota_status.v1",
-  "status": "not_executed",
-  "honesty": "Do not invent Cycle-GAN / BeatDiff / deep COT numbers. Paper author should cite these as not-run under the DenoiseOpt prolonged-R protocol.",
-  "intended_baselines": [
+  "schema": "denoiseopt.signal_heal_deep_sota_status.v4",
+  "updated_at": "20260726T082343Z",
+  "paper_table": "tab:transfer-sota-status (Table 14)",
+  "honesty": "Do not invent scores. Clinical ECG restore != wrap-R. Author fault classifiers != wrap denoise. Domain N2N = our SeamN2N (N2N-style), not Lehtinen code.",
+  "what_did_run": "Classical boards + Ours hybrid_lstm (250) + SeamN2N domain N2N. Cycle-GAN author .pth OOD wrap-R. Paderborn author CNN native healthy\u2192N. BeatDiff blocked on HF/Drive. | Paderborn Al Firdausi CNN trained from scratch + wrap-backbone bake.",
+  "artifact_table": "brand/artifacts/signal_heal_transfer/results_table.json",
+  "metric_footnote_cyclegan_beatdiff": "Clinical restore (artifact removal / beat morph) != DenoiseOpt prolonged wrap residual R. Cycle-GAN wrap-R is an OOD probe.",
+  "rows": [
+    {
+      "id": "domain_trained_n2n",
+      "table14_scope": "Domain-trained Noise2Noise (SeamN2N)",
+      "status": "executed",
+      "honesty_label": "Our SeamN2N (N2N-style corrupt\u2192corrupt), not Lehtinen Noise2Noise reference code",
+      "paper_note_draft": "SeamN2N on seven boards (Paderborn R=0.8387; expanded PTB-XL R=0.5702)",
+      "result": {
+        "domains": {
+          "cwru_bearings": {
+            "R": 0.868618369102478,
+            "R_blend": 0.8660277128219604,
+            "kind": "n2n_domain_trained",
+            "protocol": "n2n_corrupt_corrupt_domain",
+            "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\cwru_bearings\\n2n_corrupt_corrupt.pt",
+            "n_holdout": 64,
+            "steps": 4000
+          },
+          "mitbih_ecg": {
+            "R": 0.6529576778411865,
+            "R_blend": 0.7495031356811523,
+            "kind": "n2n_domain_trained",
+            "protocol": "n2n_corrupt_corrupt_domain",
+            "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\mitbih_ecg\\n2n_corrupt_corrupt.pt",
+            "n_holdout": 64,
+            "steps": 4000
+          },
+          "ptbxl_ecg": {
+            "R": 0.5701605081558228,
+            "R_blend": 0.7536793947219849,
+            "kind": "n2n_domain_trained",
+            "protocol": "n2n_corrupt_corrupt_domain",
+            "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\ptbxl_ecg\\n2n_corrupt_corrupt.pt",
+            "n_holdout": 64,
+            "steps": 4000
+          },
+          "synth_cnc_g01": {
+            "R": 0.48330581188201904,
+            "R_blend": 0.5534172654151917,
+            "kind": "n2n_domain_trained",
+            "protocol": "n2n_corrupt_corrupt_domain",
+            "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\synth_cnc_g01\\n2n_corrupt_corrupt.pt",
+            "n_holdout": 64,
+            "steps": 4000
+          },
+          "synth_pmu_cycle": {
+            "R": 0.9788673520088196,
+            "R_blend": 0.958940863609314,
+            "kind": "n2n_domain_trained",
+            "protocol": "n2n_corrupt_corrupt_domain",
+            "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\synth_pmu_cycle\\n2n_corrupt_corrupt.pt",
+            "n_holdout": 64,
+            "steps": 4000
+          },
+          "mfpt_bearings": {
+            "R": 0.8817377090454102,
+            "R_blend": 0.8662163019180298,
+            "kind": "n2n_domain_trained",
+            "protocol": "n2n_corrupt_corrupt_domain",
+            "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\mfpt_bearings\\n2n_corrupt_corrupt.pt",
+            "n_holdout": 64,
+            "steps": 4000
+          },
+          "paderborn_kat": {
+            "R": 0.8386802077293396,
+            "R_blend": 0.8421123027801514,
+            "kind": "n2n_domain_trained",
+            "protocol": "n2n_corrupt_corrupt_domain",
+            "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\paderborn_kat\\n2n_corrupt_corrupt.pt",
+            "n_holdout": 64,
+            "steps": 4000
+          }
+        }
+      }
+    },
     {
       "id": "cycle_gan_ecg",
-      "domain": "ecg",
-      "citation_hint": "Cycle-GAN / adversarial beat morph repair literature (ECG)",
-      "why_not_run": "No published weights adapted to L=256 prolonged residual R wrap protocol in this session; training from scratch exceeds pilot budget."
+      "table14_scope": "Cycle-GAN (ECG) \u2014 author Operational Cycle-GAN",
+      "status": "executed_ood_wrapR",
+      "executable_now": true,
+      "blocker": null,
+      "result": {
+        "script": "scripts/adapters_ecg_deep_sota.py",
+        "weight": "external/weights/cyclegan/model_weights_16NQ3.pth",
+        "report": "deep_sota_adapters/smoke_report.json",
+        "scores": {
+          "mitbih_ecg": {
+            "R": 0.0699673593044281,
+            "R_blend": 0.10628266632556915,
+            "kind": "cycle_gan_ecg_ood_wrapR",
+            "protocol": "operational_cyclegan_pretrained_L256_holdout_20260719",
+            "weight": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\cyclegan\\model_weights_16NQ3.pth",
+            "n_holdout": 64,
+            "footnote": "Clinical restore \u2260 wrap-R; OOD transfer probe only. Author Operational Cycle-GAN weights."
+          },
+          "ptbxl_ecg": {
+            "R": 0.15552377700805664,
+            "R_blend": 0.2104691118001938,
+            "kind": "cycle_gan_ecg_ood_wrapR",
+            "protocol": "operational_cyclegan_pretrained_L256_holdout_20260719",
+            "weight": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\cyclegan\\model_weights_16NQ3.pth",
+            "n_holdout": 64,
+            "footnote": "Clinical restore \u2260 wrap-R; OOD transfer probe only. Author Operational Cycle-GAN weights."
+          }
+        },
+        "footnote": "Clinical restore != wrap-R; OOD transfer probe only. Author method vs Ours/SeamN2N/DualCosine on same ECG boards."
+      },
+      "paper_note_draft": "OOD wrap-R (MIT-BIH R=0.0700; PTB-XL R=0.1555) \u2014 clinical restore != wrap-R"
     },
     {
       "id": "beatdiff",
-      "domain": "ecg",
-      "citation_hint": "BeatDiff / diffusion beat generation or repair",
-      "why_not_run": "Requires trained diffusion checkpoints + different objective; not reimplemented here."
+      "table14_scope": "BeatDiff (Bedin NeurIPS 2024)",
+      "status": "blocked_needs_user_auth_or_manual_drive",
+      "executable_now": false,
+      "blocker": {
+        "kind": "hf_auth_or_manual_drive_orbax",
+        "detail": "HF lbedin/BeatDiff \u2192 401 without token. Drive prior folder listed but gdown FileURLRetrievalError left empty Orbax stubs (48 files, 1 >10kB = train.log only).",
+        "user_must": {
+          "hf_login": "huggingface-cli login",
+          "hf_download": "huggingface-cli download lbedin/BeatDiff --local-dir brand/artifacts/signal_heal_transfer/external/weights/beatdiff_hf",
+          "drive_url": "https://drive.google.com/drive/folders/1m2OvyYebvnirh1CraCrnSOyjihSkSkLG"
+        }
+      },
+      "paper_note_draft": "Not run \u2014 HF login or browser Drive download required for author prior"
     },
     {
-      "id": "deep_order_tracking",
-      "domain": "bearings",
-      "citation_hint": "Learned / deep computed-order-tracking networks",
-      "why_not_run": "Pilot uses classical bad-COT (linear resample) + DualCosine board only."
+      "id": "paderborn_kat_deep",
+      "table14_scope": "Paderborn KAt deep (Al Firdausi CNN 2022)",
+      "status": "executed_native_healthy_only",
+      "classical_board_available": true,
+      "classical_full_ours": {
+        "ours_hybrid_lstm_iters": 250,
+        "ours_R": 0.9270495772361755,
+        "n2n_R": 0.8386802077293396,
+        "dual_cosine_R": 0.470979779958725
+      },
+      "author_deep": {
+        "updated_at": "20260726T082028Z",
+        "method": "paderborn_kat_deep_alfirdausi_cnn",
+        "device": "cuda",
+        "weight": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\paderborn_cnn\\model.pth",
+        "load_note": "loaded C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\paderborn_cnn\\model.pth as CNN_1D_2L (L=516)",
+        "honesty": "Author published deep model on Paderborn = fault classifier. SeamN2N / Ours wrap-R remain separate. Do not rename classification as denoise.",
+        "status": "scored_native_healthy_only",
+        "native": {
+          "status": "scored_native_healthy_only",
+          "metric": "healthy_K001_segment_Normal_rate",
+          "metric_note": "Author model is 4-class fault diagnosis (N/B/IR/OR). Only healthy K001 is extracted here \u2014 report fraction of segments predicted Normal. Not multi-class accuracy; wrap-R not applicable (classifier \u2260 denoise).",
+          "n_segments": 256,
+          "n_mats": 8,
+          "files": [
+            "N09_M07_F10_K001_1.mat",
+            "N09_M07_F10_K001_10.mat",
+            "N09_M07_F10_K001_11.mat",
+            "N09_M07_F10_K001_12.mat",
+            "N09_M07_F10_K001_13.mat",
+            "N09_M07_F10_K001_14.mat",
+            "N09_M07_F10_K001_15.mat",
+            "N09_M07_F10_K001_16.mat"
+          ],
+          "class_counts": {
+            "N": 256,
+            "B": 0,
+            "IR": 0,
+            "OR": 0
+          },
+          "healthy_Normal_rate": 1.0,
+          "mode_class": "N",
+          "seg_len": 516,
+          "wrap_R": null,
+          "wrap_R_blocker": "Refused: fault-classifier head cannot honestly produce DenoiseOpt wrap-R. Native classification metric only.",
+          "citation": {
+            "paper": "Al Firdausi & Ahmad, Comm. Sci. Tech. 7(1):62\u201372, 2022",
+            "github": "https://github.com/mdzalfirdausi/CNN-for-Paderborn-Bearing-Dataset",
+            "weight": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\paderborn_cnn\\model.pth"
+          }
+        }
+      },
+      "paper_note_draft": "Author CNN loaded; K001 healthy\u2192Normal rate=1.0 (256 segs); wrap-R N/A (classifier). Ours R=0.9270 / SeamN2N 0.8387 / DualCosine 0.4710 on wrap board."
     },
     {
-      "id": "paderborn_deep",
-      "domain": "bearings",
-      "citation_hint": "Paderborn KAt deep fault / denoise pipelines",
-      "why_not_run": "Dataset not downloaded (registration / no OA mirror); cannot score deep baselines without data."
+      "id": "full_ptbxl",
+      "table14_scope": "Expanded / full PTB-XL",
+      "status": "substantially_expanded",
+      "paper_note_draft": "Expanded records500 lead-I; Ours R=0.9379; Cycle-GAN OOD wrap-R also scored"
     },
     {
-      "id": "pmu_tve_estimator_sota",
-      "domain": "power",
-      "citation_hint": "IEEE C37.118 TVE-optimized estimators on OA PMU traces",
-      "why_not_run": "IEEE DataPort login wall; only synthetic_power / synth_pmu_cycle proxy ran."
+      "id": "real_kit_cnc_ieee_pmu",
+      "table14_scope": "Real KIT CNC / IEEE PMU",
+      "status": "blocked",
+      "paper_note_draft": "Synthetic pilots only \u2014 KIT DOI / IEEE DataPort login walls"
+    },
+    {
+      "id": "formal_mos_mushra",
+      "table14_scope": "Formal MOS / MUSHRA",
+      "status": "blocked",
+      "paper_note_draft": "Not collected"
     }
-  ],
-  "what_did_run": "Classical shared board + domain classical proxies + Ours hybrid_lstm under prolonged residual R.",
-  "artifact_table": "brand/artifacts/signal_heal_transfer/results_table.json"
+  ]
 }

@@ -4,7 +4,8 @@ use std::ffi::CString;
 use std::path::PathBuf;
 
 use reelsynth::export::{
-    export_ableton_map, export_midi, export_serum_wt, export_sfz, ExportOptions,
+    export_ableton_map, export_ableton_multicycle_wav, export_midi, export_reelpack, export_serum_wt,
+    export_sfz, ExportOptions, ExportTarget,
 };
 use reelsynth::ffi::{reelsynth_create, reelsynth_destroy, reelsynth_note_on, reelsynth_process};
 use reelsynth::patch::Patch;
@@ -73,8 +74,44 @@ fn export_ableton_map_valid_json() {
     assert!(report.success);
     let parsed: serde_json::Value =
         serde_json::from_str(&std::fs::read_to_string(&out).unwrap()).unwrap();
-    assert_eq!(parsed["schema"], "reelsynth-ableton-wt-v1");
+    assert_eq!(parsed["schema"], "reelsynth-ableton-wt-v2");
     assert!(parsed["parameters"]["filter_freq"].is_number());
+    assert!(parsed["live_param_aliases"]["filter_freq"].is_array());
+}
+
+#[test]
+fn export_ableton_multicycle_in_reelpack() {
+    use reelsynth::export::{export_ableton_multicycle_wav, export_reelpack, ExportTarget};
+    let dir = std::env::temp_dir().join("reelsynth_qa_ableton_multi");
+    let _ = std::fs::remove_dir_all(&dir);
+    let src = dir.join("src");
+    std::fs::create_dir_all(&src).unwrap();
+    let bank = WavetableBank::factory_sine();
+    bank.write_file(src.join("demo.reelwt").to_str().unwrap())
+        .unwrap();
+    let preset = Patch {
+        name: "demo".into(),
+        wavetable_id: Some("demo".into()),
+        ..Patch::default_mono()
+    };
+    let preset_path = src.join("demo.reelpreset");
+    std::fs::write(&preset_path, preset.to_json().unwrap()).unwrap();
+    let out = dir.join("out.reelpack");
+    let report = export_reelpack(
+        &preset_path,
+        &out,
+        &[ExportTarget::Ableton, ExportTarget::Wav],
+        &ExportOptions::default(),
+    );
+    assert!(report.success, "{:?}", report.errors);
+    let multi = out.join("synth/ableton/table_multicycle.wav");
+    assert!(multi.is_file(), "missing multicycle wav");
+    let map: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(out.join("synth/ableton/wavetable_map.json")).unwrap())
+            .unwrap();
+    assert_eq!(map["schema"], "reelsynth-ableton-wt-v2");
+    assert_eq!(map["frames"]["frame_count"], bank.num_frames);
+    let _ = export_ableton_multicycle_wav; // keep import used if optimized away
 }
 
 #[test]

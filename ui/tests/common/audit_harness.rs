@@ -7,8 +7,8 @@ use reelsynth_ui::{
     audit_all_elements, audit_center, audit_compose_panels, audit_header_clusters,
     audit_osc_sidebar_stacks, audit_panel_utilization, audit_rail_panels, audit_shell,
     compute_center_regions, draw_shell, embed_piano_in_center, record_region, AuditId,
-    ShellAppSettings, ShellAudioDevices, ShellConfig, ShellLayout, ShellLayoutOptions, ShellMidiDevices, ShellMode,
-    UiState, APP_HEIGHT_FULL, APP_MIN_WIDTH, SPACE_SM,
+    ShellAppSettings, ShellAudioDevices, ShellConfig, ShellLayout, ShellLayoutOptions,
+    ShellMidiDevices, ShellMode, UiState, APP_HEIGHT_FULL, APP_MIN_WIDTH, SPACE_SM,
 };
 
 pub struct ShellAuditScenario {
@@ -30,6 +30,7 @@ impl Default for ShellAuditScenario {
                 show_osc_column: true,
                 show_mod_matrix: true,
                 show_fx_rack: true,
+            host_io_only: false,
             },
             size: [APP_MIN_WIDTH, APP_HEIGHT_FULL],
             preview: Patch::factory_lead(),
@@ -96,47 +97,45 @@ pub fn run_shell_audit(scenario: ShellAuditScenario) -> ShellAuditRun {
     let shell_mode = scenario.state.shell_mode;
     let size = scenario.size;
 
-    let mut harness = Harness::builder()
-        .with_size(scenario.size)
-        .build_state(
-            move |ctx, test| {
-                if !test.fonts_applied {
-                    reelsynth_ui_theme::apply(ctx);
-                    test.fonts_applied = true;
-                    return;
-                }
-                let scenario = &mut test.scenario;
-                let midi = ShellMidiDevices {
-                    names: &scenario.midi_names,
-                    selected: scenario.midi_selected,
-                };
-                let audio_names = vec!["Speakers".to_string()];
-                let audio = ShellAudioDevices {
-                    names: &audio_names,
-                    selected: 0,
-                };
-                egui::CentralPanel::default().show(ctx, |ui| {
-                    let screen = ui.max_rect();
-                    let _actions = draw_shell(
-                        ui,
-                        screen,
-                        &mut scenario.state,
-                        None,
-                        &preview,
-                        &midi,
-                        &audio,
-                        &config,
-                        None,
-                        None,
-                        scenario.app_settings.as_mut(),
-                    );
-                });
-            },
-            ShellHarnessState {
-                fonts_applied: false,
-                scenario,
-            },
-        );
+    let mut harness = Harness::builder().with_size(scenario.size).build_state(
+        move |ctx, test| {
+            if !test.fonts_applied {
+                reelsynth_ui_theme::apply(ctx);
+                test.fonts_applied = true;
+                return;
+            }
+            let scenario = &mut test.scenario;
+            let midi = ShellMidiDevices {
+                names: &scenario.midi_names,
+                selected: scenario.midi_selected,
+            };
+            let audio_names = vec!["Speakers".to_string()];
+            let audio = ShellAudioDevices {
+                names: &audio_names,
+                selected: 0,
+            };
+            egui::CentralPanel::default().show(ctx, |ui| {
+                let screen = ui.max_rect();
+                let _actions = draw_shell(
+                    ui,
+                    screen,
+                    &mut scenario.state,
+                    None,
+                    &preview,
+                    &midi,
+                    &audio,
+                    &config,
+                    None,
+                    None,
+                    scenario.app_settings.as_mut(),
+                );
+            });
+        },
+        ShellHarnessState {
+            fonts_applied: false,
+            scenario,
+        },
+    );
     harness.run();
     let ctx = harness.ctx.clone();
     ShellAuditRun {
@@ -167,10 +166,7 @@ impl Default for FullUiAuditOptions {
 
 pub fn assert_full_ui_audit(run: &ShellAuditRun, options: &FullUiAuditOptions) {
     let shell_options = run.layout_options;
-    let screen = Rect::from_min_size(
-        egui::pos2(0.0, 0.0),
-        egui::vec2(run.size[0], run.size[1]),
-    );
+    let screen = Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(run.size[0], run.size[1]));
 
     audit_shell(&run.layout, screen, shell_options);
     audit_header_clusters(&run.ctx, run.layout.header);
