@@ -494,14 +494,20 @@ def plot_bars(table: dict[str, dict[str, float]], out_png: Path, out_pdf: Path) 
 
     n_ds = len(datasets)
     n_m = len(methods)
-    fig_w = max(8.0, 1.1 * n_m * n_ds)
-    fig, axes = plt.subplots(1, n_ds, figsize=(fig_w, 4.2), squeeze=False)
+    # Tall 2×3 board so column-width / text-width embeds stay readable.
+    n_cols = 3 if n_ds >= 3 else max(n_ds, 1)
+    n_rows = int(math.ceil(n_ds / n_cols)) if n_ds else 1
+    fig_w = max(10.0, 3.4 * n_cols)
+    fig_h = max(6.5, 3.6 * n_rows)
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(fig_w, fig_h), squeeze=False)
     colors = {
         "ours_hybrid_lstm": "#D55E00",
         "dual_cosine": "#0072B2",
         "no_bake": "#999999",
     }
-    for ax, ds in zip(axes[0], datasets):
+    flat = list(axes.ravel())
+    for i, ds in enumerate(datasets):
+        ax = flat[i]
         vals = [table[ds].get(m, float("nan")) for m in methods]
         cols = [colors.get(m, "#56B4E9") for m in methods]
         xs = range(len(methods))
@@ -509,17 +515,19 @@ def plot_bars(table: dict[str, dict[str, float]], out_png: Path, out_pdf: Path) 
         ax.set_xticks(list(xs))
         ax.set_xticklabels(methods, rotation=55, ha="right", fontsize=8)
         ax.set_ylim(0.0, 1.02)
-        ax.set_ylabel("prolonged $R$")
-        ax.set_title(ds)
+        ax.set_ylabel(r"$R_{\mathrm{blend}}$")
+        ax.set_title(ds.replace("_", " "), fontsize=10)
         ax.axhline(0.0, color="k", lw=0.5)
         ax.grid(axis="y", alpha=0.3)
+    for j in range(len(datasets), len(flat)):
+        flat[j].axis("off")
     fig.suptitle(
         "Signal-heal transfer pilot — Ours (hybrid GA–PPO) vs classical board",
-        fontsize=11,
+        fontsize=12,
     )
     fig.tight_layout()
     out_png.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out_png, dpi=160)
+    fig.savefig(out_png, dpi=180)
     fig.savefig(out_pdf)
     plt.close(fig)
 

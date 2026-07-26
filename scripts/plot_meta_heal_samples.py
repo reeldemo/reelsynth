@@ -7,12 +7,14 @@ and plots prolonged waveforms + seam zoom + spectrograms vs ideal / no-bake / Du
 
 Writes:
   denoise-opt-meta/paper/v7/figures/fig_meta_heal_samples.{png,pdf,json}
+  denoise-opt-meta/.../v10/figures/ (mirror)
   brand/artifacts/meta_approach_compare/fig_meta_heal_samples.png (mirror)
 """
 from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -31,7 +33,13 @@ EVAL_SEED = 20260719
 SEARCH_SEED = 1902771841
 TILE_FALLBACK = 46
 PERIODS = 3
-V7_FIG = ROOT.parent / "denoise-opt-meta" / "paper" / "v7" / "figures"
+META_PAPER = ROOT.parent / "denoise-opt-meta" / "paper"
+V7_FIG = META_PAPER / "v7" / "figures"
+V10_FIG = (
+    META_PAPER
+    / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v10"
+    / "figures"
+)
 META_DIR = ROOT / "brand" / "artifacts" / "meta_approach_compare"
 
 C_IDEAL = "#000000"
@@ -174,10 +182,18 @@ def main() -> int:
     y_ours = prolong(ours[0])
     wrap_abs = float((eng[0, 0] - eng[0, -1]).abs().item())
 
-    fig = plt.figure(figsize=(11.0, 7.2))
-    gs = fig.add_gridspec(3, 2, height_ratios=[1.05, 0.85, 1.0], hspace=0.38, wspace=0.22)
+    fig = plt.figure(figsize=(11.0, 8.2))
+    gs = fig.add_gridspec(
+        4,
+        2,
+        height_ratios=[0.22, 1.15, 0.85, 1.0],
+        hspace=0.42,
+        wspace=0.22,
+    )
 
-    ax_full = fig.add_subplot(gs[0, :])
+    ax_leg = fig.add_subplot(gs[0, :])
+    ax_leg.axis("off")
+    ax_full = fig.add_subplot(gs[1, :])
     ax_full.plot(x, y_ideal, color=C_IDEAL, lw=1.2, label="ideal sibling $r^*$")
     ax_full.plot(x, y_eng, color=C_ENGINE, lw=1.15, ls="--", label=f"no-bake $R$={scores_tile['no_bake']:.4f}")
     ax_full.plot(x, y_dual, color=C_DUAL, lw=1.2, ls="-.", label=f"DualCosine $R$={scores_tile['dual_cosine']:.4f}")
@@ -186,18 +202,26 @@ def main() -> int:
         ax_full.axvline(k * L - 0.5, color="#888888", lw=0.7, ls=":", alpha=0.75)
     ax_full.axvspan(L - 24, L + 24, color="#F0E442", alpha=0.16, zorder=0)
     ax_full.set_title(
-        f"Healed wrap seam | holdout seed={EVAL_SEED}, tile={idx}, |wrap|={wrap_abs:.3f} | "
-        f"search seed={SEARCH_SEED}, refit Ours champ",
+        f"(a) Healed wrap seam — tile={idx}, $|wrap|={wrap_abs:.3f}$",
         fontsize=10,
     )
     ax_full.set_xlabel("sample (tiled periods)")
     ax_full.set_ylabel("amplitude")
-    ax_full.legend(loc="upper right", fontsize=8, frameon=False, ncol=2)
+    handles, labels = ax_full.get_legend_handles_labels()
+    ax_leg.legend(
+        handles,
+        labels,
+        loc="center",
+        ncol=4,
+        fontsize=8,
+        frameon=False,
+        borderaxespad=0.0,
+    )
     ax_full.grid(True, alpha=0.25)
     ax_full.set_xlim(0, L * PERIODS - 1)
 
     # Seam zoom around first wrap
-    ax_zoom = fig.add_subplot(gs[1, 0])
+    ax_zoom = fig.add_subplot(gs[2, 0])
     lo, hi = L - 40, L + 40
     ax_zoom.plot(x[lo:hi], y_ideal[lo:hi], color=C_IDEAL, lw=1.3, label="ideal")
     ax_zoom.plot(x[lo:hi], y_eng[lo:hi], color=C_ENGINE, lw=1.2, ls="--", label="no-bake")
@@ -208,10 +232,10 @@ def main() -> int:
     ax_zoom.set_xlabel("sample")
     ax_zoom.set_ylabel("amplitude")
     ax_zoom.grid(True, alpha=0.25)
-    ax_zoom.legend(fontsize=7, frameon=False)
+    ax_zoom.legend(fontsize=7, frameon=False, loc="lower right")
 
     # Classical board bars on this tile
-    ax_bar = fig.add_subplot(gs[1, 1])
+    ax_bar = fig.add_subplot(gs[2, 1])
     names = ["no-bake", "seam_fir3", "DualCosine", "Ours"]
     vals = [
         scores_tile["no_bake"],
@@ -233,8 +257,8 @@ def main() -> int:
         ax_bar.text(i, v + 0.003, f"{v:.3f}", ha="center", va="bottom", fontsize=7.5)
 
     # Spectrograms: cracked vs healed
-    ax_sp0 = fig.add_subplot(gs[2, 0])
-    ax_sp1 = fig.add_subplot(gs[2, 1])
+    ax_sp0 = fig.add_subplot(gs[3, 0])
+    ax_sp1 = fig.add_subplot(gs[3, 1])
     sp_eng = spectrogram_db(y_eng)
     sp_ours = spectrogram_db(y_ours)
     vmin = min(sp_eng.min(), sp_ours.min())
@@ -250,9 +274,10 @@ def main() -> int:
     fig.colorbar(im1, ax=ax_sp1, fraction=0.046, pad=0.02, label="dB")
 
     fig.suptitle(
-        "DenoiseOpt wrap heal | objective = max absolute $R$ toward ideal sibling "
-        f"(holdout mean Ours $R$={scores_holdout['ours_hybrid']:.4f}, "
-        f"DualCosine={scores_holdout['dual_cosine']:.4f})",
+        "DenoiseOpt wrap heal | max absolute $R$ toward ideal sibling "
+        f"(holdout Ours $R$={scores_holdout['ours_hybrid']:.4f}, "
+        f"DualCosine={scores_holdout['dual_cosine']:.4f}; "
+        f"seeds {EVAL_SEED}/{SEARCH_SEED})",
         fontsize=10,
         y=0.995,
     )
@@ -264,11 +289,6 @@ def main() -> int:
     fig.savefig(out_png, dpi=200, bbox_inches="tight")
     fig.savefig(out_pdf, bbox_inches="tight")
     plt.close(fig)
-    args.meta_dir.mkdir(parents=True, exist_ok=True)
-    mirror = args.meta_dir / "fig_meta_heal_samples.png"
-    import shutil
-
-    shutil.copy2(out_png, mirror)
 
     meta = {
         "schema": "denoiseopt.meta_heal_samples.v1",
@@ -296,6 +316,11 @@ def main() -> int:
         "pdf": str(out_pdf),
     }
     out_json.write_text(json.dumps(meta, indent=2), encoding="utf-8")
+    args.meta_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(out_png, args.meta_dir / "fig_meta_heal_samples.png")
+    if V10_FIG.is_dir():
+        for src in (out_png, out_pdf, out_json):
+            shutil.copy2(src, V10_FIG / src.name)
     print(json.dumps(meta, indent=2))
     print(f"wrote {out_png}")
     return 0
