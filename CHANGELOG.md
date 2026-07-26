@@ -13,6 +13,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Open Editor in Live** — slim nih-plug egui host panel with an **Open Editor** button, plus an **Open Editor** bool on the device rack (toggle on) that launches `reelsynth-plugin-editor` without opening the custom plug-in window.
 - **External editor notes** — piano strip and Z–M computer keys in `reelsynth-plugin-editor` send NoteOn/Off to the Live VST over IPC so you can audition without focusing Ableton.
 - **External editor I/O labels** — header shows **Audio · Live** / **MIDI · Live** instead of a fake one-item device list; pick real devices in Ableton Preferences.
+- **Ableton audio hot path** — stop cloning/encoding the full wavetable bank every process buffer (was stalling Live’s audio thread so MIDI + editor keys appeared silent); hot-apply editor patches and return `KeepAlive`.
 
 ### Changed
 

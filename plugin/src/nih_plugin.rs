@@ -16,6 +16,8 @@ struct ReelSynthPlugin {
     sample_rate: u32,
     ipc_shared: Arc<Mutex<IpcEngineState>>,
     _ipc: Option<IpcServer>,
+    /// Scratch interleaved stereo buffer (reused; never allocate in process).
+    stereo_scratch: Vec<f32>,
 }
 
 #[derive(Params)]
@@ -64,6 +66,7 @@ impl Default for ReelSynthPlugin {
             sample_rate: 44100,
             ipc_shared,
             _ipc: ipc,
+            stereo_scratch: Vec::new(),
         }
     }
 }
@@ -75,7 +78,6 @@ impl ReelSynthParams {
             open_editor: BoolParam::new("Open Editor", false)
                 .with_callback(Arc::new(|on| {
                     if on {
-                        // Don't block the host/audio thread on process spawn.
                         std::thread::spawn(|| {
                             let _ = launch_external_editor();
                         });
@@ -140,11 +142,18 @@ impl Plugin for ReelSynthPlugin {
     const EMAIL: &'static str = "hello@reeldemo.xyz";
     const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
-    const AUDIO_IO_LAYOUTS: &'static [AudioIOLayout] = &[AudioIOLayout {
-        main_input_channels: NonZeroU32::new(0),
-        main_output_channels: NonZeroU32::new(2),
-        ..AudioIOLayout::const_default()
-    }];
+    const AUDIO_IO_LAYOUTS: &'static [AudioIOLayout] = &[
+        AudioIOLayout {
+            main_input_channels: None,
+            main_output_channels: NonZeroU32::new(2),
+            ..AudioIOLayout::const_default()
+        },
+        AudioIOLayout {
+            main_input_channels: None,
+            main_output_channels: NonZeroU32::new(1),
+            ..AudioIOLayout::const_default()
+        },
+    ];
 
     const MIDI_INPUT: MidiConfig = MidiConfig::Basic;
     const SAMPLE_ACCURATE_AUTOMATION: bool = true;
@@ -232,37 +241,58 @@ impl Plugin for ReelSynthPlugin {
         _aux: &mut AuxiliaryBuffers,
         context: &mut impl ProcessContext<Self>,
     ) -> ProcessStatus {
-        // Pull edits / notes from the external full editor.
-        let (dirty, notes) = {
+        // Apply external-editor edits without allocating / cloning on every buffer.
+        let (dirty_patch, dirty_bank, notes) = {
             let mut g = self.ipc_shared.lock();
             let dirty = g.dirty;
+            let notes = g.drain_notes();
             if dirty {
-                self.patch = g.patch.clone();
-                self.bank = g.bank.clone();
                 g.dirty = false;
+                let patch = g.patch.clone();
+                let bank = g.bank.clone();
+                (Some(patch), Some(bank), notes)
+            } else {
+                (None, None, notes)
             }
-            (dirty, g.drain_notes())
         };
-        if dirty {
-            self.rebuild_engine();
-        }
-        if let Some(engine) = self.engine.as_mut() {
-            for n in notes {
-                match n {
-                    PendingNote::On { note, velocity } => {
-                        engine.note_on(0, note, velocity);
-                    }
-                    PendingNote::Off { note } => {
-                        engine.note_off(0, note);
-                    }
-                }
+
+        if let (Some(patch), Some(bank)) = (dirty_patch, dirty_bank) {
+            self.patch = patch.clone();
+            self.bank = bank.clone();
+            if let Some(engine) = self.engine.as_mut() {
+                // Hot path: keep sounding voices; only swap patch/bank data.
+                engine.update_bank(bank);
+                engine.apply_patch_hot(patch);
+            } else {
+                self.rebuild_engine();
             }
+            self.persist_canonical();
+        }
+
+        if self.engine.is_none() {
+            self.rebuild_engine();
         }
 
         self.apply_params_to_engine();
         let Some(engine) = self.engine.as_mut() else {
-            return ProcessStatus::Normal;
+            for mut channel_samples in buffer.iter_samples() {
+                for s in channel_samples.iter_mut() {
+                    *s = 0.0;
+                }
+            }
+            return ProcessStatus::KeepAlive;
         };
+
+        for n in notes {
+            match n {
+                PendingNote::On { note, velocity } => {
+                    engine.note_on(0, note, velocity);
+                }
+                PendingNote::Off { note } => {
+                    engine.note_off(0, note);
+                }
+            }
+        }
 
         while let Some(event) = context.next_event() {
             match event {
@@ -279,30 +309,33 @@ impl Plugin for ReelSynthPlugin {
         }
 
         let frames = buffer.samples();
-        let mut tmp = vec![0.0f32; frames * 2];
-        engine.process_stereo(&mut tmp);
+        let need = frames * 2;
+        if self.stereo_scratch.len() < need {
+            self.stereo_scratch.resize(need, 0.0);
+        }
+        let scratch = &mut self.stereo_scratch[..need];
+        scratch.fill(0.0);
+        engine.process_stereo(scratch);
+
+        let channels = buffer.channels();
         for (frame_i, channel_samples) in buffer.iter_samples().enumerate() {
-            let l = tmp[frame_i * 2];
-            let r = tmp[frame_i * 2 + 1];
+            let l = scratch[frame_i * 2];
+            let r = scratch[frame_i * 2 + 1];
             let mut ch = channel_samples.into_iter();
             if let Some(s) = ch.next() {
                 *s = l;
             }
             if let Some(s) = ch.next() {
-                *s = r;
+                *s = if channels >= 2 { r } else { l };
+            }
+            // Extra channels (rare) stay silent / untouched.
+            for s in ch {
+                *s = 0.0;
             }
         }
 
-        *self.params.canonical.lock() = PluginStateV1::from_patch_bank(&self.patch, &self.bank);
-        {
-            let mut g = self.ipc_shared.lock();
-            if !g.dirty {
-                g.patch = self.patch.clone();
-                g.bank = self.bank.clone();
-            }
-        }
-
-        ProcessStatus::Normal
+        // Instruments must stay alive so Live keeps delivering MIDI while silent.
+        ProcessStatus::KeepAlive
     }
 }
 
@@ -319,6 +352,10 @@ impl ReelSynthPlugin {
                 self.bank = bank;
             }
         }
+    }
+
+    fn persist_canonical(&mut self) {
+        *self.params.canonical.lock() = PluginStateV1::from_patch_bank(&self.patch, &self.bank);
     }
 
     fn rebuild_engine(&mut self) {
@@ -365,6 +402,7 @@ impl ClapPlugin for ReelSynthPlugin {
         ClapFeature::Instrument,
         ClapFeature::Synthesizer,
         ClapFeature::Stereo,
+        ClapFeature::Mono,
     ];
 }
 
