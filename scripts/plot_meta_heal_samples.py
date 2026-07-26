@@ -232,7 +232,7 @@ def main() -> int:
     ax_zoom.set_xlabel("sample")
     ax_zoom.set_ylabel("amplitude")
     ax_zoom.grid(True, alpha=0.25)
-    ax_zoom.legend(fontsize=7, frameon=False, loc="lower right")
+    # Colors/styles match the top legend strip; omit local legend to avoid covering the seam.
 
     # Classical board bars on this tile
     ax_bar = fig.add_subplot(gs[2, 1])
