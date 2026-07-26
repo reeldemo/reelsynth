@@ -6,6 +6,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-07-26
+
 ### Fixed
 
 - **Plugin FX / filter parity** — `SynthEngine::new` now binds the patch FX rack (was stuck on defaults); Live host knobs only apply when moved so they no longer overwrite editor filter/envelope every buffer.
@@ -129,7 +131,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Python PyO3 bindings for render and export
 - Plugin UI shell (CLAP entry stub, no host I/O)
 
-[Unreleased]: https://github.com/reeldemo/reelsynth/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/reeldemo/reelsynth/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/reeldemo/reelsynth/releases/tag/v0.4.1
 [0.4.0]: https://github.com/reeldemo/reelsynth/releases/tag/v0.4.0
 [0.3.0]: https://github.com/reeldemo/reelsynth/releases/tag/v0.3.0
 [0.2.0]: https://github.com/reeldemo/reelsynth/releases/tag/v0.2.0
