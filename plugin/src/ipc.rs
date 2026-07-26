@@ -1,9 +1,12 @@
 //! Localhost JSON-lines IPC between the VST3 audio plugin and the external editor.
+//!
+//! Design rule: the audio thread must never block on IPC. Heavy decode/encode happens
+//! off the audio thread; notes use a lock-free queue; state uses `try_lock` + `Arc` swaps.
 
+use crossbeam::queue::SegQueue;
 use parking_lot::Mutex;
 use reelsynth::{Patch, WavetableBank};
 use serde::{Deserialize, Serialize};
-use std::collections::VecDeque;
 use std::io::{BufRead, BufReader, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
@@ -66,70 +69,42 @@ pub fn manifest_path() -> PathBuf {
     PathBuf::from("reelsynth_plugin_ipc.json")
 }
 
-/// Shared patch/bank mutated by IPC; audio thread applies when `dirty`.
-pub struct IpcEngineState {
-    pub patch: Patch,
-    pub bank: WavetableBank,
-    pub dirty: bool,
-    /// Note events from the external editor (drained on the audio thread).
-    pub pending_notes: VecDeque<PendingNote>,
-}
-
 #[derive(Clone, Copy, Debug)]
 pub enum PendingNote {
     On { note: u8, velocity: f32 },
     Off { note: u8 },
 }
 
+/// Shared patch/bank for the editor; audio thread pulls via `try_lock` + cheap `Arc` clones.
+pub struct IpcEngineState {
+    pub patch: Arc<Patch>,
+    pub bank: Arc<WavetableBank>,
+    pub dirty: bool,
+}
+
 impl IpcEngineState {
     pub fn new(patch: Patch, bank: WavetableBank) -> Self {
         Self {
-            patch,
-            bank,
+            patch: Arc::new(patch),
+            bank: Arc::new(bank),
             dirty: false,
-            pending_notes: VecDeque::new(),
         }
     }
-
-    pub fn snapshot(&self) -> PluginStateV1 {
-        PluginStateV1::from_patch_bank(&self.patch, &self.bank)
-    }
-
-    pub fn apply_state(&mut self, state: PluginStateV1) -> Result<(), String> {
-        let json = state.to_json()?;
-        let (patch, bank) = PluginStateV1::from_json(&json)?;
-        self.patch = patch;
-        self.bank = bank;
-        self.dirty = true;
-        Ok(())
-    }
-
-    pub fn push_note_on(&mut self, note: u8, velocity: f32) {
-        self.pending_notes.push_back(PendingNote::On {
-            note: note.min(127),
-            velocity: velocity.clamp(0.0, 1.0),
-        });
-    }
-
-    pub fn push_note_off(&mut self, note: u8) {
-        self.pending_notes
-            .push_back(PendingNote::Off { note: note.min(127) });
-    }
-
-    pub fn drain_notes(&mut self) -> Vec<PendingNote> {
-        self.pending_notes.drain(..).collect()
-    }
 }
 
-pub struct IpcServer {
+/// Bridge owned by the plugin instance.
+pub struct IpcBridge {
+    pub state: Arc<Mutex<IpcEngineState>>,
+    pub notes: Arc<SegQueue<PendingNote>>,
     pub port: Arc<AtomicU16>,
-    pub running: Arc<AtomicBool>,
+    running: Arc<AtomicBool>,
 }
 
-impl IpcServer {
-    pub fn start(shared: Arc<Mutex<IpcEngineState>>) -> std::io::Result<Self> {
+impl IpcBridge {
+    pub fn start(patch: Patch, bank: WavetableBank) -> std::io::Result<Self> {
+        let state = Arc::new(Mutex::new(IpcEngineState::new(patch, bank)));
+        let notes = Arc::new(SegQueue::new());
         let listener = TcpListener::bind("127.0.0.1:0")?;
-        listener.set_nonblocking(false)?;
         let port = listener.local_addr()?.port();
         let port_atom = Arc::new(AtomicU16::new(port));
         let running = Arc::new(AtomicBool::new(true));
@@ -137,38 +112,50 @@ impl IpcServer {
         write_manifest(port)?;
 
         let running_bg = running.clone();
+        let state_bg = state.clone();
+        let notes_bg = notes.clone();
         thread::Builder::new()
             .name("reelsynth-ipc".into())
             .spawn(move || {
                 while running_bg.load(Ordering::SeqCst) {
                     match listener.accept() {
                         Ok((stream, _)) => {
-                            let shared = shared.clone();
                             let _ = stream.set_read_timeout(Some(Duration::from_secs(30)));
                             let _ = stream.set_write_timeout(Some(Duration::from_secs(5)));
-                            handle_client(stream, shared);
+                            handle_client(stream, state_bg.clone(), notes_bg.clone());
                         }
                         Err(_) => thread::sleep(Duration::from_millis(50)),
                     }
                 }
             })?;
 
-        // Installer sets auto_editor in config.json; env REELSYNTH_AUTO_EDITOR=1 also works.
-        // Host GUI "Open Editor" always launches via `launch_external_editor`.
-        maybe_auto_spawn_external_editor();
+        // Delay auto-open so Live can finish activating audio before another process starts.
+        maybe_auto_spawn_external_editor_delayed();
 
         Ok(Self {
+            state,
+            notes,
             port: port_atom,
             running,
         })
     }
 
-    pub fn port(&self) -> u16 {
-        self.port.load(Ordering::SeqCst)
+    /// Non-blocking: take a pending editor snapshot if one is ready.
+    pub fn try_take_dirty(&self) -> Option<(Arc<Patch>, Arc<WavetableBank>)> {
+        let mut g = self.state.try_lock()?;
+        if !g.dirty {
+            return None;
+        }
+        g.dirty = false;
+        Some((Arc::clone(&g.patch), Arc::clone(&g.bank)))
+    }
+
+    pub fn push_note_from_host_view(&self, note: PendingNote) {
+        self.notes.push(note);
     }
 }
 
-impl Drop for IpcServer {
+impl Drop for IpcBridge {
     fn drop(&mut self) {
         self.running.store(false, Ordering::SeqCst);
         let _ = std::fs::remove_file(manifest_path());
@@ -190,7 +177,11 @@ fn write_manifest(port: u16) -> std::io::Result<()> {
     std::fs::write(path, text)
 }
 
-fn handle_client(stream: TcpStream, shared: Arc<Mutex<IpcEngineState>>) {
+fn handle_client(
+    stream: TcpStream,
+    shared: Arc<Mutex<IpcEngineState>>,
+    notes: Arc<SegQueue<PendingNote>>,
+) {
     let Ok(clone) = stream.try_clone() else {
         return;
     };
@@ -211,22 +202,37 @@ fn handle_client(stream: TcpStream, shared: Arc<Mutex<IpcEngineState>>) {
         let response = match serde_json::from_str::<IpcRequest>(trimmed) {
             Ok(IpcRequest::Ping) => IpcResponse::Ok { state: None },
             Ok(IpcRequest::GetState) => {
-                let st = shared.lock().snapshot();
+                // Clone Arcs under lock; encode outside so audio can proceed.
+                let (patch, bank) = {
+                    let g = shared.lock();
+                    (Arc::clone(&g.patch), Arc::clone(&g.bank))
+                };
+                let st = PluginStateV1::from_patch_bank(patch.as_ref(), bank.as_ref());
                 IpcResponse::Ok { state: Some(st) }
             }
-            Ok(IpcRequest::SetState { state }) => match shared.lock().apply_state(state) {
-                Ok(()) => {
-                    let st = shared.lock().snapshot();
-                    IpcResponse::Ok { state: Some(st) }
+            Ok(IpcRequest::SetState { state }) => match state.into_patch_bank() {
+                Ok((patch, bank)) => {
+                    {
+                        let mut g = shared.lock();
+                        g.patch = Arc::new(patch);
+                        g.bank = Arc::new(bank);
+                        g.dirty = true;
+                    }
+                    IpcResponse::Ok { state: None }
                 }
                 Err(message) => IpcResponse::Err { message },
             },
             Ok(IpcRequest::NoteOn { note, velocity }) => {
-                shared.lock().push_note_on(note, velocity);
+                notes.push(PendingNote::On {
+                    note: note.min(127),
+                    velocity: velocity.clamp(0.0, 1.0),
+                });
                 IpcResponse::Ok { state: None }
             }
             Ok(IpcRequest::NoteOff { note }) => {
-                shared.lock().push_note_off(note);
+                notes.push(PendingNote::Off {
+                    note: note.min(127),
+                });
                 IpcResponse::Ok { state: None }
             }
             Err(e) => IpcResponse::Err {
@@ -240,7 +246,7 @@ fn handle_client(stream: TcpStream, shared: Arc<Mutex<IpcEngineState>>) {
     }
 }
 
-fn maybe_auto_spawn_external_editor() {
+fn maybe_auto_spawn_external_editor_delayed() {
     use crate::ableton_config::load_config;
 
     let cfg = load_config();
@@ -248,7 +254,10 @@ fn maybe_auto_spawn_external_editor() {
     if !cfg.auto_editor && !env_force {
         return;
     }
-    let _ = launch_external_editor();
+    thread::spawn(|| {
+        thread::sleep(Duration::from_millis(1000));
+        let _ = launch_external_editor();
+    });
 }
 
 /// Spawn the full Design UI (`reelsynth-plugin-editor`). Used by auto-open and the host button.

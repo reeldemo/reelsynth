@@ -28,12 +28,18 @@ impl PluginStateV1 {
 
     pub fn from_json(json: &str) -> Result<(Patch, WavetableBank), String> {
         let st: PluginStateV1 = serde_json::from_str(json).map_err(|e| e.to_string())?;
-        if st.schema != PLUGIN_STATE_SCHEMA {
-            return Err(format!("unknown plugin state schema {}", st.schema));
+        st.into_patch_bank()
+    }
+
+    pub fn into_patch_bank(self) -> Result<(Patch, WavetableBank), String> {
+        if self.schema != PLUGIN_STATE_SCHEMA {
+            return Err(format!("unknown plugin state schema {}", self.schema));
         }
-        let bytes = B64.decode(st.reelwt_b64.as_bytes()).map_err(|e| e.to_string())?;
+        let bytes = B64
+            .decode(self.reelwt_b64.as_bytes())
+            .map_err(|e| e.to_string())?;
         let bank = WavetableBank::from_bytes(&bytes)?;
-        Ok((st.preset, bank))
+        Ok((self.preset, bank))
     }
 }
 

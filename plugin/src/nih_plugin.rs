@@ -1,6 +1,6 @@
 //! ReelSynth nih-plug instrument — slim DAW surface + IPC to external full editor.
 
-use crate::ipc::{launch_external_editor, IpcEngineState, IpcServer, PendingNote};
+use crate::ipc::{launch_external_editor, IpcBridge, PendingNote};
 use crate::plugin_state::{PluginStateV1, PLUGIN_STATE_SCHEMA};
 use nih_plug::prelude::*;
 use nih_plug_egui::{create_egui_editor, egui, widgets, EguiState};
@@ -14,9 +14,7 @@ struct ReelSynthPlugin {
     patch: Patch,
     bank: WavetableBank,
     sample_rate: u32,
-    ipc_shared: Arc<Mutex<IpcEngineState>>,
-    _ipc: Option<IpcServer>,
-    /// Scratch interleaved stereo buffer (reused; never allocate in process).
+    ipc: Option<IpcBridge>,
     stereo_scratch: Vec<f32>,
 }
 
@@ -25,7 +23,6 @@ struct ReelSynthParams {
     #[persist = "editor-state"]
     editor_state: Arc<EguiState>,
 
-    /// Visible in Live's device rack (no custom window needed). Toggle on to launch.
     #[id = "open_editor"]
     pub open_editor: BoolParam,
 
@@ -52,20 +49,18 @@ impl Default for ReelSynthPlugin {
     fn default() -> Self {
         let patch = Patch::default_mono();
         let bank = WavetableBank::factory_saw_morph();
-        let ipc_shared = Arc::new(Mutex::new(IpcEngineState::new(patch.clone(), bank.clone())));
         let params = ReelSynthParams {
             canonical: Arc::new(Mutex::new(PluginStateV1::from_patch_bank(&patch, &bank))),
             ..ReelSynthParams::default_params_only()
         };
-        let ipc = IpcServer::start(ipc_shared.clone()).ok();
+        let ipc = IpcBridge::start(patch.clone(), bank.clone()).ok();
         Self {
             params: Arc::new(params),
             engine: None,
             patch,
             bank,
             sample_rate: 44100,
-            ipc_shared,
-            _ipc: ipc,
+            ipc,
             stereo_scratch: Vec::new(),
         }
     }
@@ -221,11 +216,12 @@ impl Plugin for ReelSynthPlugin {
     ) -> bool {
         self.sample_rate = buffer_config.sample_rate as u32;
         self.hydrate_from_persisted();
-        {
-            let mut g = self.ipc_shared.lock();
-            g.patch = self.patch.clone();
-            g.bank = self.bank.clone();
-            g.dirty = false;
+        if let Some(ipc) = self.ipc.as_ref() {
+            if let Some(mut g) = ipc.state.try_lock() {
+                g.patch = Arc::new(self.patch.clone());
+                g.bank = Arc::new(self.bank.clone());
+                g.dirty = false;
+            }
         }
         self.rebuild_engine();
         true
@@ -241,32 +237,18 @@ impl Plugin for ReelSynthPlugin {
         _aux: &mut AuxiliaryBuffers,
         context: &mut impl ProcessContext<Self>,
     ) -> ProcessStatus {
-        // Apply external-editor edits without allocating / cloning on every buffer.
-        let (dirty_patch, dirty_bank, notes) = {
-            let mut g = self.ipc_shared.lock();
-            let dirty = g.dirty;
-            let notes = g.drain_notes();
-            if dirty {
-                g.dirty = false;
-                let patch = g.patch.clone();
-                let bank = g.bank.clone();
-                (Some(patch), Some(bank), notes)
-            } else {
-                (None, None, notes)
+        // Never block the audio thread on IPC. Skip editor sync this buffer if busy.
+        if let Some(ipc) = self.ipc.as_ref() {
+            if let Some((patch, bank)) = ipc.try_take_dirty() {
+                self.patch = (*patch).clone();
+                self.bank = (*bank).clone();
+                if let Some(engine) = self.engine.as_mut() {
+                    engine.update_bank((*bank).clone());
+                    engine.apply_patch_hot((*patch).clone());
+                } else {
+                    self.rebuild_engine();
+                }
             }
-        };
-
-        if let (Some(patch), Some(bank)) = (dirty_patch, dirty_bank) {
-            self.patch = patch.clone();
-            self.bank = bank.clone();
-            if let Some(engine) = self.engine.as_mut() {
-                // Hot path: keep sounding voices; only swap patch/bank data.
-                engine.update_bank(bank);
-                engine.apply_patch_hot(patch);
-            } else {
-                self.rebuild_engine();
-            }
-            self.persist_canonical();
         }
 
         if self.engine.is_none() {
@@ -275,21 +257,19 @@ impl Plugin for ReelSynthPlugin {
 
         self.apply_params_to_engine();
         let Some(engine) = self.engine.as_mut() else {
-            for mut channel_samples in buffer.iter_samples() {
-                for s in channel_samples.iter_mut() {
-                    *s = 0.0;
-                }
-            }
-            return ProcessStatus::KeepAlive;
+            silence(buffer);
+            return ProcessStatus::Normal;
         };
 
-        for n in notes {
-            match n {
-                PendingNote::On { note, velocity } => {
-                    engine.note_on(0, note, velocity);
-                }
-                PendingNote::Off { note } => {
-                    engine.note_off(0, note);
+        if let Some(ipc) = self.ipc.as_ref() {
+            while let Some(n) = ipc.notes.pop() {
+                match n {
+                    PendingNote::On { note, velocity } => {
+                        engine.note_on(0, note, velocity);
+                    }
+                    PendingNote::Off { note } => {
+                        engine.note_off(0, note);
+                    }
                 }
             }
         }
@@ -328,14 +308,21 @@ impl Plugin for ReelSynthPlugin {
             if let Some(s) = ch.next() {
                 *s = if channels >= 2 { r } else { l };
             }
-            // Extra channels (rare) stay silent / untouched.
             for s in ch {
                 *s = 0.0;
             }
         }
 
-        // Instruments must stay alive so Live keeps delivering MIDI while silent.
-        ProcessStatus::KeepAlive
+        // Normal (not KeepAlive): let Live suspend when idle so transport stays snappy.
+        ProcessStatus::Normal
+    }
+}
+
+fn silence(buffer: &mut Buffer) {
+    for mut channel_samples in buffer.iter_samples() {
+        for s in channel_samples.iter_mut() {
+            *s = 0.0;
+        }
     }
 }
 
@@ -352,10 +339,6 @@ impl ReelSynthPlugin {
                 self.bank = bank;
             }
         }
-    }
-
-    fn persist_canonical(&mut self) {
-        *self.params.canonical.lock() = PluginStateV1::from_patch_bank(&self.patch, &self.bank);
     }
 
     fn rebuild_engine(&mut self) {
