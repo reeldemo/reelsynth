@@ -13,19 +13,14 @@ Date: 2026-07-26
 | AC-4.2 | Partial | `nih_plugin.rs` MIDI + `process_stereo`; needs Live smoke |
 | AC-4.3 | Open | egui embed blocked on 0.30 vs nih-plug egui 0.34 ecosystem |
 | AC-4.4 | Partial | 5 FloatParams exposed |
-| AC-4.5 | Open | state blob not yet persisted |
+| AC-4.5 | Pass (unit) | `plugin_state` roundtrip; `#[persist = "canonical"]` |
 | AC-4.6 | Pass | `plugin/Cargo.toml` license GPL-3.0-or-later |
 | AC-4.7 | Pass | CLAP + VST3 exported; docs say Live needs VST3 |
 | AC-4.8 | Partial | no Compose in plugin process path (no editor yet) |
-| AC-5.1–5.3 | Pass (bridge) | INTEROP/WORKFLOW/CHANGELOG/REELDEMO_INTEGRATION |
-| AC-5.4 | Hold | capability matrix stays No until Live QA |
+| AC-5.1–5.3 | Pass (bridge + Ableton doc) | INTEROP/WORKFLOW/CHANGELOG/ABLETON.md |
+| AC-5.4 | Hold | capability matrix = Preview until Live QA |
 
-## Remaining tasks
+## Priority (user lock)
 
-- T8–T9, T16 — Studio repo
-- T12–T15 — state, egui embed, bundle, docs after Live smoke
-- T17 — re-run after above
-
-## Honest product claim
-
-**Today:** Send-to-Ableton bridge is usable. VST3/CLAP **builds** as an instrument shell; treat as developer preview until Live QA and editor land.
+1. **Ableton** (Send + VST3 polish) before Studio Extension.
+2. Studio T8–T9/T16 only after Ableton Live QA is green.

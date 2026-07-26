@@ -172,8 +172,10 @@ Summary:
 | Save/load patch + wavetable | Yes | — |
 | Export `reelpack` | Yes | Richer round-trips |
 | Record performance to MIDI in app | **No** | Planned |
-| Load as DAW plugin | **No** | S7 CLAP/VST3/AU |
-| Export your melody as MIDI | **No** | With MIDI recording |
+| Load as DAW plugin | **Preview** (VST3/CLAP build; Live QA + full UI pending) | S7 polish |
+| Export your melody as MIDI | **No** | With sequence SMF export |
+
+Ableton detail: [ABLETON.md](ABLETON.md).
 
 ---
 

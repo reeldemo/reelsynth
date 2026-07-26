@@ -1,6 +1,8 @@
-//! ReelSynth nih-plug instrument (VST3 + CLAP) — audio/MIDI first; shared egui editor follows egui bump.
+//! ReelSynth nih-plug instrument (VST3 + CLAP) — audio/MIDI + DAW state; shared egui later.
 
+use crate::plugin_state::{PluginStateV1, PLUGIN_STATE_SCHEMA};
 use nih_plug::prelude::*;
+use parking_lot::Mutex;
 use reelsynth::{Patch, SynthEngine, WavetableBank};
 use std::sync::Arc;
 
@@ -24,14 +26,22 @@ struct ReelSynthParams {
     pub amp_attack: FloatParam,
     #[id = "amp_release"]
     pub amp_release: FloatParam,
+
+    /// Full canonical patch + wavetable for Ableton set save/reload.
+    #[persist = "canonical"]
+    pub canonical: Arc<Mutex<PluginStateV1>>,
 }
 
 impl Default for ReelSynthPlugin {
     fn default() -> Self {
         let patch = Patch::default_mono();
         let bank = WavetableBank::factory_saw_morph();
+        let params = ReelSynthParams {
+            canonical: Arc::new(Mutex::new(PluginStateV1::from_patch_bank(&patch, &bank))),
+            ..ReelSynthParams::default_params_only()
+        };
         Self {
-            params: Arc::new(ReelSynthParams::default()),
+            params: Arc::new(params),
             engine: None,
             patch,
             bank,
@@ -40,8 +50,8 @@ impl Default for ReelSynthPlugin {
     }
 }
 
-impl Default for ReelSynthParams {
-    fn default() -> Self {
+impl ReelSynthParams {
+    fn default_params_only() -> Self {
         Self {
             wt_position: FloatParam::new(
                 "WT Position",
@@ -73,7 +83,17 @@ impl Default for ReelSynthParams {
                 FloatRange::Linear { min: 0.0, max: 1.0 },
             )
             .with_smoother(SmoothingStyle::Linear(50.0)),
+            canonical: Arc::new(Mutex::new(PluginStateV1::from_patch_bank(
+                &Patch::default_mono(),
+                &WavetableBank::factory_saw_morph(),
+            ))),
         }
+    }
+}
+
+impl Default for ReelSynthParams {
+    fn default() -> Self {
+        Self::default_params_only()
     }
 }
 
@@ -107,6 +127,7 @@ impl Plugin for ReelSynthPlugin {
         _context: &mut impl InitContext<Self>,
     ) -> bool {
         self.sample_rate = buffer_config.sample_rate as u32;
+        self.hydrate_from_persisted();
         self.rebuild_engine();
         true
     }
@@ -155,11 +176,28 @@ impl Plugin for ReelSynthPlugin {
             }
         }
 
+        // Keep persisted blob in sync for the next set save.
+        *self.params.canonical.lock() = PluginStateV1::from_patch_bank(&self.patch, &self.bank);
+
         ProcessStatus::Normal
     }
 }
 
 impl ReelSynthPlugin {
+    fn hydrate_from_persisted(&mut self) {
+        let guard = self.params.canonical.lock();
+        if guard.schema != PLUGIN_STATE_SCHEMA {
+            return;
+        }
+        if let Ok(json) = guard.to_json() {
+            drop(guard);
+            if let Ok((patch, bank)) = PluginStateV1::from_json(&json) {
+                self.patch = patch;
+                self.bank = bank;
+            }
+        }
+    }
+
     fn rebuild_engine(&mut self) {
         self.engine = Some(SynthEngine::new(
             self.bank.clone(),
@@ -183,6 +221,11 @@ impl ReelSynthPlugin {
         env.attack = self.params.amp_attack.smoothed.next() * 5.0;
         env.release = self.params.amp_release.smoothed.next() * 8.0;
         self.patch.envelope = env.clone();
+        if let Some(osc) = self.patch.oscillators.get_mut(0) {
+            osc.position = pos;
+        }
+        self.patch.filter.cutoff = (min + t * (max - min)).exp();
+        self.patch.filter.resonance = self.params.filter_res.smoothed.next();
         engine.set_envelope(env);
     }
 }

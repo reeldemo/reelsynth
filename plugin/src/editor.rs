@@ -3,7 +3,7 @@
 use eframe::egui;
 use reelsynth::Patch;
 use reelsynth_ui::{
-    draw_shell, APP_HEIGHT_FULL, ShellAudioDevices, ShellMidiDevices, ShellConfig, UiState,
+    draw_shell, ShellAudioDevices, ShellConfig, ShellMidiDevices, UiState, APP_HEIGHT_FULL,
 };
 
 /// Configuration for the plugin editor surface.
