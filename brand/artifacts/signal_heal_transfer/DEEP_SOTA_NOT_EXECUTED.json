@@ -1,13 +1,150 @@
 {
-  "schema": "denoiseopt.signal_heal_deep_sota_status.v1",
-  "status": "not_executed",
-  "honesty": "Do not invent Cycle-GAN / BeatDiff / deep COT numbers. Paper author should cite these as not-run under the DenoiseOpt prolonged-R protocol.",
-  "intended_baselines": [
+  "schema": "denoiseopt.signal_heal_deep_sota_status.v2",
+  "updated_at": "20260726T060500Z",
+  "paper_table": "tab:transfer-sota-status (Table 14)",
+  "honesty": "Do not invent Cycle-GAN / BeatDiff / Paderborn-deep / full-PTB-XL / real KIT/PMU / MOS–MUSHRA numbers. Only report scores when artifacts under this tree contain measured values. Domain-trained N2N is in progress — do not cite holdout R until domain_n2n/summary.json exists and results_table.json has been merged.",
+  "what_did_run": "Classical shared board + domain classical proxies (bad-COT / SBMM-lite / spline) + Ours hybrid_lstm under prolonged residual R on six boards (see results_table.json). Domain-trained Noise2Noise training is running separately.",
+  "artifact_table": "brand/artifacts/signal_heal_transfer/results_table.json",
+  "rows": [
+    {
+      "id": "domain_trained_n2n",
+      "table14_scope": "Domain-trained Noise2Noise",
+      "status": "in_progress",
+      "executable_now": true,
+      "blocker": null,
+      "running": {
+        "script": "scripts/train_n2n_transfer_domains.py",
+        "args": "--device cuda --steps 4000 --merge",
+        "pid_observed": 51760,
+        "out_dir": "brand/artifacts/signal_heal_transfer/domain_n2n/",
+        "log": "brand/artifacts/signal_heal_transfer/domain_n2n_train.log",
+        "merge_target": "brand/artifacts/signal_heal_transfer/results_table.json → table[*].n2n_domain_trained",
+        "domains": [
+          "cwru_bearings",
+          "mfpt_bearings",
+          "mitbih_ecg",
+          "ptbxl_ecg",
+          "synth_cnc_g01",
+          "synth_pmu_cycle"
+        ],
+        "note": "Partial per-domain summaries may appear under domain_n2n/<domain>/ while the job runs. Do not treat partial R as Table 14 scores until the full run finishes, writes domain_n2n/summary.json, and merges into results_table.json."
+      },
+      "paper_note_draft": "In progress (domain N2N train+holdout R; merge into results_table.json when complete)"
+    },
+    {
+      "id": "cycle_gan_ecg",
+      "table14_scope": "Cycle-GAN (ECG)",
+      "status": "blocked",
+      "executable_now": false,
+      "blocker": {
+        "kind": "missing_weights_and_pipeline",
+        "detail": "No published Cycle-GAN (or equivalent adversarial beat-morph) checkpoints adapted to this L=256 prolonged residual R wrap protocol live in-repo. No training recipe under DenoiseOpt residual scoring. Classical ECG rows use SBMM-lite / spline_join only.",
+        "unblock_requires": [
+          "Obtain or train ECG Cycle-GAN weights for periodized beat repair",
+          "Wrap inference to emit L=256 periods scored with residual_score / residual_score_blend",
+          "Run on the same MIT-BIH / PTB-XL transfer boards and seeds (holdout 20260719)"
+        ]
+      },
+      "paper_note_draft": "Not run — no adapted Cycle-GAN weights under prolonged-$R$ protocol"
+    },
+    {
+      "id": "beatdiff",
+      "table14_scope": "BeatDiff",
+      "status": "blocked",
+      "executable_now": false,
+      "blocker": {
+        "kind": "missing_diffusion_checkpoints",
+        "detail": "BeatDiff / diffusion beat generation-or-repair requires trained diffusion checkpoints and a different objective than DenoiseOpt prolonged R. No reimplementation or checkpoint import exists in this repo.",
+        "unblock_requires": [
+          "Upstream BeatDiff (or cited diffusion) checkpoints + inference code",
+          "Adapter to L=256 engine→repaired periods under residual protocol",
+          "Compute budget for sampling on transfer boards"
+        ]
+      },
+      "paper_note_draft": "Not run — no diffusion checkpoints under residual protocol"
+    },
+    {
+      "id": "paderborn_kat_deep",
+      "table14_scope": "Paderborn KAt deep",
+      "status": "blocked",
+      "executable_now": false,
+      "blocker": {
+        "kind": "dataset_extract_and_deep_pipeline",
+        "detail": "OA mirror K001.rar downloaded (~174 MB at brand/artifacts/signal_heal_transfer/raw/paderborn/K001.rar) but extraction blocked: no CLI UnRAR / RAR-capable 7z in session; Windows SFX installer GUI hung. Even after extract, published Paderborn deep fault/denoise pipelines are not wired to prolonged-R wrap boards. Do not claim Paderborn deep scores.",
+        "evidence": "brand/artifacts/signal_heal_transfer/cache/paderborn_status.json",
+        "unblock_requires": [
+          "Install CLI UnRAR or RAR-capable 7-Zip and extract K001.rar (and remaining KAt packs as needed)",
+          "Build periodized wrap boards from extracted MAT/CSV",
+          "Port or obtain deep Paderborn baseline weights + residual-R eval harness"
+        ]
+      },
+      "paper_note_draft": "Not run — K001.rar present but UnRAR blocked; deep models unwired"
+    },
+    {
+      "id": "full_ptbxl",
+      "table14_scope": "Full PTB-XL",
+      "status": "blocked",
+      "executable_now": false,
+      "blocker": {
+        "kind": "subset_only",
+        "detail": "Pilot scored PTB-XL records500 (*_hr, 500 Hz) lead-I only, n=256 R–R periods — not the full multi-lead / multi-rate PhysioNet corpus. Full download + multi-lead beat pools exceed this session's transfer pilot scope.",
+        "what_ran": "ptbxl_ecg classical board + hybrid_lstm (see results_table.json / cache/ptbxl_ecg_meta.json)",
+        "unblock_requires": [
+          "Complete PhysioNet PTB-XL download (100 Hz + 500 Hz as required)",
+          "Define multi-lead / full-record sampling policy matching paper claims",
+          "Re-run classical + Ours (+ optional domain N2N) at full scale"
+        ]
+      },
+      "paper_note_draft": "Subset only — records500 lead-I, $n{=}256$ (not full corpus)"
+    },
+    {
+      "id": "real_kit_cnc_ieee_pmu",
+      "table14_scope": "Real KIT CNC / IEEE PMU",
+      "status": "blocked",
+      "executable_now": false,
+      "blocker": {
+        "kind": "download_login_walls",
+        "detail": "Real KIT multimodal CNC DOI requires browser/login; IEEE DataPort PMU OA traces require free-account wall. Transfer pilot ran synthetic proxies instead (synth_cnc_g01, synth_pmu_cycle).",
+        "evidence": [
+          "brand/artifacts/signal_heal_transfer/cache/skipped_optional.json",
+          "brand/artifacts/signal_heal_transfer/results_table.json → skipped"
+        ],
+        "proxies_ran": [
+          "synth_cnc_g01",
+          "synth_pmu_cycle"
+        ],
+        "unblock_requires": [
+          "Manual KIT DOI download after institutional/browser login",
+          "IEEE DataPort account + download of cited PMU corpus",
+          "Wrap construction scripts for real traces under same L=256 residual protocol"
+        ]
+      },
+      "paper_note_draft": "Synthetic pilots only — KIT DOI / IEEE DataPort login walls"
+    },
+    {
+      "id": "formal_mos_mushra",
+      "table14_scope": "Formal MOS / MUSHRA",
+      "status": "blocked",
+      "executable_now": false,
+      "blocker": {
+        "kind": "human_listening_panel",
+        "detail": "No formal MOS / MUSHRA listening study was collected. Hear-pack WAVs and informal A/B protocol exist (LISTENING_PROTOCOL_MAIN.md); inventing mean opinion scores is forbidden.",
+        "protocol_doc": "brand/artifacts/signal_heal_transfer/LISTENING_PROTOCOL_MAIN.md",
+        "unblock_requires": [
+          "Freeze WAV pack + impairment scale (wrap-click MUSHRA-style)",
+          "Recruit listeners / panel session",
+          "Report means with CIs only from collected responses"
+        ]
+      },
+      "paper_note_draft": "Not collected — hear assets / informal A/B only (no invented MOS)"
+    }
+  ],
+  "intended_baselines_legacy": [
     {
       "id": "cycle_gan_ecg",
       "domain": "ecg",
       "citation_hint": "Cycle-GAN / adversarial beat morph repair literature (ECG)",
-      "why_not_run": "No published weights adapted to L=256 prolonged residual R wrap protocol in this session; training from scratch exceeds pilot budget."
+      "why_not_run": "No published weights adapted to L=256 prolonged residual R wrap protocol; training from scratch exceeds pilot budget."
     },
     {
       "id": "beatdiff",
@@ -25,15 +162,13 @@
       "id": "paderborn_deep",
       "domain": "bearings",
       "citation_hint": "Paderborn KAt deep fault / denoise pipelines",
-      "why_not_run": "Dataset not downloaded (registration / no OA mirror); cannot score deep baselines without data."
+      "why_not_run": "K001.rar downloaded but UnRAR extraction blocked; deep baselines unwired."
     },
     {
       "id": "pmu_tve_estimator_sota",
       "domain": "power",
       "citation_hint": "IEEE C37.118 TVE-optimized estimators on OA PMU traces",
-      "why_not_run": "IEEE DataPort login wall; only synthetic_power / synth_pmu_cycle proxy ran."
+      "why_not_run": "IEEE DataPort login wall; only synth_pmu_cycle proxy ran."
     }
-  ],
-  "what_did_run": "Classical shared board + domain classical proxies + Ours hybrid_lstm under prolonged residual R.",
-  "artifact_table": "brand/artifacts/signal_heal_transfer/results_table.json"
+  ]
 }

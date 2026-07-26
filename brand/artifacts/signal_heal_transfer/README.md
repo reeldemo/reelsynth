@@ -28,6 +28,20 @@ Generated: `20260725T123816Z`
 - Do not wipe `brand/artifacts/meta_approach_compare/`.
 - Optional KIT CNC / IEEE PMU / Paderborn / BMRB NMR skipped if login/paywall.
 
+### Table 14 (`tab:transfer-sota-status`) status
+
+Canonical blocker file: [`DEEP_SOTA_NOT_EXECUTED.json`](DEEP_SOTA_NOT_EXECUTED.json). Draft Note wording: [`TABLE14_NOTE_DRAFT.md`](TABLE14_NOTE_DRAFT.md).
+
+| Scope | Status |
+|-------|--------|
+| Domain-trained Noise2Noise | **In progress** — `scripts/train_n2n_transfer_domains.py --device cuda --steps 4000 --merge` → `domain_n2n/`; cite R only after merge into `results_table.json` |
+| Cycle-GAN (ECG) | Blocked — no adapted weights / residual-$R$ pipeline in-repo |
+| BeatDiff | Blocked — no diffusion checkpoints under residual protocol |
+| Paderborn KAt deep | Blocked — `K001.rar` downloaded but CLI UnRAR failed; deep models unwired |
+| Full PTB-XL | Blocked — subset only (`records500` lead-I, $n{=}256$) |
+| Real KIT CNC / IEEE PMU | Blocked — login walls; `synth_cnc_g01` / `synth_pmu_cycle` proxies ran |
+| Formal MOS / MUSHRA | Blocked — no human listening panel; hear protocol only |
+
 ### Skipped optional
 
 - **kit_cnc_real:** skipped — KIT CNC DOI needs browser/login; ran synth_cnc_g01 instead
@@ -41,6 +55,7 @@ Generated: `20260725T123816Z`
 ## Results table
 
 See `results_table.json` and `fig_signal_heal_transfer.{png,pdf}`.
+Domain N2N column `n2n_domain_trained` appears only after the training script finishes with `--merge`.
 
 ## Reproduce
 
@@ -48,7 +63,9 @@ See `results_table.json` and `fig_signal_heal_transfer.{png,pdf}`.
 .venv_gpu/Scripts/python scripts/download_signal_heal_data.py
 .venv_gpu/Scripts/python scripts/bench_signal_heal_transfer.py --iters 250 --merge-existing
 .venv_gpu/Scripts/python scripts/export_signal_heal_hear_pack.py
+# Table 14 follow-up (domain N2N quality; do not invent other deep SOTA rows):
+.venv_gpu/Scripts/python scripts/train_n2n_transfer_domains.py --device cuda --steps 4000 --merge
 ```
 
-Also: `REPRO.md`, `DEEP_SOTA_NOT_EXECUTED.json`, `LISTENING_PROTOCOL_MAIN.md`.
+Also: `REPRO.md`, `DEEP_SOTA_NOT_EXECUTED.json`, `LISTENING_PROTOCOL_MAIN.md`, `TABLE14_NOTE_DRAFT.md`.
 
