@@ -1423,6 +1423,7 @@ impl eframe::App for ReelSynthApp {
                     show_osc_column: true,
                     show_mod_matrix: true,
                     show_fx_rack: true,
+                    host_io_only: false,
                 };
 
                 let preview_patch = patch_from_state(&self.state, &self.current_patch);

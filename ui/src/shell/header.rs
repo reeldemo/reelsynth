@@ -31,6 +31,7 @@ pub(super) fn draw_header(
     audio: &ShellAudioDevices<'_>,
     actions: &mut ShellActions,
     mut app_settings: Option<&mut ShellAppSettings>,
+    host_io_only: bool,
 ) {
     let tokens = Tokens::default();
     region(ui, rect, |ui| {
@@ -350,60 +351,99 @@ pub(super) fn draw_header(
                             .get(midi.selected)
                             .map(String::as_str)
                             .unwrap_or("MIDI");
-                        let midi_resp = reel_combo(
-                            ui,
-                            "s1_midi_device",
-                            select_value_text(midi_label),
-                            96.0,
-                            |ui| {
-                                for (idx, name) in midi.names.iter().enumerate() {
-                                    if menu_selectable(ui, midi.selected == idx, name).clicked() {
-                                        actions.midi_device_selected = Some(idx);
+                        if host_io_only {
+                            let midi_resp = ui
+                                .add_enabled(
+                                    false,
+                                    egui::Label::new(select_value_text("MIDI · Live")),
+                                )
+                                .on_hover_text(
+                                    "MIDI is routed by Ableton Live. Choose controllers in Live’s Preferences.",
+                                );
+                            record_region(
+                                ui.ctx(),
+                                AuditId::HeaderMidiCombo,
+                                midi_resp.rect,
+                                midi_resp.rect,
+                            );
+                            right_content_min_x = right_content_min_x.min(midi_resp.rect.min.x);
+                        } else {
+                            let midi_resp = reel_combo(
+                                ui,
+                                "s1_midi_device",
+                                select_value_text(midi_label),
+                                96.0,
+                                |ui| {
+                                    for (idx, name) in midi.names.iter().enumerate() {
+                                        if menu_selectable(ui, midi.selected == idx, name)
+                                            .clicked()
+                                        {
+                                            actions.midi_device_selected = Some(idx);
+                                        }
                                     }
-                                }
-                            },
-                        );
-                        record_region(
-                            ui.ctx(),
-                            AuditId::HeaderMidiCombo,
-                            midi_resp.response.rect,
-                            midi_resp.response.rect,
-                        );
-                        right_content_min_x =
-                            right_content_min_x.min(midi_resp.response.rect.min.x);
+                                },
+                            );
+                            record_region(
+                                ui.ctx(),
+                                AuditId::HeaderMidiCombo,
+                                midi_resp.response.rect,
+                                midi_resp.response.rect,
+                            );
+                            right_content_min_x =
+                                right_content_min_x.min(midi_resp.response.rect.min.x);
+                        }
 
                         let audio_label = audio
                             .names
                             .get(audio.selected)
                             .map(String::as_str)
                             .unwrap_or("Audio");
-                        let audio_resp = reel_combo(
-                            ui,
-                            "s1_audio_device",
-                            select_value_text(audio_label),
-                            96.0,
-                            |ui| {
-                                if audio.names.is_empty() {
-                                    let _ = menu_selectable(ui, true, "No output devices");
-                                } else {
-                                    for (idx, name) in audio.names.iter().enumerate() {
-                                        if menu_selectable(ui, audio.selected == idx, name)
-                                            .clicked()
-                                        {
-                                            actions.audio_device_selected = Some(idx);
+                        if host_io_only {
+                            let audio_resp = ui
+                                .add_enabled(
+                                    false,
+                                    egui::Label::new(select_value_text("Audio · Live")),
+                                )
+                                .on_hover_text(
+                                    "Audio output is Ableton Live’s device. Change it in Live → Preferences → Audio.",
+                                );
+                            record_region(
+                                ui.ctx(),
+                                AuditId::HeaderAudioCombo,
+                                audio_resp.rect,
+                                audio_resp.rect,
+                            );
+                            right_content_min_x =
+                                right_content_min_x.min(audio_resp.rect.min.x);
+                        } else {
+                            let audio_resp = reel_combo(
+                                ui,
+                                "s1_audio_device",
+                                select_value_text(audio_label),
+                                96.0,
+                                |ui| {
+                                    if audio.names.is_empty() {
+                                        let _ = menu_selectable(ui, true, "No output devices");
+                                    } else {
+                                        for (idx, name) in audio.names.iter().enumerate() {
+                                            if menu_selectable(ui, audio.selected == idx, name)
+                                                .clicked()
+                                            {
+                                                actions.audio_device_selected = Some(idx);
+                                            }
                                         }
                                     }
-                                }
-                            },
-                        );
-                        record_region(
-                            ui.ctx(),
-                            AuditId::HeaderAudioCombo,
-                            audio_resp.response.rect,
-                            audio_resp.response.rect,
-                        );
-                        right_content_min_x =
-                            right_content_min_x.min(audio_resp.response.rect.min.x);
+                                },
+                            );
+                            record_region(
+                                ui.ctx(),
+                                AuditId::HeaderAudioCombo,
+                                audio_resp.response.rect,
+                                audio_resp.response.rect,
+                            );
+                            right_content_min_x =
+                                right_content_min_x.min(audio_resp.response.rect.min.x);
+                        }
 
                         let right_cluster = if right_content_min_x.is_finite() {
                             Rect::from_min_max(

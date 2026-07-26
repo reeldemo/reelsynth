@@ -74,7 +74,7 @@ impl PluginEditorApp {
                         self.bank = bank;
                     }
                     self.state.status =
-                        "Connected — piano / Z–M keys play through Live. Edits push to the instrument."
+                        "Connected — piano / Z–M play through Live. Audio device is Live’s Preferences → Audio."
                             .into();
                     self.client = Some(client);
                 }
@@ -257,6 +257,7 @@ impl eframe::App for PluginEditorApp {
                     show_osc_column: self.config.show_osc_column,
                     show_mod_matrix: self.config.show_mod_matrix,
                     show_fx_rack: self.config.show_fx_rack,
+                    host_io_only: true,
                 };
                 let actions = draw_shell(
                     ui,
