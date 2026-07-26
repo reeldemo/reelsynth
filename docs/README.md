@@ -9,6 +9,7 @@ ReelSynth is an MIT-licensed wavetable synthesizer. This folder is the documenta
 | **New to the synth** — install, play, save your first sound | [GETTING_STARTED.md](GETTING_STARTED.md) |
 | **Designing sounds + moving to a DAW** — MIDI, melody, export | [WORKFLOW.md](WORKFLOW.md) |
 | **Using free tools only** — DAWs, Vital, no paid stack | [FREE_STACK.md](FREE_STACK.md) |
+| **Ableton Live** — Send button + VST3 preview (before Studio) | [ABLETON.md](ABLETON.md) |
 | **Using Reeldemo Studio** — agent compose → Ableton handoff | [REELDEMO_INTEGRATION.md](REELDEMO_INTEGRATION.md) |
 | **Integrating in code** — Python, Rust, CLI, C FFI | [SDK.md](SDK.md) |
 | **Automating the UI** — AgentSession + MCP tools | [AGENT_API.md](AGENT_API.md) |
