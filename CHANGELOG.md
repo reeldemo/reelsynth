@@ -9,7 +9,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - **Send to Ableton** — header **Ableton** button writes a User Library inbox bundle (`REELSYNTH_ABLETON_INBOX` override) with `reelsynth-ableton-wt-v2` map, `table_multicycle.wav`, frames, and README; probes AbletonOSC `:11000` and best-effort creates a Wavetable track. Custom sprites still require one drag (Live API limit).
-- **VST3/CLAP + external editor** — Ableton hosts a slim instrument; full Design UI runs in `reelsynth-plugin-editor` connected over localhost IPC (`%LOCALAPPDATA%\ReelSynth\plugin_ipc.json`). Guide: [docs/ABLETON.md](docs/ABLETON.md).
+- **Ableton installer (Win/macOS)** — `scripts/install-ableton.ps1` / `scripts/install-ableton.sh` build and install VST3 + external editor and enable `auto_editor` in user config. Linux is not an Ableton target.
 
 ### Changed
 

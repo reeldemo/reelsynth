@@ -125,10 +125,8 @@ impl IpcServer {
                 }
             })?;
 
-        // Optional: spawn external editor automatically.
-        if std::env::var("REELSYNTH_AUTO_EDITOR").ok().as_deref() == Some("1") {
-            spawn_external_editor();
-        }
+        // Installer sets auto_editor in config.json; env REELSYNTH_AUTO_EDITOR=1 also works.
+        spawn_external_editor();
 
         Ok(Self {
             port: port_atom,
@@ -206,24 +204,21 @@ fn handle_client(stream: TcpStream, shared: Arc<Mutex<IpcEngineState>>) {
 }
 
 fn spawn_external_editor() {
-    let exe = std::env::current_exe().ok();
-    // Prefer sibling binary name if present; otherwise `cargo run` is documented.
-    if let Some(exe) = exe {
-        let editor = exe
-            .parent()
-            .map(|p| p.join("reelsynth-plugin-editor.exe"))
-            .filter(|p| p.exists())
-            .or_else(|| {
-                exe.parent()
-                    .map(|p| p.join("reelsynth-plugin-editor"))
-                    .filter(|p| p.exists())
-            });
-        if let Some(editor) = editor {
-            let _ = std::process::Command::new(editor).spawn();
+    use crate::ableton_config::{editor_candidates, load_config};
+
+    let cfg = load_config();
+    let env_force = std::env::var("REELSYNTH_AUTO_EDITOR").ok().as_deref() == Some("1");
+    if !cfg.auto_editor && !env_force {
+        return;
+    }
+
+    for path in editor_candidates(&cfg) {
+        if path.is_file() {
+            let _ = std::process::Command::new(&path).spawn();
             return;
         }
     }
-    // Best-effort: open via `cargo run` from REELSYNTH_ROOT if set.
+
     if let Ok(root) = std::env::var("REELSYNTH_ROOT") {
         let _ = std::process::Command::new("cargo")
             .args([
