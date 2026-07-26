@@ -30,7 +30,8 @@
     "bmrb_nmr": "skipped \u2014 BMRB FID deferred",
     "deep_sota_cyclegan_beatdiff": "Cycle-GAN OOD wrap-R scored; BeatDiff blocked \u2014 HF 401 / Drive Orbax stubs incomplete",
     "kit_cnc": "awaiting user drop under raw/kit_cnc/ (kit_cnc_README.txt); synth_cnc_g01 proxy still scored",
-    "ieee_pmu": "S3 URI known but anonymous GET 403; drop IEEE-39-bus_10_generator_PMU.mat into raw/ieee_pmu/; synth_pmu_cycle proxy still scored"
+    "ieee_pmu": "S3 URI known but anonymous GET 403; drop IEEE-39-bus_10_generator_PMU.mat into raw/ieee_pmu/; synth_pmu_cycle proxy still scored",
+    "paderborn_deep": "executed_trained_alfirdausi_cnn_classifier_plus_wrap_backbone"
   },
   "skipped_optional": {
     "kit_cnc_real": "awaiting user drop under raw/kit_cnc/ (kit_cnc_README.txt); synth_cnc_g01 proxy still scored",
@@ -198,17 +199,40 @@
         "steps": 4000
       },
       "paderborn_deep_alfirdausi_cnn": {
-        "kind": "author_fault_classifier_native",
+        "kind": "authors_cnn_classifier_trained",
         "wrap_R": null,
-        "healthy_Normal_rate": 1.0,
-        "n_segments": 256,
-        "metric": "healthy_K001_segment_Normal_rate",
+        "holdout_accuracy": 0.858984375,
+        "n_holdout_segments": 2560,
+        "epochs": 20,
+        "file_split_seed": 20260726,
+        "train_seed": 42,
+        "bearings": [
+          "K001",
+          "KA04",
+          "KB23",
+          "KI04"
+        ],
+        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\deep_sota_adapters\\alfirdausi_trained\\cnn_1d_2l_classifier.pt",
+        "metric": "4class_holdout_accuracy_NORMAL_IR_OR_OR+IR",
         "citation": {
           "paper": "Al Firdausi & Ahmad, Comm. Sci. Tech. 7(1):62\u201372, 2022",
-          "github": "https://github.com/mdzalfirdausi/CNN-for-Paderborn-Bearing-Dataset",
-          "weight": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\paderborn_cnn\\model.pth"
+          "github": "https://github.com/mdzalfirdausi/CNN-for-Paderborn-Bearing-Dataset"
         },
-        "footnote": "Author CNN (Al Firdausi 2022) is fault classification \u2014 wrap-R refused."
+        "footnote": "Trained Al Firdausi CNN_1D_2L from scratch on local Paderborn (bearings=['K001', 'KA04', 'KB23', 'KI04']); fault classification \u2260 wrap-R.",
+        "status": "trained_and_scored"
+      },
+      "paderborn_alfirdausi_backbone_wrap": {
+        "kind": "alfirdausi_backbone_wrap_residual",
+        "R": 0.8390061259269714,
+        "R_blend": 0.8415248394012451,
+        "no_bake_R": 0.8390013575553894,
+        "dual_cosine_R": 0.7592579126358032,
+        "steps": 4000,
+        "holdout_seed": 20260719,
+        "train_seed": 424242,
+        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\deep_sota_adapters\\alfirdausi_trained\\cnn_1d_2l_wrap_residual.pt",
+        "footnote": "Architecture-reuse residual bake (author conv backbone \u2260 published classifier). Comparable wrap-R to Ours/SeamN2N/DualCosine.",
+        "status": "trained_and_scored"
       }
     }
   },
@@ -2593,5 +2617,203 @@
     "cycle_gan": "executed_ood_wrapR",
     "beatdiff": "blocked_needs_user_auth_or_manual_drive",
     "paderborn_deep": "executed_native_healthy_only_alfirdausi_cnn"
+  },
+  "notes": {
+    "paderborn_kat": "K001+fault mats; classical+Ours+SeamN2N; trained Al Firdausi CNN holdout_acc=0.858984375; backbone wrap-R=0.8390061259269714"
+  },
+  "paderborn_alfirdausi_trained": {
+    "finished_at": "20260726T093858Z",
+    "classifier": {
+      "kind": "authors_cnn_classifier_trained",
+      "architecture": "CNN_1D_2L",
+      "seg_len": 516,
+      "class_map": {
+        "0": "NORMAL",
+        "1": "IR",
+        "2": "OR",
+        "3": "OR+IR"
+      },
+      "file_split_seed": 20260726,
+      "train_seed": 42,
+      "bearings_found": [
+        "K001",
+        "KA04",
+        "KB23",
+        "KI04"
+      ],
+      "n_mats": 320,
+      "labels_present": [
+        "NORMAL",
+        "IR",
+        "OR",
+        "OR+IR"
+      ],
+      "citation": {
+        "paper": "Al Firdausi & Ahmad, Comm. Sci. Tech. 7(1):62\u201372, 2022",
+        "github": "https://github.com/mdzalfirdausi/CNN-for-Paderborn-Bearing-Dataset"
+      },
+      "honesty": "Trained from scratch on local Paderborn mats with author CNN_1D_2L arch and author helper.py labels (NORMAL/IR/OR/OR+IR). Not author model.pth. Not a wrap denoiser.",
+      "n_train_mats": 256,
+      "n_holdout_mats": 64,
+      "n_train_segments": 8000,
+      "n_holdout_segments": 2560,
+      "train_class_counts": {
+        "NORMAL": 2000,
+        "IR": 2000,
+        "OR": 2000,
+        "OR+IR": 2000
+      },
+      "holdout_class_counts": {
+        "NORMAL": 640,
+        "IR": 640,
+        "OR": 640,
+        "OR+IR": 640
+      },
+      "status": "trained_and_scored",
+      "epochs": 20,
+      "batch": 64,
+      "lr": 0.001,
+      "n_params": 106116,
+      "elapsed_sec": 6.151624899997842,
+      "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\deep_sota_adapters\\alfirdausi_trained\\cnn_1d_2l_classifier.pt",
+      "train_metrics": {
+        "n_segments": 8000,
+        "accuracy": 0.9955,
+        "loss": 0.025993724524974823,
+        "per_class": {
+          "NORMAL": {
+            "n": 2000,
+            "acc": 0.999
+          },
+          "IR": {
+            "n": 2000,
+            "acc": 0.998
+          },
+          "OR": {
+            "n": 2000,
+            "acc": 0.9885
+          },
+          "OR+IR": {
+            "n": 2000,
+            "acc": 0.9965
+          }
+        },
+        "confusion_matrix": [
+          [
+            1998,
+            1,
+            0,
+            1
+          ],
+          [
+            0,
+            1996,
+            1,
+            3
+          ],
+          [
+            0,
+            0,
+            1977,
+            23
+          ],
+          [
+            0,
+            0,
+            7,
+            1993
+          ]
+        ],
+        "class_order": [
+          "NORMAL",
+          "IR",
+          "OR",
+          "OR+IR"
+        ]
+      },
+      "holdout_metrics": {
+        "n_segments": 2560,
+        "accuracy": 0.858984375,
+        "loss": 0.4810258044861257,
+        "per_class": {
+          "NORMAL": {
+            "n": 640,
+            "acc": 0.8578125
+          },
+          "IR": {
+            "n": 640,
+            "acc": 0.8421875
+          },
+          "OR": {
+            "n": 640,
+            "acc": 0.9171875
+          },
+          "OR+IR": {
+            "n": 640,
+            "acc": 0.81875
+          }
+        },
+        "confusion_matrix": [
+          [
+            549,
+            77,
+            3,
+            11
+          ],
+          [
+            45,
+            539,
+            12,
+            44
+          ],
+          [
+            1,
+            7,
+            587,
+            45
+          ],
+          [
+            0,
+            29,
+            87,
+            524
+          ]
+        ],
+        "class_order": [
+          "NORMAL",
+          "IR",
+          "OR",
+          "OR+IR"
+        ]
+      },
+      "wrap_R": null,
+      "wrap_R_note": "Classifier head \u2014 wrap-R not applicable. See alfirdausi_backbone_wrap_residual for architecture-reuse bake."
+    },
+    "wrap_residual": {
+      "kind": "alfirdausi_backbone_wrap_residual",
+      "architecture": "CNN_1D_2L_conv_backbone + residual_head",
+      "period_l": 256,
+      "holdout_seed": 20260719,
+      "train_seed": 424242,
+      "honesty": "NOT the published Al Firdausi method. Reuses author conv backbone as a trainable residual wrap-repair cell on paderborn_kat for prolonged-R comparison only. Label separately from authors_cnn_classifier.",
+      "status": "trained_and_scored",
+      "steps": 4000,
+      "batch": 48,
+      "lr": 0.002,
+      "n_params": 4106113,
+      "n_train": 192,
+      "elapsed_sec": 12.847447999985889,
+      "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\deep_sota_adapters\\alfirdausi_trained\\cnn_1d_2l_wrap_residual.pt",
+      "loss_first": 0.03722948580980301,
+      "loss_last": 0.0007183169946074486,
+      "holdout": {
+        "R": 0.8390061259269714,
+        "R_blend": 0.8415248394012451,
+        "no_bake_R": 0.8390013575553894,
+        "dual_cosine_R": 0.7592579126358032,
+        "n_holdout": 64
+      },
+      "wrap_R": 0.8390061259269714
+    }
   }
 }

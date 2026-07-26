@@ -3,7 +3,7 @@
   "updated_at": "20260726T082343Z",
   "paper_table": "tab:transfer-sota-status (Table 14)",
   "honesty": "Do not invent scores. Clinical ECG restore != wrap-R. Author fault classifiers != wrap denoise. Domain N2N = our SeamN2N (N2N-style), not Lehtinen code.",
-  "what_did_run": "Classical boards + Ours hybrid_lstm (250) + SeamN2N domain N2N. Cycle-GAN author .pth OOD wrap-R. Paderborn author CNN native healthy\u2192N. BeatDiff blocked on HF/Drive.",
+  "what_did_run": "Classical boards + Ours hybrid_lstm (250) + SeamN2N domain N2N. Cycle-GAN author .pth OOD wrap-R. Paderborn author CNN native healthy\u2192N. BeatDiff blocked on HF/Drive. | Paderborn Al Firdausi CNN trained from scratch + wrap-backbone bake.",
   "artifact_table": "brand/artifacts/signal_heal_transfer/results_table.json",
   "metric_footnote_cyclegan_beatdiff": "Clinical restore (artifact removal / beat morph) != DenoiseOpt prolonged wrap residual R. Cycle-GAN wrap-R is an OOD probe.",
   "rows": [

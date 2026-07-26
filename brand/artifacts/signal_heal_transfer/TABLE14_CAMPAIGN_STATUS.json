@@ -13,5 +13,11 @@
   "cyclegan_ptbxl_R": 0.14803940057754517,
   "beatdiff": "blocked_no_checkpoint",
   "kit_pmu": "blocked_login_walls",
-  "beatdiff_blocker": "Still blocked after re-probe 2026-07-26. (1) Hugging Face https://huggingface.co/lbedin/BeatDiff returns HTTP 401 Unauthorized without login (hf auth whoami: Not logged in); public search api/models?search=BeatDiff returns []. Paper cites this repo as pretrained host; no alternate public HF IDs found (LisaBedin/BeatDiff etc. also 401/404). User auth steps: create HF token at https://huggingface.co/settings/tokens ; run hf auth login ; open https://huggingface.co/lbedin/BeatDiff and accept any ga"
+  "beatdiff_blocker": "Still blocked after re-probe 2026-07-26. (1) Hugging Face https://huggingface.co/lbedin/BeatDiff returns HTTP 401 Unauthorized without login (hf auth whoami: Not logged in); public search api/models?search=BeatDiff returns []. Paper cites this repo as pretrained host; no alternate public HF IDs found (LisaBedin/BeatDiff etc. also 401/404). User auth steps: create HF token at https://huggingface.co/settings/tokens ; run hf auth login ; open https://huggingface.co/lbedin/BeatDiff and accept any ga",
+  "paderborn_alfirdausi": {
+    "updated_at": "20260726T093858Z",
+    "classifier_holdout_acc": 0.858984375,
+    "wrap_backbone_R": 0.8390061259269714,
+    "status": "trained"
+  }
 }

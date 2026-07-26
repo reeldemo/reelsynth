@@ -13,7 +13,7 @@ Generated: `20260726T074617Z`
 
 - **CWRU bearings:** DE @12 kHz; per-rev windows via RPM; **ideal** = cubic resample to $L$; **engine** = linear resample (bad-COT proxy) + DenoiseOpt-style wrap cliff + seam noise.
 - **MFPT:** same protocol when zip available; fixed shaft-rate periods.
-- **Paderborn KAt (K001):** vibration_1 @~64 kHz; speed→angle equal-rev windows when Mech_4kHz tach available; same cubic ideal / linear+cliff engine. Classical + Ours + domain N2N are in paper Table 13 (`tab:transfer-main`); deep Paderborn models remain unwired.
+- **Paderborn KAt (K001 + KA04/KI04/KB23):** vibration_1 @~64 kHz; speed→angle equal-rev windows when Mech_4kHz tach available; same cubic ideal / linear+cliff engine. Classical + Ours + domain N2N are in paper Table 13 (`tab:transfer-main`). Al Firdausi CNN_1D_2L trained from scratch (4-class holdout acc) + optional arch-reuse wrap bake; see `deep_sota_adapters/alfirdausi_trained/`.
 - **MIT-BIH / PTB-XL ECG:** R–R beats → $L$; **ideal** = local mean template + mild endpoint equalize (SBMM-lite classical); **engine** = single beat + wrap cliff.
 - **synth_cnc_g01 / synth_pmu_cycle:** synthetic CNC / power-cycle proxies when KIT / DataPort blocked.
 
