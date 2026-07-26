@@ -1,0 +1,22 @@
+{
+  "domain": "cwru_bearings",
+  "protocol": "n2n_corrupt_corrupt_domain",
+  "train_seed": 424242,
+  "holdout_seed": 20260719,
+  "steps": 4000,
+  "batch": 48,
+  "lr": 0.002,
+  "n_params": 53506,
+  "n_train": 192,
+  "eval": {
+    "R": 0.868618369102478,
+    "R_blend": 0.8660277128219604,
+    "no_bake_R": 0.8679422736167908,
+    "dual_cosine_R": 0.7834904193878174,
+    "n_holdout": 64
+  },
+  "loss_first": 0.7246689200401306,
+  "loss_last": 0.0008277964079752564,
+  "elapsed_sec": 32.23974290001206,
+  "finished_at": "20260726T060225Z"
+}

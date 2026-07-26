@@ -1,13 +1,13 @@
-# Table 14 (`tab:transfer-sota-status`) — Note draft (no invented scores)
+# Table 14 (`tab:transfer-sota-status`) — Note draft
 
 Source of truth for blockers: `DEEP_SOTA_NOT_EXECUTED.json`.
-Prefer leaving `results_transfer.tex` untouched until domain-trained N2N merges into `results_table.json`.
+Domain-trained N2N merged into `results_table.json` at `20260726T060508Z`.
 
-## Suggested Scope / Note rows (wording only)
+## Suggested Scope / Note rows
 
-| Scope | Note (draft) |
-|-------|----------------|
-| Domain-trained Noise2Noise | In progress — train+holdout prolonged $R$ via `scripts/train_n2n_transfer_domains.py`; cite numbers only after `domain_n2n/summary.json` + `results_table.json` merge |
+| Scope | Note |
+|-------|------|
+| Domain-trained Noise2Noise | Scored on six boards (holdout prolonged $R$; Table 13 / `tab:transfer-main`) |
 | Cycle-GAN (ECG) | Not run — no adapted Cycle-GAN weights under prolonged-$R$ wrap protocol |
 | BeatDiff | Not run — no diffusion checkpoints under residual protocol |
 | Paderborn KAt deep | Not run — `K001.rar` present but CLI UnRAR blocked; deep models unwired |
@@ -15,15 +15,16 @@ Prefer leaving `results_transfer.tex` untouched until domain-trained N2N merges 
 | Real KIT CNC / IEEE PMU | Synthetic pilots only — KIT DOI / IEEE DataPort login walls |
 | Formal MOS / MUSHRA | Not collected — hear assets / informal A/B only |
 
-## Optional LaTeX fragment (do not paste until N2N lands)
+## Domain N2N holdout scores (prolonged $R$ / $R_{\mathrm{blend}}$)
 
-```latex
-% Draft only — update Domain-trained Noise2Noise row after merge.
-Domain-trained Noise2Noise & In progress (holdout $R$; merge pending) \\
-Cycle-GAN (ECG) & Not run (no adapted weights under $R$) \\
-BeatDiff & Not run (no diffusion checkpoints) \\
-Paderborn KAt deep models & Not run ($K001$.rar UnRAR blocked; deep unwired) \\
-Full PTB-XL & Subset only (\texttt{records500} lead-I, $n{=}256$) \\
-Real KIT CNC / IEEE PMU & Synthetic pilots only (download walls) \\
-Formal MOS / MUSHRA & Not collected \\
-```
+| Domain | $R$ | $R_{\mathrm{blend}}$ |
+|--------|-----|----------------------|
+| cwru_bearings | 0.8686 | 0.8660 |
+| mfpt_bearings | 0.8817 | 0.8662 |
+| mitbih_ecg | 0.6530 | 0.7495 |
+| ptbxl_ecg | 0.5605 | 0.7365 |
+| synth_cnc_g01 | 0.4833 | 0.5534 |
+| synth_pmu_cycle | 0.9789 | 0.9589 |
+
+Protocol: corrupt→corrupt SeamN2N, 4000 Adam steps, train seed `424242`, holdout seed `20260719`, $n{=}256$ / holdout 64.
+Artifacts: `domain_n2n/summary.json`, `results_table.json` → `table[*].n2n_domain_trained`.

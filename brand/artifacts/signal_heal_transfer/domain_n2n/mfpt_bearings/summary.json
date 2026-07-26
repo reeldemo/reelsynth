@@ -1,0 +1,22 @@
+{
+  "domain": "mfpt_bearings",
+  "protocol": "n2n_corrupt_corrupt_domain",
+  "train_seed": 424242,
+  "holdout_seed": 20260719,
+  "steps": 4000,
+  "batch": 48,
+  "lr": 0.002,
+  "n_params": 53506,
+  "n_train": 192,
+  "eval": {
+    "R": 0.8817377090454102,
+    "R_blend": 0.8662163019180298,
+    "no_bake_R": 0.8821794986724854,
+    "dual_cosine_R": 0.7912628054618835,
+    "n_holdout": 64
+  },
+  "loss_first": 0.7400072813034058,
+  "loss_last": 0.0009741121320985258,
+  "elapsed_sec": 34.881066900037695,
+  "finished_at": "20260726T060300Z"
+}

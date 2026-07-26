@@ -1,0 +1,22 @@
+{
+  "domain": "synth_pmu_cycle",
+  "protocol": "n2n_corrupt_corrupt_domain",
+  "train_seed": 424242,
+  "holdout_seed": 20260719,
+  "steps": 4000,
+  "batch": 48,
+  "lr": 0.002,
+  "n_params": 53506,
+  "n_train": 192,
+  "eval": {
+    "R": 0.9788673520088196,
+    "R_blend": 0.958940863609314,
+    "no_bake_R": 0.9540901184082031,
+    "dual_cosine_R": 0.9387091994285583,
+    "n_holdout": 64
+  },
+  "loss_first": 0.7378344535827637,
+  "loss_last": 0.0006640809588134289,
+  "elapsed_sec": 29.872570199950133,
+  "finished_at": "20260726T060508Z"
+}

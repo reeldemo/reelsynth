@@ -1,0 +1,22 @@
+{
+  "domain": "synth_cnc_g01",
+  "protocol": "n2n_corrupt_corrupt_domain",
+  "train_seed": 424242,
+  "holdout_seed": 20260719,
+  "steps": 4000,
+  "batch": 48,
+  "lr": 0.002,
+  "n_params": 53506,
+  "n_train": 192,
+  "eval": {
+    "R": 0.48330581188201904,
+    "R_blend": 0.5534172654151917,
+    "no_bake_R": 0.4075140953063965,
+    "dual_cosine_R": 0.41362860798835754,
+    "n_holdout": 64
+  },
+  "loss_first": 0.7380741238594055,
+  "loss_last": 0.0005979379639029503,
+  "elapsed_sec": 30.8639348000288,
+  "finished_at": "20260726T060438Z"
+}

@@ -34,7 +34,7 @@ Canonical blocker file: [`DEEP_SOTA_NOT_EXECUTED.json`](DEEP_SOTA_NOT_EXECUTED.j
 
 | Scope | Status |
 |-------|--------|
-| Domain-trained Noise2Noise | **In progress** — `scripts/train_n2n_transfer_domains.py --device cuda --steps 4000 --merge` → `domain_n2n/`; cite R only after merge into `results_table.json` |
+| Domain-trained Noise2Noise | **Executed** — six-board holdout prolonged $R$ in `domain_n2n/summary.json` / `results_table.json` → `n2n_domain_trained` (4000 steps, seeds 424242 / 20260719) |
 | Cycle-GAN (ECG) | Blocked — no adapted weights / residual-$R$ pipeline in-repo |
 | BeatDiff | Blocked — no diffusion checkpoints under residual protocol |
 | Paderborn KAt deep | Blocked — `K001.rar` downloaded but CLI UnRAR failed; deep models unwired |
@@ -55,7 +55,7 @@ Canonical blocker file: [`DEEP_SOTA_NOT_EXECUTED.json`](DEEP_SOTA_NOT_EXECUTED.j
 ## Results table
 
 See `results_table.json` and `fig_signal_heal_transfer.{png,pdf}`.
-Domain N2N column `n2n_domain_trained` appears only after the training script finishes with `--merge`.
+Domain N2N column `n2n_domain_trained` is merged for all six domains (CWRU/MFPT/MIT-BIH/PTB-XL/synth CNC/synth PMU).
 
 ## Reproduce
 

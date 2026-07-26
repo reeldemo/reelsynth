@@ -1,0 +1,22 @@
+{
+  "domain": "ptbxl_ecg",
+  "protocol": "n2n_corrupt_corrupt_domain",
+  "train_seed": 424242,
+  "holdout_seed": 20260719,
+  "steps": 4000,
+  "batch": 48,
+  "lr": 0.002,
+  "n_params": 53506,
+  "n_train": 192,
+  "eval": {
+    "R": 0.5604552030563354,
+    "R_blend": 0.7365267276763916,
+    "no_bake_R": 0.559010922908783,
+    "dual_cosine_R": 0.2588982582092285,
+    "n_holdout": 64
+  },
+  "loss_first": 0.7398202419281006,
+  "loss_last": 0.0009847604669630527,
+  "elapsed_sec": 34.09048569999868,
+  "finished_at": "20260726T060407Z"
+}

@@ -27,7 +27,7 @@
     "ieee_pmu_real": "skipped \u2014 IEEE DataPort free-account wall; ran synth_pmu_cycle instead",
     "paderborn_kat": "downloaded K001.rar (OA mirror) but extraction blocked \u2014 no CLI UnRAR; SFX installer GUI hung; scores not claimed",
     "bmrb_nmr": "skipped \u2014 BMRB FID deferred",
-    "deep_sota_cyclegan_beatdiff": "not executed \u2014 no trained Cycle-GAN / BeatDiff weights under residual protocol",
+    "deep_sota_cyclegan_beatdiff": "not run \u2014 no Cycle-GAN / BeatDiff weights under this residual protocol",
     "kit_cnc": "skipped \u2014 KIT CNC DOI needs browser/login flow; synthetic_cnc_wrap used as proxy",
     "ieee_pmu": "skipped \u2014 IEEE DataPort free-account wall; synthetic_power_wrap used as proxy"
   },
@@ -50,7 +50,16 @@
       "seam_fir3": 0.4483480453491211,
       "cot_linear_periodize": 0.8450800776481628,
       "cot_cubic_then_dualcosine": 0.46078309416770935,
-      "ours_hybrid_lstm": 0.9623140096664429
+      "ours_hybrid_lstm": 0.9623140096664429,
+      "n2n_domain_trained": {
+        "R": 0.868618369102478,
+        "R_blend": 0.8660277128219604,
+        "kind": "n2n_domain_trained",
+        "protocol": "n2n_corrupt_corrupt_domain",
+        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\cwru_bearings\\n2n_corrupt_corrupt.pt",
+        "n_holdout": 64,
+        "steps": 4000
+      }
     },
     "mitbih_ecg": {
       "no_bake": 0.7494975328445435,
@@ -61,7 +70,16 @@
       "seam_fir3": 0.7661859393119812,
       "spline_join": 0.8082110285758972,
       "beat_average_sbmm_lite": 0.3540723919868469,
-      "ours_hybrid_lstm": 0.9564716815948486
+      "ours_hybrid_lstm": 0.9564716815948486,
+      "n2n_domain_trained": {
+        "R": 0.6529576778411865,
+        "R_blend": 0.7495031356811523,
+        "kind": "n2n_domain_trained",
+        "protocol": "n2n_corrupt_corrupt_domain",
+        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\mitbih_ecg\\n2n_corrupt_corrupt.pt",
+        "n_holdout": 64,
+        "steps": 4000
+      }
     },
     "ptbxl_ecg": {
       "no_bake": 0.7503350973129272,
@@ -72,7 +90,16 @@
       "seam_fir3": 0.7461624145507812,
       "spline_join": 0.7442231178283691,
       "beat_average_sbmm_lite": 0.32598716020584106,
-      "ours_hybrid_lstm": 0.9335662126541138
+      "ours_hybrid_lstm": 0.9335662126541138,
+      "n2n_domain_trained": {
+        "R": 0.5604552030563354,
+        "R_blend": 0.7365267276763916,
+        "kind": "n2n_domain_trained",
+        "protocol": "n2n_corrupt_corrupt_domain",
+        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\ptbxl_ecg\\n2n_corrupt_corrupt.pt",
+        "n_holdout": 64,
+        "steps": 4000
+      }
     },
     "synth_cnc_g01": {
       "no_bake": 0.4499381482601166,
@@ -82,7 +109,16 @@
       "endpoint_pin_mean": 0.4096088409423828,
       "seam_fir3": 0.5344055891036987,
       "spline_join": 0.7005928754806519,
-      "ours_hybrid_lstm": 0.9917502403259277
+      "ours_hybrid_lstm": 0.9917502403259277,
+      "n2n_domain_trained": {
+        "R": 0.48330581188201904,
+        "R_blend": 0.5534172654151917,
+        "kind": "n2n_domain_trained",
+        "protocol": "n2n_corrupt_corrupt_domain",
+        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\synth_cnc_g01\\n2n_corrupt_corrupt.pt",
+        "n_holdout": 64,
+        "steps": 4000
+      }
     },
     "synth_pmu_cycle": {
       "no_bake": 0.9355524778366089,
@@ -92,7 +128,16 @@
       "endpoint_pin_mean": 0.9441877603530884,
       "seam_fir3": 0.9118894338607788,
       "spline_join": 0.8315402865409851,
-      "ours_hybrid_lstm": 0.9915037155151367
+      "ours_hybrid_lstm": 0.9915037155151367,
+      "n2n_domain_trained": {
+        "R": 0.9788673520088196,
+        "R_blend": 0.958940863609314,
+        "kind": "n2n_domain_trained",
+        "protocol": "n2n_corrupt_corrupt_domain",
+        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\synth_pmu_cycle\\n2n_corrupt_corrupt.pt",
+        "n_holdout": 64,
+        "steps": 4000
+      }
     },
     "mfpt_bearings": {
       "no_bake": 0.8657405376434326,
@@ -103,7 +148,16 @@
       "seam_fir3": 0.5726280808448792,
       "cot_linear_periodize": 0.8657405376434326,
       "cot_cubic_then_dualcosine": 0.4829549193382263,
-      "ours_hybrid_lstm": 0.9411238431930542
+      "ours_hybrid_lstm": 0.9411238431930542,
+      "n2n_domain_trained": {
+        "R": 0.8817377090454102,
+        "R_blend": 0.8662163019180298,
+        "kind": "n2n_domain_trained",
+        "protocol": "n2n_corrupt_corrupt_domain",
+        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\mfpt_bearings\\n2n_corrupt_corrupt.pt",
+        "n_holdout": 64,
+        "steps": 4000
+      }
     }
   },
   "per_dataset": {
@@ -376,5 +430,89 @@
     "beatdiff": "not_executed",
     "paderborn_deep": "not_executed",
     "note": "Literature comparison only; no invented scores."
+  },
+  "domain_n2n": {
+    "finished_at": "20260726T060508Z",
+    "primary_metric": "prolonged residual R (holdout)",
+    "per_domain": {
+      "cwru_bearings": {
+        "domain": "cwru_bearings",
+        "R": 0.868618369102478,
+        "R_blend": 0.8660277128219604,
+        "no_bake_R": 0.8679422736167908,
+        "dual_cosine_R": 0.7834904193878174,
+        "n_holdout": 64,
+        "n_train": 192,
+        "n_params": 53506,
+        "steps": 4000,
+        "elapsed_sec": 32.23974290001206,
+        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\cwru_bearings\\n2n_corrupt_corrupt.pt"
+      },
+      "mfpt_bearings": {
+        "domain": "mfpt_bearings",
+        "R": 0.8817377090454102,
+        "R_blend": 0.8662163019180298,
+        "no_bake_R": 0.8821794986724854,
+        "dual_cosine_R": 0.7912628054618835,
+        "n_holdout": 64,
+        "n_train": 192,
+        "n_params": 53506,
+        "steps": 4000,
+        "elapsed_sec": 34.881066900037695,
+        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\mfpt_bearings\\n2n_corrupt_corrupt.pt"
+      },
+      "mitbih_ecg": {
+        "domain": "mitbih_ecg",
+        "R": 0.6529576778411865,
+        "R_blend": 0.7495031356811523,
+        "no_bake_R": 0.6447737812995911,
+        "dual_cosine_R": 0.20415443181991577,
+        "n_holdout": 64,
+        "n_train": 192,
+        "n_params": 53506,
+        "steps": 4000,
+        "elapsed_sec": 32.91993049997836,
+        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\mitbih_ecg\\n2n_corrupt_corrupt.pt"
+      },
+      "ptbxl_ecg": {
+        "domain": "ptbxl_ecg",
+        "R": 0.5604552030563354,
+        "R_blend": 0.7365267276763916,
+        "no_bake_R": 0.559010922908783,
+        "dual_cosine_R": 0.2588982582092285,
+        "n_holdout": 64,
+        "n_train": 192,
+        "n_params": 53506,
+        "steps": 4000,
+        "elapsed_sec": 34.09048569999868,
+        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\ptbxl_ecg\\n2n_corrupt_corrupt.pt"
+      },
+      "synth_cnc_g01": {
+        "domain": "synth_cnc_g01",
+        "R": 0.48330581188201904,
+        "R_blend": 0.5534172654151917,
+        "no_bake_R": 0.4075140953063965,
+        "dual_cosine_R": 0.41362860798835754,
+        "n_holdout": 64,
+        "n_train": 192,
+        "n_params": 53506,
+        "steps": 4000,
+        "elapsed_sec": 30.8639348000288,
+        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\synth_cnc_g01\\n2n_corrupt_corrupt.pt"
+      },
+      "synth_pmu_cycle": {
+        "domain": "synth_pmu_cycle",
+        "R": 0.9788673520088196,
+        "R_blend": 0.958940863609314,
+        "no_bake_R": 0.9540901184082031,
+        "dual_cosine_R": 0.9387091994285583,
+        "n_holdout": 64,
+        "n_train": 192,
+        "n_params": 53506,
+        "steps": 4000,
+        "elapsed_sec": 29.872570199950133,
+        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\synth_pmu_cycle\\n2n_corrupt_corrupt.pt"
+      }
+    }
   }
 }

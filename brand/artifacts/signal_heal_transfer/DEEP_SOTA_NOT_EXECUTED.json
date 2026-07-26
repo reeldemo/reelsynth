@@ -1,35 +1,35 @@
 {
   "schema": "denoiseopt.signal_heal_deep_sota_status.v2",
-  "updated_at": "20260726T060500Z",
+  "updated_at": "20260726T060508Z",
   "paper_table": "tab:transfer-sota-status (Table 14)",
-  "honesty": "Do not invent Cycle-GAN / BeatDiff / Paderborn-deep / full-PTB-XL / real KIT/PMU / MOS–MUSHRA numbers. Only report scores when artifacts under this tree contain measured values. Domain-trained N2N is in progress — do not cite holdout R until domain_n2n/summary.json exists and results_table.json has been merged.",
-  "what_did_run": "Classical shared board + domain classical proxies (bad-COT / SBMM-lite / spline) + Ours hybrid_lstm under prolonged residual R on six boards (see results_table.json). Domain-trained Noise2Noise training is running separately.",
+  "honesty": "Do not invent Cycle-GAN / BeatDiff / Paderborn-deep / full-PTB-XL / real KIT/PMU / MOS–MUSHRA numbers. Only report scores when artifacts under this tree contain measured values. Domain-trained N2N is executed — cite holdout R / R_blend from results_table.json table[*].n2n_domain_trained and domain_n2n/summary.json.",
+  "what_did_run": "Classical shared board + domain classical proxies (bad-COT / SBMM-lite / spline) + Ours hybrid_lstm under prolonged residual R on six boards (see results_table.json). Domain-trained Noise2Noise (corrupt→corrupt, 4000 Adam steps, holdout seed 20260719, train seed 424242) scored on all six boards and merged as n2n_domain_trained.",
   "artifact_table": "brand/artifacts/signal_heal_transfer/results_table.json",
   "rows": [
     {
       "id": "domain_trained_n2n",
       "table14_scope": "Domain-trained Noise2Noise",
-      "status": "in_progress",
+      "status": "executed",
       "executable_now": true,
       "blocker": null,
-      "running": {
+      "result": {
         "script": "scripts/train_n2n_transfer_domains.py",
         "args": "--device cuda --steps 4000 --merge",
-        "pid_observed": 51760,
         "out_dir": "brand/artifacts/signal_heal_transfer/domain_n2n/",
-        "log": "brand/artifacts/signal_heal_transfer/domain_n2n_train.log",
+        "summary": "brand/artifacts/signal_heal_transfer/domain_n2n/summary.json",
         "merge_target": "brand/artifacts/signal_heal_transfer/results_table.json → table[*].n2n_domain_trained",
-        "domains": [
-          "cwru_bearings",
-          "mfpt_bearings",
-          "mitbih_ecg",
-          "ptbxl_ecg",
-          "synth_cnc_g01",
-          "synth_pmu_cycle"
-        ],
-        "note": "Partial per-domain summaries may appear under domain_n2n/<domain>/ while the job runs. Do not treat partial R as Table 14 scores until the full run finishes, writes domain_n2n/summary.json, and merges into results_table.json."
+        "finished_at": "20260726T060508Z",
+        "primary_metric": "prolonged residual R (holdout)",
+        "domains": {
+          "cwru_bearings": {"R": 0.868618369102478, "R_blend": 0.8660277128219604},
+          "mfpt_bearings": {"R": 0.8817377090454102, "R_blend": 0.8662163019180298},
+          "mitbih_ecg": {"R": 0.6529576778411865, "R_blend": 0.7495031356811523},
+          "ptbxl_ecg": {"R": 0.5604552030563354, "R_blend": 0.7365267276763916},
+          "synth_cnc_g01": {"R": 0.48330581188201904, "R_blend": 0.5534172654151917},
+          "synth_pmu_cycle": {"R": 0.9788673520088196, "R_blend": 0.958940863609314}
+        }
       },
-      "paper_note_draft": "In progress (domain N2N train+holdout R; merge into results_table.json when complete)"
+      "paper_note_draft": "Scored — holdout prolonged R on six boards (CWRU 0.8686, MFPT 0.8817, MIT-BIH 0.6530, PTB-XL 0.5605, synth CNC 0.4833, synth PMU 0.9789; 4000 steps)"
     },
     {
       "id": "cycle_gan_ecg",
@@ -88,7 +88,7 @@
       "blocker": {
         "kind": "subset_only",
         "detail": "Pilot scored PTB-XL records500 (*_hr, 500 Hz) lead-I only, n=256 R–R periods — not the full multi-lead / multi-rate PhysioNet corpus. Full download + multi-lead beat pools exceed this session's transfer pilot scope.",
-        "what_ran": "ptbxl_ecg classical board + hybrid_lstm (see results_table.json / cache/ptbxl_ecg_meta.json)",
+        "what_ran": "ptbxl_ecg classical board + hybrid_lstm + domain N2N (see results_table.json / cache/ptbxl_ecg_meta.json)",
         "unblock_requires": [
           "Complete PhysioNet PTB-XL download (100 Hz + 500 Hz as required)",
           "Define multi-lead / full-record sampling policy matching paper claims",
@@ -104,7 +104,7 @@
       "executable_now": false,
       "blocker": {
         "kind": "download_login_walls",
-        "detail": "Real KIT multimodal CNC DOI requires browser/login; IEEE DataPort PMU OA traces require free-account wall. Transfer pilot ran synthetic proxies instead (synth_cnc_g01, synth_pmu_cycle).",
+        "detail": "Real KIT multimodal CNC DOI requires browser/login; IEEE DataPort PMU OA traces require free-account wall. Transfer pilot ran synthetic proxies instead (synth_cnc_g01, synth_pmu_cycle), including domain-trained N2N on those proxies.",
         "evidence": [
           "brand/artifacts/signal_heal_transfer/cache/skipped_optional.json",
           "brand/artifacts/signal_heal_transfer/results_table.json → skipped"
