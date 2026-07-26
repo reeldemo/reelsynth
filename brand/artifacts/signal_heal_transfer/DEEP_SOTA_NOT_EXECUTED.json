@@ -1,9 +1,9 @@
 {
   "schema": "denoiseopt.signal_heal_deep_sota_status.v2",
-  "updated_at": "20260726T060508Z",
+  "updated_at": "20260726T062109Z",
   "paper_table": "tab:transfer-sota-status (Table 14)",
-  "honesty": "Do not invent Cycle-GAN / BeatDiff / Paderborn-deep / full-PTB-XL / real KIT/PMU / MOS–MUSHRA numbers. Only report scores when artifacts under this tree contain measured values. Domain-trained N2N is executed — cite holdout R / R_blend from results_table.json table[*].n2n_domain_trained and domain_n2n/summary.json.",
-  "what_did_run": "Classical shared board + domain classical proxies (bad-COT / SBMM-lite / spline) + Ours hybrid_lstm under prolonged residual R on six boards (see results_table.json). Domain-trained Noise2Noise (corrupt→corrupt, 4000 Adam steps, holdout seed 20260719, train seed 424242) scored on all six boards and merged as n2n_domain_trained.",
+  "honesty": "Do not invent Cycle-GAN / BeatDiff / Paderborn-deep / full-PTB-XL / real KIT/PMU / MOS\u2013MUSHRA numbers. Only report scores when artifacts under this tree contain measured values. Domain-trained N2N is executed \u2014 cite holdout R / R_blend from results_table.json table[*].n2n_domain_trained and domain_n2n/summary.json.",
+  "what_did_run": "Classical shared board + domain classical proxies (bad-COT / SBMM-lite / spline) + Ours hybrid_lstm under prolonged residual R on six boards (see results_table.json). Domain-trained Noise2Noise (corrupt\u2192corrupt, 4000 Adam steps, holdout seed 20260719, train seed 424242) scored on all six boards and merged as n2n_domain_trained.",
   "artifact_table": "brand/artifacts/signal_heal_transfer/results_table.json",
   "rows": [
     {
@@ -17,19 +17,41 @@
         "args": "--device cuda --steps 4000 --merge",
         "out_dir": "brand/artifacts/signal_heal_transfer/domain_n2n/",
         "summary": "brand/artifacts/signal_heal_transfer/domain_n2n/summary.json",
-        "merge_target": "brand/artifacts/signal_heal_transfer/results_table.json → table[*].n2n_domain_trained",
+        "merge_target": "brand/artifacts/signal_heal_transfer/results_table.json \u2192 table[*].n2n_domain_trained",
         "finished_at": "20260726T060508Z",
         "primary_metric": "prolonged residual R (holdout)",
         "domains": {
-          "cwru_bearings": {"R": 0.868618369102478, "R_blend": 0.8660277128219604},
-          "mfpt_bearings": {"R": 0.8817377090454102, "R_blend": 0.8662163019180298},
-          "mitbih_ecg": {"R": 0.6529576778411865, "R_blend": 0.7495031356811523},
-          "ptbxl_ecg": {"R": 0.5604552030563354, "R_blend": 0.7365267276763916},
-          "synth_cnc_g01": {"R": 0.48330581188201904, "R_blend": 0.5534172654151917},
-          "synth_pmu_cycle": {"R": 0.9788673520088196, "R_blend": 0.958940863609314}
+          "cwru_bearings": {
+            "R": 0.868618369102478,
+            "R_blend": 0.8660277128219604
+          },
+          "mfpt_bearings": {
+            "R": 0.8817377090454102,
+            "R_blend": 0.8662163019180298
+          },
+          "mitbih_ecg": {
+            "R": 0.6529576778411865,
+            "R_blend": 0.7495031356811523
+          },
+          "ptbxl_ecg": {
+            "R": 0.5604552030563354,
+            "R_blend": 0.7365267276763916
+          },
+          "synth_cnc_g01": {
+            "R": 0.48330581188201904,
+            "R_blend": 0.5534172654151917
+          },
+          "synth_pmu_cycle": {
+            "R": 0.9788673520088196,
+            "R_blend": 0.958940863609314
+          },
+          "paderborn_kat": {
+            "R": 0.8386802077293396,
+            "R_blend": 0.8421123027801514
+          }
         }
       },
-      "paper_note_draft": "Scored — holdout prolonged R on six boards (CWRU 0.8686, MFPT 0.8817, MIT-BIH 0.6530, PTB-XL 0.5605, synth CNC 0.4833, synth PMU 0.9789; 4000 steps)"
+      "paper_note_draft": "Scored \u2014 holdout prolonged R on seven boards (incl. Paderborn K001 classical board N2N R=0.8387; 4000 steps)"
     },
     {
       "id": "cycle_gan_ecg",
@@ -45,7 +67,7 @@
           "Run on the same MIT-BIH / PTB-XL transfer boards and seeds (holdout 20260719)"
         ]
       },
-      "paper_note_draft": "Not run — no adapted Cycle-GAN weights under prolonged-$R$ protocol"
+      "paper_note_draft": "Not run \u2014 no adapted Cycle-GAN weights under prolonged-$R$ protocol"
     },
     {
       "id": "beatdiff",
@@ -57,11 +79,11 @@
         "detail": "BeatDiff / diffusion beat generation-or-repair requires trained diffusion checkpoints and a different objective than DenoiseOpt prolonged R. No reimplementation or checkpoint import exists in this repo.",
         "unblock_requires": [
           "Upstream BeatDiff (or cited diffusion) checkpoints + inference code",
-          "Adapter to L=256 engine→repaired periods under residual protocol",
+          "Adapter to L=256 engine\u2192repaired periods under residual protocol",
           "Compute budget for sampling on transfer boards"
         ]
       },
-      "paper_note_draft": "Not run — no diffusion checkpoints under residual protocol"
+      "paper_note_draft": "Not run \u2014 no diffusion checkpoints under residual protocol"
     },
     {
       "id": "paderborn_kat_deep",
@@ -69,16 +91,21 @@
       "status": "blocked",
       "executable_now": false,
       "blocker": {
-        "kind": "dataset_extract_and_deep_pipeline",
-        "detail": "OA mirror K001.rar downloaded (~174 MB at brand/artifacts/signal_heal_transfer/raw/paderborn/K001.rar) but extraction blocked: no CLI UnRAR / RAR-capable 7z in session; Windows SFX installer GUI hung. Even after extract, published Paderborn deep fault/denoise pipelines are not wired to prolonged-R wrap boards. Do not claim Paderborn deep scores.",
+        "kind": "deep_pipeline_only",
+        "detail": "K001.rar extracted with repo-root UnRAR.exe into raw/paderborn/K001 (80 .mat, ~666 MB). Classical wrap board build_paderborn / paderborn_kat is available. Published deep Paderborn fault/denoise pipelines are still not wired to prolonged-R wrap boards \u2014 do not claim deep-Paderborn scores.",
         "evidence": "brand/artifacts/signal_heal_transfer/cache/paderborn_status.json",
         "unblock_requires": [
-          "Install CLI UnRAR or RAR-capable 7-Zip and extract K001.rar (and remaining KAt packs as needed)",
-          "Build periodized wrap boards from extracted MAT/CSV",
-          "Port or obtain deep Paderborn baseline weights + residual-R eval harness"
+          "Port or obtain deep Paderborn baseline weights + residual-R eval harness",
+          "Run on the same L=256 paderborn_kat board / holdout seed 20260719"
         ]
       },
-      "paper_note_draft": "Not run — K001.rar present but UnRAR blocked; deep models unwired"
+      "paper_note_draft": "Not run \u2014 K001 extracted; classical board available; deep models unwired",
+      "classical_board_available": true,
+      "classical_smoke": {
+        "ours_hybrid_lstm_iters": 20,
+        "ours_R": 0.8932,
+        "note": "smoke not full protocol"
+      }
     },
     {
       "id": "full_ptbxl",
@@ -87,7 +114,7 @@
       "executable_now": false,
       "blocker": {
         "kind": "subset_only",
-        "detail": "Pilot scored PTB-XL records500 (*_hr, 500 Hz) lead-I only, n=256 R–R periods — not the full multi-lead / multi-rate PhysioNet corpus. Full download + multi-lead beat pools exceed this session's transfer pilot scope.",
+        "detail": "Pilot scored PTB-XL records500 (*_hr, 500 Hz) lead-I only, n=256 R\u2013R periods \u2014 not the full multi-lead / multi-rate PhysioNet corpus. Full download + multi-lead beat pools exceed this session's transfer pilot scope.",
         "what_ran": "ptbxl_ecg classical board + hybrid_lstm + domain N2N (see results_table.json / cache/ptbxl_ecg_meta.json)",
         "unblock_requires": [
           "Complete PhysioNet PTB-XL download (100 Hz + 500 Hz as required)",
@@ -95,7 +122,7 @@
           "Re-run classical + Ours (+ optional domain N2N) at full scale"
         ]
       },
-      "paper_note_draft": "Subset only — records500 lead-I, $n{=}256$ (not full corpus)"
+      "paper_note_draft": "Subset only \u2014 records500 lead-I, $n{=}256$ (not full corpus)"
     },
     {
       "id": "real_kit_cnc_ieee_pmu",
@@ -107,7 +134,7 @@
         "detail": "Real KIT multimodal CNC DOI requires browser/login; IEEE DataPort PMU OA traces require free-account wall. Transfer pilot ran synthetic proxies instead (synth_cnc_g01, synth_pmu_cycle), including domain-trained N2N on those proxies.",
         "evidence": [
           "brand/artifacts/signal_heal_transfer/cache/skipped_optional.json",
-          "brand/artifacts/signal_heal_transfer/results_table.json → skipped"
+          "brand/artifacts/signal_heal_transfer/results_table.json \u2192 skipped"
         ],
         "proxies_ran": [
           "synth_cnc_g01",
@@ -117,9 +144,13 @@
           "Manual KIT DOI download after institutional/browser login",
           "IEEE DataPort account + download of cited PMU corpus",
           "Wrap construction scripts for real traces under same L=256 residual protocol"
+        ],
+        "user_must_open": [
+          "https://doi.org/10.35097/hvvwn1kfwf7qt48z",
+          "https://ieee-dataport.org/open-access/pmu-measurements-ieee-39-bus-power-system-model"
         ]
       },
-      "paper_note_draft": "Synthetic pilots only — KIT DOI / IEEE DataPort login walls"
+      "paper_note_draft": "Synthetic pilots only \u2014 KIT DOI / IEEE DataPort login walls"
     },
     {
       "id": "formal_mos_mushra",
@@ -136,7 +167,7 @@
           "Report means with CIs only from collected responses"
         ]
       },
-      "paper_note_draft": "Not collected — hear assets / informal A/B only (no invented MOS)"
+      "paper_note_draft": "Not collected \u2014 hear assets / informal A/B only (no invented MOS)"
     }
   ],
   "intended_baselines_legacy": [
@@ -162,7 +193,7 @@
       "id": "paderborn_deep",
       "domain": "bearings",
       "citation_hint": "Paderborn KAt deep fault / denoise pipelines",
-      "why_not_run": "K001.rar downloaded but UnRAR extraction blocked; deep baselines unwired."
+      "why_not_run": "K001 extracted (UnRAR unblocked); classical wrap board available; deep baselines still unwired."
     },
     {
       "id": "pmu_tve_estimator_sota",

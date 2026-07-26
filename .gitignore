@@ -28,6 +28,9 @@ brand/artifacts/signal_heal_transfer/**/policy.pt
 brand/artifacts/signal_heal_transfer/**/champ_cell.pt
 brand/artifacts/signal_heal_transfer/**/history.jsonl
 brand/artifacts/signal_heal_transfer/*.log
+# Local UnRAR binary (do not commit); .mat under raw/ already ignored
+/UnRAR.exe
+UnRAR.exe
 
 # HP sensitivity probe: keep summaries/figures, skip runtime weights/logs
 brand/artifacts/meta_hp_sensitivity/**/policy.pt

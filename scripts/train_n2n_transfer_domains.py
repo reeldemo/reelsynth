@@ -9,7 +9,8 @@ Protocol:
   - Holdout: seed 20260719, n=64 (disjoint from train indices).
   - Train: SeamN2N on two independent cliffs of the same ideal (N2N).
   - Eval: prolonged residual R (matches transfer Table) + R_blend debug.
-  - Does NOT invent Cycle-GAN / BeatDiff / Paderborn / MOS scores.
+  - Does NOT invent Cycle-GAN / BeatDiff / deep-Paderborn / MOS scores.
+    Classical paderborn_kat board may be trained when extracted.
 
 Writes:
   brand/artifacts/signal_heal_transfer/domain_n2n/
@@ -42,6 +43,7 @@ TRAIN_SEED = 424242
 DOMAINS = [
     "cwru_bearings",
     "mfpt_bearings",
+    "paderborn_kat",
     "mitbih_ecg",
     "ptbxl_ecg",
     "synth_cnc_g01",
@@ -255,6 +257,15 @@ def main() -> int:
             holdout_n=args.holdout_n,
         )
 
+    summary_path = OUT / "summary.json"
+    prior_per: dict = {}
+    if summary_path.is_file():
+        try:
+            prior = json.loads(summary_path.read_text(encoding="utf-8"))
+            prior_per = dict(prior.get("per_domain") or {})
+        except Exception:
+            prior_per = {}
+    prior_per.update(per_domain)
     summary = {
         "schema": "denoiseopt.domain_n2n.v1",
         "finished_at": utc_now(),
@@ -265,18 +276,24 @@ def main() -> int:
         "holdout_seed": HOLDOUT_SEED,
         "train_seed": TRAIN_SEED,
         "primary_metric": "prolonged residual R on disjoint holdout",
-        "per_domain": per_domain,
+        "per_domain": prior_per,
+        "domains_this_run": list(per_domain),
         "not_run": {
             "cycle_gan_ecg": "no adapted weights / training pipeline in-repo",
             "beatdiff": "no diffusion checkpoints under residual protocol",
-            "paderborn_kat_deep": "K001.rar present but no CLI UnRAR extraction",
+            "paderborn_kat_deep": "K001 extracted; classical board ok; deep models unwired",
             "full_ptbxl": "subset pilot only (records500 lead-I n=256)",
-            "kit_cnc_real": "KIT DOI login wall",
-            "ieee_pmu_real": "IEEE DataPort account wall",
+            "kit_cnc_real": (
+                "KIT DOI login wall — open https://doi.org/10.35097/hvvwn1kfwf7qt48z"
+            ),
+            "ieee_pmu_real": (
+                "IEEE DataPort account wall — open "
+                "https://ieee-dataport.org/open-access/pmu-measurements-ieee-39-bus-power-system-model"
+            ),
             "formal_mos_mushra": "human listening not collected",
         },
     }
-    (OUT / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
     if args.merge:
         merge_into_results(per_domain)
     print(json.dumps({"domains": list(per_domain), "out": str(OUT)}, indent=2))

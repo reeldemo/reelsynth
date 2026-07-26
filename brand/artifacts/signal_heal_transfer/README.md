@@ -1,71 +1,49 @@
 # Signal-heal transfer pilot
 
-Generated: `20260725T123816Z`
+Generated: 20260726T062438Z (Paderborn K001 extract + classical board + smoke Ours + domain N2N)
 
 ## Method under test
 
-- **Ours:** hybrid GA–PPO outer loop (`hybrid_lstm` in `bench_meta_approaches_5k.py`).
-- FitCell / SeamCell / arch search reused; period length fixed to `N=256`.
-- Metric: DenoiseOpt prolonged residual $R$ (same formula as wavetable).
-- Pilot budget: modest outer iters (see `config`); not full industrial overnight.
+- **Ours:** hybrid GA–PPO outer loop (hybrid_lstm).
+- Period length fixed to N=256; metric = DenoiseOpt prolonged residual $.
 
 ## Wrap construction
 
-- **CWRU bearings:** DE @12 kHz; per-rev windows via RPM; **ideal** = cubic resample to $L$; **engine** = linear resample (bad-COT proxy) + DenoiseOpt-style wrap cliff + seam noise.
-- **MFPT:** same protocol when zip available; fixed shaft-rate periods.
-- **MIT-BIH / PTB-XL ECG:** R–R beats → $L$; **ideal** = local mean template + mild endpoint equalize (SBMM-lite classical); **engine** = single beat + wrap cliff.
-- **synth_cnc_g01 / synth_pmu_cycle:** synthetic CNC / power-cycle proxies when KIT / DataPort blocked.
-
-## Seeds
-
-- Search / construction seed: `1902771841`
-- Holdout sample seed: `20260719`
+- **CWRU / MFPT:** existing bearing boards.
+- **Paderborn KAt (K001):** extracted with repo-root UnRAR.exe → 
+aw/paderborn/K001/ (**80** .mat, ~666 MB). uild_paderborn → paderborn_kat (vibration_1 @~64 kHz; Mech_4kHz speed → equal-angle revs; cubic ideal / linear+cliff engine).
+- **MIT-BIH / PTB-XL / synth CNC / synth PMU:** unchanged.
 
 ## Honesty / limits
 
-- Baselines are a **classical board** (+ domain classical COT / SBMM-lite). We do **not** claim BeatDiff / Cycle-GAN / deep order-tracking SOTA unless those weights ran.
-- See `DEEP_SOTA_NOT_EXECUTED.json` and `LISTENING_PROTOCOL_MAIN.md` (no invented MOS).
-- Do not wipe `brand/artifacts/meta_approach_compare/`.
-- Optional KIT CNC / IEEE PMU / Paderborn / BMRB NMR skipped if login/paywall.
+- UnRAR **unblocked**; K001 extract **done**.
+- Deep Paderborn / Cycle-GAN / BeatDiff / MOS–MUSHRA **not executed** — see DEEP_SOTA_NOT_EXECUTED.json.
+- Paderborn **Ours** row below is a **smoke** (iters=20), not the full 250-iter transfer protocol.
+- Domain N2N on Paderborn is protocol-matched (4000 steps).
 
-### Table 14 (`tab:transfer-sota-status`) status
+### Login-walled (user must open)
 
-Canonical blocker file: [`DEEP_SOTA_NOT_EXECUTED.json`](DEEP_SOTA_NOT_EXECUTED.json). Draft Note wording: [`TABLE14_NOTE_DRAFT.md`](TABLE14_NOTE_DRAFT.md).
+- KIT CNC: https://doi.org/10.35097/hvvwn1kfwf7qt48z
+- IEEE 39-bus PMU: https://ieee-dataport.org/open-access/pmu-measurements-ieee-39-bus-power-system-model
+
+### Table 14 status (abbrev)
 
 | Scope | Status |
 |-------|--------|
-| Domain-trained Noise2Noise | **Executed** — six-board holdout prolonged $R$ in `domain_n2n/summary.json` / `results_table.json` → `n2n_domain_trained` (4000 steps, seeds 424242 / 20260719) |
-| Cycle-GAN (ECG) | Blocked — no adapted weights / residual-$R$ pipeline in-repo |
-| BeatDiff | Blocked — no diffusion checkpoints under residual protocol |
-| Paderborn KAt deep | Blocked — `K001.rar` downloaded but CLI UnRAR failed; deep models unwired |
-| Full PTB-XL | Blocked — subset only (`records500` lead-I, $n{=}256$) |
-| Real KIT CNC / IEEE PMU | Blocked — login walls; `synth_cnc_g01` / `synth_pmu_cycle` proxies ran |
-| Formal MOS / MUSHRA | Blocked — no human listening panel; hear protocol only |
+| Domain-trained N2N | Executed (incl. Paderborn) |
+| Cycle-GAN / BeatDiff | Blocked |
+| Paderborn KAt deep | Blocked — extract done; deep unwired |
+| Full PTB-XL / KIT / PMU / MOS | Blocked as before |
 
-### Skipped optional
+## Paderborn paderborn_kat scores (prolonged $ / {\mathrm{blend}}$)
 
-- **kit_cnc_real:** skipped — KIT CNC DOI needs browser/login; ran synth_cnc_g01 instead
-- **ieee_pmu_real:** skipped — IEEE DataPort free-account wall; ran synth_pmu_cycle instead
-- **paderborn_kat:** downloaded K001.rar (OA mirror) but extraction blocked — no CLI UnRAR; SFX installer GUI hung; scores not claimed
-- **bmrb_nmr:** skipped — BMRB FID deferred
-- **deep_sota_cyclegan_beatdiff:** not executed — no trained Cycle-GAN / BeatDiff weights under residual protocol
-- **kit_cnc:** skipped — KIT CNC DOI needs browser/login flow; synthetic_cnc_wrap used as proxy
-- **ieee_pmu:** skipped — IEEE DataPort free-account wall; synthetic_power_wrap used as proxy
+| Method | Score | Note |
+|--------|-------|------|
+| no_bake | 0.8376 | classical |
+| dual_cosine | 0.4710 | classical |
+| ours_hybrid_lstm | 0.8932 | **smoke iters=20** |
+| n2n_domain_trained $ | 0.8387 | 4000 steps |
+| n2n_domain_trained {\mathrm{blend}}$ | 0.8421 | 4000 steps |
 
-## Results table
-
-See `results_table.json` and `fig_signal_heal_transfer.{png,pdf}`.
-Domain N2N column `n2n_domain_trained` is merged for all six domains (CWRU/MFPT/MIT-BIH/PTB-XL/synth CNC/synth PMU).
-
-## Reproduce
-
-```bash
-.venv_gpu/Scripts/python scripts/download_signal_heal_data.py
-.venv_gpu/Scripts/python scripts/bench_signal_heal_transfer.py --iters 250 --merge-existing
-.venv_gpu/Scripts/python scripts/export_signal_heal_hear_pack.py
-# Table 14 follow-up (domain N2N quality; do not invent other deep SOTA rows):
-.venv_gpu/Scripts/python scripts/train_n2n_transfer_domains.py --device cuda --steps 4000 --merge
-```
-
-Also: `REPRO.md`, `DEEP_SOTA_NOT_EXECUTED.json`, `LISTENING_PROTOCOL_MAIN.md`, `TABLE14_NOTE_DRAFT.md`.
-
+Full table: 
+esults_table.json. Status: cache/paderborn_status.json.

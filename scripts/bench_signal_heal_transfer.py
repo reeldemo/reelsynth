@@ -484,12 +484,14 @@ def plot_bars(table: dict[str, dict[str, float]], out_png: Path, out_pdf: Path) 
     datasets = list(table.keys())
     methods = []
     for m in prefer:
-        if any(m in table[d] for d in datasets):
+        if any(
+            m in table[d] and isinstance(table[d].get(m), (int, float)) for d in datasets
+        ):
             methods.append(m)
-    # add any leftovers
+    # add any leftovers (numeric columns only — skip nested n2n blobs etc.)
     for d in datasets:
-        for m in table[d]:
-            if m not in methods:
+        for m, v in table[d].items():
+            if m not in methods and isinstance(v, (int, float)):
                 methods.append(m)
 
     n_ds = len(datasets)
@@ -508,7 +510,10 @@ def plot_bars(table: dict[str, dict[str, float]], out_png: Path, out_pdf: Path) 
     flat = list(axes.ravel())
     for i, ds in enumerate(datasets):
         ax = flat[i]
-        vals = [table[ds].get(m, float("nan")) for m in methods]
+        vals = []
+        for m in methods:
+            v = table[ds].get(m, float("nan"))
+            vals.append(float(v) if isinstance(v, (int, float)) else float("nan"))
         cols = [colors.get(m, "#56B4E9") for m in methods]
         xs = range(len(methods))
         ax.bar(xs, vals, color=cols)
@@ -551,6 +556,8 @@ def write_readme(path: Path, results: dict[str, Any]) -> None:
         "- **CWRU bearings:** DE @12 kHz; per-rev windows via RPM; **ideal** = cubic resample to $L$; "
         "**engine** = linear resample (bad-COT proxy) + DenoiseOpt-style wrap cliff + seam noise.",
         "- **MFPT:** same protocol when zip available; fixed shaft-rate periods.",
+        "- **Paderborn KAt (K001):** vibration_1 @~64 kHz; speed→angle equal-rev windows when "
+        "Mech_4kHz tach available; same cubic ideal / linear+cliff engine (classical board only).",
         "- **MIT-BIH / PTB-XL ECG:** R–R beats → $L$; **ideal** = local mean template + mild endpoint "
         "equalize (SBMM-lite classical); **engine** = single beat + wrap cliff.",
         "- **synth_cnc_g01 / synth_pmu_cycle:** synthetic CNC / power-cycle proxies when KIT / DataPort blocked.",
@@ -566,7 +573,13 @@ def write_readme(path: Path, results: dict[str, Any]) -> None:
         "We do **not** claim BeatDiff / Cycle-GAN / deep order-tracking SOTA unless those weights ran.",
         "- See `DEEP_SOTA_NOT_EXECUTED.json` and `LISTENING_PROTOCOL_MAIN.md` (no invented MOS).",
         "- Do not wipe `brand/artifacts/meta_approach_compare/`.",
-        "- Optional KIT CNC / IEEE PMU / Paderborn / BMRB NMR skipped if login/paywall.",
+        "- Optional KIT CNC / IEEE PMU / BMRB NMR skipped if login/paywall. "
+        "Paderborn K001 is extracted; deep Paderborn models remain unwired.",
+        "",
+        "### Login-walled downloads (user must open)",
+        "",
+        "- KIT CNC: https://doi.org/10.35097/hvvwn1kfwf7qt48z",
+        "- IEEE 39-bus PMU: https://ieee-dataport.org/open-access/pmu-measurements-ieee-39-bus-power-system-model",
         "",
         "### Skipped optional",
         "",
@@ -645,7 +658,10 @@ def main() -> int:
     ap.add_argument(
         "--datasets",
         type=str,
-        default="cwru_bearings,mitbih_ecg,mfpt_bearings,ptbxl_ecg,synth_cnc_g01,synth_pmu_cycle",
+        default=(
+            "cwru_bearings,mitbih_ecg,mfpt_bearings,paderborn_kat,"
+            "ptbxl_ecg,synth_cnc_g01,synth_pmu_cycle"
+        ),
         help="comma list; missing downloads are skipped",
     )
     ap.add_argument(

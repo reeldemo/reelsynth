@@ -1,10 +1,10 @@
 {
-  "finished_at": "20260725T123816Z",
+  "finished_at": "20260726T062438Z",
   "config": {
-    "iters": 250,
+    "iters": 20,
     "fit_steps": 40,
     "batch": 48,
-    "pop_size": 12,
+    "pop_size": 8,
     "seed": 1902771841,
     "device": "cuda",
     "period_l": 256,
@@ -15,17 +15,18 @@
     "cwru_bearings",
     "mfpt_bearings",
     "mitbih_ecg",
+    "paderborn_kat",
     "ptbxl_ecg",
     "synth_cnc_g01",
     "synth_pmu_cycle"
   ],
   "datasets_ran_this_session": [
-    "synth_pmu_cycle"
+    "paderborn_kat"
   ],
   "skipped": {
     "kit_cnc_real": "skipped \u2014 KIT CNC DOI needs browser/login; ran synth_cnc_g01 instead",
     "ieee_pmu_real": "skipped \u2014 IEEE DataPort free-account wall; ran synth_pmu_cycle instead",
-    "paderborn_kat": "downloaded K001.rar (OA mirror) but extraction blocked \u2014 no CLI UnRAR; SFX installer GUI hung; scores not claimed",
+    "paderborn_kat": "K001 extracted; classical paderborn_kat board cached \u2014 deep SOTA still not executed",
     "bmrb_nmr": "skipped \u2014 BMRB FID deferred",
     "deep_sota_cyclegan_beatdiff": "not run \u2014 no Cycle-GAN / BeatDiff weights under this residual protocol",
     "kit_cnc": "skipped \u2014 KIT CNC DOI needs browser/login flow; synthetic_cnc_wrap used as proxy",
@@ -34,7 +35,7 @@
   "skipped_optional": {
     "kit_cnc_real": "skipped \u2014 KIT CNC DOI needs browser/login; ran synth_cnc_g01 instead",
     "ieee_pmu_real": "skipped \u2014 IEEE DataPort free-account wall; ran synth_pmu_cycle instead",
-    "paderborn_kat": "downloaded K001.rar (OA mirror) but extraction blocked \u2014 no CLI UnRAR; SFX installer GUI hung; scores not claimed",
+    "paderborn_kat": "K001 extracted; classical paderborn_kat board cached \u2014 deep SOTA still not executed",
     "bmrb_nmr": "skipped \u2014 BMRB FID deferred",
     "deep_sota_cyclegan_beatdiff": "not executed \u2014 no trained Cycle-GAN / BeatDiff weights under residual protocol",
     "kit_cnc": "skipped \u2014 KIT CNC DOI needs browser/login flow; synthetic_cnc_wrap used as proxy",
@@ -158,9 +159,67 @@
         "n_holdout": 64,
         "steps": 4000
       }
+    },
+    "paderborn_kat": {
+      "no_bake": 0.8376242518424988,
+      "dual_cosine": 0.470979779958725,
+      "soft_periodize_hann": 0.4286333918571472,
+      "linear_fade": 0.4856114387512207,
+      "endpoint_pin_mean": 0.5669890642166138,
+      "seam_fir3": 0.5600777864456177,
+      "cot_linear_periodize": 0.8376242518424988,
+      "cot_cubic_then_dualcosine": 0.470979779958725,
+      "ours_hybrid_lstm": 0.8932043313980103,
+      "n2n_domain_trained": {
+        "R": 0.8386802077293396,
+        "R_blend": 0.8421123027801514,
+        "kind": "n2n_domain_trained",
+        "protocol": "n2n_corrupt_corrupt_domain",
+        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\paderborn_kat\\n2n_corrupt_corrupt.pt",
+        "n_holdout": 64,
+        "steps": 4000
+      }
     }
   },
   "per_dataset": {
+    "paderborn_kat": {
+      "meta": {
+        "domain": "bearings",
+        "files": [
+          "N09_M07_F10_K001_1.mat",
+          "N09_M07_F10_K001_10.mat",
+          "N09_M07_F10_K001_11.mat",
+          "N09_M07_F10_K001_12.mat",
+          "N09_M07_F10_K001_13.mat",
+          "N09_M07_F10_K001_14.mat",
+          "N09_M07_F10_K001_15.mat"
+        ],
+        "n": 256,
+        "period_l": 256,
+        "wrap": "Paderborn K001 vibration_1 (~64 kHz); shaft angle from Mech_4kHz speed when available (equal-angle rev windows); ideal=cubic resample to L; engine=linear (bad-COT) + DenoiseOpt wrap cliff+noise.",
+        "fs_hz": 64000.318436129346,
+        "citation": "Paderborn KAt Bearing Data Center (Lessmeier et al., PHME 2016); CC BY-NC 4.0",
+        "seed": 1902771841,
+        "bearing_code": "K001",
+        "n_angle_revs": 256,
+        "n_fixed_rpm_revs": 0,
+        "label": "classical_board_plus_bad_cot \u2014 not a published deep Paderborn denoise reimplementation (deep SOTA still blocked)",
+        "requested_n": 256
+      },
+      "baseline_labels": {
+        "no_bake": "classical / passthrough",
+        "dual_cosine": "classical DualCosine fade",
+        "soft_periodize_hann": "classical Hann soft-periodize",
+        "linear_fade": "classical linear fade",
+        "endpoint_pin_mean": "classical endpoint pin",
+        "seam_fir3": "classical seam FIR3",
+        "cot_linear_periodize": "bearings classical bad-COT control (passthrough of linear resample)",
+        "cot_cubic_then_dualcosine": "bearings classical: DualCosine on cracked (not published deep COT)",
+        "ours_hybrid_lstm": "Ours (hybrid GA\u2013PPO / hybrid_lstm outer loop)"
+      },
+      "champ_raw": 0.8948834240436554,
+      "holdout_refit_R": 0.8932043313980103
+    },
     "synth_pmu_cycle": {
       "meta": {
         "domain": "power",
@@ -432,87 +491,30 @@
     "note": "Literature comparison only; no invented scores."
   },
   "domain_n2n": {
-    "finished_at": "20260726T060508Z",
+    "finished_at": "20260726T062526Z",
     "primary_metric": "prolonged residual R (holdout)",
     "per_domain": {
-      "cwru_bearings": {
-        "domain": "cwru_bearings",
-        "R": 0.868618369102478,
-        "R_blend": 0.8660277128219604,
-        "no_bake_R": 0.8679422736167908,
-        "dual_cosine_R": 0.7834904193878174,
+      "paderborn_kat": {
+        "domain": "paderborn_kat",
+        "R": 0.8386802077293396,
+        "R_blend": 0.8421123027801514,
+        "no_bake_R": 0.8390013575553894,
+        "dual_cosine_R": 0.7592579126358032,
         "n_holdout": 64,
         "n_train": 192,
         "n_params": 53506,
         "steps": 4000,
-        "elapsed_sec": 32.23974290001206,
-        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\cwru_bearings\\n2n_corrupt_corrupt.pt"
-      },
-      "mfpt_bearings": {
-        "domain": "mfpt_bearings",
-        "R": 0.8817377090454102,
-        "R_blend": 0.8662163019180298,
-        "no_bake_R": 0.8821794986724854,
-        "dual_cosine_R": 0.7912628054618835,
-        "n_holdout": 64,
-        "n_train": 192,
-        "n_params": 53506,
-        "steps": 4000,
-        "elapsed_sec": 34.881066900037695,
-        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\mfpt_bearings\\n2n_corrupt_corrupt.pt"
-      },
-      "mitbih_ecg": {
-        "domain": "mitbih_ecg",
-        "R": 0.6529576778411865,
-        "R_blend": 0.7495031356811523,
-        "no_bake_R": 0.6447737812995911,
-        "dual_cosine_R": 0.20415443181991577,
-        "n_holdout": 64,
-        "n_train": 192,
-        "n_params": 53506,
-        "steps": 4000,
-        "elapsed_sec": 32.91993049997836,
-        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\mitbih_ecg\\n2n_corrupt_corrupt.pt"
-      },
-      "ptbxl_ecg": {
-        "domain": "ptbxl_ecg",
-        "R": 0.5604552030563354,
-        "R_blend": 0.7365267276763916,
-        "no_bake_R": 0.559010922908783,
-        "dual_cosine_R": 0.2588982582092285,
-        "n_holdout": 64,
-        "n_train": 192,
-        "n_params": 53506,
-        "steps": 4000,
-        "elapsed_sec": 34.09048569999868,
-        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\ptbxl_ecg\\n2n_corrupt_corrupt.pt"
-      },
-      "synth_cnc_g01": {
-        "domain": "synth_cnc_g01",
-        "R": 0.48330581188201904,
-        "R_blend": 0.5534172654151917,
-        "no_bake_R": 0.4075140953063965,
-        "dual_cosine_R": 0.41362860798835754,
-        "n_holdout": 64,
-        "n_train": 192,
-        "n_params": 53506,
-        "steps": 4000,
-        "elapsed_sec": 30.8639348000288,
-        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\synth_cnc_g01\\n2n_corrupt_corrupt.pt"
-      },
-      "synth_pmu_cycle": {
-        "domain": "synth_pmu_cycle",
-        "R": 0.9788673520088196,
-        "R_blend": 0.958940863609314,
-        "no_bake_R": 0.9540901184082031,
-        "dual_cosine_R": 0.9387091994285583,
-        "n_holdout": 64,
-        "n_train": 192,
-        "n_params": 53506,
-        "steps": 4000,
-        "elapsed_sec": 29.872570199950133,
-        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\synth_pmu_cycle\\n2n_corrupt_corrupt.pt"
+        "elapsed_sec": 26.527546400029678,
+        "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\paderborn_kat\\n2n_corrupt_corrupt.pt"
       }
     }
+  },
+  "paderborn_notes": {
+    "extract": "K001.rar extracted with UnRAR.exe; 80 mat files",
+    "classical_board": "paderborn_kat L=256 angle-domain from speed",
+    "ours_hybrid_lstm_iters": 20,
+    "ours_note": "smoke / short outer loop (iters=20), not full transfer protocol (250). Report classical + domain N2N (4000) as protocol-matched; treat Ours as smoke until full iters.",
+    "n2n_domain_trained": "4000 Adam steps, holdout seed 20260719 \u2014 protocol-matched",
+    "deep_paderborn": "not executed"
   }
 }

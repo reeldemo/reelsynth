@@ -202,6 +202,185 @@ def build_cwru(
     )
 
 
+def _paderborn_channels(mat_path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray] | None:
+    """Return (vib, t_vib, speed_rpm, t_mech) from a Paderborn KAt .mat measurement."""
+    import scipy.io as sio
+
+    try:
+        mat = sio.loadmat(str(mat_path), squeeze_me=True, struct_as_record=False)
+    except Exception:
+        return None
+    keys = [k for k in mat if not k.startswith("__")]
+    if not keys:
+        return None
+    obj = mat[keys[0]]
+    y = getattr(obj, "Y", None)
+    x = getattr(obj, "X", None)
+    if y is None or x is None:
+        return None
+    vib = None
+    speed = None
+    for ch in np.atleast_1d(y):
+        name = str(getattr(ch, "Name", "") or "")
+        data = np.asarray(getattr(ch, "Data", []), dtype=np.float64).ravel()
+        if name == "vibration_1" and data.size > 1000:
+            vib = data
+        elif name == "speed" and data.size > 100:
+            speed = data
+    if vib is None:
+        return None
+    t_vib = None
+    t_mech = None
+    for ch in np.atleast_1d(x):
+        raster = str(getattr(ch, "Raster", "") or "")
+        data = np.asarray(getattr(ch, "Data", []), dtype=np.float64).ravel()
+        if "HostService" in raster and data.size == vib.size:
+            t_vib = data
+        elif "Mech" in raster and speed is not None and data.size == speed.size:
+            t_mech = data
+    if t_vib is None:
+        # ~64 kHz HostService fallback from literature / observed Δt
+        t_vib = np.arange(vib.size, dtype=np.float64) / 64000.0
+    if speed is None:
+        # Healthy K001 nominal ~900–1500 rpm; use 1500 as last-resort constant
+        speed = np.full(max(16, vib.size // 16), 1500.0, dtype=np.float64)
+        t_mech = np.linspace(float(t_vib[0]), float(t_vib[-1]), speed.size)
+    if t_mech is None:
+        t_mech = np.linspace(float(t_vib[0]), float(t_vib[-1]), speed.size)
+    return vib, t_vib, speed, t_mech
+
+
+def _angle_rev_starts(angle: np.ndarray) -> np.ndarray:
+    """Indices where cumulative shaft angle crosses successive 2π boundaries."""
+    revs = angle / (2.0 * math.pi)
+    crosses = np.where(np.diff(np.floor(revs)) > 0)[0] + 1
+    return crosses.astype(np.int64)
+
+
+def build_paderborn(
+    *,
+    n_periods: int = 256,
+    period_l: int = PERIOD_L,
+    seed: int = SEED,
+    raw_dir: Path | None = None,
+) -> DatasetBundle | None:
+    """Paderborn KAt K001: vibration_1 @~64 kHz; speed→angle COT when available.
+
+    Ideal = cubic equal-angle resample of one shaft rev; engine = linear resample
+    (bad-COT proxy) + DenoiseOpt wrap cliff. Deep Paderborn pipelines are separate
+    (see DEEP_SOTA_NOT_EXECUTED.json) — this only builds the classical wrap board.
+    """
+    raw_dir = raw_dir or (RAW / "paderborn")
+    mats = sorted(raw_dir.rglob("*.mat"))
+    if not mats:
+        return None
+
+    rng = np.random.default_rng(seed + 31)
+    ideals: list[np.ndarray] = []
+    engines: list[np.ndarray] = []
+    sources: list[str] = []
+    used_angle = 0
+    used_fixed = 0
+    fs_seen: list[float] = []
+
+    for mat_path in mats:
+        chans = _paderborn_channels(mat_path)
+        if chans is None:
+            continue
+        vib, t_vib, speed, t_mech = chans
+        span = float(t_vib[-1] - t_vib[0])
+        if span <= 0 or vib.size < 4096:
+            continue
+        fs = float((vib.size - 1) / span)
+        fs_seen.append(fs)
+
+        # Upsample / interpolate mechanical RPM onto vibration timebase
+        rpm_i = np.interp(t_vib, t_mech, speed).astype(np.float64)
+        rpm_i = np.clip(rpm_i, 60.0, 6000.0)
+        omega = rpm_i * (2.0 * math.pi / 60.0)  # rad/s
+        dt = np.diff(t_vib, prepend=t_vib[0])
+        dt[0] = dt[1] if dt.size > 1 else (1.0 / max(fs, 1.0))
+        angle = np.cumsum(omega * dt)
+
+        starts = _angle_rev_starts(angle)
+        if starts.size >= 3:
+            # Pair consecutive 2π crossings as one revolution
+            rev_bounds = list(zip(starts[:-1], starts[1:]))
+            if len(rev_bounds) > 4:
+                # Drop first/last incomplete-ish edges
+                rev_bounds = rev_bounds[1:-1]
+            take_n = min(max(40, n_periods // max(len(mats), 1)), len(rev_bounds))
+            pick = rng.choice(len(rev_bounds), size=take_n, replace=False)
+            for bi in pick:
+                a, b = rev_bounds[int(bi)]
+                if b - a < 64:
+                    continue
+                seg = vib[int(a) : int(b)]
+                ideal = _zscore(_resample_1d(seg, period_l, kind="cubic"))
+                bad = _zscore(_resample_1d(seg, period_l, kind="linear"))
+                eng = _inject_cliff(bad, rng)
+                ideals.append(ideal)
+                engines.append(eng)
+                sources.append(mat_path.name)
+                used_angle += 1
+                if len(ideals) >= n_periods:
+                    break
+        else:
+            # Fixed samples/rev from mean RPM (no reliable tach crossings)
+            rpm_mean = float(np.median(speed))
+            spr = int(round(fs * 60.0 / max(rpm_mean, 1.0)))
+            if spr < 64:
+                continue
+            max_start = vib.size - 2 * spr
+            if max_start <= 0:
+                continue
+            starts_f = np.arange(0, max_start, spr)
+            take_n = min(max(40, n_periods // max(len(mats), 1)), starts_f.size)
+            for s in rng.choice(starts_f, size=take_n, replace=False):
+                seg = vib[int(s) : int(s) + spr]
+                ideal = _zscore(_resample_1d(seg, period_l, kind="cubic"))
+                bad = _zscore(_resample_1d(seg, period_l, kind="linear"))
+                eng = _inject_cliff(bad, rng)
+                ideals.append(ideal)
+                engines.append(eng)
+                sources.append(mat_path.name)
+                used_fixed += 1
+                if len(ideals) >= n_periods:
+                    break
+        if len(ideals) >= n_periods:
+            break
+
+    if len(ideals) < 16:
+        return None
+    return DatasetBundle(
+        name="paderborn_kat",
+        ideal=torch.from_numpy(np.stack(ideals[:n_periods], 0)),
+        engine=torch.from_numpy(np.stack(engines[:n_periods], 0)),
+        meta={
+            "domain": "bearings",
+            "files": sorted({Path(s).name for s in sources}),
+            "n": min(n_periods, len(ideals)),
+            "period_l": period_l,
+            "wrap": (
+                "Paderborn K001 vibration_1 (~64 kHz); shaft angle from Mech_4kHz speed "
+                "when available (equal-angle rev windows); ideal=cubic resample to L; "
+                "engine=linear (bad-COT) + DenoiseOpt wrap cliff+noise."
+            ),
+            "fs_hz": float(np.median(fs_seen)) if fs_seen else 64000.0,
+            "citation": "Paderborn KAt Bearing Data Center (Lessmeier et al., PHME 2016); CC BY-NC 4.0",
+            "seed": seed,
+            "bearing_code": "K001",
+            "n_angle_revs": used_angle,
+            "n_fixed_rpm_revs": used_fixed,
+            "label": (
+                "classical_board_plus_bad_cot — not a published deep Paderborn denoise "
+                "reimplementation (deep SOTA still blocked)"
+            ),
+            "requested_n": n_periods,
+        },
+    )
+
+
 def build_mfpt(
     *,
     n_periods: int = 256,
@@ -627,8 +806,8 @@ def try_optional_probe() -> dict[str, str]:
             "skipped — IEEE DataPort free-account wall; ran synth_pmu_cycle instead"
         ),
         "paderborn_kat": (
-            "downloaded K001.rar (OA mirror) but extraction blocked — no CLI UnRAR; "
-            "SFX installer GUI hung; scores not claimed"
+            "extracted K001 via repo UnRAR.exe — classical wrap board available as "
+            "paderborn_kat; deep Paderborn pipelines still unwired (see DEEP_SOTA)"
         ),
         "bmrb_nmr": "skipped — BMRB FID needs per-entry API hunt; defer to follow-up",
         "mfpt_bearings": (
@@ -657,6 +836,7 @@ def ensure_bundles(
     builders = {
         "cwru_bearings": lambda: build_cwru(n_periods=n_periods),
         "mfpt_bearings": lambda: build_mfpt(n_periods=n_periods),
+        "paderborn_kat": lambda: build_paderborn(n_periods=n_periods),
         "mitbih_ecg": lambda: build_mitbih(n_periods=n_periods),
         "ptbxl_ecg": lambda: build_ptbxl(n_periods=n_periods),
         "synth_cnc_g01": lambda: build_synth_cnc(n_periods=n_periods),
@@ -681,6 +861,11 @@ def ensure_bundles(
         skip.pop("mfpt_bearings", None)
     if out.get("ptbxl_ecg") is not None:
         skip.pop("ptbxl_ecg", None)
+    if out.get("paderborn_kat") is not None:
+        # Classical board built; deep pipelines remain blocked elsewhere.
+        skip["paderborn_kat"] = (
+            "K001 extracted; classical paderborn_kat board cached — deep SOTA still not executed"
+        )
     (CACHE / "skipped_optional.json").write_text(json.dumps(skip, indent=2), encoding="utf-8")
     return out
 
