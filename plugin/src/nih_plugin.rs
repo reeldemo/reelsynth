@@ -8,6 +8,32 @@ use parking_lot::Mutex;
 use reelsynth::{Patch, SynthEngine, WavetableBank};
 use std::sync::Arc;
 
+/// Tracks last-seen Live rack knobs so we only push them when the host
+/// actually moves them — otherwise defaults overwrite the external editor patch
+/// (filters, envelope, FX) every audio buffer.
+#[derive(Clone, Copy)]
+struct HostParamSnap {
+    wt: f32,
+    cutoff: f32,
+    res: f32,
+    attack: f32,
+    release: f32,
+    primed: bool,
+}
+
+impl Default for HostParamSnap {
+    fn default() -> Self {
+        Self {
+            wt: 0.0,
+            cutoff: 0.0,
+            res: 0.0,
+            attack: 0.0,
+            release: 0.0,
+            primed: false,
+        }
+    }
+}
+
 struct ReelSynthPlugin {
     params: Arc<ReelSynthParams>,
     engine: Option<SynthEngine>,
@@ -16,6 +42,7 @@ struct ReelSynthPlugin {
     sample_rate: u32,
     ipc: Option<IpcBridge>,
     stereo_scratch: Vec<f32>,
+    host_snap: HostParamSnap,
 }
 
 #[derive(Params)]
@@ -62,6 +89,7 @@ impl Default for ReelSynthPlugin {
             sample_rate: 44100,
             ipc,
             stereo_scratch: Vec::new(),
+            host_snap: HostParamSnap::default(),
         }
     }
 }
@@ -353,25 +381,64 @@ impl ReelSynthPlugin {
         let Some(engine) = self.engine.as_mut() else {
             return;
         };
-        let pos = self.params.wt_position.smoothed.next();
-        engine.set_wt_position(pos * 255.0);
-        let t = self.params.filter_cutoff.smoothed.next().clamp(0.0, 1.0);
-        let min = 20.0f32.ln();
-        let max = 20000.0f32.ln();
-        let cutoff = (min + t * (max - min)).exp();
-        engine.set_filter_cutoff(cutoff);
-        let res = self.params.filter_res.smoothed.next();
-        engine.set_filter_resonance(res);
-        let mut env = self.patch.envelope.clone();
-        env.attack = self.params.amp_attack.smoothed.next() * 5.0;
-        env.release = self.params.amp_release.smoothed.next() * 8.0;
-        self.patch.envelope = env.clone();
-        if let Some(osc) = self.patch.oscillators.get_mut(0) {
-            osc.position = pos;
+
+        // Advance nih-plug smoothers every buffer (required), but only write into
+        // the engine when Live's knobs actually move. Otherwise host defaults
+        // stomp filter/envelope (and chain slot 0) from the external editor.
+        let wt_s = self.params.wt_position.smoothed.next();
+        let cut_s = self.params.filter_cutoff.smoothed.next().clamp(0.0, 1.0);
+        let res_s = self.params.filter_res.smoothed.next();
+        let atk_s = self.params.amp_attack.smoothed.next();
+        let rel_s = self.params.amp_release.smoothed.next();
+
+        let wt = self.params.wt_position.value();
+        let cut = self.params.filter_cutoff.value().clamp(0.0, 1.0);
+        let res = self.params.filter_res.value();
+        let atk = self.params.amp_attack.value();
+        let rel = self.params.amp_release.value();
+
+        if !self.host_snap.primed {
+            self.host_snap = HostParamSnap {
+                wt,
+                cutoff: cut,
+                res,
+                attack: atk,
+                release: rel,
+                primed: true,
+            };
+            return;
         }
-        self.patch.filter.cutoff = cutoff;
-        self.patch.filter.resonance = res;
-        engine.set_envelope(env);
+
+        const EPS: f32 = 1e-5;
+        if (wt - self.host_snap.wt).abs() > EPS {
+            engine.set_wt_position(wt_s * 255.0);
+            if let Some(osc) = self.patch.oscillators.get_mut(0) {
+                osc.position = wt_s;
+            }
+            self.host_snap.wt = wt;
+        }
+        if (cut - self.host_snap.cutoff).abs() > EPS {
+            let min = 20.0f32.ln();
+            let max = 20000.0f32.ln();
+            let cutoff = (min + cut_s * (max - min)).exp();
+            engine.set_filter_cutoff(cutoff);
+            self.patch.filter.cutoff = cutoff;
+            self.host_snap.cutoff = cut;
+        }
+        if (res - self.host_snap.res).abs() > EPS {
+            engine.set_filter_resonance(res_s);
+            self.patch.filter.resonance = res_s;
+            self.host_snap.res = res;
+        }
+        if (atk - self.host_snap.attack).abs() > EPS || (rel - self.host_snap.release).abs() > EPS {
+            let mut env = self.patch.envelope.clone();
+            env.attack = atk_s * 5.0;
+            env.release = rel_s * 8.0;
+            self.patch.envelope = env.clone();
+            engine.set_envelope(env);
+            self.host_snap.attack = atk;
+            self.host_snap.release = rel;
+        }
     }
 }
 

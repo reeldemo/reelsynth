@@ -6,6 +6,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Plugin FX / filter parity** — `SynthEngine::new` now binds the patch FX rack (was stuck on defaults); Live host knobs only apply when moved so they no longer overwrite editor filter/envelope every buffer.
+
 ## [0.4.0] - 2026-07-26
 
 ### Added

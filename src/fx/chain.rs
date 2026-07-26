@@ -29,13 +29,22 @@ impl Default for FxBypass {
 
 pub fn effects_from_bypass(bypass: &FxBypass) -> Vec<EffectSlot> {
     let mut effects = default_effects();
-    if let Some(slot) = effects.iter_mut().find(|s| s.effect_type == EffectType::Chorus) {
+    if let Some(slot) = effects
+        .iter_mut()
+        .find(|s| s.effect_type == EffectType::Chorus)
+    {
         slot.bypassed = bypass.chorus_bypassed;
     }
-    if let Some(slot) = effects.iter_mut().find(|s| s.effect_type == EffectType::Delay) {
+    if let Some(slot) = effects
+        .iter_mut()
+        .find(|s| s.effect_type == EffectType::Delay)
+    {
         slot.bypassed = bypass.delay_bypassed;
     }
-    if let Some(slot) = effects.iter_mut().find(|s| s.effect_type == EffectType::Reverb) {
+    if let Some(slot) = effects
+        .iter_mut()
+        .find(|s| s.effect_type == EffectType::Reverb)
+    {
         slot.bypassed = bypass.reverb_bypassed;
     }
     effects
@@ -78,6 +87,10 @@ impl FxChain {
             .collect();
     }
 
+    pub fn slots(&self) -> &[EffectSlot] {
+        &self.slots
+    }
+
     /// Legacy API — maps fixed chorus/delay/reverb bypass flags.
     pub fn set_bypass(&mut self, bypass: FxBypass) {
         self.set_effects(effects_from_bypass(&bypass));
@@ -107,4 +120,3 @@ impl FxChain {
         [soft_clip(l), soft_clip(r)]
     }
 }
-
