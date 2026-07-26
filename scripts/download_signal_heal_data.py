@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import json
 import ssl
+import subprocess
+import sys
 import urllib.request
 from pathlib import Path
 
@@ -42,8 +44,16 @@ PADERBORN_PROBE = [
 
 MITDB_RECS = ["100", "101", "103", "105", "112", "113", "115", "117", "121", "123"]
 
-# PTB-XL 100 Hz low-res subset — enough beats for L=256 wrap pilot without full dump.
-PTBXL_RECS = [f"{i:05d}_lr" for i in range(1, 21)]
+# PTB-XL 100 Hz low-res subset (legacy pilot).
+PTBXL_RECS_LR = [f"{i:05d}_lr" for i in range(1, 21)]
+
+# PTB-XL 500 Hz high-res (records500). Prefer AWS Open Data sync via
+# scripts/sync_ptbxl_records500.py (full corpus ~2–3 GB). HTTP fallback below
+# pulls a large contiguous OA slice when AWS is unavailable.
+# Folders are record_id // 1000 → 00000, 00001, …
+# Policy (see build_ptbxl / PTBXL_POLICY.md): lead I only, *_hr @ 500 Hz,
+# R–R beat windows, board n=256 from the downloaded pool.
+PTBXL_HR_N = 5000  # HTTP fallback: records 00001_hr … 05000_hr (~substantially larger than pilot 200)
 
 
 def try_get(urls: list[str], dest: Path, min_bytes: int = 1000) -> tuple[bool, str]:
@@ -113,13 +123,11 @@ def dl_mitdb() -> bool:
 
 
 def dl_ptbxl() -> bool:
-    """Download a small PTB-XL records100 subset into flat raw/ptbxl/."""
+    """Download PTB-XL records100 (legacy) + records500 (500 Hz) slice into raw/ptbxl/."""
     dest = RAW / "ptbxl"
     dest.mkdir(parents=True, exist_ok=True)
     ok = True
-    for rec in PTBXL_RECS:
-        # PhysioNet layout: records100/00000/NNNNN_lr.{dat,hea}
-        # Also accept already-flat sibling downloads.
+    for rec in PTBXL_RECS_LR:
         base_nested = f"https://physionet.org/files/ptb-xl/1.0.3/records100/00000/{rec}"
         for ext, amin in ((".dat", 1000), (".hea", 40)):
             path = dest / f"{rec}{ext}"
@@ -128,6 +136,26 @@ def dl_ptbxl() -> bool:
             got, _ = try_get([base_nested + ext], path, min_bytes=amin)
             if not got:
                 ok = False
+
+    hr_ok = 0
+    for i in range(1, PTBXL_HR_N + 1):
+        rec = f"{i:05d}_hr"
+        folder = f"{(i // 1000):05d}"
+        base_nested = f"https://physionet.org/files/ptb-xl/1.0.3/records500/{folder}/{rec}"
+        rec_ok = True
+        for ext, amin in ((".dat", 5000), (".hea", 40)):
+            path = dest / f"{rec}{ext}"
+            if path.is_file() and path.stat().st_size >= amin:
+                continue
+            got, _ = try_get([base_nested + ext], path, min_bytes=amin)
+            if not got:
+                rec_ok = False
+                ok = False
+        if rec_ok and (dest / f"{rec}.dat").is_file():
+            hr_ok += 1
+    print(f"PTB-XL records500 (_hr) downloaded/cached: {hr_ok}/{PTBXL_HR_N}")
+    if hr_ok < 32:
+        ok = False
     return ok
 
 
@@ -184,19 +212,45 @@ def main() -> int:
     print("MITDB ok=", mit_ok)
 
     ptb_ok = dl_ptbxl()
-    print("PTB-XL subset ok=", ptb_ok)
+    print("PTB-XL (incl. records500 500 Hz slice) ok=", ptb_ok)
     if not ptb_ok:
-        skip_log["ptbxl_ecg"] = "PTB-XL PhysioNet subset incomplete after download"
+        skip_log["ptbxl_ecg"] = "PTB-XL PhysioNet 500 Hz / 100 Hz download incomplete"
 
-    # Always note login-walled optional sets for paper honesty
-    skip_log.setdefault(
-        "kit_cnc",
-        "skipped — KIT CNC DOI needs browser/login flow; synthetic_cnc_wrap used as proxy",
+    # Optional OA sets: KIT drop folder; IEEE PMU open S3 (often 403 anonymously)
+    kit_dir = RAW / "kit_cnc"
+    kit_dir.mkdir(parents=True, exist_ok=True)
+    kit_has = any(kit_dir.rglob("*.mat")) or any(kit_dir.rglob("*.json")) or any(
+        kit_dir.rglob("*.nc")
     )
-    skip_log.setdefault(
-        "ieee_pmu",
-        "skipped — IEEE DataPort free-account wall; synthetic_power_wrap used as proxy",
-    )
+    if kit_has:
+        skip_log["kit_cnc"] = "files detected under raw/kit_cnc/ — build_kit_cnc_real available"
+    else:
+        skip_log.setdefault(
+            "kit_cnc",
+            "awaiting drop under raw/kit_cnc/ (kit_cnc_README.txt); synth_cnc_g01 proxy",
+        )
+
+    ieee_dir = RAW / "ieee_pmu"
+    ieee_dir.mkdir(parents=True, exist_ok=True)
+    ieee_mat = list(ieee_dir.glob("*.mat"))
+    if not ieee_mat:
+        try:
+            probe = ROOT / "scripts" / "fetch_and_probe_ieee_pmu.py"
+            if probe.is_file():
+                subprocess.run([sys.executable, str(probe)], check=False)
+                ieee_mat = list(ieee_dir.glob("*.mat"))
+        except Exception as e:
+            skip_log["ieee_pmu_fetch_error"] = str(e)
+    if ieee_mat:
+        skip_log["ieee_pmu"] = (
+            f"mat present ({ieee_mat[0].name}); phasors — run fetch_and_probe_ieee_pmu.py"
+        )
+    else:
+        skip_log.setdefault(
+            "ieee_pmu",
+            "S3 URI known but anonymous GET 403; drop .mat into raw/ieee_pmu/; "
+            "synth_pmu_cycle proxy; prefer TVE probe when present",
+        )
     skip_log.setdefault("bmrb_nmr", "skipped — BMRB FID deferred")
 
     (CACHE / "download_status.json").write_text(

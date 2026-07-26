@@ -1,6 +1,6 @@
 {
   "schema": "denoiseopt.signal_heal_deep_sota_status.v2",
-  "updated_at": "20260726T062109Z",
+  "updated_at": "20260726T083000Z",
   "paper_table": "tab:transfer-sota-status (Table 14)",
   "honesty": "Do not invent Cycle-GAN / BeatDiff / Paderborn-deep / full-PTB-XL / real KIT/PMU / MOS\u2013MUSHRA numbers. Only report scores when artifacts under this tree contain measured values. Domain-trained N2N is executed \u2014 cite holdout R / R_blend from results_table.json table[*].n2n_domain_trained and domain_n2n/summary.json.",
   "what_did_run": "Classical shared board + domain classical proxies (bad-COT / SBMM-lite / spline) + Ours hybrid_lstm under prolonged residual R on six boards (see results_table.json). Domain-trained Noise2Noise (corrupt\u2192corrupt, 4000 Adam steps, holdout seed 20260719, train seed 424242) scored on all six boards and merged as n2n_domain_trained.",
@@ -127,30 +127,36 @@
     {
       "id": "real_kit_cnc_ieee_pmu",
       "table14_scope": "Real KIT CNC / IEEE PMU",
-      "status": "blocked",
+      "status": "partially_unblocked",
       "executable_now": false,
       "blocker": {
-        "kind": "download_login_walls",
-        "detail": "Real KIT multimodal CNC DOI requires browser/login; IEEE DataPort PMU OA traces require free-account wall. Transfer pilot ran synthetic proxies instead (synth_cnc_g01, synth_pmu_cycle), including domain-trained N2N on those proxies.",
+        "kind": "ieee_anonymous_s3_403_kit_awaiting_drop",
+        "detail": "IEEE PMU open S3 URI is known (s3://ieee-dataport/open/11968/IEEE-39-bus_10_generator_PMU.mat). Anonymous aws/boto3 --no-sign-request and public HTTPS GETs still return 403 \u2014 OA object GET needs free IEEE DataPort login or manual browser download into raw/ieee_pmu/. Corpus is synchrophasors (not raw AC); builders + TVE/window-leakage probe are wired (scripts/fetch_and_probe_ieee_pmu.py, build_ieee_pmu_real). KIT multimodal CNC still awaiting user extract into raw/kit_cnc/ (kit_cnc_README.txt); build_kit_cnc_real stubs with a clear error until files appear. Transfer scores still use synth_cnc_g01 / synth_pmu_cycle proxies until real boards are cached.",
         "evidence": [
+          "brand/artifacts/signal_heal_transfer/cache/ieee_pmu_status.json",
           "brand/artifacts/signal_heal_transfer/cache/skipped_optional.json",
-          "brand/artifacts/signal_heal_transfer/results_table.json \u2192 skipped"
+          "brand/artifacts/signal_heal_transfer/raw/ieee_pmu/README.txt",
+          "brand/artifacts/signal_heal_transfer/raw/kit_cnc/kit_cnc_README.txt"
         ],
+        "s3_uri": "s3://ieee-dataport/open/11968/IEEE-39-bus_10_generator_PMU.mat",
+        "ieee_drop": "brand/artifacts/signal_heal_transfer/raw/ieee_pmu/",
+        "kit_drop": "brand/artifacts/signal_heal_transfer/raw/kit_cnc/",
         "proxies_ran": [
           "synth_cnc_g01",
           "synth_pmu_cycle"
         ],
+        "content_honesty": "IEEE 39-bus OA = phasors (mag\u2220, f, ROCOF); prefer TVE/window-leakage probe over musical prolonged-R. Phasor\u2192waveform L=256 board is explicitly footnoted if built.",
         "unblock_requires": [
-          "Manual KIT DOI download after institutional/browser login",
-          "IEEE DataPort account + download of cited PMU corpus",
-          "Wrap construction scripts for real traces under same L=256 residual protocol"
+          "Drop IEEE-39-bus_10_generator_PMU.mat into raw/ieee_pmu/ (after DataPort login) OR supply AWS keys for ieee-dataport",
+          "Run scripts/fetch_and_probe_ieee_pmu.py \u2192 ieee_pmu_status.json + ieee_pmu_tve_probe.json",
+          "Extract KIT CNC archive into raw/kit_cnc/ then build_kit_cnc_real()"
         ],
         "user_must_open": [
           "https://doi.org/10.35097/hvvwn1kfwf7qt48z",
           "https://ieee-dataport.org/open-access/pmu-measurements-ieee-39-bus-power-system-model"
         ]
       },
-      "paper_note_draft": "Synthetic pilots only \u2014 KIT DOI / IEEE DataPort login walls"
+      "paper_note_draft": "IEEE PMU S3 URI known (anonymous GET 403; phasors \u2014 TVE probe when mat dropped); KIT awaiting user drop; synth pilots still the scored boards"
     },
     {
       "id": "formal_mos_mushra",
@@ -199,7 +205,7 @@
       "id": "pmu_tve_estimator_sota",
       "domain": "power",
       "citation_hint": "IEEE C37.118 TVE-optimized estimators on OA PMU traces",
-      "why_not_run": "IEEE DataPort login wall; only synth_pmu_cycle proxy ran."
+      "why_not_run": "Anonymous S3/HTTPS GET 403 on open URI; mat not on disk yet. Probe script ready (fetch_and_probe_ieee_pmu.py). Only synth_pmu_cycle scored so far."
     }
   ]
 }

@@ -12,7 +12,7 @@ Domain-trained N2N merged into `results_table.json` at `20260726T060508Z`.
 | BeatDiff | Not run — no diffusion checkpoints under residual protocol |
 | Paderborn KAt deep | Not run — K001 extracted; classical wrap board available; deep models unwired |
 | Full PTB-XL | Subset only — `records500` lead-I, $n{=}256$ (not full corpus) |
-| Real KIT CNC / IEEE PMU | Synthetic pilots only — KIT DOI / IEEE DataPort login walls |
+| Real KIT CNC / IEEE PMU | IEEE S3 URI known (anonymous GET 403; phasors — TVE probe when `.mat` dropped); KIT awaiting user drop under `raw/kit_cnc/`; synth pilots still the scored boards |
 | Formal MOS / MUSHRA | Not collected — hear assets / informal A/B only |
 
 ## Domain N2N holdout scores (prolonged $R$ / $R_{\mathrm{blend}}$)
@@ -31,4 +31,6 @@ Protocol: corrupt→corrupt SeamN2N, 4000 Adam steps, train seed `424242`, holdo
 Artifacts: `domain_n2n/summary.json`, `results_table.json` → `table[*].n2n_domain_trained`.
 
 Paderborn classical board extract: UnRAR unblocked; deep Paderborn pipelines still not executed.
-KIT / IEEE PMU login URLs: `https://doi.org/10.35097/hvvwn1kfwf7qt48z` · `https://ieee-dataport.org/open-access/pmu-measurements-ieee-39-bus-power-system-model`.
+KIT drop: `brand/artifacts/signal_heal_transfer/raw/kit_cnc/` (see `kit_cnc_README.txt`).
+IEEE PMU drop: `brand/artifacts/signal_heal_transfer/raw/ieee_pmu/` — S3 `s3://ieee-dataport/open/11968/IEEE-39-bus_10_generator_PMU.mat` (anonymous 403; free DataPort login / manual drop). Probe: `scripts/fetch_and_probe_ieee_pmu.py`.
+Login URLs: `https://doi.org/10.35097/hvvwn1kfwf7qt48z` · `https://ieee-dataport.org/open-access/pmu-measurements-ieee-39-bus-power-system-model`.

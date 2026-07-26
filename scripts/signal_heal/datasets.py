@@ -581,6 +581,29 @@ def build_mitbih(
     )
 
 
+# Explicit PTB-XL wrap-board policy (document in meta + PTBXL_POLICY.md).
+PTBXL_POLICY = {
+    "source": "PhysioNet ptb-xl 1.0.3",
+    "preferred_subset": "records500 (*_hr, 500 Hz)",
+    "fallback_subset": "records100 (*_lr, 100 Hz)",
+    "lead_index": 0,
+    "lead_name": "I",
+    "period_l": PERIOD_L,
+    "board_n_periods": 256,
+    "peak_thr_frac_of_max": 0.55,
+    "min_peak_distance_s": 0.28,
+    "rr_min_s": 0.22,
+    "rr_max_s": 1.8,
+    "template_neighbors": 8,
+    "endpoint_equalize_w": 8,
+    "pool_mode": "scan_all_available_records_then_sample",
+    "note": (
+        "Clinical multi-lead / diagnosis restore ≠ wrap-R; this board is L=256 "
+        "prolonged residual R only (lead I)."
+    ),
+}
+
+
 def build_ptbxl(
     *,
     n_periods: int = 256,
@@ -588,15 +611,35 @@ def build_ptbxl(
     seed: int = SEED,
     raw_dir: Path | None = None,
     prefer_hz: int = 500,
+    max_pool_beats: int | None = None,
 ) -> DatasetBundle | None:
-    """PTB-XL lead-I beat windows. Prefer records500 (500 Hz `_hr`); fall back to `_lr`."""
+    """PTB-XL lead-I beat windows under PTBXL_POLICY.
+
+    Prefer records500 (500 Hz `_hr`); fall back to `_lr`. Scans all available
+    records for the beat pool (no early stop at n*4), then samples ``n_periods``.
+    """
     raw_dir = raw_dir or (RAW / "ptbxl")
+    # Prefer flattened raw/ptbxl; also accept nested AWS sync tree beside it.
+    aws_nested = RAW / "ptbxl_aws" / "records500"
     try:
         import wfdb
     except ImportError:
         return None
-    hr = sorted(raw_dir.rglob("*_hr.hea"))
-    lr = sorted(raw_dir.rglob("*_lr.hea"))
+    search_roots = [raw_dir]
+    if aws_nested.is_dir():
+        search_roots.append(aws_nested)
+    hr: list[Path] = []
+    lr: list[Path] = []
+    seen: set[str] = set()
+    for root in search_roots:
+        for p in sorted(root.rglob("*_hr.hea")):
+            if p.stem not in seen:
+                hr.append(p)
+                seen.add(p.stem)
+        for p in sorted(root.rglob("*_lr.hea")):
+            if p.stem not in seen:
+                lr.append(p)
+                seen.add(p.stem)
     if prefer_hz >= 500 and hr:
         heas = hr
         subset = "records500 (*_hr, 500 Hz)"
@@ -615,7 +658,11 @@ def build_ptbxl(
     beats: list[np.ndarray] = []
     used: list[str] = []
     fs_seen: list[float] = []
+    # Cap only if explicitly requested; default = scan all downloaded records.
+    pool_cap = max_pool_beats if max_pool_beats is not None else 10**9
     for hea in heas:
+        if len(beats) >= pool_cap:
+            break
         rec = hea.with_suffix("")  # path without .hea
         try:
             sig, fields = wfdb.rdsamp(str(rec))
@@ -623,10 +670,11 @@ def build_ptbxl(
             continue
         fs = float(fields.get("fs", default_fs))
         fs_seen.append(fs)
-        x = np.asarray(sig[:, 0], dtype=np.float64)
+        # Policy: lead index 0 = lead I only (not multi-lead restore).
+        x = np.asarray(sig[:, int(PTBXL_POLICY["lead_index"])], dtype=np.float64)
         xz = _zscore(x)
-        thr = 0.55 * float(np.max(xz))
-        min_dist = max(12, int(0.28 * fs))
+        thr = float(PTBXL_POLICY["peak_thr_frac_of_max"]) * float(np.max(xz))
+        min_dist = max(12, int(float(PTBXL_POLICY["min_peak_distance_s"]) * fs))
         peaks: list[int] = []
         i = 5
         while i < xz.size - 5:
@@ -636,34 +684,46 @@ def build_ptbxl(
                 i += max(4, min_dist // 2)
             else:
                 i += 1
+        rr_min = max(16, int(float(PTBXL_POLICY["rr_min_s"]) * fs))
+        rr_max = int(float(PTBXL_POLICY["rr_max_s"]) * fs)
         for a, b in zip(peaks[:-1], peaks[1:]):
-            if b - a < max(16, int(0.22 * fs)) or b - a > int(1.8 * fs):
+            if b - a < rr_min or b - a > rr_max:
                 continue
             beats.append(_zscore(_resample_1d(x[a:b], period_l, kind="cubic")))
+            if len(beats) >= pool_cap:
+                break
         used.append(hea.stem)
-        if len(beats) >= n_periods * 4:
-            break
     if len(beats) < 32:
         return None
     beats_arr = np.stack(beats, axis=0)
     ideals: list[np.ndarray] = []
     engines: list[np.ndarray] = []
     idx = rng.permutation(len(beats_arr))
+    neigh = int(PTBXL_POLICY["template_neighbors"])
+    eq_w = int(PTBXL_POLICY["endpoint_equalize_w"])
     for i in idx[:n_periods]:
-        lo = max(0, int(i) - 8)
-        hi = min(len(beats_arr), int(i) + 9)
+        lo = max(0, int(i) - neigh)
+        hi = min(len(beats_arr), int(i) + neigh + 1)
         template = beats_arr[lo:hi].mean(axis=0).astype(np.float32)
         ideal = template.copy()
-        w = 8
         target = 0.5 * (ideal[0] + ideal[-1])
-        for j in range(w):
-            a = j / max(w - 1, 1)
+        for j in range(eq_w):
+            a = j / max(eq_w - 1, 1)
             ideal[j] = (1 - a) * target + a * ideal[j]
             ideal[-1 - j] = (1 - a) * target + a * ideal[-1 - j]
         eng = _inject_cliff(beats_arr[int(i)], rng)
         ideals.append(_zscore(ideal))
         engines.append(eng)
     fs_meta = float(np.median(fs_seen)) if fs_seen else default_fs
+    policy = {
+        **PTBXL_POLICY,
+        "board_n_periods": int(n_periods),
+        "period_l": int(period_l),
+        "n_records_available": len(heas),
+        "n_records_used": len(used),
+        "n_beats_pool": int(beats_arr.shape[0]),
+        "subset_resolved": subset,
+    }
     return DatasetBundle(
         name="ptbxl_ecg",
         ideal=torch.from_numpy(np.stack(ideals, 0)),
@@ -676,15 +736,18 @@ def build_ptbxl(
             "n": len(ideals),
             "period_l": period_l,
             "wrap": (
-                f"PTB-XL {subset} lead-I R–R windows resampled to L; "
-                "ideal=local mean template + mild endpoint equalize; engine=beat+cliff."
+                f"PTB-XL {subset} lead-I (idx 0) R–R windows resampled to L; "
+                "ideal=local mean template + mild endpoint equalize; engine=beat+cliff. "
+                "Pool=all available downloaded records (explicit PTBXL_POLICY)."
             ),
             "fs_hz": fs_meta,
             "citation": "PTB-XL (PhysioNet, CC BY 4.0)",
             "seed": seed,
             "subset": subset,
+            "policy": policy,
             "baseline_note": (
-                "Classical board + SBMM-lite / spline only. Cycle-GAN / BeatDiff not executed."
+                "Classical board + SBMM-lite / spline only. "
+                "Cycle-GAN / BeatDiff clinical restore ≠ wrap-R (see DEEP_SOTA)."
             ),
         },
     )
@@ -796,14 +859,240 @@ def build_synth_pmu(
     )
 
 
+def build_ieee_pmu_real(
+    *,
+    n_periods: int = 256,
+    period_l: int = PERIOD_L,
+    seed: int = SEED,
+    raw_dir: Path | None = None,
+) -> DatasetBundle | None:
+    """IEEE 39-bus OA PMU → L=256 periods from **phasor-synthesized** AC cycles.
+
+    Native content is synchrophasors (mag∠ / f / ROCOF), not oscillography.
+    Ideal = one clean cycle from measured phasor; engine = same + DenoiseOpt cliff.
+    Meta labels this as phasor-synth — do **not** claim native waveform prolonged-R.
+    Prefer ``scripts/fetch_and_probe_ieee_pmu.py`` TVE probe for honest PMU scoring.
+    """
+    raw_dir = raw_dir or (RAW / "ieee_pmu")
+    mats = sorted(raw_dir.glob("*.mat"))
+    if not mats:
+        return None
+    mat_path = max(mats, key=lambda p: p.stat().st_size)
+
+    # Prefer shared loader from fetch script; fall back inline
+    try:
+        sys_path_note = None
+        import importlib.util
+
+        probe_path = ROOT / "scripts" / "fetch_and_probe_ieee_pmu.py"
+        spec = importlib.util.spec_from_file_location("fetch_ieee_pmu", probe_path)
+        if spec and spec.loader:
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            mat, loader = mod._load_mat_any(mat_path)
+            mag, ang, freq = mod._pick_phasor_streams(mat)
+        else:
+            raise RuntimeError("importlib failed")
+    except Exception as e:
+        sys_path_note = str(e)
+        import scipy.io as sio
+
+        blob = sio.loadmat(str(mat_path), squeeze_me=True, struct_as_record=False)
+        mat = {k: v for k, v in blob.items() if not k.startswith("__")}
+        data = mat.get("DATA") or mat.get("Data")
+        if data is None:
+            return None
+        mag = np.asarray(getattr(data, "Magnitude"), dtype=np.float64)
+        ang = np.asarray(getattr(data, "Angle"), dtype=np.float64)
+        freq = None
+        if hasattr(data, "Freq"):
+            freq = np.asarray(getattr(data, "Freq"), dtype=np.float64)
+        loader = f"scipy-fallback ({sys_path_note})"
+
+    if mag.ndim == 1:
+        mag = mag[None, :]
+        ang = ang[None, :]
+    elif mag.ndim == 2 and mag.shape[0] > mag.shape[1] and mag.shape[0] > 50:
+        mag, ang = mag.T, ang.T
+        if freq is not None and freq.ndim == 2 and freq.shape[0] > freq.shape[1]:
+            freq = freq.T
+    if np.nanmax(np.abs(ang)) > 2 * math.pi + 0.5:
+        ang = np.deg2rad(ang)
+
+    rng = np.random.default_rng(seed + 71)
+    n_gen, n_t = int(mag.shape[0]), int(mag.shape[1])
+    f0 = float(np.nanmedian(freq)) if freq is not None else 60.0
+    ideals: list[np.ndarray] = []
+    engines: list[np.ndarray] = []
+    # Sample frames across gens/time
+    idxs = rng.choice(n_t, size=min(n_periods, n_t), replace=n_t < n_periods)
+    gens = rng.integers(0, n_gen, size=len(idxs))
+    t = np.linspace(0.0, 1.0, period_l, endpoint=False)
+    for g, k in zip(gens, idxs):
+        m0 = float(mag[int(g), int(k)])
+        a0 = float(ang[int(g), int(k)])
+        # One AC cycle synthesized from phasor (footnote in meta)
+        ideal = _zscore((m0 * np.cos(2 * math.pi * t + a0)).astype(np.float32))
+        eng = _inject_cliff(ideal, rng)
+        ideals.append(ideal)
+        engines.append(eng)
+    while len(ideals) < n_periods:
+        ideals.append(ideals[len(ideals) % max(1, len(idxs))])
+        engines.append(engines[len(engines) % max(1, len(idxs))])
+
+    return DatasetBundle(
+        name="ieee_pmu_real",
+        ideal=torch.from_numpy(np.stack(ideals[:n_periods], 0)),
+        engine=torch.from_numpy(np.stack(engines[:n_periods], 0)),
+        meta={
+            "domain": "power",
+            "n": n_periods,
+            "period_l": period_l,
+            "label": (
+                "phasor_synthesized_cycles — NOT native OA oscillography; "
+                "prefer TVE probe in cache/ieee_pmu_tve_probe.json"
+            ),
+            "wrap": (
+                "Ideal=1-cycle AC reconstructed from measured synchrophasor; "
+                "engine=+DenoiseOpt wrap cliff. Musical prolonged-R here is a protocol "
+                "compatibility board only."
+            ),
+            "content_kind": "phasors_synthesized_to_waveform",
+            "mat_path": str(mat_path),
+            "loader": loader,
+            "n_generators": n_gen,
+            "n_frames": n_t,
+            "nominal_f_hz": f0,
+            "citation": "Naglic, IEEE DataPort DOI 10.21227/vkz3-2e96",
+            "seed": seed,
+            "s3_uri": "s3://ieee-dataport/open/11968/IEEE-39-bus_10_generator_PMU.mat",
+        },
+    )
+
+
+def build_kit_cnc_real(
+    *,
+    n_periods: int = 256,
+    period_l: int = PERIOD_L,
+    seed: int = SEED,
+    raw_dir: Path | None = None,
+) -> DatasetBundle | None:
+    """KIT multimodal CNC (DOI 10.35097/hvvwn1kfwf7qt48z) — stub until files dropped.
+
+    Expect extracted tree under ``raw/kit_cnc/`` (see kit_cnc_README.txt):
+    synced ``.mat`` / controller ``.json`` / force-accel ``.mat`` / NC ``.nc`` / CAD ``.stp``.
+    """
+    raw_dir = raw_dir or (RAW / "kit_cnc")
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    mats = list(raw_dir.rglob("*.mat"))
+    jsons = list(raw_dir.rglob("*.json"))
+    ncs = list(raw_dir.rglob("*.nc")) + list(raw_dir.rglob("*.NC"))
+    if not mats and not jsons and not ncs:
+        raise FileNotFoundError(
+            "KIT CNC files not found. Drop extracted RADAR4KIT archive contents into "
+            f"{raw_dir} (see kit_cnc_README.txt). DOI: "
+            "https://doi.org/10.35097/hvvwn1kfwf7qt48z — until then use synth_cnc_g01."
+        )
+    # Minimal wrap: prefer accel/force channel from first usable .mat
+    rng = np.random.default_rng(seed + 83)
+    ideals: list[np.ndarray] = []
+    engines: list[np.ndarray] = []
+    used = None
+    for mat_path in sorted(mats)[:40]:
+        try:
+            import scipy.io as sio
+
+            blob = sio.loadmat(str(mat_path), squeeze_me=True, struct_as_record=False)
+        except Exception:
+            continue
+        # Largest 1-D numeric ≥ period_l*4 as vib/force proxy
+        best = None
+        best_n = 0
+        for k, v in blob.items():
+            if k.startswith("__"):
+                continue
+            try:
+                a = np.asarray(v, dtype=np.float64).ravel()
+            except Exception:
+                continue
+            if a.size > best_n and a.size >= period_l * 4:
+                best, best_n = a, a.size
+        if best is None:
+            continue
+        used = str(mat_path)
+        step = max(1, best.size // (n_periods * 2))
+        for i in range(0, best.size - period_l, step):
+            seg = best[i : i + period_l]
+            if seg.size < period_l:
+                break
+            ideal = _zscore(seg.astype(np.float32))
+            # Sharp-corner proxy: emphasize local peaks + cliff
+            eng = ideal.copy()
+            eng = _inject_cliff(eng, rng)
+            ideals.append(ideal)
+            engines.append(eng)
+            if len(ideals) >= n_periods:
+                break
+        if len(ideals) >= n_periods:
+            break
+    if len(ideals) < 8:
+        raise FileNotFoundError(
+            f"KIT drop present but no usable long 1-D channels found under {raw_dir} "
+            f"(mats={len(mats)}, json={len(jsons)}, nc={len(ncs)}). "
+            "Expect synced sensor .mat with force/accel time series."
+        )
+    while len(ideals) < n_periods:
+        ideals.append(ideals[len(ideals) % len(ideals)])
+        engines.append(engines[len(engines) % len(engines)])
+    return DatasetBundle(
+        name="kit_cnc_real",
+        ideal=torch.from_numpy(np.stack(ideals[:n_periods], 0)),
+        engine=torch.from_numpy(np.stack(engines[:n_periods], 0)),
+        meta={
+            "domain": "cnc",
+            "n": n_periods,
+            "period_l": period_l,
+            "wrap": (
+                "KIT real sensor/controller streams: ideal=z-scored segment; "
+                "engine=+wrap cliff (G01 corner / loop residual proxy)."
+            ),
+            "citation": "Ströbel et al. 2025, DOI 10.35097/hvvwn1kfwf7qt48z (CC BY 4.0)",
+            "source_mat": used,
+            "seed": seed,
+            "label": "kit_cnc_real",
+        },
+    )
+
+
 def try_optional_probe() -> dict[str, str]:
     """Document skipped optional datasets (real KIT / PMU / Paderborn / NMR)."""
+    ieee_mat = list((RAW / "ieee_pmu").glob("*.mat")) if (RAW / "ieee_pmu").is_dir() else []
+    kit_dir = RAW / "kit_cnc"
+    kit_has = False
+    if kit_dir.is_dir():
+        kit_has = any(kit_dir.rglob("*.mat")) or any(kit_dir.rglob("*.json")) or any(
+            kit_dir.rglob("*.nc")
+        )
     base = {
         "kit_cnc_real": (
-            "skipped — KIT CNC DOI needs browser/login; ran synth_cnc_g01 instead"
+            "ready — files detected under raw/kit_cnc/"
+            if kit_has
+            else (
+                "awaiting drop — extract KIT CNC into "
+                "brand/artifacts/signal_heal_transfer/raw/kit_cnc/ "
+                "(see kit_cnc_README.txt); DOI https://doi.org/10.35097/hvvwn1kfwf7qt48z; "
+                "synth_cnc_g01 remains the scored proxy"
+            )
         ),
         "ieee_pmu_real": (
-            "skipped — IEEE DataPort free-account wall; ran synth_pmu_cycle instead"
+            "mat present — run scripts/fetch_and_probe_ieee_pmu.py + build_ieee_pmu_real"
+            if ieee_mat
+            else (
+                "S3 URI known (s3://ieee-dataport/open/11968/IEEE-39-bus_10_generator_PMU.mat) "
+                "but anonymous --no-sign-request / HTTPS GET return 403; drop .mat into "
+                "raw/ieee_pmu/ after free IEEE DataPort login; synth_pmu_cycle remains proxy; "
+                "content is phasors → prefer TVE probe over musical R"
+            )
         ),
         "paderborn_kat": (
             "extracted K001 via repo UnRAR.exe — classical wrap board available as "
@@ -823,6 +1112,29 @@ def try_optional_probe() -> dict[str, str]:
             base.update(json.loads(skip_path.read_text(encoding="utf-8")))
         except Exception:
             pass
+    # Re-assert live filesystem truth over stale cache for KIT / IEEE
+    if ieee_mat:
+        base["ieee_pmu_real"] = (
+            f"mat present ({ieee_mat[0].name}, {ieee_mat[0].stat().st_size} B) — "
+            "phasors; TVE probe / phasor-synth board"
+        )
+        base["ieee_pmu"] = base["ieee_pmu_real"]
+    else:
+        base["ieee_pmu_real"] = (
+            "S3 URI known but anonymous GET 403; drop "
+            "IEEE-39-bus_10_generator_PMU.mat into raw/ieee_pmu/; "
+            "synth_pmu_cycle proxy still scored"
+        )
+        base["ieee_pmu"] = base["ieee_pmu_real"]
+    if kit_has:
+        base["kit_cnc_real"] = "files detected under raw/kit_cnc/ — build_kit_cnc_real available"
+        base["kit_cnc"] = base["kit_cnc_real"]
+    else:
+        base["kit_cnc_real"] = (
+            "awaiting user drop under raw/kit_cnc/ (kit_cnc_README.txt); "
+            "synth_cnc_g01 proxy still scored"
+        )
+        base["kit_cnc"] = base["kit_cnc_real"]
     return base
 
 
@@ -841,6 +1153,8 @@ def ensure_bundles(
         "ptbxl_ecg": lambda: build_ptbxl(n_periods=n_periods),
         "synth_cnc_g01": lambda: build_synth_cnc(n_periods=n_periods),
         "synth_pmu_cycle": lambda: build_synth_pmu(n_periods=n_periods),
+        "ieee_pmu_real": lambda: build_ieee_pmu_real(n_periods=n_periods),
+        "kit_cnc_real": lambda: build_kit_cnc_real(n_periods=n_periods),
     }
     for name, fn in builders.items():
         cache_path = CACHE / f"{name}.pt"
@@ -851,7 +1165,19 @@ def ensure_bundles(
                 continue
             except Exception:
                 pass
-        bundle = fn()
+        try:
+            bundle = fn()
+        except FileNotFoundError as e:
+            out[name] = None
+            if name in ("kit_cnc_real", "ieee_pmu_real"):
+                # leave skip message; do not raise
+                (CACHE / f"{name}_stub_error.txt").write_text(str(e), encoding="utf-8")
+            continue
+        except Exception as e:
+            out[name] = None
+            if name in ("kit_cnc_real", "ieee_pmu_real"):
+                (CACHE / f"{name}_stub_error.txt").write_text(repr(e), encoding="utf-8")
+            continue
         out[name] = bundle
         if bundle is not None:
             bundle.save(cache_path)
@@ -866,6 +1192,14 @@ def ensure_bundles(
         skip["paderborn_kat"] = (
             "K001 extracted; classical paderborn_kat board cached — deep SOTA still not executed"
         )
+    if out.get("ieee_pmu_real") is not None:
+        skip["ieee_pmu_real"] = (
+            "phasor-synth L=256 board cached — see meta label; TVE probe is preferred score"
+        )
+        skip.pop("ieee_pmu", None)
+    if out.get("kit_cnc_real") is not None:
+        skip["kit_cnc_real"] = "kit_cnc_real board cached from dropped files"
+        skip.pop("kit_cnc", None)
     (CACHE / "skipped_optional.json").write_text(json.dumps(skip, indent=2), encoding="utf-8")
     return out
 
