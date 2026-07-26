@@ -1,54 +1,61 @@
 # Signal-heal transfer pilot
 
-Generated: 20260726T083000Z (IEEE PMU S3 probe + KIT drop folder)
+Generated: `20260726T074617Z`
 
 ## Method under test
 
-- **Ours:** hybrid GA–PPO outer loop (hybrid_lstm).
-- Period length fixed to N=256; metric = DenoiseOpt prolonged residual $R$.
+- **Ours:** hybrid GA–PPO outer loop (`hybrid_lstm` in `bench_meta_approaches_5k.py`).
+- FitCell / SeamCell / arch search reused; period length fixed to `N=256`.
+- Metric: DenoiseOpt prolonged residual $R$ (same formula as wavetable).
+- Pilot budget: modest outer iters (see `config`); not full industrial overnight.
 
 ## Wrap construction
 
-- **CWRU / MFPT:** existing bearing boards.
-- **Paderborn KAt (K001):** extracted with repo-root UnRAR.exe → raw/paderborn/K001/ (**80** .mat, ~666 MB). build_paderborn → paderborn_kat.
-- **MIT-BIH / PTB-XL / synth CNC / synth PMU:** unchanged.
-- **IEEE 39-bus PMU:** S3 URI `s3://ieee-dataport/open/11968/IEEE-39-bus_10_generator_PMU.mat` identified. Anonymous `--no-sign-request` / public HTTPS still **403** (OA needs free IEEE login). Drop `.mat` into `raw/ieee_pmu/` then run `scripts/fetch_and_probe_ieee_pmu.py`. Content is **phasors** → prefer TVE / window-leakage probe (not musical prolonged-$R$). Optional `build_ieee_pmu_real()` = phasor-synthesized cycles with explicit footnote.
-- **KIT CNC:** awaiting manual extract into `raw/kit_cnc/` — see `raw/kit_cnc/kit_cnc_README.txt`. Stub `build_kit_cnc_real()` errors clearly until files appear.
+- **CWRU bearings:** DE @12 kHz; per-rev windows via RPM; **ideal** = cubic resample to $L$; **engine** = linear resample (bad-COT proxy) + DenoiseOpt-style wrap cliff + seam noise.
+- **MFPT:** same protocol when zip available; fixed shaft-rate periods.
+- **Paderborn KAt (K001):** vibration_1 @~64 kHz; speed→angle equal-rev windows when Mech_4kHz tach available; same cubic ideal / linear+cliff engine (classical board only).
+- **MIT-BIH / PTB-XL ECG:** R–R beats → $L$; **ideal** = local mean template + mild endpoint equalize (SBMM-lite classical); **engine** = single beat + wrap cliff.
+- **synth_cnc_g01 / synth_pmu_cycle:** synthetic CNC / power-cycle proxies when KIT / DataPort blocked.
+
+## Seeds
+
+- Search / construction seed: `1902771841`
+- Holdout sample seed: `20260719`
 
 ## Honesty / limits
 
-- UnRAR **unblocked**; K001 extract **done**.
-- Deep Paderborn / Cycle-GAN / BeatDiff / MOS–MUSHRA **not executed** — see DEEP_SOTA_NOT_EXECUTED.json.
-- Paderborn **Ours** smoke (iters=20) ≠ full 250-iter transfer protocol.
-- Domain N2N on Paderborn is protocol-matched (4000 steps).
-- IEEE PMU open S3 path **documented**; anonymous GET still blocked — manual drop / DataPort login required.
-- KIT still **awaiting user drop**.
+- Baselines are a **classical board** (+ domain classical COT / SBMM-lite). We do **not** claim BeatDiff / Cycle-GAN / deep order-tracking SOTA unless those weights ran.
+- See `DEEP_SOTA_NOT_EXECUTED.json` and `LISTENING_PROTOCOL_MAIN.md` (no invented MOS).
+- Do not wipe `brand/artifacts/meta_approach_compare/`.
+- Optional KIT CNC / IEEE PMU / BMRB NMR skipped if login/paywall. Paderborn K001 is extracted; deep Paderborn models remain unwired.
 
-### Login / drop
+### Login-walled downloads (user must open)
 
-- KIT CNC drop: `brand/artifacts/signal_heal_transfer/raw/kit_cnc/` — https://doi.org/10.35097/hvvwn1kfwf7qt48z
-- IEEE PMU drop: `brand/artifacts/signal_heal_transfer/raw/ieee_pmu/` — https://ieee-dataport.org/open-access/pmu-measurements-ieee-39-bus-power-system-model
+- KIT CNC: https://doi.org/10.35097/hvvwn1kfwf7qt48z
+- IEEE 39-bus PMU: https://ieee-dataport.org/open-access/pmu-measurements-ieee-39-bus-power-system-model
 
-### Table 14 status (abbrev)
+### Skipped optional
 
-| Scope | Status |
-|-------|--------|
-| Domain-trained N2N | Executed (incl. Paderborn) |
-| Cycle-GAN / BeatDiff | Blocked |
-| Paderborn KAt deep | Blocked — extract done; deep unwired |
-| Full PTB-XL | Blocked (subset) |
-| IEEE PMU | S3 URI known; anonymous 403; drop/login; phasors → TVE probe when mat present |
-| KIT CNC | Awaiting user drop under raw/kit_cnc/ |
-| MOS / MUSHRA | Not collected |
+- **kit_cnc_real:** awaiting user drop under raw/kit_cnc/ (kit_cnc_README.txt); synth_cnc_g01 proxy still scored
+- **ieee_pmu_real:** S3 URI known but anonymous GET 403; drop IEEE-39-bus_10_generator_PMU.mat into raw/ieee_pmu/; synth_pmu_cycle proxy still scored
+- **paderborn_kat:** K001 extracted; classical paderborn_kat board cached — deep SOTA still not executed
+- **bmrb_nmr:** skipped — BMRB FID deferred
+- **deep_sota_cyclegan_beatdiff:** not executed — no trained Cycle-GAN / BeatDiff weights under residual protocol
+- **kit_cnc:** awaiting user drop under raw/kit_cnc/ (kit_cnc_README.txt); synth_cnc_g01 proxy still scored
+- **ieee_pmu:** S3 URI known but anonymous GET 403; drop IEEE-39-bus_10_generator_PMU.mat into raw/ieee_pmu/; synth_pmu_cycle proxy still scored
 
-## Paderborn paderborn_kat scores (prolonged $R$ / $R_{\mathrm{blend}}$)
+## Results table
 
-| Method | Score | Note |
-|--------|-------|------|
-| no_bake | 0.8376 | classical |
-| dual_cosine | 0.4710 | classical |
-| ours_hybrid_lstm | 0.8932 | **smoke iters=20** |
-| n2n_domain_trained $R$ | 0.8387 | 4000 steps |
-| n2n_domain_trained $R_{\mathrm{blend}}$ | 0.8421 | 4000 steps |
+See `results_table.json` and `fig_signal_heal_transfer.{png,pdf}`.
 
-Full table: results_table.json. Status: cache/paderborn_status.json · cache/ieee_pmu_status.json.
+## Reproduce
+
+```bash
+.venv_gpu/Scripts/python scripts/download_signal_heal_data.py
+.venv_gpu/Scripts/python scripts/bench_signal_heal_transfer.py --iters 250 --merge-existing
+.venv_gpu/Scripts/python scripts/export_signal_heal_hear_pack.py
+```
+
+Also: `REPRO.md`, `DEEP_SOTA_NOT_EXECUTED.json`, `LISTENING_PROTOCOL_MAIN.md`.
+
+

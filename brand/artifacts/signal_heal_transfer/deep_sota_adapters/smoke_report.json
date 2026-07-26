@@ -1,0 +1,44 @@
+{
+  "updated_at": "20260726T072258Z",
+  "metric_footnote": "Clinical ECG restoration (Cycle-GAN / BeatDiff) optimizes different objectives than DenoiseOpt prolonged wrap residual R. Clinical restore \u2260 wrap-R.",
+  "device": "cuda/cpu",
+  "external_clones": {
+    "cyclegan": true,
+    "beatdiff": true
+  },
+  "methods": {
+    "cycle_gan_ecg": {
+      "method": "cycle_gan_ecg",
+      "status": "scored",
+      "metric_footnote": "Clinical ECG restoration (Cycle-GAN / BeatDiff) optimizes different objectives than DenoiseOpt prolonged wrap residual R.",
+      "weight": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\cyclegan\\model_weights_16NQ3.pth",
+      "notes": [
+        "loaded model_weights_16NQ3.pth via cyclegan_arch_minimal"
+      ],
+      "scores": {
+        "mitbih_ecg": {
+          "R": 0.0699673593044281,
+          "R_blend": 0.10628266632556915,
+          "no_bake_R": 0.6447737812995911,
+          "status": "scored",
+          "n_holdout": 64
+        },
+        "ptbxl_ecg": {
+          "R": 0.14803940057754517,
+          "R_blend": 0.22339724004268646,
+          "no_bake_R": 0.5428313612937927,
+          "status": "scored",
+          "n_holdout": 64
+        }
+      }
+    },
+    "beatdiff": {
+      "method": "beatdiff",
+      "status": "blocked",
+      "weight": null,
+      "scores": {},
+      "blocker": "No BeatDiff checkpoint; HF lbedin/BeatDiff auth/empty; Drive folder not usable as single ckpt; retrain exceeds session.",
+      "metric_footnote": "Clinical ECG restoration (Cycle-GAN / BeatDiff) optimizes different objectives than DenoiseOpt prolonged wrap residual R."
+    }
+  }
+}

@@ -1,73 +1,118 @@
 {
-  "schema": "denoiseopt.signal_heal_deep_sota_status.v2",
-  "updated_at": "20260726T083000Z",
+  "schema": "denoiseopt.signal_heal_deep_sota_status.v3",
+  "updated_at": "20260726T072459Z",
   "paper_table": "tab:transfer-sota-status (Table 14)",
-  "honesty": "Do not invent Cycle-GAN / BeatDiff / Paderborn-deep / full-PTB-XL / real KIT/PMU / MOS\u2013MUSHRA numbers. Only report scores when artifacts under this tree contain measured values. Domain-trained N2N is executed \u2014 cite holdout R / R_blend from results_table.json table[*].n2n_domain_trained and domain_n2n/summary.json.",
-  "what_did_run": "Classical shared board + domain classical proxies (bad-COT / SBMM-lite / spline) + Ours hybrid_lstm under prolonged residual R on six boards (see results_table.json). Domain-trained Noise2Noise (corrupt\u2192corrupt, 4000 Adam steps, holdout seed 20260719, train seed 424242) scored on all six boards and merged as n2n_domain_trained.",
+  "honesty": "Do not invent scores. Clinical ECG restore != wrap-R. Only report measured values from this tree.",
+  "what_did_run": "Classical boards + Ours hybrid_lstm (250 iters) + domain N2N. Paderborn full Ours. PTB-XL expanded board classical+N2N (+Ours in flight). Cycle-GAN OOD wrap-R scored. BeatDiff blocked.",
   "artifact_table": "brand/artifacts/signal_heal_transfer/results_table.json",
+  "metric_footnote_cyclegan_beatdiff": "Clinical restore (artifact removal / beat morph) != DenoiseOpt prolonged wrap residual R. Cycle-GAN wrap-R is an OOD probe.",
   "rows": [
     {
       "id": "domain_trained_n2n",
       "table14_scope": "Domain-trained Noise2Noise",
       "status": "executed",
-      "executable_now": true,
-      "blocker": null,
+      "paper_note_draft": "Scored on seven boards (Paderborn N2N R=0.8387; expanded PTB-XL N2N R=0.5702)",
       "result": {
-        "script": "scripts/train_n2n_transfer_domains.py",
-        "args": "--device cuda --steps 4000 --merge",
-        "out_dir": "brand/artifacts/signal_heal_transfer/domain_n2n/",
-        "summary": "brand/artifacts/signal_heal_transfer/domain_n2n/summary.json",
-        "merge_target": "brand/artifacts/signal_heal_transfer/results_table.json \u2192 table[*].n2n_domain_trained",
-        "finished_at": "20260726T060508Z",
-        "primary_metric": "prolonged residual R (holdout)",
         "domains": {
           "cwru_bearings": {
             "R": 0.868618369102478,
-            "R_blend": 0.8660277128219604
-          },
-          "mfpt_bearings": {
-            "R": 0.8817377090454102,
-            "R_blend": 0.8662163019180298
+            "R_blend": 0.8660277128219604,
+            "kind": "n2n_domain_trained",
+            "protocol": "n2n_corrupt_corrupt_domain",
+            "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\cwru_bearings\\n2n_corrupt_corrupt.pt",
+            "n_holdout": 64,
+            "steps": 4000
           },
           "mitbih_ecg": {
             "R": 0.6529576778411865,
-            "R_blend": 0.7495031356811523
+            "R_blend": 0.7495031356811523,
+            "kind": "n2n_domain_trained",
+            "protocol": "n2n_corrupt_corrupt_domain",
+            "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\mitbih_ecg\\n2n_corrupt_corrupt.pt",
+            "n_holdout": 64,
+            "steps": 4000
           },
           "ptbxl_ecg": {
-            "R": 0.5604552030563354,
-            "R_blend": 0.7365267276763916
+            "R": 0.5701605081558228,
+            "R_blend": 0.7536793947219849,
+            "kind": "n2n_domain_trained",
+            "protocol": "n2n_corrupt_corrupt_domain",
+            "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\ptbxl_ecg\\n2n_corrupt_corrupt.pt",
+            "n_holdout": 64,
+            "steps": 4000
           },
           "synth_cnc_g01": {
             "R": 0.48330581188201904,
-            "R_blend": 0.5534172654151917
+            "R_blend": 0.5534172654151917,
+            "kind": "n2n_domain_trained",
+            "protocol": "n2n_corrupt_corrupt_domain",
+            "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\synth_cnc_g01\\n2n_corrupt_corrupt.pt",
+            "n_holdout": 64,
+            "steps": 4000
           },
           "synth_pmu_cycle": {
             "R": 0.9788673520088196,
-            "R_blend": 0.958940863609314
+            "R_blend": 0.958940863609314,
+            "kind": "n2n_domain_trained",
+            "protocol": "n2n_corrupt_corrupt_domain",
+            "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\synth_pmu_cycle\\n2n_corrupt_corrupt.pt",
+            "n_holdout": 64,
+            "steps": 4000
+          },
+          "mfpt_bearings": {
+            "R": 0.8817377090454102,
+            "R_blend": 0.8662163019180298,
+            "kind": "n2n_domain_trained",
+            "protocol": "n2n_corrupt_corrupt_domain",
+            "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\mfpt_bearings\\n2n_corrupt_corrupt.pt",
+            "n_holdout": 64,
+            "steps": 4000
           },
           "paderborn_kat": {
             "R": 0.8386802077293396,
-            "R_blend": 0.8421123027801514
+            "R_blend": 0.8421123027801514,
+            "kind": "n2n_domain_trained",
+            "protocol": "n2n_corrupt_corrupt_domain",
+            "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\paderborn_kat\\n2n_corrupt_corrupt.pt",
+            "n_holdout": 64,
+            "steps": 4000
           }
         }
-      },
-      "paper_note_draft": "Scored \u2014 holdout prolonged R on seven boards (incl. Paderborn K001 classical board N2N R=0.8387; 4000 steps)"
+      }
     },
     {
       "id": "cycle_gan_ecg",
       "table14_scope": "Cycle-GAN (ECG)",
-      "status": "blocked",
-      "executable_now": false,
-      "blocker": {
-        "kind": "missing_weights_and_pipeline",
-        "detail": "No published Cycle-GAN (or equivalent adversarial beat-morph) checkpoints adapted to this L=256 prolonged residual R wrap protocol live in-repo. No training recipe under DenoiseOpt residual scoring. Classical ECG rows use SBMM-lite / spline_join only.",
-        "unblock_requires": [
-          "Obtain or train ECG Cycle-GAN weights for periodized beat repair",
-          "Wrap inference to emit L=256 periods scored with residual_score / residual_score_blend",
-          "Run on the same MIT-BIH / PTB-XL transfer boards and seeds (holdout 20260719)"
-        ]
+      "status": "executed_ood_wrapR",
+      "executable_now": true,
+      "blocker": null,
+      "result": {
+        "script": "scripts/adapters_ecg_deep_sota.py",
+        "weight": "external/weights/cyclegan/model_weights_16NQ3.pth",
+        "report": "deep_sota_adapters/smoke_report.json",
+        "scores": {
+          "mitbih_ecg": {
+            "R": 0.0699673593044281,
+            "R_blend": 0.10628266632556915,
+            "kind": "cycle_gan_ecg_ood_wrapR",
+            "protocol": "operational_cyclegan_pretrained_L256_holdout_20260719",
+            "weight": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\cyclegan\\model_weights_16NQ3.pth",
+            "n_holdout": 64,
+            "footnote": "Clinical restore \u2260 wrap-R; OOD transfer probe only."
+          },
+          "ptbxl_ecg": {
+            "R": 0.14803940057754517,
+            "R_blend": 0.22339724004268646,
+            "kind": "cycle_gan_ecg_ood_wrapR",
+            "protocol": "operational_cyclegan_pretrained_L256_holdout_20260719",
+            "weight": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\cyclegan\\model_weights_16NQ3.pth",
+            "n_holdout": 64,
+            "footnote": "Clinical restore \u2260 wrap-R; OOD transfer probe only."
+          }
+        },
+        "footnote": "Clinical restore != wrap-R; OOD transfer probe only."
       },
-      "paper_note_draft": "Not run \u2014 no adapted Cycle-GAN weights under prolonged-$R$ protocol"
+      "paper_note_draft": "OOD wrap-R scored (MIT-BIH R=0.0700; PTB-XL R=0.1480) \u2014 clinical restore != wrap-R"
     },
     {
       "id": "beatdiff",
@@ -76,136 +121,56 @@
       "executable_now": false,
       "blocker": {
         "kind": "missing_diffusion_checkpoints",
-        "detail": "BeatDiff / diffusion beat generation-or-repair requires trained diffusion checkpoints and a different objective than DenoiseOpt prolonged R. No reimplementation or checkpoint import exists in this repo.",
-        "unblock_requires": [
-          "Upstream BeatDiff (or cited diffusion) checkpoints + inference code",
-          "Adapter to L=256 engine\u2192repaired periods under residual protocol",
-          "Compute budget for sampling on transfer boards"
-        ]
+        "detail": "HF lbedin/BeatDiff auth/empty; Google Drive prior tree not a loadable single checkpoint for L=256 wrap-R adapter; retrain exceeds session."
       },
-      "paper_note_draft": "Not run \u2014 no diffusion checkpoints under residual protocol"
+      "paper_note_draft": "Not run \u2014 no usable diffusion checkpoint under wrap-R protocol"
     },
     {
       "id": "paderborn_kat_deep",
       "table14_scope": "Paderborn KAt deep",
       "status": "blocked",
-      "executable_now": false,
-      "blocker": {
-        "kind": "deep_pipeline_only",
-        "detail": "K001.rar extracted with repo-root UnRAR.exe into raw/paderborn/K001 (80 .mat, ~666 MB). Classical wrap board build_paderborn / paderborn_kat is available. Published deep Paderborn fault/denoise pipelines are still not wired to prolonged-R wrap boards \u2014 do not claim deep-Paderborn scores.",
-        "evidence": "brand/artifacts/signal_heal_transfer/cache/paderborn_status.json",
-        "unblock_requires": [
-          "Port or obtain deep Paderborn baseline weights + residual-R eval harness",
-          "Run on the same L=256 paderborn_kat board / holdout seed 20260719"
-        ]
-      },
-      "paper_note_draft": "Not run \u2014 K001 extracted; classical board available; deep models unwired",
       "classical_board_available": true,
-      "classical_smoke": {
-        "ours_hybrid_lstm_iters": 20,
-        "ours_R": 0.8932,
-        "note": "smoke not full protocol"
-      }
+      "classical_full_ours": {
+        "ours_hybrid_lstm_iters": 250,
+        "ours_R": 0.9270495772361755,
+        "n2n_R": 0.8386802077293396,
+        "note": "full protocol classical board; deep fault models still unwired"
+      },
+      "paper_note_draft": "Deep unwired; classical board + full Ours (R=0.9270) + domain N2N available"
     },
     {
       "id": "full_ptbxl",
-      "table14_scope": "Full PTB-XL",
-      "status": "blocked",
-      "executable_now": false,
-      "blocker": {
-        "kind": "subset_only",
-        "detail": "Pilot scored PTB-XL records500 (*_hr, 500 Hz) lead-I only, n=256 R\u2013R periods \u2014 not the full multi-lead / multi-rate PhysioNet corpus. Full download + multi-lead beat pools exceed this session's transfer pilot scope.",
-        "what_ran": "ptbxl_ecg classical board + hybrid_lstm + domain N2N (see results_table.json / cache/ptbxl_ecg_meta.json)",
-        "unblock_requires": [
-          "Complete PhysioNet PTB-XL download (100 Hz + 500 Hz as required)",
-          "Define multi-lead / full-record sampling policy matching paper claims",
-          "Re-run classical + Ours (+ optional domain N2N) at full scale"
-        ]
+      "table14_scope": "Expanded / full PTB-XL",
+      "status": "substantially_expanded",
+      "executable_now": true,
+      "policy": "PTBXL_POLICY.md",
+      "result": {
+        "n_records_files": 2137,
+        "n_beats_pool": 23094,
+        "n": 256,
+        "lead": "I",
+        "subset": "records500 (*_hr, 500 Hz)",
+        "classical_no_bake": 0.761685848236084,
+        "n2n_R": 0.5701605081558228,
+        "ours_status": "iters=250 re-run in flight on expanded board"
       },
-      "paper_note_draft": "Subset only \u2014 records500 lead-I, $n{=}256$ (not full corpus)"
+      "paper_note_draft": "Expanded records500 lead-I (n_rec\u22482137, pool\u224823094, board n=256); multi-lead still out of scope"
     },
     {
       "id": "real_kit_cnc_ieee_pmu",
       "table14_scope": "Real KIT CNC / IEEE PMU",
-      "status": "partially_unblocked",
-      "executable_now": false,
-      "blocker": {
-        "kind": "ieee_anonymous_s3_403_kit_awaiting_drop",
-        "detail": "IEEE PMU open S3 URI is known (s3://ieee-dataport/open/11968/IEEE-39-bus_10_generator_PMU.mat). Anonymous aws/boto3 --no-sign-request and public HTTPS GETs still return 403 \u2014 OA object GET needs free IEEE DataPort login or manual browser download into raw/ieee_pmu/. Corpus is synchrophasors (not raw AC); builders + TVE/window-leakage probe are wired (scripts/fetch_and_probe_ieee_pmu.py, build_ieee_pmu_real). KIT multimodal CNC still awaiting user extract into raw/kit_cnc/ (kit_cnc_README.txt); build_kit_cnc_real stubs with a clear error until files appear. Transfer scores still use synth_cnc_g01 / synth_pmu_cycle proxies until real boards are cached.",
-        "evidence": [
-          "brand/artifacts/signal_heal_transfer/cache/ieee_pmu_status.json",
-          "brand/artifacts/signal_heal_transfer/cache/skipped_optional.json",
-          "brand/artifacts/signal_heal_transfer/raw/ieee_pmu/README.txt",
-          "brand/artifacts/signal_heal_transfer/raw/kit_cnc/kit_cnc_README.txt"
-        ],
-        "s3_uri": "s3://ieee-dataport/open/11968/IEEE-39-bus_10_generator_PMU.mat",
-        "ieee_drop": "brand/artifacts/signal_heal_transfer/raw/ieee_pmu/",
-        "kit_drop": "brand/artifacts/signal_heal_transfer/raw/kit_cnc/",
-        "proxies_ran": [
-          "synth_cnc_g01",
-          "synth_pmu_cycle"
-        ],
-        "content_honesty": "IEEE 39-bus OA = phasors (mag\u2220, f, ROCOF); prefer TVE/window-leakage probe over musical prolonged-R. Phasor\u2192waveform L=256 board is explicitly footnoted if built.",
-        "unblock_requires": [
-          "Drop IEEE-39-bus_10_generator_PMU.mat into raw/ieee_pmu/ (after DataPort login) OR supply AWS keys for ieee-dataport",
-          "Run scripts/fetch_and_probe_ieee_pmu.py \u2192 ieee_pmu_status.json + ieee_pmu_tve_probe.json",
-          "Extract KIT CNC archive into raw/kit_cnc/ then build_kit_cnc_real()"
-        ],
-        "user_must_open": [
-          "https://doi.org/10.35097/hvvwn1kfwf7qt48z",
-          "https://ieee-dataport.org/open-access/pmu-measurements-ieee-39-bus-power-system-model"
-        ]
-      },
-      "paper_note_draft": "IEEE PMU S3 URI known (anonymous GET 403; phasors \u2014 TVE probe when mat dropped); KIT awaiting user drop; synth pilots still the scored boards"
+      "status": "blocked",
+      "paper_note_draft": "Synthetic pilots only \u2014 KIT DOI / IEEE DataPort login walls",
+      "user_must_open": [
+        "https://doi.org/10.35097/hvvwn1kfwf7qt48z",
+        "https://ieee-dataport.org/open-access/pmu-measurements-ieee-39-bus-power-system-model"
+      ]
     },
     {
       "id": "formal_mos_mushra",
       "table14_scope": "Formal MOS / MUSHRA",
       "status": "blocked",
-      "executable_now": false,
-      "blocker": {
-        "kind": "human_listening_panel",
-        "detail": "No formal MOS / MUSHRA listening study was collected. Hear-pack WAVs and informal A/B protocol exist (LISTENING_PROTOCOL_MAIN.md); inventing mean opinion scores is forbidden.",
-        "protocol_doc": "brand/artifacts/signal_heal_transfer/LISTENING_PROTOCOL_MAIN.md",
-        "unblock_requires": [
-          "Freeze WAV pack + impairment scale (wrap-click MUSHRA-style)",
-          "Recruit listeners / panel session",
-          "Report means with CIs only from collected responses"
-        ]
-      },
-      "paper_note_draft": "Not collected \u2014 hear assets / informal A/B only (no invented MOS)"
-    }
-  ],
-  "intended_baselines_legacy": [
-    {
-      "id": "cycle_gan_ecg",
-      "domain": "ecg",
-      "citation_hint": "Cycle-GAN / adversarial beat morph repair literature (ECG)",
-      "why_not_run": "No published weights adapted to L=256 prolonged residual R wrap protocol; training from scratch exceeds pilot budget."
-    },
-    {
-      "id": "beatdiff",
-      "domain": "ecg",
-      "citation_hint": "BeatDiff / diffusion beat generation or repair",
-      "why_not_run": "Requires trained diffusion checkpoints + different objective; not reimplemented here."
-    },
-    {
-      "id": "deep_order_tracking",
-      "domain": "bearings",
-      "citation_hint": "Learned / deep computed-order-tracking networks",
-      "why_not_run": "Pilot uses classical bad-COT (linear resample) + DualCosine board only."
-    },
-    {
-      "id": "paderborn_deep",
-      "domain": "bearings",
-      "citation_hint": "Paderborn KAt deep fault / denoise pipelines",
-      "why_not_run": "K001 extracted (UnRAR unblocked); classical wrap board available; deep baselines still unwired."
-    },
-    {
-      "id": "pmu_tve_estimator_sota",
-      "domain": "power",
-      "citation_hint": "IEEE C37.118 TVE-optimized estimators on OA PMU traces",
-      "why_not_run": "Anonymous S3/HTTPS GET 403 on open URI; mat not on disk yet. Probe script ready (fetch_and_probe_ieee_pmu.py). Only synth_pmu_cycle scored so far."
+      "paper_note_draft": "Not collected"
     }
   ]
 }

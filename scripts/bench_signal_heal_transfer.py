@@ -626,9 +626,24 @@ def write_paper_note(path: Path, results: dict[str, Any]) -> None:
         lines.append("")
         lines.append("| Method | $R$ | Label |")
         lines.append("|--------|-----|-------|")
-        for m, r in sorted(row.items(), key=lambda kv: (-(kv[1] if kv[1] == kv[1] else -1), kv[0])):
+        def _sort_key(kv: tuple[str, Any]) -> tuple[float, str]:
+            v = kv[1]
+            if isinstance(v, dict):
+                v = v.get("R", float("nan"))
+            if not isinstance(v, (int, float)) or v != v:
+                return (1.0, kv[0])
+            return (-float(v), kv[0])
+
+        for m, r in sorted(row.items(), key=_sort_key):
             lab = BASELINE_LABELS.get(m, m)
-            lines.append(f"| `{m}` | {r:.4f} | {lab} |")
+            if isinstance(r, dict):
+                rv = r.get("R")
+                if isinstance(rv, (int, float)):
+                    lines.append(f"| `{m}` | {float(rv):.4f} | {lab} (nested R) |")
+                continue
+            if not isinstance(r, (int, float)):
+                continue
+            lines.append(f"| `{m}` | {float(r):.4f} | {lab} |")
         lines.append("")
     lines += [
         "## Caveats",
@@ -735,7 +750,16 @@ def main() -> int:
                 json.dumps(summary, indent=2), encoding="utf-8"
             )
         row = dict(base_scores)
-        row["ours_hybrid_lstm"] = ours_r if ours_r == ours_r else float(summary["champ_raw"]) if summary else float("nan")
+        if ours_r == ours_r:
+            row["ours_hybrid_lstm"] = ours_r
+        elif summary is not None:
+            row["ours_hybrid_lstm"] = float(summary["champ_raw"])
+        # else: leave for prior-row preserve below (skip-search / failed search)
+        # Preserve prior nested columns (e.g. n2n_domain_trained) when re-running Ours only.
+        prior_row = prior_table.get(name) or {}
+        for pk, pv in prior_row.items():
+            if pk not in row:
+                row[pk] = pv
         table[name] = row
         per_ds[name] = {
             "meta": bundle.meta,

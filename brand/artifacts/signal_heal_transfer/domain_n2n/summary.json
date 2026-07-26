@@ -1,8 +1,10 @@
 {
   "schema": "denoiseopt.domain_n2n.v1",
-  "finished_at": "20260726T062601Z",
-  "note": "Rebuilt from results_table.json after paderborn_kat add-on train; prior domains preserved.",
+  "finished_at": "20260726T072400Z",
+  "device": "cuda",
   "steps": 4000,
+  "batch": 48,
+  "lr": 0.002,
   "holdout_seed": 20260719,
   "train_seed": 424242,
   "primary_metric": "prolonged residual R on disjoint holdout",
@@ -33,15 +35,16 @@
     },
     "ptbxl_ecg": {
       "domain": "ptbxl_ecg",
-      "R": 0.5604552030563354,
-      "R_blend": 0.7365267276763916,
-      "steps": 4000,
-      "kind": "n2n_domain_trained",
+      "R": 0.5701605081558228,
+      "R_blend": 0.7536793947219849,
+      "no_bake_R": 0.5687443614006042,
+      "dual_cosine_R": 0.282890647649765,
       "n_holdout": 64,
-      "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\ptbxl_ecg\\n2n_corrupt_corrupt.pt",
       "n_train": 192,
       "n_params": 53506,
-      "elapsed_sec": 34.09048569999868
+      "steps": 4000,
+      "elapsed_sec": 26.20296419999795,
+      "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\ptbxl_ecg\\n2n_corrupt_corrupt.pt"
     },
     "synth_cnc_g01": {
       "domain": "synth_cnc_g01",
@@ -92,6 +95,9 @@
       "elapsed_sec": 26.527546400029678
     }
   },
+  "domains_this_run": [
+    "ptbxl_ecg"
+  ],
   "not_run": {
     "cycle_gan_ecg": "no adapted weights / training pipeline in-repo",
     "beatdiff": "no diffusion checkpoints under residual protocol",

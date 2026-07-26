@@ -1,11 +1,30 @@
 {
-  "no_bake": 0.7503350973129272,
-  "dual_cosine": 0.4768674969673157,
-  "soft_periodize_hann": 0.45297813415527344,
-  "linear_fade": 0.510837197303772,
-  "endpoint_pin_mean": 0.8569492697715759,
-  "seam_fir3": 0.7461624145507812,
-  "spline_join": 0.7442231178283691,
-  "beat_average_sbmm_lite": 0.32598716020584106,
-  "ours_hybrid_lstm": 0.9335662126541138
+  "no_bake": 0.761685848236084,
+  "dual_cosine": 0.5118306875228882,
+  "soft_periodize_hann": 0.4876847267150879,
+  "linear_fade": 0.545569658279419,
+  "endpoint_pin_mean": 0.8696064949035645,
+  "seam_fir3": 0.7604179382324219,
+  "spline_join": 0.7608078718185425,
+  "beat_average_sbmm_lite": 0.3632850646972656,
+  "ours_hybrid_lstm": 0.9378750324249268,
+  "n2n_domain_trained": {
+    "R": 0.5701605081558228,
+    "R_blend": 0.7536793947219849,
+    "kind": "n2n_domain_trained",
+    "protocol": "n2n_corrupt_corrupt_domain",
+    "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\ptbxl_ecg\\n2n_corrupt_corrupt.pt",
+    "n_holdout": 64,
+    "steps": 4000
+  },
+  "cycle_gan_ecg": {
+    "R": 0.14803940057754517,
+    "R_blend": 0.22339724004268646,
+    "kind": "cycle_gan_ecg_ood_wrapR",
+    "protocol": "operational_cyclegan_pretrained_L256_holdout_20260719",
+    "weight": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\cyclegan\\model_weights_16NQ3.pth",
+    "n_holdout": 64,
+    "footnote": "Clinical restore \u2260 wrap-R; OOD transfer probe only."
+  },
+  "ours_protocol_note": "provisional: prior board Ours R until expanded-board iters=250 completes"
 }

@@ -1,0 +1,16 @@
+{
+  "updated_at": "20260726T074812Z",
+  "campaign": "table14_continue",
+  "paderborn_ours_R": 0.9270495772361755,
+  "paderborn_ours_iters": 250,
+  "paderborn_n2n_R": 0.8386802077293396,
+  "ptbxl_ours_R": 0.9378750324249268,
+  "ptbxl_n2n_R": 0.5701605081558228,
+  "ptbxl_no_bake": 0.761685848236084,
+  "ptbxl_n_records": 2137,
+  "ptbxl_n_beats_pool": 23094,
+  "cyclegan_mitbih_R": 0.0699673593044281,
+  "cyclegan_ptbxl_R": 0.14803940057754517,
+  "beatdiff": "blocked_no_checkpoint",
+  "kit_pmu": "blocked_login_walls"
+}
