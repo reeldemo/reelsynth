@@ -4,14 +4,16 @@ Source of truth: DEEP_SOTA_NOT_EXECUTED.json + deep_sota_adapters/
 
 | Scope | Status |
 |-------|--------|
-| Domain-trained Noise2Noise (SeamN2N) | Scored on seven boards (Paderborn N2N R=0.8387; expanded PTB-XL N2N R=0.5702). Our SeamN2N, not Lehtinen code. |
-| Cycle-GAN (ECG) author | OOD wrap-R scored (MIT-BIH R=0.0700; PTB-XL R=0.1555) — clinical restore ≠ wrap-R |
-| BeatDiff (Bedin) | Not run — HF huggingface-cli login + download OR browser Drive folder required |
-| Paderborn KAt deep (Al Firdausi CNN) | Trained CNN_1D_2L from scratch (seeds file=20260726/train=42); holdout 4-class acc=0.8590 (n=2560, bearings=K001/KA04/KI04/KB23); classifier wrap-R N/A. Arch-reuse wrap residual R=0.8390 (4000 steps). Wrap board: Ours 0.9270 / SeamN2N 0.8387 / DualCosine 0.4710 |
+| SeamN2N | Executed (ours, N2N-style) |
+| Cycle-GAN (author) | OOD wrap-R scored |
+| BeatDiff (Bedin) | OOD wrap-R scored — Drive Orbax prior (not HF) |
+| Paderborn Al Firdausi | Native classifier + wrap bake |
 
-## BeatDiff user action
-`
-huggingface-cli login
-huggingface-cli download lbedin/BeatDiff --local-dir brand/artifacts/signal_heal_transfer/external/weights/beatdiff_hf
-`
-Or browser: https://drive.google.com/drive/folders/1m2OvyYebvnirh1CraCrnSOyjihSkSkLG
+## BeatDiff download (no HF)
+
+```text
+# Folder (README): https://drive.google.com/drive/folders/1m2OvyYebvnirh1CraCrnSOyjihSkSkLG
+# Prior subfolder: 1QN6mZXnBpYJFxwUNYV5PXbkhd4HYw3Xh
+# Scripts: scripts/download_beatdiff_curl.py , scripts/score_beatdiff_wrap_r.py
+# Scores: MIT-BIH R=0.3693; PTB-XL R=0.3259 (one-step σ=0.5; clinical ≠ wrap-R)
+```

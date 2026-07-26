@@ -28,7 +28,7 @@
     "ieee_pmu_real": "S3 URI known but anonymous GET 403; drop IEEE-39-bus_10_generator_PMU.mat into raw/ieee_pmu/; synth_pmu_cycle proxy still scored",
     "paderborn_kat": "K001 extracted; classical+Ours+SeamN2N scored; author CNN native healthy\u2192N rate scored (wrap-R N/A)",
     "bmrb_nmr": "skipped \u2014 BMRB FID deferred",
-    "deep_sota_cyclegan_beatdiff": "Cycle-GAN OOD wrap-R scored; BeatDiff blocked \u2014 HF 401 / Drive Orbax stubs incomplete",
+    "deep_sota_cyclegan_beatdiff": "Cycle-GAN + BeatDiff OOD wrap-R scored (clinical != wrap-R footnote)",
     "kit_cnc": "awaiting user drop under raw/kit_cnc/ (kit_cnc_README.txt); synth_cnc_g01 proxy still scored",
     "ieee_pmu": "S3 URI known but anonymous GET 403; drop IEEE-39-bus_10_generator_PMU.mat into raw/ieee_pmu/; synth_pmu_cycle proxy still scored",
     "paderborn_deep": "executed_trained_alfirdausi_cnn_classifier_plus_wrap_backbone"
@@ -90,6 +90,17 @@
         "weight": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\cyclegan\\model_weights_16NQ3.pth",
         "n_holdout": 64,
         "footnote": "Clinical restore \u2260 wrap-R; OOD transfer probe only. Author Operational Cycle-GAN weights."
+      },
+      "beatdiff": {
+        "R": 0.36933428049087524,
+        "R_blend": 0.49070602655410767,
+        "no_bake_R": 0.6447737812995911,
+        "kind": "beatdiff_ood_wrapR_onestep",
+        "protocol": "beatdiff_onestep_sigma0.5_L176x9_mono_tile_step9360_holdout_20260719",
+        "orbax_step": 9360,
+        "n_holdout": 64,
+        "footnote": "Clinical BeatDiff prior OOD wrap-R probe (mono tile to 9 leads); not native Bedin metrics.",
+        "download_source": "https://drive.google.com/drive/folders/1m2OvyYebvnirh1CraCrnSOyjihSkSkLG (subfolder beatdiff_prior=1QN6mZXnBpYJFxwUNYV5PXbkhd4HYw3Xh; curl uc?export=download&confirm=t)"
       }
     },
     "ptbxl_ecg": {
@@ -119,6 +130,17 @@
         "weight": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\cyclegan\\model_weights_16NQ3.pth",
         "n_holdout": 64,
         "footnote": "Clinical restore \u2260 wrap-R; OOD transfer probe only. Author Operational Cycle-GAN weights."
+      },
+      "beatdiff": {
+        "R": 0.32593613862991333,
+        "R_blend": 0.49326974153518677,
+        "no_bake_R": 0.568744421005249,
+        "kind": "beatdiff_ood_wrapR_onestep",
+        "protocol": "beatdiff_onestep_sigma0.5_L176x9_mono_tile_step9360_holdout_20260719",
+        "orbax_step": 9360,
+        "n_holdout": 64,
+        "footnote": "Clinical BeatDiff prior OOD wrap-R probe (mono tile to 9 leads); not native Bedin metrics.",
+        "download_source": "https://drive.google.com/drive/folders/1m2OvyYebvnirh1CraCrnSOyjihSkSkLG (subfolder beatdiff_prior=1QN6mZXnBpYJFxwUNYV5PXbkhd4HYw3Xh; curl uc?export=download&confirm=t)"
       }
     },
     "synth_cnc_g01": {
@@ -2815,5 +2837,6 @@
       },
       "wrap_R": 0.8390061259269714
     }
-  }
+  },
+  "updated_at": "20260726T104142Z"
 }

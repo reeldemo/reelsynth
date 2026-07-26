@@ -1,0 +1,33 @@
+{
+  "method": "beatdiff",
+  "status": "scored",
+  "metric_footnote": "Clinical ECG restoration (Cycle-GAN / BeatDiff) optimizes different objectives (artifact removal, beat morph, inpainting) than DenoiseOpt prolonged wrap residual R. Even when weights load, wrap-R is an out-of-distribution transfer probe \u2014 not a claim that the method was designed for wavetable seam repair.",
+  "download_source": "https://drive.google.com/drive/folders/1m2OvyYebvnirh1CraCrnSOyjihSkSkLG (subfolder beatdiff_prior=1QN6mZXnBpYJFxwUNYV5PXbkhd4HYw3Xh; curl uc?export=download&confirm=t)",
+  "notes": [
+    "reconstructed hydra config at C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\beatdiff\\beatdiff_prior\\.hydra\\config.yaml",
+    "Drive listed 637 files; zstd shards load as float32; modern orbax .zarray restore skipped (manual leaf load)",
+    "params reconstructed + TrainState built"
+  ],
+  "scores": {
+    "mitbih_ecg": {
+      "R": 0.36933428049087524,
+      "R_blend": 0.49070602655410767,
+      "no_bake_R": 0.6447737812995911,
+      "status": "scored",
+      "n_holdout": 64,
+      "protocol": "beatdiff_onestep_sigma0.5_L176x9_mono_tile_step9360_holdout_20260719"
+    },
+    "ptbxl_ecg": {
+      "R": 0.32593613862991333,
+      "R_blend": 0.49326974153518677,
+      "no_bake_R": 0.568744421005249,
+      "status": "scored",
+      "n_holdout": 64,
+      "protocol": "beatdiff_onestep_sigma0.5_L176x9_mono_tile_step9360_holdout_20260719"
+    }
+  },
+  "blocker": null,
+  "orbax_step": 9360,
+  "load_ok": true,
+  "updated_at": "20260726T104123Z"
+}

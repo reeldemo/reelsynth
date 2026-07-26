@@ -40,7 +40,7 @@ Generated: `20260726T074617Z`
 - **ieee_pmu_real:** S3 URI known but anonymous GET 403; drop IEEE-39-bus_10_generator_PMU.mat into raw/ieee_pmu/; synth_pmu_cycle proxy still scored
 - **paderborn_kat:** K001 extracted; classical paderborn_kat board cached — deep SOTA still not executed
 - **bmrb_nmr:** skipped — BMRB FID deferred
-- **deep_sota_cyclegan_beatdiff:** not executed — no trained Cycle-GAN / BeatDiff weights under residual protocol
+- **deep_sota_cyclegan_beatdiff:** Cycle-GAN + BeatDiff OOD wrap-R scored (clinical ≠ wrap-R footnote); see `DEEP_SOTA_NOT_EXECUTED.json` / `deep_sota_adapters/beatdiff_report.json`
 - **kit_cnc:** awaiting user drop under raw/kit_cnc/ (kit_cnc_README.txt); synth_cnc_g01 proxy still scored
 - **ieee_pmu:** S3 URI known but anonymous GET 403; drop IEEE-39-bus_10_generator_PMU.mat into raw/ieee_pmu/; synth_pmu_cycle proxy still scored
 

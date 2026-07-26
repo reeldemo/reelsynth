@@ -5,8 +5,11 @@ Honesty:
   - Clinical ECG restore (artifact removal / beat morph) ≠ prolonged wrap residual R.
   - Do NOT invent scores. Only emit R / R_blend when pretrained weights load and
     inference runs on L=256 cracked periods from MIT-BIH / PTB-XL boards.
-  - Upstream weights live on Google Drive (Cycle-GAN, BeatDiff) or HF (lbedin/BeatDiff);
-    this script probes those paths and records blockers in DEEP_SOTA JSON.
+  - Upstream weights live on Google Drive (Cycle-GAN, BeatDiff prior+baselines).
+    BeatDiff is NOT on Hugging Face for this work — use Drive folder
+    https://drive.google.com/drive/folders/1m2OvyYebvnirh1CraCrnSOyjihSkSkLG
+    via scripts/download_beatdiff_curl.py then scripts/score_beatdiff_wrap_r.py.
+    This thin adapter still probes paths and records blockers in DEEP_SOTA JSON.
 
 Clones (gitignored):
   brand/artifacts/signal_heal_transfer/external/
