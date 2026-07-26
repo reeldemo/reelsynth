@@ -226,6 +226,24 @@ impl eframe::App for PluginEditorApp {
                 ..Default::default()
             })
             .show(ctx, |ui| {
+                if self.client.is_none() {
+                    egui::Frame::none()
+                        .fill(egui::Color32::from_rgb(48, 36, 28))
+                        .inner_margin(egui::Margin::symmetric(10.0, 6.0))
+                        .show(ui, |ui| {
+                            ui.horizontal(|ui| {
+                                ui.label(
+                                    egui::RichText::new("Not connected to Live plugin.")
+                                        .color(egui::Color32::from_rgb(255, 200, 140)),
+                                );
+                                if ui.button("Reconnect").clicked() {
+                                    self.try_connect();
+                                }
+                            });
+                        });
+                    ui.add_space(4.0);
+                }
+
                 let midi = ShellMidiDevices {
                     names: &self.midi_names,
                     selected: 0,
@@ -268,17 +286,6 @@ impl eframe::App for PluginEditorApp {
                 }
                 if let Some((freq, vel)) = actions.note_on_freq {
                     self.send_note_on(freq_to_midi(freq), vel);
-                }
-                if ui
-                    .interact(
-                        ui.max_rect(),
-                        ui.id().with("reconnect_click"),
-                        egui::Sense::click(),
-                    )
-                    .clicked()
-                    && self.client.is_none()
-                {
-                    self.try_connect();
                 }
             });
         ctx.request_repaint_after(std::time::Duration::from_millis(16));
