@@ -1,0 +1,514 @@
+{
+  "schema": "denoiseopt.v13_param_fluctuation.v1",
+  "note": "Champion parameter count is not fixed across search iterations or seeds. Outer-loop graphs jump between compact and heavy cells as R_blend improves.",
+  "v10_locked_hybrid": {
+    "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare_v10\\hybrid_lstm\\champ_cell.pt",
+    "params": 121451,
+    "r_blend": 0.969511866569519,
+    "t_ms": 5.075566664648552,
+    "blocks": [
+      "tf_split",
+      "moe_mix",
+      "residual",
+      "soft_mix"
+    ],
+    "cell_kind": "tf_split"
+  },
+  "seeds": {
+    "1902771841": {
+      "hybrid_lstm": {
+        "approach": "hybrid_lstm",
+        "champ_updates": [
+          {
+            "iter": 1,
+            "champ_raw": 0.5734089612960815,
+            "t_ms": 5.1003333331512595,
+            "params": 55854,
+            "blocks": [
+              "gated",
+              "moe_mix"
+            ],
+            "width": 40,
+            "depth": 10,
+            "cell_kind": "gated",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 2,
+            "champ_raw": 0.5947521030902863,
+            "t_ms": 76.08760000039183,
+            "params": 17268,
+            "blocks": [
+              "dilated",
+              "attn",
+              "xlstm"
+            ],
+            "width": 22,
+            "depth": 11,
+            "cell_kind": "dilated",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 6,
+            "champ_raw": 0.8510266244411469,
+            "t_ms": 8.159066666848958,
+            "params": 286087,
+            "blocks": [
+              "lstm",
+              "dense",
+              "tf_split",
+              "mlp",
+              "n2n_unet"
+            ],
+            "width": 32,
+            "depth": 12,
+            "cell_kind": "lstm",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 7,
+            "champ_raw": 0.8639130890369415,
+            "t_ms": 66.15513333357133,
+            "params": 46430,
+            "blocks": [
+              "dilated",
+              "attn",
+              "xlstm",
+              "noise_cond"
+            ],
+            "width": 48,
+            "depth": 12,
+            "cell_kind": "dilated",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 9,
+            "champ_raw": 0.8952697217464447,
+            "t_ms": 4.457933333469555,
+            "params": 15481,
+            "blocks": [
+              "soft_mix"
+            ],
+            "width": 24,
+            "depth": 9,
+            "cell_kind": "soft_mix",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 18,
+            "champ_raw": 0.8980488479137421,
+            "t_ms": 11.588800000026822,
+            "params": 263357,
+            "blocks": [
+              "n2n_unet",
+              "soft_mix",
+              "dilated",
+              "residual",
+              "mlp",
+              "attn"
+            ],
+            "width": 48,
+            "depth": 12,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 26,
+            "champ_raw": 0.9143975079059601,
+            "t_ms": 7.036566666405027,
+            "params": 258033,
+            "blocks": [
+              "n2n_unet",
+              "dense",
+              "conv1d",
+              "unet"
+            ],
+            "width": 48,
+            "depth": 12,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 37,
+            "champ_raw": 0.9261577725410461,
+            "t_ms": 74.3097666666775,
+            "params": 271183,
+            "blocks": [
+              "n2n_unet",
+              "dense",
+              "conv1d",
+              "unet",
+              "noise_cond",
+              "xlstm"
+            ],
+            "width": 32,
+            "depth": 12,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 38,
+            "champ_raw": 0.9290580749511719,
+            "t_ms": 9.614666666796742,
+            "params": 258033,
+            "blocks": [
+              "n2n_unet",
+              "dense",
+              "conv1d",
+              "unet"
+            ],
+            "width": 48,
+            "depth": 12,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 60,
+            "champ_raw": 0.9388030469417572,
+            "t_ms": 8.275933333303934,
+            "params": 303886,
+            "blocks": [
+              "bottleneck",
+              "dilated",
+              "n2n_unet",
+              "dense",
+              "conv1d",
+              "unet"
+            ],
+            "width": 44,
+            "depth": 12,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 123,
+            "champ_raw": 0.9405566453933716,
+            "t_ms": 8.515099999688877,
+            "params": 313929,
+            "blocks": [
+              "bottleneck",
+              "mlp",
+              "dilated",
+              "n2n_unet",
+              "dense",
+              "conv1d"
+            ],
+            "width": 39,
+            "depth": 12,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 170,
+            "champ_raw": 0.9419571459293365,
+            "t_ms": 9.084766667001531,
+            "params": 373077,
+            "blocks": [
+              "residual",
+              "bottleneck",
+              "dense",
+              "moe_mix",
+              "attn",
+              "n2n_unet"
+            ],
+            "width": 48,
+            "depth": 12,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 295,
+            "champ_raw": 0.9426449537277222,
+            "t_ms": 8.067899999635605,
+            "params": 344693,
+            "blocks": [
+              "bottleneck",
+              "mlp",
+              "dilated",
+              "n2n_unet",
+              "dense",
+              "conv1d"
+            ],
+            "width": 48,
+            "depth": 12,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 301,
+            "champ_raw": 0.9466983079910278,
+            "t_ms": 3.834166666517073,
+            "params": 165238,
+            "blocks": [
+              "bottleneck",
+              "dense"
+            ],
+            "width": 48,
+            "depth": 12,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 676,
+            "champ_raw": 0.9490002989768982,
+            "t_ms": 4.380733333770574,
+            "params": 198187,
+            "blocks": [
+              "tf_split",
+              "bottleneck",
+              "dense"
+            ],
+            "width": 48,
+            "depth": 12,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 691,
+            "champ_raw": 0.9516350030899048,
+            "t_ms": 7.110133333602183,
+            "params": 297600,
+            "blocks": [
+              "bottleneck",
+              "dense",
+              "attn",
+              "dual_path",
+              "n2n_unet"
+            ],
+            "width": 48,
+            "depth": 12,
+            "cell_kind": "dual_path",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 748,
+            "champ_raw": 0.9593999981880188,
+            "t_ms": 4.3310333336800495,
+            "params": 198187,
+            "blocks": [
+              "tf_split",
+              "bottleneck",
+              "dense"
+            ],
+            "width": 48,
+            "depth": 12,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 760,
+            "champ_raw": 0.96391361951828,
+            "t_ms": 4.105366667014702,
+            "params": 189523,
+            "blocks": [
+              "tf_split",
+              "bottleneck",
+              "dense"
+            ],
+            "width": 48,
+            "depth": 11,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 783,
+            "champ_raw": 0.9740909337997437,
+            "t_ms": 2.082433333271183,
+            "params": 26782,
+            "blocks": [
+              "tf_split"
+            ],
+            "width": 48,
+            "depth": 11,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 997,
+            "champ_raw": 0.9756118655204773,
+            "t_ms": 2.0519000002726293,
+            "params": 25756,
+            "blocks": [
+              "tf_split"
+            ],
+            "width": 47,
+            "depth": 12,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": true
+          },
+          {
+            "iter": 1291,
+            "champ_raw": 0.9766173660755157,
+            "t_ms": 2.0860999999664878,
+            "params": 25756,
+            "blocks": [
+              "tf_split"
+            ],
+            "width": 47,
+            "depth": 12,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": true
+          }
+        ],
+        "summary": {
+          "n_updates": 21,
+          "with_params": 21,
+          "params_min": 15481,
+          "params_median": 198187.0,
+          "params_max": 373077,
+          "params_mean": 187349.52380952382,
+          "params_std": 121087.89399268106,
+          "final_params": 25756,
+          "final_r_blend": 0.9766173660755157,
+          "final_t_ms": 2.0860999999664878,
+          "final_beats_n2n": true
+        },
+        "live_champ_cell": {
+          "params": 25756,
+          "r_blend": 0.9766173660755157,
+          "t_ms": 2.0860999999664878,
+          "blocks": [
+            "tf_split"
+          ],
+          "cell_kind": "tf_split",
+          "depth": 12,
+          "width": 47
+        },
+        "checkpoint_iters_done": 2875
+      }
+    },
+    "2026072701": {
+      "hybrid_lstm": {
+        "approach": "hybrid_lstm",
+        "champ_updates": [
+          {
+            "iter": 1,
+            "champ_raw": 0.8485620617866516,
+            "t_ms": 7.241866666542289,
+            "params": 166132,
+            "blocks": [
+              "dilated",
+              "n2n_unet",
+              "unet",
+              "tf_split",
+              "conv1d"
+            ],
+            "width": 48,
+            "depth": 10,
+            "cell_kind": "dilated",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 5,
+            "champ_raw": 0.9126352667808533,
+            "t_ms": 69.51236666645855,
+            "params": 156982,
+            "blocks": [
+              "xlstm",
+              "n2n_unet",
+              "unet",
+              "attn",
+              "dual_path"
+            ],
+            "width": 48,
+            "depth": 12,
+            "cell_kind": "xlstm",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 7,
+            "champ_raw": 0.9187584221363068,
+            "t_ms": 68.05793333296606,
+            "params": 249166,
+            "blocks": [
+              "dilated",
+              "dense",
+              "xlstm",
+              "mlp",
+              "soft_mix",
+              "lstm"
+            ],
+            "width": 48,
+            "depth": 12,
+            "cell_kind": "dilated",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          }
+        ],
+        "summary": {
+          "n_updates": 3,
+          "with_params": 3,
+          "params_min": 156982,
+          "params_median": 166132.0,
+          "params_max": 249166,
+          "params_mean": 190760.0,
+          "params_std": 41467.86910368074,
+          "final_params": 249166,
+          "final_r_blend": 0.9187584221363068,
+          "final_t_ms": 68.05793333296606,
+          "final_beats_n2n": false
+        },
+        "live_champ_cell": {
+          "params": 136484,
+          "r_blend": 0.9156511425971985,
+          "t_ms": 7.705199999691104,
+          "blocks": [
+            "soft_mix",
+            "dense",
+            "lstm"
+          ],
+          "cell_kind": "soft_mix",
+          "depth": 9,
+          "width": 32
+        }
+      }
+    }
+  }
+}
