@@ -18,16 +18,26 @@ import metrics_snr_sdr as msm  # noqa: E402
 from baselines.poly_seam_fitter import fit_poly_seam  # noqa: E402
 
 HOLDOUT_SEED = 20260719
-V6 = ROOT.parent / "denoise-opt-meta" / "paper" / "v6" / "figures"
+V11 = (
+    ROOT.parent
+    / "denoise-opt-meta"
+    / "paper"
+    / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v11"
+    / "figures"
+)
 
 
 @torch.no_grad()
-def score_pair(ideal: torch.Tensor, out: torch.Tensor) -> dict:
-    r = og.residual_score(ideal, out)
-    sec = msm.secondary_metrics(ideal, out, periods=int(og.PROLONG), seam_w=og.SEAM_W)
+def score_pair(ideal: torch.Tensor, eng: torch.Tensor, out: torch.Tensor) -> dict:
+    r = og.residual_score_blend(ideal, eng, out)
+    sec = msm.secondary_metrics(
+        ideal, out, periods=int(og.PROLONG), seam_w=og.SEAM_W, eng=eng, alpha=og.BLEND_ALPHA
+    )
     return {
         "R_mean": float(r.mean().item()),
         "R_std": float(r.std(unbiased=False).item()),
+        "primary_metric": "r_blend",
+        "blend_alpha": og.BLEND_ALPHA,
         **sec,
     }
 
@@ -61,10 +71,10 @@ def main() -> None:
         if device.type == "cuda":
             torch.cuda.synchronize()
         ms = (time.perf_counter() - t0) * 1000.0
-        row = score_pair(ideal, out)
+        row = score_pair(ideal, eng, out)
         row["ms_batch"] = float(ms)
         rows[name] = row
-        print(f"{name}: R={row['R_mean']:.4f} jump={row['wrap_jump_mean']:.4f} ms={ms:.2f}")
+        print(f"{name}: R_blend={row['R_mean']:.4f} jump={row['wrap_jump_mean']:.4f} ms={ms:.2f}")
 
     blob = {
         "meta": {
@@ -72,6 +82,8 @@ def main() -> None:
             "batch": args.batch,
             "L": int(og.N),
             "SEAM_W": int(og.SEAM_W),
+            "primary_metric": "r_blend",
+            "blend_alpha": og.BLEND_ALPHA,
             "ssm_status": "deferred",
             "ssm_reason": "timeboxed; LSTM remains seq ceiling (train seed 424243)",
             "nomenclature": {"no_bake": "passthrough unrepaired engine; legacy key identity"},
@@ -80,8 +92,8 @@ def main() -> None:
     }
     if "no_bake" in rows:
         rows["identity"] = rows["no_bake"]
-    V6.mkdir(parents=True, exist_ok=True)
-    out_path = V6 / "poly_baseline.json"
+    V11.mkdir(parents=True, exist_ok=True)
+    out_path = V11 / "poly_baseline.json"
     out_path.write_text(json.dumps(blob, indent=2), encoding="utf-8")
     print(f"wrote {out_path}")
     local = ROOT / "brand" / "artifacts" / "poly_baseline.json"

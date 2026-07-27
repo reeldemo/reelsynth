@@ -21,6 +21,10 @@ import overnight_gpu_rl_arch as og  # noqa: E402
 import bench_classical_vs_ai as cav  # noqa: E402
 import bench_inference_same_score as bib  # noqa: E402
 
+V10_HYBRID_CHAMP = (
+    ROOT / "brand/artifacts/meta_approach_compare_v10/hybrid_lstm/champ_cell.pt"
+)
+
 # Paper-facing holdout seed (distinct from overnight search DEFAULT_SEED).
 CANONICAL_EVAL_SEED = 20_260_719
 # Larger draw for distribution metrics (same generative process).
@@ -51,13 +55,15 @@ def dataset_metrics(ideal: torch.Tensor, eng: torch.Tensor) -> dict:
     residual_rms = resid.pow(2).mean(dim=1).sqrt()
     ideal_rms = ideal.pow(2).mean(dim=1).sqrt()
     wrap_jump = (eng[:, 0] - eng[:, -1]).abs()
-    # Prolonged engine residual R (identity bake) for hardness baseline.
-    r_identity = og.residual_score(ideal, eng)
+    # Identity bake under locked R_blend (hardness baseline).
+    r_identity = og.residual_score_blend(ideal, eng, eng)
     return {
         "n_samples": int(ideal.shape[0]),
         "cycle_length_N": int(ideal.shape[1]),
         "prolong_tiles": int(og.PROLONG),
         "seam_width": int(og.SEAM_W),
+        "primary_metric": "r_blend",
+        "blend_alpha": og.BLEND_ALPHA,
         "ideal_rms": {
             "mean": float(ideal_rms.mean().item()),
             "std": float(ideal_rms.std(unbiased=False).item()),
@@ -84,12 +90,14 @@ def dataset_metrics(ideal: torch.Tensor, eng: torch.Tensor) -> dict:
             "std": float(r_identity.std(unbiased=False).item()),
             "min": float(r_identity.min().item()),
             "max": float(r_identity.max().item()),
+            "note": "R_blend for no-bake (eng vs ideal/eng body)",
         },
         "family_labels": None,
         "note": (
             "Single synthetic family: make_batch sine+cliff (not Rust sound_bench families). "
             "No train/eval split of labeled clean audio: overnight search draws i.i.d. "
-            "batches from the same generator; this freeze is the paper holdout for method tables."
+            "batches from the same generator; this freeze is the paper holdout for method tables. "
+            "Primary metric is R_blend (α=0.7)."
         ),
     }
 
@@ -101,39 +109,55 @@ def score_on_batch(
     device = eng.device
     for _ in range(warmup):
         out = fn(eng)
-        _ = og.residual_score(ideal, out).mean()
+        _ = og.residual_score_blend(ideal, eng, out).mean()
     if device.type == "cuda":
         torch.cuda.synchronize()
     out = fn(eng)
-    r = float(og.residual_score(ideal, out).mean().item())
+    r = float(og.residual_score_blend(ideal, eng, out).mean().item())
     if device.type == "cuda":
         torch.cuda.synchronize()
     t0 = time.perf_counter()
     for _ in range(repeats):
         out = fn(eng)
-        _ = og.residual_score(ideal, out).mean()
+        _ = og.residual_score_blend(ideal, eng, out).mean()
     if device.type == "cuda":
         torch.cuda.synchronize()
     ms = 1000.0 * (time.perf_counter() - t0) / repeats
     batch = eng.shape[0]
-    return {"residual": r, "ms_per_batch": ms, "ms_per_sample": ms / batch}
+    return {
+        "residual": r,
+        "residual_R_blend": r,
+        "primary_metric": "r_blend",
+        "blend_alpha": og.BLEND_ALPHA,
+        "ms_per_batch": ms,
+        "ms_per_sample": ms / batch,
+    }
 
 
 def load_neural_favorite(device: torch.device):
-    fav_meta = json.loads(
-        (ROOT / "brand/artifacts/inference_bench/inference_bench.json").read_text(encoding="utf-8")
-    )
-    fav = fav_meta["favorite"]
-    cfg, cell, residual_saved, _ = bib.load_fitted(Path(fav["path"]), device)
+    path = V10_HYBRID_CHAMP
+    tag = "v10_hybrid_lstm_champ"
+    if not path.is_file():
+        fav_meta = json.loads(
+            (ROOT / "brand/artifacts/inference_bench/inference_bench.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        fav = fav_meta["favorite"]
+        path = Path(fav["path"])
+        tag = str(fav.get("tag") or path.stem)
+    cfg, cell, residual_saved, _ = bib.load_fitted(path, device)
 
     def neural_fn(eng):
         return og.apply_ops(eng, cell, cfg.ops)
 
     return neural_fn, {
-        "tag": fav.get("tag"),
-        "path": fav["path"],
+        "tag": tag,
+        "path": str(path),
         "residual_saved": residual_saved,
         "n_params": sum(p.numel() for p in cell.parameters()),
+        "primary_metric": "r_blend",
+        "blend_alpha": og.BLEND_ALPHA,
     }
 
 

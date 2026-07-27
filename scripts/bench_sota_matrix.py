@@ -147,12 +147,25 @@ def score_fn(
     }
 
 
-def load_neural_favorite(device: torch.device):
-    fav_meta = json.loads(
-        (ROOT / "brand/artifacts/inference_bench/inference_bench.json").read_text(encoding="utf-8")
-    )
-    fav = fav_meta["favorite"]
-    cfg, cell, residual_saved, _ = bib.load_fitted(Path(fav["path"]), device)
+V10_HYBRID_CHAMP = (
+    ROOT / "brand/artifacts/meta_approach_compare_v10/hybrid_lstm/champ_cell.pt"
+)
+
+
+def load_neural_favorite(device: torch.device, champ_path: Path | None = None):
+    """Prefer locked v10.1 hybrid champ (R_blend search); fall back to inference_bench."""
+    path = Path(champ_path) if champ_path is not None else V10_HYBRID_CHAMP
+    tag = "v10_hybrid_lstm_champ"
+    if not path.is_file():
+        fav_meta = json.loads(
+            (ROOT / "brand/artifacts/inference_bench/inference_bench.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        fav = fav_meta["favorite"]
+        path = Path(fav["path"])
+        tag = str(fav.get("tag") or path.stem)
+    cfg, cell, residual_saved, _ = bib.load_fitted(path, device)
 
     def neural_fn(eng):
         return og.apply_ops(eng, cell, cfg.ops)
@@ -160,14 +173,52 @@ def load_neural_favorite(device: torch.device):
     return (
         neural_fn,
         {
-            "tag": fav.get("tag"),
-            "path": fav["path"],
+            "tag": tag,
+            "path": str(path),
             "residual_saved": residual_saved,
             "n_params": sum(p.numel() for p in cell.parameters()),
+            "primary_metric": "r_blend",
+            "blend_alpha": og.BLEND_ALPHA,
+            "source": "v10_hybrid" if path == V10_HYBRID_CHAMP else "inference_bench",
         },
         cell,
         cfg,
     )
+
+
+def try_load_baseline_fn(name: str, device: torch.device):
+    """Optional N2N / seq checkpoints (same layout as bench_cliff_strata)."""
+    ckpt_root = ROOT / "brand" / "artifacts" / "n2n_seam_baselines"
+    mapping = {
+        "n2n_corrupt_corrupt": ckpt_root / "n2n_corrupt_corrupt.pt",
+        "n2n_sibling_supervised": ckpt_root / "n2n_sibling_supervised.pt",
+        "seq_lstm": ckpt_root / "seq_lstm.pt",
+        "seq_cnn1d": ckpt_root / "seq_cnn1d.pt",
+    }
+    path = mapping.get(name)
+    if path is None or not path.is_file():
+        return None
+    try:
+        from baselines import n2n_seam, seq_seam_lstm, seq_seam_cnn1d
+
+        blob = torch.load(path, map_location=device, weights_only=False)
+        kind = blob.get("kind", name)
+        if kind.startswith("n2n") or name.startswith("n2n"):
+            model = n2n_seam.SeamN2N.from_state(blob["state_dict"], device)
+        elif "lstm" in kind or name == "seq_lstm":
+            model = seq_seam_lstm.SeamLSTM.from_state(blob["state_dict"], device)
+        else:
+            model = seq_seam_cnn1d.SeamCNN1D.from_state(blob["state_dict"], device)
+        model.eval()
+
+        def fn(eng: torch.Tensor) -> torch.Tensor:
+            return model(eng)
+
+        n_params = sum(p.numel() for p in model.parameters())
+        return fn, n_params
+    except Exception as exc:  # noqa: BLE001
+        print(f"skip {name}: {exc}")
+        return None
 
 
 def train_fixed_baseline(
@@ -375,6 +426,17 @@ def main() -> int:
     neural_fn, neural_meta, _cell, _cfg = load_neural_favorite(device)
     methods.append(("neural_favorite", "ai", neural_fn, int(neural_meta["n_params"])))
 
+    for extra in (
+        "n2n_corrupt_corrupt",
+        "n2n_sibling_supervised",
+        "seq_lstm",
+        "seq_cnn1d",
+    ):
+        loaded = try_load_baseline_fn(extra, device)
+        if loaded is not None:
+            fn, n_params = loaded
+            methods.append((extra, "learned_fixed", fn, int(n_params)))
+
     learned_meta = {}
     if not args.skip_learned:
         print("Training fixed MLP-on-R baseline...")
@@ -474,7 +536,9 @@ def main() -> int:
         c["delta_R_vs_dual_cosine"] = c["residual_R"] - dual_r
 
     payload = {
-        "protocol": "EVAL_PROTOCOL v1 / Phase 3a+3c",
+        "protocol": "EVAL_PROTOCOL v10.1 / R_blend alpha=0.7",
+        "primary_metric": "r_blend",
+        "blend_alpha": og.BLEND_ALPHA,
         "device": str(device),
         "canonical_eval_seed": bced.CANONICAL_EVAL_SEED,
         "overnight_search_seed": og.DEFAULT_SEED,
@@ -485,11 +549,13 @@ def main() -> int:
         "families": FAMILIES,
         "waveform_seeds": WAVEFORM_SEEDS,
         "wave_catalog": wave_catalog,
+        "neural_favorite_meta": neural_meta,
         "note": (
-            "SNR/SDR are tiled vs procedural ideal. No PESQ/STOI. "
-            "Families are Python generative stand-ins spanning harmonic/AM-FM/nonlinear/"
-            "overlay/open-wrap variants of make_batch (not a 1:1 Rust sound_bench port). "
-            "Ablations are branch-best freezes from the 5k-gate history, not isolated re-runs."
+            "Primary residual_R keys are R_blend (α=0.7). SNR/SDR tiled vs procedural ideal. "
+            "No PESQ/STOI. Families are Python generative stand-ins spanning harmonic/AM-FM/"
+            "nonlinear/overlay/open-wrap variants of make_batch (not a 1:1 Rust sound_bench port). "
+            "Ablations are branch-best freezes from the 5k-gate history, not isolated re-runs. "
+            "neural_favorite is the locked v10.1 hybrid champ when present."
         ),
         "learned_baselines": learned_meta,
         "canonical_holdout": canonical,

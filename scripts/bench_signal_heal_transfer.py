@@ -730,6 +730,7 @@ def main() -> int:
         base_scores = score_baselines(name, domain, batcher)
         ours_r = float("nan")
         summary = None
+        summary_path = ds_dir / "hybrid_lstm" / "summary.json"
         if not args.skip_search:
             summary = run_hybrid_lstm_domain(
                 batcher,
@@ -749,6 +750,9 @@ def main() -> int:
             (ds_dir / "hybrid_lstm" / "summary.json").write_text(
                 json.dumps(summary, indent=2), encoding="utf-8"
             )
+        elif summary_path.is_file():
+            summary = json.loads(summary_path.read_text(encoding="utf-8"))
+            ours_r = float(summary.get("champ_raw") or summary.get("holdout_refit_R") or float("nan"))
         row = dict(base_scores)
         if ours_r == ours_r:
             row["ours_hybrid_lstm"] = ours_r
@@ -760,6 +764,11 @@ def main() -> int:
         for pk, pv in prior_row.items():
             if pk not in row:
                 row[pk] = pv
+            # Prefer locked R_blend for nested neural rows when present.
+            if isinstance(pv, dict) and "R_blend" in pv and isinstance(pv.get("R_blend"), (int, float)):
+                row[pk] = dict(pv)
+                row[pk]["R"] = float(pv["R_blend"])
+                row[pk]["primary_metric"] = "r_blend"
         table[name] = row
         per_ds[name] = {
             "meta": bundle.meta,
@@ -792,8 +801,11 @@ def main() -> int:
             "seed": args.seed,
             "device": str(device),
             "period_l": 256,
-            "metric": "prolonged residual R (DenoiseOpt)",
+            "metric": "v10.1 R_blend (alpha=0.7); search objective J",
+            "primary_metric": "r_blend",
+            "blend_alpha": 0.7,
             "method": "hybrid_lstm only",
+            "skip_search": bool(args.skip_search),
         },
         "datasets_ran": sorted(set(ran) | (set(prior_table) if args.merge_existing else set())),
         "datasets_ran_this_session": ran,
@@ -833,7 +845,7 @@ def main() -> int:
         fig_dst = (
             META_PAPER
             / "paper"
-            / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v9"
+            / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v11"
             / "figures"
         )
         if fig_dst.parent.is_dir():

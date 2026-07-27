@@ -44,7 +44,15 @@ def load_fitted(pt_path: Path, device: torch.device):
     cell = og.SeamCell(cfg).to(device)
     cell.load_state_dict(blob["cell_state_dict"], strict=False)
     cell.eval()
-    residual = float(blob.get("residual") or -1.0)
+    residual = float(
+        blob.get("residual")
+        if blob.get("residual") is not None
+        else blob.get("r_blend")
+        if blob.get("r_blend") is not None
+        else blob.get("r_seam")
+        if blob.get("r_seam") is not None
+        else -1.0
+    )
     return cfg, cell, residual, arch
 
 

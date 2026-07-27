@@ -53,9 +53,12 @@ def main() -> int:
         "identity": "no-bake",
         "no_bake": "no-bake",
     }
+    by_name = {r["name"]: r for r in payload["results_multifamily"]}
+    # Older result files used ``no_bake`` while current files use the
+    # equivalent ``identity`` row; retain each available method once.
+    keep = [m for m in keep if m in by_name]
     # Aggregate R per (method, family) across seeds
     mat = np.zeros((len(keep), len(families)))
-    by_name = {r["name"]: r for r in payload["results_multifamily"]}
     for i, m in enumerate(keep):
         rows = by_name[m]["per_waveform"]
         for j, fam in enumerate(families):
@@ -83,9 +86,9 @@ def main() -> int:
                 color="white" if v < 0.7 else "black",
             )
     cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-    cbar.set_label("prolonged residual $R$ (1=best)", fontsize=9)
+    cbar.set_label(r"$R_{\mathrm{blend}}$ (1=best)", fontsize=9)
     ax.set_title(
-        "SOTA matrix: mean $R$ over 2 seeds × 10 generative families (batch 64)",
+        r"$R_{\mathrm{blend}}$ across waveform families (2 seeds each, batch 64)",
         fontsize=10,
     )
     fig.tight_layout()

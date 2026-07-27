@@ -1,5 +1,5 @@
 {
-  "finished_at": "20260726T082343Z",
+  "finished_at": "20260727T040447Z",
   "config": {
     "iters": 250,
     "fit_steps": 40,
@@ -8,8 +8,11 @@
     "seed": 1902771841,
     "device": "cuda",
     "period_l": 256,
-    "metric": "prolonged residual R (DenoiseOpt)",
-    "method": "hybrid_lstm only"
+    "metric": "v10.1 R_blend (alpha=0.7); search objective J",
+    "primary_metric": "r_blend",
+    "blend_alpha": 0.7,
+    "method": "hybrid_lstm only",
+    "skip_search": true
   },
   "datasets_ran": [
     "cwru_bearings",
@@ -21,24 +24,29 @@
     "synth_pmu_cycle"
   ],
   "datasets_ran_this_session": [
-    "ptbxl_ecg"
+    "cwru_bearings",
+    "mitbih_ecg",
+    "mfpt_bearings",
+    "paderborn_kat",
+    "ptbxl_ecg",
+    "synth_cnc_g01",
+    "synth_pmu_cycle"
   ],
   "skipped": {
     "kit_cnc_real": "awaiting user drop under raw/kit_cnc/ (kit_cnc_README.txt); synth_cnc_g01 proxy still scored",
     "ieee_pmu_real": "S3 URI known but anonymous GET 403; drop IEEE-39-bus_10_generator_PMU.mat into raw/ieee_pmu/; synth_pmu_cycle proxy still scored",
-    "paderborn_kat": "K001 extracted; classical+Ours+SeamN2N scored; author CNN native healthy\u2192N rate scored (wrap-R N/A)",
+    "paderborn_kat": "K001 extracted; classical paderborn_kat board cached \u2014 deep SOTA still not executed",
     "bmrb_nmr": "skipped \u2014 BMRB FID deferred",
-    "deep_sota_cyclegan_beatdiff": "Cycle-GAN + BeatDiff OOD wrap-R scored (clinical != wrap-R footnote)",
+    "deep_sota_cyclegan_beatdiff": "not executed \u2014 no trained Cycle-GAN / BeatDiff weights under residual protocol",
     "kit_cnc": "awaiting user drop under raw/kit_cnc/ (kit_cnc_README.txt); synth_cnc_g01 proxy still scored",
-    "ieee_pmu": "S3 URI known but anonymous GET 403; drop IEEE-39-bus_10_generator_PMU.mat into raw/ieee_pmu/; synth_pmu_cycle proxy still scored",
-    "paderborn_deep": "executed_trained_alfirdausi_cnn_classifier_plus_wrap_backbone"
+    "ieee_pmu": "S3 URI known but anonymous GET 403; drop IEEE-39-bus_10_generator_PMU.mat into raw/ieee_pmu/; synth_pmu_cycle proxy still scored"
   },
   "skipped_optional": {
     "kit_cnc_real": "awaiting user drop under raw/kit_cnc/ (kit_cnc_README.txt); synth_cnc_g01 proxy still scored",
     "ieee_pmu_real": "S3 URI known but anonymous GET 403; drop IEEE-39-bus_10_generator_PMU.mat into raw/ieee_pmu/; synth_pmu_cycle proxy still scored",
-    "paderborn_kat": "K001 extracted; classical+Ours+SeamN2N scored; author CNN native healthy\u2192N rate scored (wrap-R N/A)",
+    "paderborn_kat": "K001 extracted; classical paderborn_kat board cached \u2014 deep SOTA still not executed",
     "bmrb_nmr": "skipped \u2014 BMRB FID deferred",
-    "deep_sota_cyclegan_beatdiff": "Cycle-GAN OOD wrap-R scored; BeatDiff blocked \u2014 HF 401 / Drive Orbax stubs incomplete",
+    "deep_sota_cyclegan_beatdiff": "not executed \u2014 no trained Cycle-GAN / BeatDiff weights under residual protocol",
     "kit_cnc": "awaiting user drop under raw/kit_cnc/ (kit_cnc_README.txt); synth_cnc_g01 proxy still scored",
     "ieee_pmu": "S3 URI known but anonymous GET 403; drop IEEE-39-bus_10_generator_PMU.mat into raw/ieee_pmu/; synth_pmu_cycle proxy still scored"
   },
@@ -52,15 +60,16 @@
       "seam_fir3": 0.4483480453491211,
       "cot_linear_periodize": 0.8450800776481628,
       "cot_cubic_then_dualcosine": 0.46078309416770935,
-      "ours_hybrid_lstm": 0.9623140096664429,
+      "ours_hybrid_lstm": 0.9595887362957001,
       "n2n_domain_trained": {
-        "R": 0.868618369102478,
+        "R": 0.8660277128219604,
         "R_blend": 0.8660277128219604,
         "kind": "n2n_domain_trained",
         "protocol": "n2n_corrupt_corrupt_domain",
         "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\cwru_bearings\\n2n_corrupt_corrupt.pt",
         "n_holdout": 64,
-        "steps": 4000
+        "steps": 4000,
+        "primary_metric": "r_blend"
       }
     },
     "mitbih_ecg": {
@@ -72,27 +81,29 @@
       "seam_fir3": 0.7661859393119812,
       "spline_join": 0.8082110285758972,
       "beat_average_sbmm_lite": 0.3540723919868469,
-      "ours_hybrid_lstm": 0.9564716815948486,
+      "ours_hybrid_lstm": 0.9746841490268707,
       "n2n_domain_trained": {
-        "R": 0.6529576778411865,
+        "R": 0.7495031356811523,
         "R_blend": 0.7495031356811523,
         "kind": "n2n_domain_trained",
         "protocol": "n2n_corrupt_corrupt_domain",
         "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\mitbih_ecg\\n2n_corrupt_corrupt.pt",
         "n_holdout": 64,
-        "steps": 4000
+        "steps": 4000,
+        "primary_metric": "r_blend"
       },
       "cycle_gan_ecg": {
-        "R": 0.0699673593044281,
+        "R": 0.10628266632556915,
         "R_blend": 0.10628266632556915,
         "kind": "cycle_gan_ecg_ood_wrapR",
         "protocol": "operational_cyclegan_pretrained_L256_holdout_20260719",
         "weight": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\cyclegan\\model_weights_16NQ3.pth",
         "n_holdout": 64,
-        "footnote": "Clinical restore \u2260 wrap-R; OOD transfer probe only. Author Operational Cycle-GAN weights."
+        "footnote": "Clinical restore \u2260 wrap-R; OOD transfer probe only. Author Operational Cycle-GAN weights.",
+        "primary_metric": "r_blend"
       },
       "beatdiff": {
-        "R": 0.36933428049087524,
+        "R": 0.49070602655410767,
         "R_blend": 0.49070602655410767,
         "no_bake_R": 0.6447737812995911,
         "kind": "beatdiff_ood_wrapR_onestep",
@@ -100,7 +111,8 @@
         "orbax_step": 9360,
         "n_holdout": 64,
         "footnote": "Clinical BeatDiff prior OOD wrap-R probe (mono tile to 9 leads); not native Bedin metrics.",
-        "download_source": "https://drive.google.com/drive/folders/1m2OvyYebvnirh1CraCrnSOyjihSkSkLG (subfolder beatdiff_prior=1QN6mZXnBpYJFxwUNYV5PXbkhd4HYw3Xh; curl uc?export=download&confirm=t)"
+        "download_source": "https://drive.google.com/drive/folders/1m2OvyYebvnirh1CraCrnSOyjihSkSkLG (subfolder beatdiff_prior=1QN6mZXnBpYJFxwUNYV5PXbkhd4HYw3Xh; curl uc?export=download&confirm=t)",
+        "primary_metric": "r_blend"
       }
     },
     "ptbxl_ecg": {
@@ -112,27 +124,29 @@
       "seam_fir3": 0.7604179382324219,
       "spline_join": 0.7608078718185425,
       "beat_average_sbmm_lite": 0.3632850646972656,
-      "ours_hybrid_lstm": 0.9378750324249268,
+      "ours_hybrid_lstm": 0.945066511631012,
       "n2n_domain_trained": {
-        "R": 0.5701605081558228,
+        "R": 0.7536793947219849,
         "R_blend": 0.7536793947219849,
         "kind": "n2n_domain_trained",
         "protocol": "n2n_corrupt_corrupt_domain",
         "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\ptbxl_ecg\\n2n_corrupt_corrupt.pt",
         "n_holdout": 64,
-        "steps": 4000
+        "steps": 4000,
+        "primary_metric": "r_blend"
       },
       "cycle_gan_ecg": {
-        "R": 0.15552377700805664,
+        "R": 0.2104691118001938,
         "R_blend": 0.2104691118001938,
         "kind": "cycle_gan_ecg_ood_wrapR",
         "protocol": "operational_cyclegan_pretrained_L256_holdout_20260719",
         "weight": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\external\\weights\\cyclegan\\model_weights_16NQ3.pth",
         "n_holdout": 64,
-        "footnote": "Clinical restore \u2260 wrap-R; OOD transfer probe only. Author Operational Cycle-GAN weights."
+        "footnote": "Clinical restore \u2260 wrap-R; OOD transfer probe only. Author Operational Cycle-GAN weights.",
+        "primary_metric": "r_blend"
       },
       "beatdiff": {
-        "R": 0.32593613862991333,
+        "R": 0.49326974153518677,
         "R_blend": 0.49326974153518677,
         "no_bake_R": 0.568744421005249,
         "kind": "beatdiff_ood_wrapR_onestep",
@@ -140,7 +154,8 @@
         "orbax_step": 9360,
         "n_holdout": 64,
         "footnote": "Clinical BeatDiff prior OOD wrap-R probe (mono tile to 9 leads); not native Bedin metrics.",
-        "download_source": "https://drive.google.com/drive/folders/1m2OvyYebvnirh1CraCrnSOyjihSkSkLG (subfolder beatdiff_prior=1QN6mZXnBpYJFxwUNYV5PXbkhd4HYw3Xh; curl uc?export=download&confirm=t)"
+        "download_source": "https://drive.google.com/drive/folders/1m2OvyYebvnirh1CraCrnSOyjihSkSkLG (subfolder beatdiff_prior=1QN6mZXnBpYJFxwUNYV5PXbkhd4HYw3Xh; curl uc?export=download&confirm=t)",
+        "primary_metric": "r_blend"
       }
     },
     "synth_cnc_g01": {
@@ -151,15 +166,16 @@
       "endpoint_pin_mean": 0.4096088409423828,
       "seam_fir3": 0.5344055891036987,
       "spline_join": 0.7005928754806519,
-      "ours_hybrid_lstm": 0.9917502403259277,
+      "ours_hybrid_lstm": 0.9913659393787384,
       "n2n_domain_trained": {
-        "R": 0.48330581188201904,
+        "R": 0.5534172654151917,
         "R_blend": 0.5534172654151917,
         "kind": "n2n_domain_trained",
         "protocol": "n2n_corrupt_corrupt_domain",
         "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\synth_cnc_g01\\n2n_corrupt_corrupt.pt",
         "n_holdout": 64,
-        "steps": 4000
+        "steps": 4000,
+        "primary_metric": "r_blend"
       }
     },
     "synth_pmu_cycle": {
@@ -170,15 +186,16 @@
       "endpoint_pin_mean": 0.9441877603530884,
       "seam_fir3": 0.9118894338607788,
       "spline_join": 0.8315402865409851,
-      "ours_hybrid_lstm": 0.9915037155151367,
+      "ours_hybrid_lstm": 0.9918926358222961,
       "n2n_domain_trained": {
-        "R": 0.9788673520088196,
+        "R": 0.958940863609314,
         "R_blend": 0.958940863609314,
         "kind": "n2n_domain_trained",
         "protocol": "n2n_corrupt_corrupt_domain",
         "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\synth_pmu_cycle\\n2n_corrupt_corrupt.pt",
         "n_holdout": 64,
-        "steps": 4000
+        "steps": 4000,
+        "primary_metric": "r_blend"
       }
     },
     "mfpt_bearings": {
@@ -190,15 +207,16 @@
       "seam_fir3": 0.5726280808448792,
       "cot_linear_periodize": 0.8657405376434326,
       "cot_cubic_then_dualcosine": 0.4829549193382263,
-      "ours_hybrid_lstm": 0.9411238431930542,
+      "ours_hybrid_lstm": 0.942652016878128,
       "n2n_domain_trained": {
-        "R": 0.8817377090454102,
+        "R": 0.8662163019180298,
         "R_blend": 0.8662163019180298,
         "kind": "n2n_domain_trained",
         "protocol": "n2n_corrupt_corrupt_domain",
         "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\mfpt_bearings\\n2n_corrupt_corrupt.pt",
         "n_holdout": 64,
-        "steps": 4000
+        "steps": 4000,
+        "primary_metric": "r_blend"
       }
     },
     "paderborn_kat": {
@@ -210,15 +228,16 @@
       "seam_fir3": 0.5600777864456177,
       "cot_linear_periodize": 0.8376242518424988,
       "cot_cubic_then_dualcosine": 0.470979779958725,
-      "ours_hybrid_lstm": 0.9270495772361755,
+      "ours_hybrid_lstm": 0.9369480609893799,
       "n2n_domain_trained": {
-        "R": 0.8386802077293396,
+        "R": 0.8421123027801514,
         "R_blend": 0.8421123027801514,
         "kind": "n2n_domain_trained",
         "protocol": "n2n_corrupt_corrupt_domain",
         "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\domain_n2n\\paderborn_kat\\n2n_corrupt_corrupt.pt",
         "n_holdout": 64,
-        "steps": 4000
+        "steps": 4000,
+        "primary_metric": "r_blend"
       },
       "paderborn_deep_alfirdausi_cnn": {
         "kind": "authors_cnn_classifier_trained",
@@ -245,7 +264,7 @@
       },
       "paderborn_alfirdausi_backbone_wrap": {
         "kind": "alfirdausi_backbone_wrap_residual",
-        "R": 0.8390061259269714,
+        "R": 0.8415248394012451,
         "R_blend": 0.8415248394012451,
         "no_bake_R": 0.8390013575553894,
         "dual_cosine_R": 0.7592579126358032,
@@ -254,11 +273,150 @@
         "train_seed": 424242,
         "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\deep_sota_adapters\\alfirdausi_trained\\cnn_1d_2l_wrap_residual.pt",
         "footnote": "Architecture-reuse residual bake (author conv backbone \u2260 published classifier). Comparable wrap-R to Ours/SeamN2N/DualCosine.",
-        "status": "trained_and_scored"
+        "status": "trained_and_scored",
+        "primary_metric": "r_blend"
       }
     }
   },
   "per_dataset": {
+    "cwru_bearings": {
+      "meta": {
+        "domain": "bearings",
+        "files": [
+          "105.mat",
+          "169.mat",
+          "209.mat",
+          "97.mat"
+        ],
+        "n": 256,
+        "period_l": 256,
+        "wrap": "Per-rev windows from CWRU DE @12 kHz; ideal=cubic resample to L; engine=linear (bad-COT proxy) + DenoiseOpt-style wrap cliff+noise.",
+        "fs_hz": 12000.0,
+        "citation": "Case Western Reserve University Bearing Data Center",
+        "seed": 1902771841
+      },
+      "baseline_labels": {
+        "no_bake": "classical / passthrough",
+        "dual_cosine": "classical DualCosine fade",
+        "soft_periodize_hann": "classical Hann soft-periodize",
+        "linear_fade": "classical linear fade",
+        "endpoint_pin_mean": "classical endpoint pin",
+        "seam_fir3": "classical seam FIR3",
+        "cot_linear_periodize": "bearings classical bad-COT control (passthrough of linear resample)",
+        "cot_cubic_then_dualcosine": "bearings classical: DualCosine on cracked (not published deep COT)",
+        "ours_hybrid_lstm": "Ours (hybrid GA\u2013PPO / hybrid_lstm outer loop)",
+        "n2n_domain_trained": "n2n_domain_trained"
+      },
+      "champ_raw": 0.9595887362957001,
+      "holdout_refit_R": 0.9623140096664429
+    },
+    "mitbih_ecg": {
+      "meta": {
+        "domain": "ecg",
+        "records": [
+          "100",
+          "101",
+          "103",
+          "105",
+          "112",
+          "113",
+          "115",
+          "117",
+          "121",
+          "123"
+        ],
+        "n": 256,
+        "period_l": 256,
+        "wrap": "R\u2013R normal beats resampled to L; ideal=local mean template with mild endpoint equalize (SBMM-lite classical); engine=single beat + wrap cliff.",
+        "fs_hz": 360.0,
+        "citation": "MIT-BIH Arrhythmia Database (PhysioNet, ODC-By 1.0)",
+        "seed": 1902771841,
+        "baseline_note": "ECG baselines are classical board + beat-average / spline join \u2014 not Cycle-GAN / BeatDiff SOTA (those need trained weights)."
+      },
+      "baseline_labels": {
+        "no_bake": "classical / passthrough",
+        "dual_cosine": "classical DualCosine fade",
+        "soft_periodize_hann": "classical Hann soft-periodize",
+        "linear_fade": "classical linear fade",
+        "endpoint_pin_mean": "classical endpoint pin",
+        "seam_fir3": "classical seam FIR3",
+        "spline_join": "domain classical spline/FIR join (not Cycle-GAN / deep SOTA)",
+        "beat_average_sbmm_lite": "ECG classical SBMM-lite beat average (not BeatDiff/Cycle-GAN)",
+        "ours_hybrid_lstm": "Ours (hybrid GA\u2013PPO / hybrid_lstm outer loop)",
+        "n2n_domain_trained": "n2n_domain_trained",
+        "cycle_gan_ecg": "cycle_gan_ecg",
+        "beatdiff": "beatdiff"
+      },
+      "champ_raw": 0.9746841490268707,
+      "holdout_refit_R": 0.9564716815948486
+    },
+    "mfpt_bearings": {
+      "meta": {
+        "domain": "bearings",
+        "n": 256,
+        "period_l": 256,
+        "wrap": "MFPT shaft-rate periods; cubic ideal vs linear+cliff engine.",
+        "citation": "MFPT Fault Data Sets (Society for Machinery Failure Prevention Technology)",
+        "seed": 1902771841,
+        "label": "classical_board_plus_bad_cot \u2014 not a published deep SOTA reimplementation",
+        "requested_n": 256
+      },
+      "baseline_labels": {
+        "no_bake": "classical / passthrough",
+        "dual_cosine": "classical DualCosine fade",
+        "soft_periodize_hann": "classical Hann soft-periodize",
+        "linear_fade": "classical linear fade",
+        "endpoint_pin_mean": "classical endpoint pin",
+        "seam_fir3": "classical seam FIR3",
+        "cot_linear_periodize": "bearings classical bad-COT control (passthrough of linear resample)",
+        "cot_cubic_then_dualcosine": "bearings classical: DualCosine on cracked (not published deep COT)",
+        "ours_hybrid_lstm": "Ours (hybrid GA\u2013PPO / hybrid_lstm outer loop)",
+        "n2n_domain_trained": "n2n_domain_trained"
+      },
+      "champ_raw": 0.942652016878128,
+      "holdout_refit_R": 0.9411238431930542
+    },
+    "paderborn_kat": {
+      "meta": {
+        "domain": "bearings",
+        "files": [
+          "N09_M07_F10_K001_1.mat",
+          "N09_M07_F10_K001_10.mat",
+          "N09_M07_F10_K001_11.mat",
+          "N09_M07_F10_K001_12.mat",
+          "N09_M07_F10_K001_13.mat",
+          "N09_M07_F10_K001_14.mat",
+          "N09_M07_F10_K001_15.mat"
+        ],
+        "n": 256,
+        "period_l": 256,
+        "wrap": "Paderborn K001 vibration_1 (~64 kHz); shaft angle from Mech_4kHz speed when available (equal-angle rev windows); ideal=cubic resample to L; engine=linear (bad-COT) + DenoiseOpt wrap cliff+noise.",
+        "fs_hz": 64000.318436129346,
+        "citation": "Paderborn KAt Bearing Data Center (Lessmeier et al., PHME 2016); CC BY-NC 4.0",
+        "seed": 1902771841,
+        "bearing_code": "K001",
+        "n_angle_revs": 256,
+        "n_fixed_rpm_revs": 0,
+        "label": "classical_board_plus_bad_cot \u2014 not a published deep Paderborn denoise reimplementation (deep SOTA still blocked)",
+        "requested_n": 256
+      },
+      "baseline_labels": {
+        "no_bake": "classical / passthrough",
+        "dual_cosine": "classical DualCosine fade",
+        "soft_periodize_hann": "classical Hann soft-periodize",
+        "linear_fade": "classical linear fade",
+        "endpoint_pin_mean": "classical endpoint pin",
+        "seam_fir3": "classical seam FIR3",
+        "cot_linear_periodize": "bearings classical bad-COT control (passthrough of linear resample)",
+        "cot_cubic_then_dualcosine": "bearings classical: DualCosine on cracked (not published deep COT)",
+        "ours_hybrid_lstm": "Ours (hybrid GA\u2013PPO / hybrid_lstm outer loop)",
+        "n2n_domain_trained": "n2n_domain_trained",
+        "paderborn_deep_alfirdausi_cnn": "paderborn_deep_alfirdausi_cnn",
+        "paderborn_alfirdausi_backbone_wrap": "paderborn_alfirdausi_backbone_wrap"
+      },
+      "champ_raw": 0.9369480609893799,
+      "holdout_refit_R": 0.9270495772361755
+    },
     "ptbxl_ecg": {
       "meta": {
         "domain": "ecg",
@@ -2445,71 +2603,10 @@
         "ours_hybrid_lstm": "Ours (hybrid GA\u2013PPO / hybrid_lstm outer loop)",
         "n2n_domain_trained": "n2n_domain_trained",
         "cycle_gan_ecg": "cycle_gan_ecg",
-        "ours_protocol_note": "ours_protocol_note"
+        "beatdiff": "beatdiff"
       },
       "champ_raw": 0.945066511631012,
       "holdout_refit_R": 0.9378750324249268
-    },
-    "paderborn_kat": {
-      "meta": {
-        "domain": "bearings",
-        "files": [
-          "N09_M07_F10_K001_1.mat",
-          "N09_M07_F10_K001_10.mat",
-          "N09_M07_F10_K001_11.mat",
-          "N09_M07_F10_K001_12.mat",
-          "N09_M07_F10_K001_13.mat",
-          "N09_M07_F10_K001_14.mat",
-          "N09_M07_F10_K001_15.mat"
-        ],
-        "n": 256,
-        "period_l": 256,
-        "wrap": "Paderborn K001 vibration_1 (~64 kHz); shaft angle from Mech_4kHz speed when available (equal-angle rev windows); ideal=cubic resample to L; engine=linear (bad-COT) + DenoiseOpt wrap cliff+noise.",
-        "fs_hz": 64000.318436129346,
-        "citation": "Paderborn KAt Bearing Data Center (Lessmeier et al., PHME 2016); CC BY-NC 4.0",
-        "seed": 1902771841,
-        "bearing_code": "K001",
-        "n_angle_revs": 256,
-        "n_fixed_rpm_revs": 0,
-        "label": "classical_board_plus_bad_cot \u2014 not a published deep Paderborn denoise reimplementation (deep SOTA still blocked)",
-        "requested_n": 256
-      },
-      "baseline_labels": {
-        "no_bake": "classical / passthrough",
-        "dual_cosine": "classical DualCosine fade",
-        "soft_periodize_hann": "classical Hann soft-periodize",
-        "linear_fade": "classical linear fade",
-        "endpoint_pin_mean": "classical endpoint pin",
-        "seam_fir3": "classical seam FIR3",
-        "cot_linear_periodize": "bearings classical bad-COT control (passthrough of linear resample)",
-        "cot_cubic_then_dualcosine": "bearings classical: DualCosine on cracked (not published deep COT)",
-        "ours_hybrid_lstm": "Ours (hybrid GA\u2013PPO / hybrid_lstm outer loop)"
-      },
-      "champ_raw": 0.9369480609893799,
-      "holdout_refit_R": 0.9270495772361755
-    },
-    "synth_pmu_cycle": {
-      "meta": {
-        "domain": "power",
-        "n": 256,
-        "period_l": 256,
-        "wrap": "Synthetic 1-cycle voltage with harmonics; ideal=clean AC; engine=wrap cliff (+ optional notch). IEEE 39-bus PMU OA not fetched.",
-        "citation": "Synthetic IEEE 1159 / C37.118-style cycle proxy",
-        "seed": 1902771841,
-        "label": "synthetic_pilot \u2014 not DataPort PMU recordings"
-      },
-      "baseline_labels": {
-        "no_bake": "classical / passthrough",
-        "dual_cosine": "classical DualCosine fade",
-        "soft_periodize_hann": "classical Hann soft-periodize",
-        "linear_fade": "classical linear fade",
-        "endpoint_pin_mean": "classical endpoint pin",
-        "seam_fir3": "classical seam FIR3",
-        "spline_join": "domain classical spline/FIR join (not Cycle-GAN / deep SOTA)",
-        "ours_hybrid_lstm": "Ours (hybrid GA\u2013PPO / hybrid_lstm outer loop)"
-      },
-      "champ_raw": 0.9918926358222961,
-      "holdout_refit_R": 0.9915037155151367
     },
     "synth_cnc_g01": {
       "meta": {
@@ -2529,33 +2626,21 @@
         "endpoint_pin_mean": "classical endpoint pin",
         "seam_fir3": "classical seam FIR3",
         "spline_join": "domain classical spline/FIR join (not Cycle-GAN / deep SOTA)",
-        "ours_hybrid_lstm": "Ours (hybrid GA\u2013PPO / hybrid_lstm outer loop)"
+        "ours_hybrid_lstm": "Ours (hybrid GA\u2013PPO / hybrid_lstm outer loop)",
+        "n2n_domain_trained": "n2n_domain_trained"
       },
       "champ_raw": 0.9913659393787384,
       "holdout_refit_R": 0.9917502403259277
     },
-    "mitbih_ecg": {
+    "synth_pmu_cycle": {
       "meta": {
-        "domain": "ecg",
-        "records": [
-          "100",
-          "101",
-          "103",
-          "105",
-          "112",
-          "113",
-          "115",
-          "117",
-          "121",
-          "123"
-        ],
+        "domain": "power",
         "n": 256,
         "period_l": 256,
-        "wrap": "R\u2013R normal beats resampled to L; ideal=local mean template with mild endpoint equalize (SBMM-lite classical); engine=single beat + wrap cliff.",
-        "fs_hz": 360.0,
-        "citation": "MIT-BIH Arrhythmia Database (PhysioNet, ODC-By 1.0)",
+        "wrap": "Synthetic 1-cycle voltage with harmonics; ideal=clean AC; engine=wrap cliff (+ optional notch). IEEE 39-bus PMU OA not fetched.",
+        "citation": "Synthetic IEEE 1159 / C37.118-style cycle proxy",
         "seed": 1902771841,
-        "baseline_note": "ECG baselines are classical board + beat-average / spline join \u2014 not Cycle-GAN / BeatDiff SOTA (those need trained weights)."
+        "label": "synthetic_pilot \u2014 not DataPort PMU recordings"
       },
       "baseline_labels": {
         "no_bake": "classical / passthrough",
@@ -2565,66 +2650,11 @@
         "endpoint_pin_mean": "classical endpoint pin",
         "seam_fir3": "classical seam FIR3",
         "spline_join": "domain classical spline/FIR join (not Cycle-GAN / deep SOTA)",
-        "beat_average_sbmm_lite": "ECG classical SBMM-lite beat average (not BeatDiff/Cycle-GAN)",
-        "ours_hybrid_lstm": "Ours (hybrid GA\u2013PPO / hybrid_lstm outer loop)"
+        "ours_hybrid_lstm": "Ours (hybrid GA\u2013PPO / hybrid_lstm outer loop)",
+        "n2n_domain_trained": "n2n_domain_trained"
       },
-      "champ_raw": 0.9746841490268707,
-      "holdout_refit_R": 0.9564716815948486
-    },
-    "mfpt_bearings": {
-      "meta": {
-        "domain": "bearings",
-        "n": 256,
-        "period_l": 256,
-        "wrap": "MFPT shaft-rate periods; cubic ideal vs linear+cliff engine.",
-        "citation": "MFPT Fault Data Sets (Society for Machinery Failure Prevention Technology)",
-        "seed": 1902771841,
-        "label": "classical_board_plus_bad_cot \u2014 not a published deep SOTA reimplementation",
-        "requested_n": 256
-      },
-      "baseline_labels": {
-        "no_bake": "classical / passthrough",
-        "dual_cosine": "classical DualCosine fade",
-        "soft_periodize_hann": "classical Hann soft-periodize",
-        "linear_fade": "classical linear fade",
-        "endpoint_pin_mean": "classical endpoint pin",
-        "seam_fir3": "classical seam FIR3",
-        "cot_linear_periodize": "bearings classical bad-COT control (passthrough of linear resample)",
-        "cot_cubic_then_dualcosine": "bearings classical: DualCosine on cracked (not published deep COT)",
-        "ours_hybrid_lstm": "Ours (hybrid GA\u2013PPO / hybrid_lstm outer loop)"
-      },
-      "champ_raw": 0.942652016878128,
-      "holdout_refit_R": 0.9411238431930542
-    },
-    "cwru_bearings": {
-      "meta": {
-        "domain": "bearings",
-        "files": [
-          "105.mat",
-          "169.mat",
-          "209.mat",
-          "97.mat"
-        ],
-        "n": 256,
-        "period_l": 256,
-        "wrap": "Per-rev windows from CWRU DE @12 kHz; ideal=cubic resample to L; engine=linear (bad-COT proxy) + DenoiseOpt-style wrap cliff+noise.",
-        "fs_hz": 12000.0,
-        "citation": "Case Western Reserve University Bearing Data Center",
-        "seed": 1902771841
-      },
-      "baseline_labels": {
-        "no_bake": "classical / passthrough",
-        "dual_cosine": "classical DualCosine fade",
-        "soft_periodize_hann": "classical Hann soft-periodize",
-        "linear_fade": "classical linear fade",
-        "endpoint_pin_mean": "classical endpoint pin",
-        "seam_fir3": "classical seam FIR3",
-        "cot_linear_periodize": "bearings classical bad-COT control (passthrough of linear resample)",
-        "cot_cubic_then_dualcosine": "bearings classical: DualCosine on cracked (not published deep COT)",
-        "ours_hybrid_lstm": "Ours (hybrid GA\u2013PPO / hybrid_lstm outer loop)"
-      },
-      "champ_raw": 0.9595887362957001,
-      "holdout_refit_R": 0.9623140096664429
+      "champ_raw": 0.9918926358222961,
+      "holdout_refit_R": 0.9915037155151367
     }
   },
   "honesty": "Classical board + domain classical proxies. Not a deep SOTA bake-off unless published model weights were run. synth_cnc_g01 / synth_pmu_cycle are synthetic proxies when real KIT / DataPort downloads are blocked.",
@@ -2633,210 +2663,5 @@
     "beatdiff": "not_executed",
     "paderborn_deep": "not_executed",
     "note": "Literature comparison only; no invented scores."
-  },
-  "ptbxl_expanded_note": "ptbxl_ecg board rebuilt from expanded records500 lead-I pool; Ours/N2N/classical rescored",
-  "deep_sota": {
-    "cycle_gan": "executed_ood_wrapR",
-    "beatdiff": "blocked_needs_user_auth_or_manual_drive",
-    "paderborn_deep": "executed_native_healthy_only_alfirdausi_cnn"
-  },
-  "notes": {
-    "paderborn_kat": "K001+fault mats; classical+Ours+SeamN2N; trained Al Firdausi CNN holdout_acc=0.858984375; backbone wrap-R=0.8390061259269714"
-  },
-  "paderborn_alfirdausi_trained": {
-    "finished_at": "20260726T093858Z",
-    "classifier": {
-      "kind": "authors_cnn_classifier_trained",
-      "architecture": "CNN_1D_2L",
-      "seg_len": 516,
-      "class_map": {
-        "0": "NORMAL",
-        "1": "IR",
-        "2": "OR",
-        "3": "OR+IR"
-      },
-      "file_split_seed": 20260726,
-      "train_seed": 42,
-      "bearings_found": [
-        "K001",
-        "KA04",
-        "KB23",
-        "KI04"
-      ],
-      "n_mats": 320,
-      "labels_present": [
-        "NORMAL",
-        "IR",
-        "OR",
-        "OR+IR"
-      ],
-      "citation": {
-        "paper": "Al Firdausi & Ahmad, Comm. Sci. Tech. 7(1):62\u201372, 2022",
-        "github": "https://github.com/mdzalfirdausi/CNN-for-Paderborn-Bearing-Dataset"
-      },
-      "honesty": "Trained from scratch on local Paderborn mats with author CNN_1D_2L arch and author helper.py labels (NORMAL/IR/OR/OR+IR). Not author model.pth. Not a wrap denoiser.",
-      "n_train_mats": 256,
-      "n_holdout_mats": 64,
-      "n_train_segments": 8000,
-      "n_holdout_segments": 2560,
-      "train_class_counts": {
-        "NORMAL": 2000,
-        "IR": 2000,
-        "OR": 2000,
-        "OR+IR": 2000
-      },
-      "holdout_class_counts": {
-        "NORMAL": 640,
-        "IR": 640,
-        "OR": 640,
-        "OR+IR": 640
-      },
-      "status": "trained_and_scored",
-      "epochs": 20,
-      "batch": 64,
-      "lr": 0.001,
-      "n_params": 106116,
-      "elapsed_sec": 6.151624899997842,
-      "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\deep_sota_adapters\\alfirdausi_trained\\cnn_1d_2l_classifier.pt",
-      "train_metrics": {
-        "n_segments": 8000,
-        "accuracy": 0.9955,
-        "loss": 0.025993724524974823,
-        "per_class": {
-          "NORMAL": {
-            "n": 2000,
-            "acc": 0.999
-          },
-          "IR": {
-            "n": 2000,
-            "acc": 0.998
-          },
-          "OR": {
-            "n": 2000,
-            "acc": 0.9885
-          },
-          "OR+IR": {
-            "n": 2000,
-            "acc": 0.9965
-          }
-        },
-        "confusion_matrix": [
-          [
-            1998,
-            1,
-            0,
-            1
-          ],
-          [
-            0,
-            1996,
-            1,
-            3
-          ],
-          [
-            0,
-            0,
-            1977,
-            23
-          ],
-          [
-            0,
-            0,
-            7,
-            1993
-          ]
-        ],
-        "class_order": [
-          "NORMAL",
-          "IR",
-          "OR",
-          "OR+IR"
-        ]
-      },
-      "holdout_metrics": {
-        "n_segments": 2560,
-        "accuracy": 0.858984375,
-        "loss": 0.4810258044861257,
-        "per_class": {
-          "NORMAL": {
-            "n": 640,
-            "acc": 0.8578125
-          },
-          "IR": {
-            "n": 640,
-            "acc": 0.8421875
-          },
-          "OR": {
-            "n": 640,
-            "acc": 0.9171875
-          },
-          "OR+IR": {
-            "n": 640,
-            "acc": 0.81875
-          }
-        },
-        "confusion_matrix": [
-          [
-            549,
-            77,
-            3,
-            11
-          ],
-          [
-            45,
-            539,
-            12,
-            44
-          ],
-          [
-            1,
-            7,
-            587,
-            45
-          ],
-          [
-            0,
-            29,
-            87,
-            524
-          ]
-        ],
-        "class_order": [
-          "NORMAL",
-          "IR",
-          "OR",
-          "OR+IR"
-        ]
-      },
-      "wrap_R": null,
-      "wrap_R_note": "Classifier head \u2014 wrap-R not applicable. See alfirdausi_backbone_wrap_residual for architecture-reuse bake."
-    },
-    "wrap_residual": {
-      "kind": "alfirdausi_backbone_wrap_residual",
-      "architecture": "CNN_1D_2L_conv_backbone + residual_head",
-      "period_l": 256,
-      "holdout_seed": 20260719,
-      "train_seed": 424242,
-      "honesty": "NOT the published Al Firdausi method. Reuses author conv backbone as a trainable residual wrap-repair cell on paderborn_kat for prolonged-R comparison only. Label separately from authors_cnn_classifier.",
-      "status": "trained_and_scored",
-      "steps": 4000,
-      "batch": 48,
-      "lr": 0.002,
-      "n_params": 4106113,
-      "n_train": 192,
-      "elapsed_sec": 12.847447999985889,
-      "ckpt": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\signal_heal_transfer\\deep_sota_adapters\\alfirdausi_trained\\cnn_1d_2l_wrap_residual.pt",
-      "loss_first": 0.03722948580980301,
-      "loss_last": 0.0007183169946074486,
-      "holdout": {
-        "R": 0.8390061259269714,
-        "R_blend": 0.8415248394012451,
-        "no_bake_R": 0.8390013575553894,
-        "dual_cosine_R": 0.7592579126358032,
-        "n_holdout": 64
-      },
-      "wrap_R": 0.8390061259269714
-    }
-  },
-  "updated_at": "20260726T104142Z"
+  }
 }

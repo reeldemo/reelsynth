@@ -23,7 +23,13 @@ import metrics_snr_sdr as msm  # noqa: E402
 from baselines.va_seam_blep import blit_blep_seam, blamp_seam, polyblep_seam  # noqa: E402
 
 HOLDOUT_SEED = 20260719
-V7 = ROOT.parent / "denoise-opt-meta" / "paper" / "v7" / "figures"
+V11 = (
+    ROOT.parent
+    / "denoise-opt-meta"
+    / "paper"
+    / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v11"
+    / "figures"
+)
 LOCAL = ROOT / "brand" / "artifacts" / "va_seam_blep.json"
 
 
@@ -34,19 +40,26 @@ def set_seed(seed: int, device: torch.device) -> None:
 
 
 @torch.no_grad()
-def score_pair(ideal: torch.Tensor, out: torch.Tensor) -> dict:
-    r = og.residual_score(ideal, out)
-    sec = msm.secondary_metrics(ideal, out, periods=int(og.PROLONG), seam_w=og.SEAM_W)
+def score_pair(ideal: torch.Tensor, eng: torch.Tensor, out: torch.Tensor) -> dict:
+    r = og.residual_score_blend(ideal, eng, out)
+    sec = msm.secondary_metrics(
+        ideal, out, periods=int(og.PROLONG), seam_w=og.SEAM_W, eng=eng, alpha=og.BLEND_ALPHA
+    )
     return {
         "R_mean": float(r.mean().item()),
         "R_std": float(r.std(unbiased=False).item()),
+        "R_blend_mean": float(r.mean().item()),
+        "primary_metric": "r_blend",
+        "blend_alpha": og.BLEND_ALPHA,
         **sec,
     }
 
 
 @torch.no_grad()
-def per_tile_metrics(ideal: torch.Tensor, out: torch.Tensor) -> dict[str, torch.Tensor]:
-    r = og.residual_score(ideal, out)
+def per_tile_metrics(
+    ideal: torch.Tensor, eng: torch.Tensor, out: torch.Tensor
+) -> dict[str, torch.Tensor]:
+    r = og.residual_score_blend(ideal, eng, out)
     snr = msm.tiled_snr_db(ideal, out, periods=int(og.PROLONG))
     sdr = msm.tiled_sdr_db(ideal, out, periods=int(og.PROLONG))
     jump = msm.wrap_jump_abs(out)
@@ -54,6 +67,7 @@ def per_tile_metrics(ideal: torch.Tensor, out: torch.Tensor) -> dict[str, torch.
     click = msm.click_energy(out, periods=4)
     return {
         "R": r,
+        "R_blend": r,
         "snr_db": snr,
         "sdr_db": sdr,
         "wrap_jump": jump,
@@ -105,11 +119,11 @@ def main() -> None:
         if device.type == "cuda":
             torch.cuda.synchronize()
         ms = (time.perf_counter() - t0) * 1000.0
-        row = score_pair(ideal, out)
+        row = score_pair(ideal, eng, out)
         row["ms_batch"] = float(ms)
         canonical[name] = row
         print(
-            f"canonical {name}: R={row['R_mean']:.4f} "
+            f"canonical {name}: R_blend={row['R_mean']:.4f} "
             f"jump={row['wrap_jump_mean']:.4f} edge={row['edge_rmse_mean']:.4f} ms={ms:.2f}"
         )
 
@@ -127,11 +141,11 @@ def main() -> None:
     strata: dict = {}
     for name, fn in methods.items():
         out = fn(eng_c)
-        metrics = per_tile_metrics(ideal_c, out)
+        metrics = per_tile_metrics(ideal_c, eng_c, out)
         strata[name] = {k: summarize(metrics, m) for k, m in masks.items()}
         print(
-            f"cliff {name}: all R={strata[name]['all']['R_mean']:.4f} "
-            f"top10 R={strata[name]['top10_wrap']['R_mean']:.4f} "
+            f"cliff {name}: all R_blend={strata[name]['all']['R_mean']:.4f} "
+            f"top10 R_blend={strata[name]['top10_wrap']['R_mean']:.4f} "
             f"top10 edge={strata[name]['top10_wrap']['edge_rmse_mean']:.4f}"
         )
 
@@ -147,7 +161,7 @@ def main() -> None:
             ideal_f, eng_f = bsm.make_family_batch(fam, args.batch, og.N, device, seed=seed)
             for name, fn in methods.items():
                 out = fn(eng_f)
-                row = score_pair(ideal_f, out)
+                row = score_pair(ideal_f, eng_f, out)
                 per_method_r[name].append(row["R_mean"])
                 per_method_snr[name].append(row["snr_db_mean"])
                 per_method_sdr[name].append(row["sdr_db_mean"])
@@ -169,9 +183,10 @@ def main() -> None:
                 "wrap_jump_std": float(jump.std(unbiased=False).item()),
                 "delta_R_vs_dual_cosine": float((r - dc_r).mean().item()),
                 "n_waveforms": len(wave_specs),
+                "primary_metric": "r_blend",
             }
             print(
-                f"multi {name}: R={multifamily[name]['R_mean']:.4f} "
+                f"multi {name}: R_blend={multifamily[name]['R_mean']:.4f} "
                 f"dR_dc={multifamily[name]['delta_R_vs_dual_cosine']:+.4f}"
             )
 
@@ -185,6 +200,9 @@ def main() -> None:
             "PROLONG": int(og.PROLONG),
             "wrap_jump_p75": p75,
             "wrap_jump_p90": p90,
+            "primary_metric": "r_blend",
+            "blend_alpha": og.BLEND_ALPHA,
+            "protocol": "EVAL_PROTOCOL v10.1",
             "implementation": (
                 "cycle-local seam residual bake; polyblep matches osc::va::poly_blep; "
                 "blit_blep raised-cosine BLEP-family; blamp polyBLAMP on slope jump"
@@ -204,10 +222,10 @@ def main() -> None:
     if multifamily and "no_bake" in multifamily:
         multifamily["identity"] = multifamily["no_bake"]
 
-    V7.mkdir(parents=True, exist_ok=True)
-    out_v7 = V7 / "va_seam_blep.json"
-    out_v7.write_text(json.dumps(blob, indent=2), encoding="utf-8")
-    print(f"wrote {out_v7}")
+    V11.mkdir(parents=True, exist_ok=True)
+    out_v11 = V11 / "va_seam_blep.json"
+    out_v11.write_text(json.dumps(blob, indent=2), encoding="utf-8")
+    print(f"wrote {out_v11}")
     LOCAL.parent.mkdir(parents=True, exist_ok=True)
     LOCAL.write_text(json.dumps(blob, indent=2), encoding="utf-8")
     print(f"wrote {LOCAL}")

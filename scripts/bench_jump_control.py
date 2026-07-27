@@ -17,20 +17,30 @@ from baselines.endpoint_pin import endpoint_pin  # noqa: E402
 from baselines.poly_seam_fitter import fit_poly_seam  # noqa: E402
 
 HOLDOUT_SEED = 20260719
-V6 = ROOT.parent / "denoise-opt-meta" / "paper" / "v6" / "figures"
+V11 = (
+    ROOT.parent
+    / "denoise-opt-meta"
+    / "paper"
+    / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v11"
+    / "figures"
+)
 
 
 @torch.no_grad()
 def score(ideal, eng, fn) -> dict:
     out = fn(eng)
-    r = og.residual_score(ideal, out)
-    sec = msm.secondary_metrics(ideal, out, periods=int(og.PROLONG), seam_w=og.SEAM_W)
+    r = og.residual_score_blend(ideal, eng, out)
+    sec = msm.secondary_metrics(
+        ideal, out, periods=int(og.PROLONG), seam_w=og.SEAM_W, eng=eng, alpha=og.BLEND_ALPHA
+    )
     return {
         "R_mean": float(r.mean().item()),
         "wrap_jump_mean": float(sec["wrap_jump_mean"]),
         "edge_rmse_mean": float(sec["edge_rmse_mean"]),
         "click_energy_mean": float(sec["click_energy_mean"]),
         "snr_db_mean": float(sec["snr_db_mean"]),
+        "primary_metric": "r_blend",
+        "blend_alpha": og.BLEND_ALPHA,
     }
 
 
@@ -63,7 +73,9 @@ def main() -> None:
             "n_tiles": args.n_tiles,
             "p90_wrap_jump": p90,
             "n_hard": int(mask.sum().item()),
-            "note": "Endpoint-pin lowers wrap-jump; prolonged R often drops vs no-bake/favorite.",
+            "note": "Endpoint-pin lowers wrap-jump; R_blend often drops vs no-bake/favorite.",
+            "primary_metric": "r_blend",
+            "blend_alpha": og.BLEND_ALPHA,
             "nomenclature": {"no_bake": "passthrough unrepaired engine; legacy key identity"},
         },
         "all": {},
@@ -73,9 +85,9 @@ def main() -> None:
         blob["all"][name] = score(ideal, eng, fn)
         blob["top10_wrap"][name] = score(ideal_h, eng_h, fn)
         print(
-            f"{name}: all R={blob['all'][name]['R_mean']:.4f} "
+            f"{name}: all R_blend={blob['all'][name]['R_mean']:.4f} "
             f"jump={blob['all'][name]['wrap_jump_mean']:.4f} | "
-            f"hard R={blob['top10_wrap'][name]['R_mean']:.4f} "
+            f"hard R_blend={blob['top10_wrap'][name]['R_mean']:.4f} "
             f"jump={blob['top10_wrap'][name]['wrap_jump_mean']:.4f}"
         )
     # Legacy alias
@@ -83,10 +95,13 @@ def main() -> None:
         if "no_bake" in blob[section]:
             blob[section]["identity"] = blob[section]["no_bake"]
 
-    V6.mkdir(parents=True, exist_ok=True)
-    path = V6 / "jump_control.json"
+    V11.mkdir(parents=True, exist_ok=True)
+    path = V11 / "jump_control.json"
     path.write_text(json.dumps(blob, indent=2), encoding="utf-8")
     print(f"wrote {path}")
+    local = ROOT / "brand" / "artifacts" / "jump_control.json"
+    local.write_text(json.dumps(blob, indent=2), encoding="utf-8")
+    print(f"wrote {local}")
 
 
 if __name__ == "__main__":

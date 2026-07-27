@@ -4,6 +4,8 @@
     "cycle_length_N": 256,
     "prolong_tiles": 16,
     "seam_width": 8,
+    "primary_metric": "r_blend",
+    "blend_alpha": 0.7,
     "ideal_rms": {
       "mean": 0.7210429310798645,
       "std": 0.01584848202764988,
@@ -26,13 +28,14 @@
       "p50": 0.8319320678710938
     },
     "identity_residual_R": {
-      "mean": 0.9714958667755127,
-      "std": 0.018290098756551743,
-      "min": 0.9054800271987915,
-      "max": 0.9947156310081482
+      "mean": 0.912605345249176,
+      "std": 0.07650081068277359,
+      "min": 0.30000001192092896,
+      "max": 0.9910383224487305,
+      "note": "R_blend for no-bake (eng vs ideal/eng body)"
     },
     "family_labels": null,
-    "note": "Single synthetic family: make_batch sine+cliff (not Rust sound_bench families). No train/eval split of labeled clean audio: overnight search draws i.i.d. batches from the same generator; this freeze is the paper holdout for method tables.",
+    "note": "Single synthetic family: make_batch sine+cliff (not Rust sound_bench families). No train/eval split of labeled clean audio: overnight search draws i.i.d. batches from the same generator; this freeze is the paper holdout for method tables. Primary metric is R_blend (\u03b1=0.7).",
     "generator": {
       "fn": "overnight_gpu_rl_arch.make_batch",
       "procedure": "Per sample: two-harmonic sine (freq~U(1,4), phase~U(0,2pi)), seam cliff amplitude ~\u00b1U(0.08,0.43) applied over SEAM_W samples at both ends, plus seam-boosted Gaussian noise (0.02 at ends, 0.15\u00d7 mid).",

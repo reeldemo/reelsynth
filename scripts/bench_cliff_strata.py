@@ -26,11 +26,11 @@ META_OUT = (
     Path(__file__).resolve().parents[2]
     / "denoise-opt-meta"
     / "paper"
-    / "v5"
+    / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v11"
     / "figures"
     / "cliff_strata.json"
 )
-MIRROR_OUT = ROOT / "docs" / "papers" / "denoise_opt" / "v5" / "figures" / "cliff_strata.json"
+MIRROR_OUT = ROOT / "brand" / "artifacts" / "cliff_strata.json"
 
 
 def set_seed(seed: int, device: torch.device) -> None:
@@ -55,6 +55,7 @@ def per_tile_metrics(
     click = msm.click_energy(out, periods=4)
     return {
         "R": r,
+        "R_blend": r,
         "snr_db": snr,
         "sdr_db": sdr,
         "wrap_jump": jump,
@@ -157,6 +158,9 @@ def main() -> None:
             "wrap_jump_p90": p90,
             "engine_wrap_jump_mean": float(engine_jump.mean().item()),
             "favorite_meta": neural_meta,
+            "primary_metric": "r_blend",
+            "blend_alpha": og.BLEND_ALPHA,
+            "protocol": "EVAL_PROTOCOL v10.1",
             "stratum_rule": "empirical percentiles of engine wrap-jump |x0-xL-1|",
             "edge_rmse": "RMS(out-ideal) on indices [0:W] U [L-W:L]",
             "click_energy": "mean square first-diff across tiled wrap boundaries",
@@ -215,7 +219,7 @@ def main() -> None:
             ROOT.parent
             / "denoise-opt-meta"
             / "paper"
-            / "v5"
+            / "Unsupervised_Wavetable_Seam_Artifact_Repair_via_Hybrid_GA-PPO_Meta-Search_v11"
             / "figures"
             / "cliff_strata.json"
         )

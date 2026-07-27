@@ -7,6 +7,8 @@
     "cycle_length_N": 256,
     "prolong_tiles": 16,
     "seam_width": 8,
+    "primary_metric": "r_blend",
+    "blend_alpha": 0.7,
     "ideal_rms": {
       "mean": 0.7210429310798645,
       "std": 0.01584848202764988,
@@ -29,13 +31,14 @@
       "p50": 0.8319320678710938
     },
     "identity_residual_R": {
-      "mean": 0.9714958667755127,
-      "std": 0.018290098756551743,
-      "min": 0.9054800271987915,
-      "max": 0.9947156310081482
+      "mean": 0.912605345249176,
+      "std": 0.07650081068277359,
+      "min": 0.30000001192092896,
+      "max": 0.9910383224487305,
+      "note": "R_blend for no-bake (eng vs ideal/eng body)"
     },
     "family_labels": null,
-    "note": "Single synthetic family: make_batch sine+cliff (not Rust sound_bench families). No train/eval split of labeled clean audio: overnight search draws i.i.d. batches from the same generator; this freeze is the paper holdout for method tables.",
+    "note": "Single synthetic family: make_batch sine+cliff (not Rust sound_bench families). No train/eval split of labeled clean audio: overnight search draws i.i.d. batches from the same generator; this freeze is the paper holdout for method tables. Primary metric is R_blend (\u03b1=0.7).",
     "generator": {
       "fn": "overnight_gpu_rl_arch.make_batch",
       "procedure": "Per sample: two-harmonic sine (freq~U(1,4), phase~U(0,2pi)), seam cliff amplitude ~\u00b1U(0.08,0.43) applied over SEAM_W samples at both ends, plus seam-boosted Gaussian noise (0.02 at ends, 0.15\u00d7 mid).",
@@ -50,132 +53,166 @@
   },
   "results": [
     {
-      "name": "identity",
+      "name": "no_bake",
       "kind": "non_ai",
-      "residual": 0.9717606902122498,
-      "ms_per_batch": 0.3068925001571188,
-      "ms_per_sample": 0.004795195314954981,
+      "residual": 0.9141565561294556,
+      "residual_R_blend": 0.9141565561294556,
+      "primary_metric": "r_blend",
+      "blend_alpha": 0.7,
+      "ms_per_batch": 1.0593940003309399,
+      "ms_per_sample": 0.016553031255170936,
       "n_params": 0,
       "eval_seed": 20260719,
-      "R_mean_multiseed": 0.9726044297218323,
-      "R_std_multiseed": 0.0020547732409553756
+      "R_mean_multiseed": 0.9166171789169312,
+      "R_std_multiseed": 0.008994993813202031
     },
     {
       "name": "classic_quadratic",
       "kind": "non_ai",
-      "residual": 0.8448915481567383,
-      "ms_per_batch": 1.594815000134986,
-      "ms_per_sample": 0.024918984377109155,
+      "residual": 0.5741926431655884,
+      "residual_R_blend": 0.5741926431655884,
+      "primary_metric": "r_blend",
+      "blend_alpha": 0.7,
+      "ms_per_batch": 2.073561999714002,
+      "ms_per_sample": 0.03239940624553128,
       "n_params": 0,
       "eval_seed": 20260719,
-      "R_mean_multiseed": 0.8452812194824219,
-      "R_std_multiseed": 0.01168853945918661
+      "R_mean_multiseed": 0.5726601719856262,
+      "R_std_multiseed": 0.031778024287619555
     },
     {
       "name": "cosine_fade",
       "kind": "non_ai",
-      "residual": 0.8248767852783203,
-      "ms_per_batch": 1.5945499999361346,
-      "ms_per_sample": 0.024914843749002102,
+      "residual": 0.5408586263656616,
+      "residual_R_blend": 0.5408586263656616,
+      "primary_metric": "r_blend",
+      "blend_alpha": 0.7,
+      "ms_per_batch": 1.8691419996321201,
+      "ms_per_sample": 0.029205343744251877,
       "n_params": 0,
       "eval_seed": 20260719,
-      "R_mean_multiseed": 0.8257672667503357,
-      "R_std_multiseed": 0.01365821849148019
+      "R_mean_multiseed": 0.5419712424278259,
+      "R_std_multiseed": 0.03424009978834697
     },
     {
       "name": "dual_cosine",
       "kind": "non_ai",
-      "residual": 0.8248767852783203,
-      "ms_per_batch": 1.34570000009262,
-      "ms_per_sample": 0.021026562501447188,
+      "residual": 0.5408586263656616,
+      "residual_R_blend": 0.5408586263656616,
+      "primary_metric": "r_blend",
+      "blend_alpha": 0.7,
+      "ms_per_batch": 1.6564460005611181,
+      "ms_per_sample": 0.02588196875876747,
       "n_params": 0,
       "eval_seed": 20260719,
-      "R_mean_multiseed": 0.8257672667503357,
-      "R_std_multiseed": 0.01365821849148019
+      "R_mean_multiseed": 0.5419712424278259,
+      "R_std_multiseed": 0.03424009978834697
     },
     {
       "name": "soft_wide_fade",
       "kind": "non_ai",
-      "residual": 0.7431874871253967,
-      "ms_per_batch": 2.6351900000008754,
-      "ms_per_sample": 0.04117484375001368,
+      "residual": 0.48278385400772095,
+      "residual_R_blend": 0.48278385400772095,
+      "primary_metric": "r_blend",
+      "blend_alpha": 0.7,
+      "ms_per_batch": 2.852071999805048,
+      "ms_per_sample": 0.04456362499695388,
       "n_params": 0,
       "eval_seed": 20260719,
-      "R_mean_multiseed": 0.7377992153167725,
-      "R_std_multiseed": 0.017122827775705556
+      "R_mean_multiseed": 0.48026766180992125,
+      "R_std_multiseed": 0.025756889063822848
     },
     {
       "name": "detrend",
       "kind": "non_ai",
-      "residual": 0.40794822573661804,
-      "ms_per_batch": 0.3601849999540718,
-      "ms_per_sample": 0.005627890624282372,
+      "residual": 0.3436805009841919,
+      "residual_R_blend": 0.3436805009841919,
+      "primary_metric": "r_blend",
+      "blend_alpha": 0.7,
+      "ms_per_batch": 0.9613800002261996,
+      "ms_per_sample": 0.01502156250353437,
       "n_params": 0,
       "eval_seed": 20260719,
-      "R_mean_multiseed": 0.40910319685935975,
-      "R_std_multiseed": 0.03863159324370911
+      "R_mean_multiseed": 0.34528308510780337,
+      "R_std_multiseed": 0.03988387522559381
     },
     {
       "name": "crossfade",
       "kind": "non_ai",
-      "residual": 0.8115774989128113,
-      "ms_per_batch": 1.5049024998006644,
-      "ms_per_sample": 0.02351410155938538,
+      "residual": 0.5310215950012207,
+      "residual_R_blend": 0.5310215950012207,
+      "primary_metric": "r_blend",
+      "blend_alpha": 0.7,
+      "ms_per_batch": 1.8557259999215603,
+      "ms_per_sample": 0.02899571874877438,
       "n_params": 0,
       "eval_seed": 20260719,
-      "R_mean_multiseed": 0.8129824757575989,
-      "R_std_multiseed": 0.01449366907989955
+      "R_mean_multiseed": 0.5273251175880432,
+      "R_std_multiseed": 0.031059718550414925
     },
     {
       "name": "hann_blend",
       "kind": "non_ai",
-      "residual": 0.8047966957092285,
-      "ms_per_batch": 0.541657500070869,
-      "ms_per_sample": 0.008463398438607328,
+      "residual": 0.5196982026100159,
+      "residual_R_blend": 0.5196982026100159,
+      "primary_metric": "r_blend",
+      "blend_alpha": 0.7,
+      "ms_per_batch": 1.0530799999833107,
+      "ms_per_sample": 0.01645437499973923,
       "n_params": 0,
       "eval_seed": 20260719,
-      "R_mean_multiseed": 0.805998432636261,
-      "R_std_multiseed": 0.015557421071392363
+      "R_mean_multiseed": 0.5213771760463715,
+      "R_std_multiseed": 0.033653396596048345
     },
     {
       "name": "seam_fir3",
       "kind": "non_ai",
-      "residual": 0.9610013961791992,
-      "ms_per_batch": 0.6682749997708015,
-      "ms_per_sample": 0.010441796871418774,
+      "residual": 0.8842320442199707,
+      "residual_R_blend": 0.8842320442199707,
+      "primary_metric": "r_blend",
+      "blend_alpha": 0.7,
+      "ms_per_batch": 1.1129979998804629,
+      "ms_per_sample": 0.017390593748132233,
       "n_params": 0,
       "eval_seed": 20260719,
-      "R_mean_multiseed": 0.9615767121315002,
-      "R_std_multiseed": 0.001923152028896591
+      "R_mean_multiseed": 0.8879098296165466,
+      "R_std_multiseed": 0.008718485296018694
     },
     {
       "name": "ensemble_detrend_dc_fir",
       "kind": "non_ai",
-      "residual": 0.4023715853691101,
-      "ms_per_batch": 1.5616724998835707,
-      "ms_per_sample": 0.024401132810680792,
+      "residual": 0.3126137852668762,
+      "residual_R_blend": 0.3126137852668762,
+      "primary_metric": "r_blend",
+      "blend_alpha": 0.7,
+      "ms_per_batch": 2.004936001030728,
+      "ms_per_sample": 0.03132712501610513,
       "n_params": 0,
       "eval_seed": 20260719,
-      "R_mean_multiseed": 0.402651846408844,
-      "R_std_multiseed": 0.03867818063339462
+      "R_mean_multiseed": 0.3099950224161148,
+      "R_std_multiseed": 0.0421368823263354
     },
     {
       "name": "neural_favorite_meta",
       "kind": "ai",
-      "residual": 0.9910600185394287,
-      "ms_per_batch": 2.5635774996771943,
-      "ms_per_sample": 0.04005589843245616,
-      "n_params": 37489,
+      "residual": 0.9697462320327759,
+      "residual_R_blend": 0.9697462320327759,
+      "primary_metric": "r_blend",
+      "blend_alpha": 0.7,
+      "ms_per_batch": 5.990158000495285,
+      "ms_per_sample": 0.09359621875773882,
+      "n_params": 121451,
       "eval_seed": 20260719,
-      "tag": "champion_iter_000235_fitted",
-      "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\gpu-rl-arch-20260719T061909Z\\fitted\\champion_iter_000235_fitted.pt",
-      "residual_saved": 0.9909982681274414,
-      "R_mean_multiseed": 0.9912270665168762,
-      "R_std_multiseed": 0.0001868340524399009
+      "tag": "v10_hybrid_lstm_champ",
+      "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare_v10\\hybrid_lstm\\champ_cell.pt",
+      "residual_saved": 0.969511866569519,
+      "source": "v10_hybrid",
+      "R_mean_multiseed": 0.9707812786102294,
+      "R_std_multiseed": 0.001227547128458088
     }
   ],
   "multiseed": {
-    "identity": {
+    "no_bake": {
       "seeds": [
         20260719,
         20260720,
@@ -183,14 +220,14 @@
         20260722,
         20260723
       ],
-      "R_mean": 0.9726044297218323,
-      "R_std": 0.0020547732409553756,
+      "R_mean": 0.9166171789169312,
+      "R_std": 0.008994993813202031,
       "R_values": [
-        0.9717606902122498,
-        0.9703060984611511,
-        0.9760109186172485,
-        0.9737907648086548,
-        0.9711536765098572
+        0.9141565561294556,
+        0.9060189723968506,
+        0.9293766021728516,
+        0.9246194362640381,
+        0.90891432762146
       ]
     },
     "classic_quadratic": {
@@ -201,14 +238,14 @@
         20260722,
         20260723
       ],
-      "R_mean": 0.8452812194824219,
-      "R_std": 0.01168853945918661,
+      "R_mean": 0.5726601719856262,
+      "R_std": 0.031778024287619555,
       "R_values": [
-        0.8448915481567383,
-        0.8247206211090088,
-        0.8498318195343018,
-        0.8462340831756592,
-        0.8607280254364014
+        0.5741926431655884,
+        0.514411449432373,
+        0.579730749130249,
+        0.5838519334793091,
+        0.6111140847206116
       ]
     },
     "cosine_fade": {
@@ -219,14 +256,14 @@
         20260722,
         20260723
       ],
-      "R_mean": 0.8257672667503357,
-      "R_std": 0.01365821849148019,
+      "R_mean": 0.5419712424278259,
+      "R_std": 0.03424009978834697,
       "R_values": [
-        0.8248767852783203,
-        0.8017913103103638,
-        0.8311089277267456,
-        0.8272244334220886,
-        0.8438348770141602
+        0.5408586263656616,
+        0.4809948205947876,
+        0.5471922755241394,
+        0.5546205043792725,
+        0.5861899852752686
       ]
     },
     "dual_cosine": {
@@ -237,14 +274,14 @@
         20260722,
         20260723
       ],
-      "R_mean": 0.8257672667503357,
-      "R_std": 0.01365821849148019,
+      "R_mean": 0.5419712424278259,
+      "R_std": 0.03424009978834697,
       "R_values": [
-        0.8248767852783203,
-        0.8017913103103638,
-        0.8311089277267456,
-        0.8272244334220886,
-        0.8438348770141602
+        0.5408586263656616,
+        0.4809948205947876,
+        0.5471922755241394,
+        0.5546205043792725,
+        0.5861899852752686
       ]
     },
     "soft_wide_fade": {
@@ -255,14 +292,14 @@
         20260722,
         20260723
       ],
-      "R_mean": 0.7377992153167725,
-      "R_std": 0.017122827775705556,
+      "R_mean": 0.48026766180992125,
+      "R_std": 0.025756889063822848,
       "R_values": [
-        0.7431874871253967,
-        0.7108732461929321,
-        0.7376308441162109,
-        0.7332199811935425,
-        0.76408451795578
+        0.48278385400772095,
+        0.4432210624217987,
+        0.4788094162940979,
+        0.4728790521621704,
+        0.5236449241638184
       ]
     },
     "detrend": {
@@ -273,14 +310,14 @@
         20260722,
         20260723
       ],
-      "R_mean": 0.40910319685935975,
-      "R_std": 0.03863159324370911,
+      "R_mean": 0.34528308510780337,
+      "R_std": 0.03988387522559381,
       "R_values": [
-        0.40794822573661804,
-        0.34864145517349243,
-        0.42567670345306396,
-        0.39615708589553833,
-        0.46709251403808594
+        0.3436805009841919,
+        0.28327447175979614,
+        0.3428872227668762,
+        0.34728842973709106,
+        0.4092848002910614
       ]
     },
     "crossfade": {
@@ -291,14 +328,14 @@
         20260722,
         20260723
       ],
-      "R_mean": 0.8129824757575989,
-      "R_std": 0.01449366907989955,
+      "R_mean": 0.5273251175880432,
+      "R_std": 0.031059718550414925,
       "R_values": [
-        0.8115774989128113,
-        0.7877506017684937,
-        0.8152846097946167,
-        0.8177227973937988,
-        0.8325768709182739
+        0.5310215950012207,
+        0.4686558246612549,
+        0.5348939299583435,
+        0.541359543800354,
+        0.560694694519043
       ]
     },
     "hann_blend": {
@@ -309,14 +346,14 @@
         20260722,
         20260723
       ],
-      "R_mean": 0.805998432636261,
-      "R_std": 0.015557421071392363,
+      "R_mean": 0.5213771760463715,
+      "R_std": 0.033653396596048345,
       "R_values": [
-        0.8047966957092285,
-        0.7786664366722107,
-        0.8123111724853516,
-        0.8077561855316162,
-        0.826461672782898
+        0.5196982026100159,
+        0.46204617619514465,
+        0.5245847702026367,
+        0.5351303815841675,
+        0.5654263496398926
       ]
     },
     "seam_fir3": {
@@ -327,14 +364,14 @@
         20260722,
         20260723
       ],
-      "R_mean": 0.9615767121315002,
-      "R_std": 0.001923152028896591,
+      "R_mean": 0.8879098296165466,
+      "R_std": 0.008718485296018694,
       "R_values": [
-        0.9610013961791992,
-        0.9583688974380493,
-        0.9640629291534424,
-        0.9628767967224121,
-        0.9615735411643982
+        0.8842320442199707,
+        0.8747923374176025,
+        0.8984599709510803,
+        0.8966741561889648,
+        0.8853906393051147
       ]
     },
     "ensemble_detrend_dc_fir": {
@@ -345,14 +382,14 @@
         20260722,
         20260723
       ],
-      "R_mean": 0.402651846408844,
-      "R_std": 0.03867818063339462,
+      "R_mean": 0.3099950224161148,
+      "R_std": 0.0421368823263354,
       "R_values": [
-        0.4023715853691101,
-        0.3412230610847473,
-        0.4182214140892029,
-        0.3910834789276123,
-        0.46035969257354736
+        0.3126137852668762,
+        0.23836733400821686,
+        0.3106071352958679,
+        0.3177286982536316,
+        0.37065815925598145
       ]
     },
     "neural_favorite_meta": {
@@ -363,27 +400,27 @@
         20260722,
         20260723
       ],
-      "R_mean": 0.9912270665168762,
-      "R_std": 0.0001868340524399009,
+      "R_mean": 0.9707812786102294,
+      "R_std": 0.001227547128458088,
       "R_values": [
-        0.9910600185394287,
-        0.9912663102149963,
-        0.9909653663635254,
-        0.9914025068283081,
-        0.9914411306381226
+        0.9697462320327759,
+        0.9691658020019531,
+        0.9708452224731445,
+        0.9715725779533386,
+        0.9725765585899353
       ]
     }
   },
   "summary": {
-    "best_classical": "seam_fir3",
-    "best_classical_R": 0.9610013961791992,
-    "dual_cosine_R": 0.8248767852783203,
-    "ai_favorite_R": 0.9910600185394287,
-    "delta_R_ai_minus_best_classical": 0.030058622360229492,
-    "delta_R_ai_minus_dual_cosine": 0.1661832332611084,
-    "ai_ms_per_batch": 2.5635774996771943,
-    "best_classical_ms_per_batch": 0.6682749997708015,
-    "dual_cosine_ms_per_batch": 1.34570000009262
+    "best_classical": "no_bake",
+    "best_classical_R": 0.9141565561294556,
+    "dual_cosine_R": 0.5408586263656616,
+    "ai_favorite_R": 0.9697462320327759,
+    "delta_R_ai_minus_best_classical": 0.05558967590332031,
+    "delta_R_ai_minus_dual_cosine": 0.42888760566711426,
+    "ai_ms_per_batch": 5.990158000495285,
+    "best_classical_ms_per_batch": 1.0593940003309399,
+    "dual_cosine_ms_per_batch": 1.6564460005611181
   },
   "creation": {
     "script": "scripts/bench_canonical_eval_dataset.py",
