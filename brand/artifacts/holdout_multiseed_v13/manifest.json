@@ -1,0 +1,12 @@
+{
+  "schema": "denoiseopt.holdout_multiseed_v13.v1",
+  "seeds": [
+    20260719,
+    20260720,
+    20260721,
+    20260722,
+    20260723
+  ],
+  "champ": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare_v10\\hybrid_lstm\\champ_cell.pt",
+  "out": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\holdout_multiseed_v13"
+}

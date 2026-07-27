@@ -113,10 +113,12 @@ def main() -> None:
     ap.add_argument("--n-tiles", type=int, default=4096)
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--out", type=Path, default=None)
+    ap.add_argument("--eval-seed", type=int, default=HOLDOUT_SEED)
     args = ap.parse_args()
     device = torch.device(args.device)
+    eval_seed = int(args.eval_seed)
 
-    set_seed(HOLDOUT_SEED, device)
+    set_seed(eval_seed, device)
     ideal, eng = og.make_batch(args.n_tiles, og.N, device)
     engine_jump = msm.wrap_jump_abs(eng)
     p75 = float(torch.quantile(engine_jump, 0.75).item())
@@ -149,7 +151,7 @@ def main() -> None:
     }
     results: dict = {
         "meta": {
-            "holdout_seed": HOLDOUT_SEED,
+            "holdout_seed": eval_seed,
             "n_tiles": int(args.n_tiles),
             "L": int(og.N),
             "SEAM_W": int(og.SEAM_W),

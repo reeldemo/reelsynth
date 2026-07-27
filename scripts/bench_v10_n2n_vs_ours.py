@@ -127,9 +127,11 @@ def main() -> int:
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--out-dir", type=Path, default=OUT_DEFAULT)
     ap.add_argument("--skip-real-wt", action="store_true")
+    ap.add_argument("--eval-seed", type=int, default=HOLDOUT_SEED)
     args = ap.parse_args()
     device = torch.device(args.device if args.device != "cuda" or torch.cuda.is_available() else "cpu")
     args.out_dir.mkdir(parents=True, exist_ok=True)
+    eval_seed = int(args.eval_seed)
 
     n2n, n2n_path, n2n_blob = load_n2n(device)
     cell, cfg, champ_blob = load_ours(args.champ, device)
@@ -137,14 +139,14 @@ def main() -> int:
     def ours_fn(eng):
         return og.apply_ops(eng, cell, cfg.ops)
 
-    set_seed(HOLDOUT_SEED, device)
+    set_seed(eval_seed, device)
     ideal, eng = og.make_batch(args.batch, og.N, device)
     holdout = score_pair(ideal, eng, n2n=n2n, ours_fn=ours_fn, device=device)
 
     multifamily = {}
     for fam in bsm.FAMILIES:
         for i, seed in enumerate(bsm.WAVEFORM_SEEDS):
-            ideal_f, eng_f = bsm.make_family_batch(fam, args.batch, og.N, device, seed=seed)
+            ideal_f, eng_f = bsm.make_family_batch(fam, args.batch, og.N, device, seed=seed + (eval_seed - HOLDOUT_SEED))
             key = f"{fam}/seed{seed}"
             multifamily[key] = score_pair(ideal_f, eng_f, n2n=n2n, ours_fn=ours_fn, device=device)
 
@@ -172,7 +174,7 @@ def main() -> int:
                 if key in blob and hasattr(blob[key], "shape"):
                     cyc = blob[key].to(device)
                     closed = rwp.close_seam_ideal(cyc)
-                    ideal_r, eng_r = rwp.apply_open_wrap_cliff(closed, seed=HOLDOUT_SEED)
+                    ideal_r, eng_r = rwp.apply_open_wrap_cliff(closed, seed=eval_seed)
                     real_wt[label] = {
                         "n_cycles": int(cyc.shape[0]),
                         **score_pair(ideal_r, eng_r, n2n=n2n, ours_fn=ours_fn, device=device),
@@ -183,7 +185,7 @@ def main() -> int:
         "protocol": "paper_v10.1",
         "primary_metric": "r_blend",
         "blend_alpha": og.BLEND_ALPHA,
-        "holdout_seed": HOLDOUT_SEED,
+        "holdout_seed": eval_seed,
         "n2n_checkpoint": str(n2n_path),
         "n2n_train_eval_R_blend": (n2n_blob.get("eval") or {}).get("residual_R"),
         "champ_path": str(args.champ),
