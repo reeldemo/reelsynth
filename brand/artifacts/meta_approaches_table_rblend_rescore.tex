@@ -1,0 +1,19 @@
+\begin{table}[t]
+  \centering
+  \caption{Frozen matched-5k champion architectures re-fit once under $R_{\mathrm{blend}}$ ($\alpha{=}0.7$; search seed \texttt{1902771841}). Outer-loop search still maximized prolonged $R$; wall hours are the original 5k-search walls. Full $R_{\mathrm{blend}}$ re-search remains Deferred D1.}
+  \label{tab:meta-approaches}
+  \setlength{\tabcolsep}{2pt}
+  \scriptsize
+  \begin{tabular}{@{}lrrrcc@{}}
+    \toprule
+    Method & $R_{\mathrm{blend}}$ & $\Delta R$ vs DC & h & LSTM & xLSTM \\
+    \midrule
+    Random NAS & 0.93291 & $+0.39427$ & 5.72 & no & no \\
+    Cont.\ CMA-ES & 0.94929 & $+0.41065$ & 2.28 & no & no \\
+    Arch REINFORCE & 0.93758 & $+0.39893$ & 25.93 & no & yes \\
+    Aging evolution & 0.96519 & $+0.42655$ & 15.02 & no & yes \\
+    TPE Bayes NAS & 0.92710 & $+0.38846$ & 11.18 & yes & no \\
+    Ours (hybrid GA--PPO) & 0.97484 & $+0.43619$ & 8.46 & no & no \\
+    \bottomrule
+  \end{tabular}
+\end{table}

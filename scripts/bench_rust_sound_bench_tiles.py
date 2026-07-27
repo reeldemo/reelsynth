@@ -114,14 +114,16 @@ def main() -> int:
     }
 
     payload = {
-        "protocol": "EVAL_PROTOCOL v1 / Rust sound_bench tiles",
+        "protocol": "EVAL_PROTOCOL v10.1 / Rust sound_bench tiles / R_blend alpha=0.7",
+        "primary_metric": "r_blend",
+        "blend_alpha": float(og.BLEND_ALPHA),
         "source_tiles": str(args.tiles),
         "n_tiles": len(tiles),
         "families": sorted({t["family"] for t in tiles}),
         "note": (
             "Waveforms exported from Rust sound_bench (generate_sound / generate_sound_ideal). "
-            "Closes the Python stand-in gap for ≥20 family tiles. Residual geometry uses the "
-            "Python overnight residual_score on tiled cycles (same secondary SNR/SDR helpers)."
+            "Closes the Python stand-in gap for ≥20 family tiles. Primary residual_R keys are "
+            "R_blend (α=0.7) via residual_score_blend; SNR/SDR secondary helpers unchanged."
         ),
         "results": results,
         "stats": stats,

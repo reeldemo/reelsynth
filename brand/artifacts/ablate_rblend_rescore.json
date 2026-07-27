@@ -1,0 +1,214 @@
+{
+  "primary_metric": "r_blend",
+  "blend_alpha": 0.7,
+  "baseline_dual_cosine": 0.4946783483028412,
+  "note": "Isolated 150-it ablate-* final champions re-scored under R_blend. Search freezes maximized prolonged R; branch-best freezes from the 5k hybrid history remain prolonged-only (no separate fitted weights).",
+  "isolated_150it": {
+    "Full hybrid": {
+      "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\ablate-full-150it-1902771841\\fitted\\final_champion_fitted.pt",
+      "residual_saved_hint": 0.9811286330223083,
+      "r_blend_live": 0.927100658416748,
+      "delta_vs_dual_cosine": 0.43242231011390686,
+      "n_params": 133240,
+      "arch": {
+        "depth": 12,
+        "width": 24,
+        "act": "silu",
+        "ops": [
+          "pin",
+          "polish",
+          "fade_pull",
+          "asym_wet"
+        ],
+        "wet": 0.5850161038786684,
+        "fir": [
+          0.17471940813108378,
+          0.09134042771250651,
+          0.35514875715018324,
+          0.3393866213983181,
+          0.4059071060031442
+        ],
+        "cell_kind": "dense",
+        "soft_logits": [
+          0.14447300277864805,
+          0.3312737085098182,
+          0.1974168596182887,
+          0.20552569112180158,
+          0.19881737719461756,
+          -0.017134737793681465,
+          1.058034634751238,
+          -0.5557464659430217,
+          0.4540194500097642,
+          0.6274191842622213,
+          0.9458486784307053,
+          0.03375848050758207,
+          -0.060233607303386755,
+          0.7335743414306835,
+          0.04618001361710211
+        ],
+        "blocks": [
+          "dense",
+          "noise_cond",
+          "dual_path",
+          "dilated"
+        ],
+        "use_adv_aux": false,
+        "moe_mode": "moe_parallel"
+      }
+    },
+    "GA-only": {
+      "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\ablate-ga-only-150it-1902771841\\fitted\\final_champion_fitted.pt",
+      "residual_saved_hint": 0.9806169271469116,
+      "r_blend_live": 0.9416766166687012,
+      "delta_vs_dual_cosine": 0.44699826836586,
+      "n_params": 150788,
+      "arch": {
+        "depth": 12,
+        "width": 24,
+        "act": "tanh",
+        "ops": [
+          "fir3",
+          "fir5"
+        ],
+        "wet": 0.2658557648730012,
+        "fir": [
+          0.15146544878715432,
+          0.1963276290910574,
+          0.29561540037745937,
+          0.39242349353145245,
+          0.20735236700774906
+        ],
+        "cell_kind": "noise_cond",
+        "soft_logits": [
+          0.11620922414445539,
+          0.08724791043958796,
+          -0.3768306797633331,
+          -0.025476447754848808,
+          -0.42069098339508043,
+          -0.06314140878611657,
+          0.43733419455201283,
+          0.5916413942721332,
+          -0.40581892075699966,
+          0.13516939908097764,
+          0.011537813212065373,
+          0.5959222597611171,
+          0.4334008797549024,
+          0.19181417974433027,
+          -0.5846506174837895
+        ],
+        "blocks": [
+          "noise_cond",
+          "dense",
+          "residual",
+          "unet",
+          "soft_mix"
+        ],
+        "use_adv_aux": false,
+        "moe_mode": "sequential"
+      }
+    },
+    "GA+PPO": {
+      "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\ablate-ga-ppo-150it-1902771841\\fitted\\final_champion_fitted.pt",
+      "residual_saved_hint": 0.9800712764263153,
+      "r_blend_live": 0.9447849988937378,
+      "delta_vs_dual_cosine": 0.4501066505908966,
+      "n_params": 189596,
+      "arch": {
+        "depth": 12,
+        "width": 37,
+        "act": "tanh",
+        "ops": [
+          "mlp_seam",
+          "edge_pin",
+          "classic",
+          "fade_pull",
+          "skip_blend",
+          "soft_seam"
+        ],
+        "wet": 0.7009333967076988,
+        "fir": [
+          0.5607353678013243,
+          0.06078119747699611,
+          0.3984368154397288,
+          0.46153209200446793,
+          0.21991939168643485
+        ],
+        "cell_kind": "dense",
+        "soft_logits": [
+          -0.44503497919929225,
+          0.4773183191094287,
+          0.29602422257361743,
+          0.16639151197283228,
+          -0.6785378729495364,
+          -0.7114657132501131,
+          0.49597777260452697,
+          -0.3434276402051101,
+          -0.025074760268336896,
+          -0.2777213134746388,
+          -0.3586232950572814,
+          -0.32705651871948005,
+          0.2112714195600045,
+          0.09360832386762286,
+          0.8704238676677816
+        ],
+        "blocks": [
+          "dense",
+          "noise_cond",
+          "moe_mix",
+          "soft_mix"
+        ],
+        "use_adv_aux": false,
+        "moe_mode": "moe_parallel"
+      }
+    },
+    "PPO-only": {
+      "path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\models\\ablate-ppo-only-150it-1902771841\\fitted\\final_champion_fitted.pt",
+      "residual_saved_hint": 0.9793209135532379,
+      "r_blend_live": 0.9440457820892334,
+      "delta_vs_dual_cosine": 0.4493674337863922,
+      "n_params": 155625,
+      "arch": {
+        "depth": 12,
+        "width": 30,
+        "act": "silu",
+        "ops": [
+          "asym_wet"
+        ],
+        "wet": 0.7528176817782598,
+        "fir": [
+          0.19729102065855186,
+          0.5776730887131127,
+          0.09505150337738898,
+          0.49687822260468795,
+          0.35681963394415883
+        ],
+        "cell_kind": "dense",
+        "soft_logits": [
+          0.44677034871869686,
+          0.5314416136205732,
+          -1.4142906033054652,
+          -0.7076702157743829,
+          -0.594695406899142,
+          0.4838552407579174,
+          -1.1884915106992315,
+          1.0300748655245249,
+          -1.3143121809040752,
+          0.9461619812243196,
+          0.323165318849266,
+          -0.12427253368182056,
+          0.9811996946569662,
+          -1.373058439186954,
+          -0.9170113181356845
+        ],
+        "blocks": [
+          "dense",
+          "dual_path",
+          "moe_mix",
+          "dilated"
+        ],
+        "use_adv_aux": false,
+        "moe_mode": "moe_parallel"
+      }
+    }
+  }
+}
