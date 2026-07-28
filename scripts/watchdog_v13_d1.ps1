@@ -5,7 +5,10 @@
 $ErrorActionPreference = "Continue"
 $Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $Out = Join-Path $Root "brand\artifacts\meta_approach_compare_v13_rblend"
-$Launch = Join-Path $Root "scripts\launch_v13_multiseed_search.ps1"
+$Launch = Join-Path $Root "scripts\launch_v13_multiseed_parallel.ps1"
+if (-not (Test-Path $Launch)) {
+  $Launch = Join-Path $Root "scripts\launch_v13_multiseed_search.ps1"
+}
 $Log = Join-Path $Out "watchdog.log"
 New-Item -ItemType Directory -Force -Path $Out | Out-Null
 
