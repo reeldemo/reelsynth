@@ -5,10 +5,8 @@
 $ErrorActionPreference = "Continue"
 $Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $Out = Join-Path $Root "brand\artifacts\meta_approach_compare_v13_rblend"
-$Launch = Join-Path $Root "scripts\launch_v13_multiseed_parallel.ps1"
-if (-not (Test-Path $Launch)) {
-  $Launch = Join-Path $Root "scripts\launch_v13_multiseed_search.ps1"
-}
+# Sequential only (one seed at a time) - parallel dual-seed was abandoned due to GPU memory leaks.
+$Launch = Join-Path $Root "scripts\launch_v13_multiseed_search.ps1"
 $Log = Join-Path $Out "watchdog.log"
 New-Item -ItemType Directory -Force -Path $Out | Out-Null
 
@@ -38,7 +36,7 @@ function AllComplete {
 Log "watchdog start (resume-only; reboot-safe)"
 while ($true) {
     if (AllComplete) {
-        Log "all_complete — watchdog exit"
+        Log "all_complete - watchdog exit"
         break
     }
 
@@ -61,7 +59,12 @@ while ($true) {
             $_.CommandLine -notlike "*force-fresh*"
         }
     $launcherAlive = Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
-        Where-Object { $_.CommandLine -and $_.CommandLine -like "*launch_v13_multiseed_search*" }
+        Where-Object {
+            $_.CommandLine -and (
+                $_.CommandLine -like "*launch_v13_multiseed_search*" -or
+                $_.CommandLine -like "*launch_v13_multiseed_parallel*"
+            )
+        }
 
     if (-not $any -and -not $launcherAlive) {
         Log "bench dead; restarting RESUME-ONLY launcher"

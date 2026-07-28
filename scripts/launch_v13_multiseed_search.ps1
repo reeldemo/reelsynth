@@ -1,4 +1,4 @@
-# Idempotent v13 D1 launcher — safe to re-run after reboot / crash.
+# Idempotent v13 D1 launcher - safe to re-run after reboot / crash.
 # Resumes from checkpoint.json per approach (never --force-fresh).
 # Usage after reboot:
 #   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\launch_v13_multiseed_search.ps1
@@ -65,7 +65,7 @@ $existing = Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
     }
 if ($existing) {
     $pids = ($existing | ForEach-Object { $_.ProcessId }) -join ","
-    Log "ALREADY_RUNNING pids=$pids — exit 0 (resume-safe; do not start a second copy)"
+    Log "ALREADY_RUNNING pids=$pids - exit 0 (resume-safe; do not start a second copy)"
     exit 0
 }
 
@@ -119,11 +119,11 @@ foreach ($Seed in $Seeds) {
     if (-not (SeedDone (Join-Path $BaseOut "$Seed"))) { $allDone = $false }
 }
 if ($allDone) {
-    Log "ALL SEEDS COMPLETE — running finish helper"
+    Log "ALL SEEDS COMPLETE - running finish helper"
     & $Py "scripts\finish_v13_d1_when_ready.py" 2>&1 | Tee-Object -FilePath (Join-Path $BaseOut "finish.log") -Append
     Log "FINISH exit=$LASTEXITCODE"
 } else {
-    Log "PARTIAL — re-run this script or let watchdog resume after reboot"
+    Log "PARTIAL - re-run this script or let watchdog resume after reboot"
 }
 
 exit 0
