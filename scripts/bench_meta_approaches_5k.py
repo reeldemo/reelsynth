@@ -211,10 +211,12 @@ def evaluate_best_of_proposals(
         )
         return cfg, hp, r_raw, r, cell
 
+    # CUDA + multithreaded autograd is unsafe / can stall. Parallelize via
+    # larger batch + sequential multi-proposal instead of concurrent FitCells.
     use_parallel = (
         int(fit_parallel) >= 2
         and len(proposals) >= 2
-        and device.type == "cuda"
+        and device.type != "cuda"
         and hasattr(og, "cuda_free_mib")
         and og.cuda_free_mib() >= float(min_free_mib)
     )
