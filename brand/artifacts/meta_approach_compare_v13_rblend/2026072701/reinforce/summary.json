@@ -1,0 +1,79 @@
+{
+  "approach": "reinforce",
+  "iters": 5000,
+  "iters_done": 5000,
+  "seed": 2026072701,
+  "champ_r": 0.9662000139769622,
+  "champ_raw": 0.9732869863510132,
+  "champ_j": 0.9649250139769622,
+  "champ_t_ms": 4.175266658421606,
+  "champ_beats_n2n": false,
+  "n2n_gate_r": 0.9750486612319946,
+  "primary_metric": "r_blend",
+  "search_objective": "J=R_blend-lambda*latency_norm",
+  "lambda_latency": 0.02,
+  "delta_r_vs_dual_cosine": 0.41955000162124634,
+  "baseline_dual_cosine": 0.5537369847297668,
+  "wall_s": 18201.65551495552,
+  "wall_h": 5.0560154208209775,
+  "lstm_in_champ": false,
+  "xlstm_in_champ": false,
+  "champ_arch": {
+    "depth": 11,
+    "width": 8,
+    "act": "gelu",
+    "ops": [
+      "fade_pull",
+      "mlp_seam",
+      "fir5",
+      "edge_pin",
+      "median3"
+    ],
+    "wet": 0.6281717561281536,
+    "fir": [
+      0.30476104056613235,
+      0.13849449909255068,
+      0.4288689484453746,
+      0.2223753010124711,
+      0.263838644536902
+    ],
+    "cell_kind": "tf_split",
+    "soft_logits": [
+      0.6606363755678071,
+      -0.42011744009045526,
+      -0.8720518172472551,
+      0.6721053804567374,
+      -0.6832425956336061,
+      -0.9248136927826303,
+      -0.8570058560517604,
+      0.11759547896347122,
+      0.8087035164076246,
+      0.9031349498214345,
+      0.2994957812263128,
+      0.8393729173850777,
+      -0.7269422646956194,
+      -0.9096835981158671,
+      0.9609578408585115
+    ],
+    "blocks": [
+      "tf_split",
+      "noise_cond",
+      "dense"
+    ],
+    "use_adv_aux": false,
+    "moe_mode": "sequential"
+  },
+  "champ_hp": {
+    "lr": 0.04023417210719663,
+    "fit_steps": 64,
+    "batch": 64,
+    "entropy_coef": 0.04980828652477541,
+    "ppo_clip": 0.2,
+    "adv_coef": 0.1148998450057783,
+    "reward_mode": "neglog_gap"
+  },
+  "champ_cell_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare_v13_rblend\\2026072701\\reinforce\\champ_cell.pt",
+  "history_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare_v13_rblend\\2026072701\\reinforce\\history.jsonl",
+  "finished_at": "20260730T040208Z",
+  "protocol": "paper_v10"
+}

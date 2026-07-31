@@ -1,59 +1,33 @@
-# v13 D1 — matched-5k multi-seed re-search under R_blend
+# v13 D1 matched-5k outer-loop re-search (`R_blend` + `J`)
 
-## Reboot / crash rule
+**Status: COMPLETE** (2026-07-31)
 
-**Checkpoints are the source of truth.** Safe to reboot anytime.
+Three search seeds × six approaches × 5000 iters, sequential resume-only.
 
-After login / reboot, either:
+| Seed | Hybrid champ `R_blend` | Notes |
+|------|------------------------|-------|
+| 1902771841 | **0.9766** | beats N2N gate (~0.9750) |
+| 2026072701 | 0.9730 | |
+| 2026072702 | 0.9748 | |
 
-```powershell
-cd C:\Users\Julian\Documents\Programming\github\reeldemo\reelsynth
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\launch_v13_multiseed_search.ps1
-```
+Mean±std hybrid: **0.9748 ± 0.0018**. Aging second (0.9635 ± 0.0049).
 
-or install auto-resume once:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\install_v13_d1_autostart.ps1
-```
-
-That puts Startup shortcuts for the launcher + watchdog. Both are **resume-only** (never `--force-fresh`).
-
-## Status
+## Commands
 
 ```powershell
+# status
 powershell -File scripts\status_v13_d1.ps1
-```
 
-## Layout
+# resume (noop if done)
+powershell -File scripts\launch_v13_multiseed_search.ps1
 
-```
-<meta_approach_compare_v13_rblend>/
-  launcher.log
-  watchdog.log
-  <seed>/
-    run.log
-    hybrid_lstm/
-      checkpoint.json   # resume every 25 iters
-      history.jsonl
-      champ_cell.pt
-      summary.json      # written when 5000 done
-    random/ ...
-```
-
-## Seeds / approaches
-
-- Seeds: `1902771841`, `2026072701`, `2026072702`
-- Order: `hybrid_lstm`, `random`, `cmaes`, `tpe`, `aging_evo`, `reinforce`
-- Iters: 5000 under locked `R_blend` / `J`
-
-## When all complete
-
-```powershell
+# re-aggregate paper numbers
 .\.venv_gpu\Scripts\python.exe scripts\finish_v13_d1_when_ready.py
+.\.venv_gpu\Scripts\python.exe scripts\analyze_v13_param_fluctuation.py
 ```
 
-## Do not
+## Paper
 
-- Do not pass `--force-fresh` (wipes progress).
-- Do not start a second launcher while one is already writing this tree (launcher self-exits if busy).
+Numbers live in `denoise-opt-meta` v13 Table `tab:meta-approaches` and `figures/multiseed_summary.json`.
+
+Do **not** `--force-fresh` this tree.

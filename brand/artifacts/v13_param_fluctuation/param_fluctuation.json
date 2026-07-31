@@ -416,7 +416,1616 @@
           "depth": 12,
           "width": 47
         },
-        "checkpoint_iters_done": 2875
+        "checkpoint_iters_done": 5000
+      },
+      "random": {
+        "approach": "random",
+        "champ_updates": [
+          {
+            "iter": 1,
+            "champ_raw": 0.39326442778110504,
+            "t_ms": 9.527066666729903,
+            "params": 116976,
+            "blocks": [
+              "conv1d",
+              "dilated",
+              "n2n_unet",
+              "mlp",
+              "unet"
+            ],
+            "width": 12,
+            "depth": 8,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 2,
+            "champ_raw": 0.5415804982185364,
+            "t_ms": 77.06583333492745,
+            "params": 5450,
+            "blocks": [
+              "dilated",
+              "xlstm",
+              "attn",
+              "lstm"
+            ],
+            "width": 8,
+            "depth": 19,
+            "cell_kind": "dilated",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 3,
+            "champ_raw": 0.7855973541736603,
+            "t_ms": 8.883833332220092,
+            "params": 292238,
+            "blocks": [
+              "soft_mix",
+              "dense",
+              "n2n_unet",
+              "gated"
+            ],
+            "width": 48,
+            "depth": 10,
+            "cell_kind": "soft_mix",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 4,
+            "champ_raw": 0.9187281727790833,
+            "t_ms": 4.275466667119569,
+            "params": 116690,
+            "blocks": [
+              "unet",
+              "n2n_unet"
+            ],
+            "width": 40,
+            "depth": 5,
+            "cell_kind": "unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 341,
+            "champ_raw": 0.919177234172821,
+            "t_ms": 2.7559666656694994,
+            "params": 78654,
+            "blocks": [
+              "dense"
+            ],
+            "width": 4,
+            "depth": 12,
+            "cell_kind": "dense",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 359,
+            "champ_raw": 0.9221029877662659,
+            "t_ms": 2.5343333327327855,
+            "params": 20400,
+            "blocks": [
+              "noise_cond",
+              "moe_mix"
+            ],
+            "width": 24,
+            "depth": 10,
+            "cell_kind": "noise_cond",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 752,
+            "champ_raw": 0.9305927157402039,
+            "t_ms": 12.603733332070988,
+            "params": 190884,
+            "blocks": [
+              "soft_mix",
+              "dense",
+              "moe_mix",
+              "gated"
+            ],
+            "width": 32,
+            "depth": 13,
+            "cell_kind": "soft_mix",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 862,
+            "champ_raw": 0.9330961108207703,
+            "t_ms": 13.233300000138115,
+            "params": 199408,
+            "blocks": [
+              "lstm",
+              "attn",
+              "tf_split",
+              "dense",
+              "bottleneck"
+            ],
+            "width": 40,
+            "depth": 17,
+            "cell_kind": "lstm",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 1110,
+            "champ_raw": 0.9348253011703491,
+            "t_ms": 12.741500000023128,
+            "params": 193198,
+            "blocks": [
+              "dense",
+              "lstm",
+              "bottleneck",
+              "unet"
+            ],
+            "width": 48,
+            "depth": 17,
+            "cell_kind": "dense",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 1262,
+            "champ_raw": 0.9403516352176666,
+            "t_ms": 7.038633331831079,
+            "params": 197053,
+            "blocks": [
+              "unet",
+              "noise_cond",
+              "residual",
+              "dense"
+            ],
+            "width": 56,
+            "depth": 12,
+            "cell_kind": "unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          }
+        ],
+        "summary": {
+          "n_updates": 10,
+          "with_params": 10,
+          "params_min": 5450,
+          "params_median": 153930.0,
+          "params_max": 292238,
+          "params_mean": 141095.1,
+          "params_std": 85213.04772680062,
+          "final_params": 197053,
+          "final_r_blend": 0.9403516352176666,
+          "final_t_ms": 7.038633331831079,
+          "final_beats_n2n": false
+        },
+        "live_champ_cell": {
+          "params": 197053,
+          "r_blend": 0.9403516352176666,
+          "t_ms": 7.038633331831079,
+          "blocks": [
+            "unet",
+            "noise_cond",
+            "residual",
+            "dense"
+          ],
+          "cell_kind": "unet",
+          "depth": 12,
+          "width": 56
+        },
+        "checkpoint_iters_done": 5000
+      },
+      "cmaes": {
+        "approach": "cmaes",
+        "champ_updates": [
+          {
+            "iter": 1,
+            "champ_raw": 0.6494959592819214,
+            "t_ms": 5.502733331619917,
+            "params": 21900,
+            "blocks": [
+              "dilated",
+              "dual_path",
+              "soft_mix",
+              "mlp"
+            ],
+            "width": 16,
+            "depth": 5,
+            "cell_kind": "dilated",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 7,
+            "champ_raw": 0.6565608084201813,
+            "t_ms": 5.195066667511128,
+            "params": 24098,
+            "blocks": [
+              "attn",
+              "moe_mix",
+              "mlp"
+            ],
+            "width": 24,
+            "depth": 6,
+            "cell_kind": "attn",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 9,
+            "champ_raw": 0.689281702041626,
+            "t_ms": 4.971833332092501,
+            "params": 16164,
+            "blocks": [
+              "conv1d",
+              "noise_cond",
+              "unet",
+              "residual"
+            ],
+            "width": 16,
+            "depth": 5,
+            "cell_kind": "conv1d",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 10,
+            "champ_raw": 0.8121718168258667,
+            "t_ms": 5.671933332147698,
+            "params": 15920,
+            "blocks": [
+              "attn",
+              "dual_path",
+              "mlp",
+              "unet"
+            ],
+            "width": 16,
+            "depth": 5,
+            "cell_kind": "attn",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 15,
+            "champ_raw": 0.8142575919628143,
+            "t_ms": 5.948533335564814,
+            "params": 31386,
+            "blocks": [
+              "conv1d",
+              "dual_path",
+              "mlp",
+              "unet"
+            ],
+            "width": 24,
+            "depth": 7,
+            "cell_kind": "conv1d",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 19,
+            "champ_raw": 0.8548601567745209,
+            "t_ms": 74.53633333352627,
+            "params": 78174,
+            "blocks": [
+              "dual_path",
+              "unet",
+              "dense",
+              "xlstm"
+            ],
+            "width": 12,
+            "depth": 4,
+            "cell_kind": "dual_path",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 31,
+            "champ_raw": 0.9177601337432861,
+            "t_ms": 5.95910000023044,
+            "params": 99020,
+            "blocks": [
+              "bottleneck",
+              "soft_mix",
+              "dense",
+              "attn"
+            ],
+            "width": 24,
+            "depth": 4,
+            "cell_kind": "attn",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 60,
+            "champ_raw": 0.9194011688232422,
+            "t_ms": 4.7727333318713745,
+            "params": 88754,
+            "blocks": [
+              "dense",
+              "conv1d",
+              "soft_mix",
+              "bottleneck"
+            ],
+            "width": 16,
+            "depth": 4,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 71,
+            "champ_raw": 0.922153651714325,
+            "t_ms": 6.512466665299144,
+            "params": 190246,
+            "blocks": [
+              "conv1d",
+              "n2n_unet",
+              "soft_mix",
+              "dense"
+            ],
+            "width": 16,
+            "depth": 4,
+            "cell_kind": "conv1d",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 76,
+            "champ_raw": 0.9293991923332214,
+            "t_ms": 7.136733334239882,
+            "params": 219294,
+            "blocks": [
+              "n2n_unet",
+              "soft_mix",
+              "bottleneck",
+              "conv1d",
+              "dense"
+            ],
+            "width": 32,
+            "depth": 4,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 136,
+            "champ_raw": 0.9311914145946503,
+            "t_ms": 4.789600000852563,
+            "params": 24334,
+            "blocks": [
+              "conv1d",
+              "bottleneck",
+              "soft_mix"
+            ],
+            "width": 24,
+            "depth": 4,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 168,
+            "champ_raw": 0.9319965839385986,
+            "t_ms": 4.6802666668857755,
+            "params": 36034,
+            "blocks": [
+              "bottleneck",
+              "unet",
+              "soft_mix"
+            ],
+            "width": 32,
+            "depth": 5,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 176,
+            "champ_raw": 0.9341754913330078,
+            "t_ms": 6.467766666901298,
+            "params": 44280,
+            "blocks": [
+              "unet",
+              "tf_split",
+              "bottleneck",
+              "dilated",
+              "soft_mix"
+            ],
+            "width": 24,
+            "depth": 4,
+            "cell_kind": "unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 227,
+            "champ_raw": 0.9358406662940979,
+            "t_ms": 4.980333331332076,
+            "params": 116182,
+            "blocks": [
+              "dense",
+              "bottleneck",
+              "tf_split",
+              "soft_mix"
+            ],
+            "width": 32,
+            "depth": 3,
+            "cell_kind": "dense",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 248,
+            "champ_raw": 0.9401851296424866,
+            "t_ms": 4.48820000019623,
+            "params": 116182,
+            "blocks": [
+              "dense",
+              "bottleneck",
+              "soft_mix",
+              "tf_split"
+            ],
+            "width": 32,
+            "depth": 3,
+            "cell_kind": "dense",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 283,
+            "champ_raw": 0.9418949782848358,
+            "t_ms": 4.5446000003721565,
+            "params": 126086,
+            "blocks": [
+              "dense",
+              "tf_split",
+              "bottleneck",
+              "soft_mix"
+            ],
+            "width": 40,
+            "depth": 3,
+            "cell_kind": "dense",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 345,
+            "champ_raw": 0.9475528597831726,
+            "t_ms": 4.372433332415919,
+            "params": 70438,
+            "blocks": [
+              "residual",
+              "bottleneck",
+              "tf_split",
+              "soft_mix"
+            ],
+            "width": 40,
+            "depth": 4,
+            "cell_kind": "residual",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 689,
+            "champ_raw": 0.9493019580841064,
+            "t_ms": 3.306733332768393,
+            "params": 33620,
+            "blocks": [
+              "mlp",
+              "soft_mix"
+            ],
+            "width": 48,
+            "depth": 3,
+            "cell_kind": "mlp",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 702,
+            "champ_raw": 0.9510083496570587,
+            "t_ms": 3.641466668341309,
+            "params": 45428,
+            "blocks": [
+              "mlp",
+              "soft_mix"
+            ],
+            "width": 48,
+            "depth": 5,
+            "cell_kind": "mlp",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 1112,
+            "champ_raw": 0.9522391557693481,
+            "t_ms": 4.015699999096493,
+            "params": 59272,
+            "blocks": [
+              "mlp",
+              "moe_mix",
+              "soft_mix"
+            ],
+            "width": 48,
+            "depth": 4,
+            "cell_kind": "mlp",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 1287,
+            "champ_raw": 0.9529004395008087,
+            "t_ms": 3.668499998942328,
+            "params": 59272,
+            "blocks": [
+              "mlp",
+              "soft_mix",
+              "residual"
+            ],
+            "width": 48,
+            "depth": 4,
+            "cell_kind": "mlp",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 1643,
+            "champ_raw": 0.9542956948280334,
+            "t_ms": 4.6231999998174915,
+            "params": 106050,
+            "blocks": [
+              "mlp",
+              "residual",
+              "soft_mix",
+              "tf_split",
+              "moe_mix"
+            ],
+            "width": 48,
+            "depth": 4,
+            "cell_kind": "mlp",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 3158,
+            "champ_raw": 0.9543365836143494,
+            "t_ms": 4.052399999636691,
+            "params": 79020,
+            "blocks": [
+              "mlp",
+              "soft_mix",
+              "residual",
+              "bottleneck"
+            ],
+            "width": 48,
+            "depth": 4,
+            "cell_kind": "mlp",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 3642,
+            "champ_raw": 0.9551702439785004,
+            "t_ms": 3.7631999997150465,
+            "params": 59272,
+            "blocks": [
+              "mlp",
+              "soft_mix",
+              "bottleneck"
+            ],
+            "width": 48,
+            "depth": 4,
+            "cell_kind": "mlp",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 4069,
+            "champ_raw": 0.95550137758255,
+            "t_ms": 3.71883333233806,
+            "params": 59272,
+            "blocks": [
+              "mlp",
+              "soft_mix",
+              "bottleneck"
+            ],
+            "width": 48,
+            "depth": 4,
+            "cell_kind": "mlp",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          }
+        ],
+        "summary": {
+          "n_updates": 25,
+          "with_params": 25,
+          "params_min": 15920,
+          "params_median": 59272.0,
+          "params_max": 219294,
+          "params_mean": 72787.92,
+          "params_std": 50844.61293464235,
+          "final_params": 59272,
+          "final_r_blend": 0.95550137758255,
+          "final_t_ms": 3.71883333233806,
+          "final_beats_n2n": false
+        },
+        "live_champ_cell": {
+          "params": 59272,
+          "r_blend": 0.95550137758255,
+          "t_ms": 3.71883333233806,
+          "blocks": [
+            "mlp",
+            "soft_mix",
+            "bottleneck"
+          ],
+          "cell_kind": "mlp",
+          "depth": 4,
+          "width": 48
+        },
+        "checkpoint_iters_done": 5000
+      },
+      "tpe": {
+        "approach": "tpe",
+        "champ_updates": [
+          {
+            "iter": 1,
+            "champ_raw": 0.5294944643974304,
+            "t_ms": 5.029433331704543,
+            "params": 76414,
+            "blocks": [
+              "dense",
+              "conv1d",
+              "attn"
+            ],
+            "width": 24,
+            "depth": 2,
+            "cell_kind": "dense",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 2,
+            "champ_raw": 0.9191652834415436,
+            "t_ms": 58.84293333413856,
+            "params": 75888,
+            "blocks": [
+              "gated",
+              "lstm",
+              "xlstm"
+            ],
+            "width": 48,
+            "depth": 2,
+            "cell_kind": "gated",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 14,
+            "champ_raw": 0.919384628534317,
+            "t_ms": 61.53033333248459,
+            "params": 86252,
+            "blocks": [
+              "attn",
+              "tf_split",
+              "soft_mix",
+              "lstm",
+              "xlstm"
+            ],
+            "width": 40,
+            "depth": 11,
+            "cell_kind": "attn",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 17,
+            "champ_raw": 0.9201023280620575,
+            "t_ms": 5.107999999988048,
+            "params": 37640,
+            "blocks": [
+              "attn",
+              "mlp",
+              "dilated",
+              "lstm"
+            ],
+            "width": 40,
+            "depth": 4,
+            "cell_kind": "attn",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 21,
+            "champ_raw": 0.9219794571399689,
+            "t_ms": 6.2688333321906,
+            "params": 25356,
+            "blocks": [
+              "attn",
+              "tf_split",
+              "soft_mix",
+              "lstm"
+            ],
+            "width": 16,
+            "depth": 11,
+            "cell_kind": "attn",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 23,
+            "champ_raw": 0.9237409830093384,
+            "t_ms": 3.5226666659582406,
+            "params": 30768,
+            "blocks": [
+              "attn",
+              "tf_split"
+            ],
+            "width": 40,
+            "depth": 11,
+            "cell_kind": "attn",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 50,
+            "champ_raw": 0.9261882901191711,
+            "t_ms": 5.2662999999787035,
+            "params": 137573,
+            "blocks": [
+              "attn",
+              "dense",
+              "lstm",
+              "residual"
+            ],
+            "width": 12,
+            "depth": 2,
+            "cell_kind": "attn",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 81,
+            "champ_raw": 0.9305598437786102,
+            "t_ms": 3.875733333795021,
+            "params": 26472,
+            "blocks": [
+              "noise_cond",
+              "dual_path"
+            ],
+            "width": 40,
+            "depth": 5,
+            "cell_kind": "noise_cond",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 158,
+            "champ_raw": 0.9336819052696228,
+            "t_ms": 4.960900002818865,
+            "params": 40062,
+            "blocks": [
+              "attn",
+              "noise_cond",
+              "dual_path",
+              "lstm"
+            ],
+            "width": 40,
+            "depth": 2,
+            "cell_kind": "attn",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 1160,
+            "champ_raw": 0.939592719078064,
+            "t_ms": 6.182000002202888,
+            "params": 103576,
+            "blocks": [
+              "attn",
+              "dense",
+              "lstm",
+              "residual"
+            ],
+            "width": 24,
+            "depth": 6,
+            "cell_kind": "attn",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 2690,
+            "champ_raw": 0.9406751394271851,
+            "t_ms": 7.2746000029534725,
+            "params": 169088,
+            "blocks": [
+              "attn",
+              "tf_split",
+              "soft_mix",
+              "dense",
+              "lstm"
+            ],
+            "width": 40,
+            "depth": 8,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 3287,
+            "champ_raw": 0.9431834816932678,
+            "t_ms": 3.6617666628444567,
+            "params": 35804,
+            "blocks": [
+              "mlp",
+              "bottleneck"
+            ],
+            "width": 40,
+            "depth": 5,
+            "cell_kind": "mlp",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 3568,
+            "champ_raw": 0.9461058676242828,
+            "t_ms": 5.690666662606721,
+            "params": 120754,
+            "blocks": [
+              "unet",
+              "attn",
+              "dense",
+              "residual"
+            ],
+            "width": 40,
+            "depth": 5,
+            "cell_kind": "unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          }
+        ],
+        "summary": {
+          "n_updates": 13,
+          "with_params": 13,
+          "params_min": 25356,
+          "params_median": 75888.0,
+          "params_max": 169088,
+          "params_mean": 74280.53846153847,
+          "params_std": 45344.27102243692,
+          "final_params": 120754,
+          "final_r_blend": 0.9461058676242828,
+          "final_t_ms": 5.690666662606721,
+          "final_beats_n2n": false
+        },
+        "live_champ_cell": {
+          "params": 120754,
+          "r_blend": 0.9461058676242828,
+          "t_ms": 5.690666662606721,
+          "blocks": [
+            "unet",
+            "attn",
+            "dense",
+            "residual"
+          ],
+          "cell_kind": "unet",
+          "depth": 5,
+          "width": 40
+        },
+        "checkpoint_iters_done": 5000
+      },
+      "aging_evo": {
+        "approach": "aging_evo",
+        "champ_updates": [
+          {
+            "iter": 1,
+            "champ_raw": 0.43465250730514526,
+            "t_ms": 8.31303333688993,
+            "params": 19741,
+            "blocks": [
+              "dilated",
+              "conv1d",
+              "soft_mix",
+              "gated",
+              "lstm"
+            ],
+            "width": 12,
+            "depth": 13,
+            "cell_kind": "dilated",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 2,
+            "champ_raw": 0.57888063788414,
+            "t_ms": 3.4377666694733002,
+            "params": 7015,
+            "blocks": [
+              "attn"
+            ],
+            "width": 24,
+            "depth": 7,
+            "cell_kind": "attn",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 3,
+            "champ_raw": 0.9084102809429169,
+            "t_ms": 4.469333332963288,
+            "params": 70422,
+            "blocks": [
+              "mlp",
+              "tf_split"
+            ],
+            "width": 56,
+            "depth": 18,
+            "cell_kind": "mlp",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 12,
+            "champ_raw": 0.931639164686203,
+            "t_ms": 60.74570000055246,
+            "params": 98308,
+            "blocks": [
+              "mlp",
+              "tf_split",
+              "lstm",
+              "xlstm"
+            ],
+            "width": 56,
+            "depth": 17,
+            "cell_kind": "mlp",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 42,
+            "champ_raw": 0.9357017278671265,
+            "t_ms": 13.473299996500524,
+            "params": 344708,
+            "blocks": [
+              "dense",
+              "mlp",
+              "soft_mix",
+              "unet",
+              "dual_path",
+              "n2n_unet"
+            ],
+            "width": 56,
+            "depth": 18,
+            "cell_kind": "dense",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 239,
+            "champ_raw": 0.9364748299121857,
+            "t_ms": 3.5623000003397465,
+            "params": 18574,
+            "blocks": [
+              "tf_split"
+            ],
+            "width": 32,
+            "depth": 11,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 294,
+            "champ_raw": 0.93862184882164,
+            "t_ms": 8.892766670517934,
+            "params": 237014,
+            "blocks": [
+              "n2n_unet",
+              "unet",
+              "dense",
+              "moe_mix"
+            ],
+            "width": 24,
+            "depth": 12,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 307,
+            "champ_raw": 0.9396055340766907,
+            "t_ms": 7.2379666671622545,
+            "params": 239013,
+            "blocks": [
+              "n2n_unet",
+              "unet",
+              "dense",
+              "moe_mix"
+            ],
+            "width": 24,
+            "depth": 12,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 493,
+            "champ_raw": 0.9426542222499847,
+            "t_ms": 11.546366663727289,
+            "params": 251586,
+            "blocks": [
+              "noise_cond",
+              "dense",
+              "tf_split",
+              "n2n_unet"
+            ],
+            "width": 32,
+            "depth": 11,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 767,
+            "champ_raw": 0.9462780356407166,
+            "t_ms": 8.186833331516633,
+            "params": 246686,
+            "blocks": [
+              "n2n_unet",
+              "soft_mix",
+              "moe_mix",
+              "dense"
+            ],
+            "width": 24,
+            "depth": 12,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 923,
+            "champ_raw": 0.9486626088619232,
+            "t_ms": 9.603533331149569,
+            "params": 316554,
+            "blocks": [
+              "bottleneck",
+              "noise_cond",
+              "dense",
+              "unet",
+              "n2n_unet",
+              "dual_path"
+            ],
+            "width": 46,
+            "depth": 12,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 1261,
+            "champ_raw": 0.9494974315166473,
+            "t_ms": 3.115366668983673,
+            "params": 94957,
+            "blocks": [
+              "dense"
+            ],
+            "width": 41,
+            "depth": 6,
+            "cell_kind": "dense",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 2223,
+            "champ_raw": 0.9658937752246857,
+            "t_ms": 58.59869999888664,
+            "params": 54083,
+            "blocks": [
+              "tf_split",
+              "bottleneck",
+              "xlstm"
+            ],
+            "width": 32,
+            "depth": 11,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          }
+        ],
+        "summary": {
+          "n_updates": 13,
+          "with_params": 13,
+          "params_min": 7015,
+          "params_median": 98308.0,
+          "params_max": 344708,
+          "params_mean": 153743.15384615384,
+          "params_std": 116537.0120789272,
+          "final_params": 54083,
+          "final_r_blend": 0.9658937752246857,
+          "final_t_ms": 58.59869999888664,
+          "final_beats_n2n": false
+        },
+        "live_champ_cell": {
+          "params": 160378,
+          "r_blend": 0.9632943272590637,
+          "t_ms": 8.292166666554598,
+          "blocks": [
+            "tf_split",
+            "mlp",
+            "bottleneck",
+            "dual_path",
+            "attn",
+            "moe_mix"
+          ],
+          "cell_kind": "dual_path",
+          "depth": 12,
+          "width": 44
+        },
+        "checkpoint_iters_done": 5000
+      },
+      "reinforce": {
+        "approach": "reinforce",
+        "champ_updates": [
+          {
+            "iter": 1,
+            "champ_raw": 0.4143778532743454,
+            "t_ms": 55.268066663605474,
+            "params": 5928,
+            "blocks": [
+              "xlstm",
+              "dilated",
+              "noise_cond"
+            ],
+            "width": 12,
+            "depth": 8,
+            "cell_kind": "dilated",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 3,
+            "champ_raw": 0.6001202762126923,
+            "t_ms": 65.31099999847356,
+            "params": 112942,
+            "blocks": [
+              "xlstm",
+              "dilated",
+              "noise_cond",
+              "n2n_unet"
+            ],
+            "width": 12,
+            "depth": 8,
+            "cell_kind": "dilated",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 6,
+            "champ_raw": 0.6608625054359436,
+            "t_ms": 55.22696667079193,
+            "params": 112942,
+            "blocks": [
+              "xlstm",
+              "dilated",
+              "noise_cond",
+              "n2n_unet"
+            ],
+            "width": 12,
+            "depth": 8,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 9,
+            "champ_raw": 0.7777840793132782,
+            "t_ms": 56.569099998644866,
+            "params": 117836,
+            "blocks": [
+              "mlp",
+              "xlstm",
+              "dilated",
+              "noise_cond",
+              "n2n_unet"
+            ],
+            "width": 12,
+            "depth": 8,
+            "cell_kind": "mlp",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 12,
+            "champ_raw": 0.804086446762085,
+            "t_ms": 54.023333330405876,
+            "params": 117836,
+            "blocks": [
+              "mlp",
+              "xlstm",
+              "dilated",
+              "noise_cond",
+              "n2n_unet"
+            ],
+            "width": 12,
+            "depth": 8,
+            "cell_kind": "mlp",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 16,
+            "champ_raw": 0.8244493007659912,
+            "t_ms": 65.60526666483686,
+            "params": 119208,
+            "blocks": [
+              "mlp",
+              "xlstm",
+              "dilated",
+              "noise_cond",
+              "n2n_unet"
+            ],
+            "width": 12,
+            "depth": 8,
+            "cell_kind": "mlp",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 18,
+            "champ_raw": 0.9092694222927094,
+            "t_ms": 7.942633334702502,
+            "params": 127280,
+            "blocks": [
+              "mlp",
+              "dual_path",
+              "unet",
+              "soft_mix",
+              "lstm",
+              "n2n_unet"
+            ],
+            "width": 12,
+            "depth": 8,
+            "cell_kind": "mlp",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 19,
+            "champ_raw": 0.9121847748756409,
+            "t_ms": 8.041466668752642,
+            "params": 135408,
+            "blocks": [
+              "mlp",
+              "dual_path",
+              "unet",
+              "soft_mix",
+              "lstm",
+              "n2n_unet"
+            ],
+            "width": 16,
+            "depth": 8,
+            "cell_kind": "mlp",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 25,
+            "champ_raw": 0.9276041686534882,
+            "t_ms": 11.420400003165318,
+            "params": 135408,
+            "blocks": [
+              "mlp",
+              "dual_path",
+              "unet",
+              "soft_mix",
+              "lstm",
+              "n2n_unet"
+            ],
+            "width": 16,
+            "depth": 8,
+            "cell_kind": "mlp",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 31,
+            "champ_raw": 0.9291641116142273,
+            "t_ms": 8.046266666497104,
+            "params": 136096,
+            "blocks": [
+              "mlp",
+              "dual_path",
+              "unet",
+              "soft_mix",
+              "lstm",
+              "n2n_unet"
+            ],
+            "width": 16,
+            "depth": 9,
+            "cell_kind": "mlp",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 49,
+            "champ_raw": 0.9319990873336792,
+            "t_ms": 4.7224333344881115,
+            "params": 119800,
+            "blocks": [
+              "mlp",
+              "lstm",
+              "n2n_unet"
+            ],
+            "width": 16,
+            "depth": 9,
+            "cell_kind": "mlp",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 155,
+            "champ_raw": 0.9322408139705658,
+            "t_ms": 4.648633330361918,
+            "params": 119800,
+            "blocks": [
+              "mlp",
+              "lstm",
+              "n2n_unet"
+            ],
+            "width": 16,
+            "depth": 9,
+            "cell_kind": "mlp",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 193,
+            "champ_raw": 0.9329502284526825,
+            "t_ms": 4.872366664737153,
+            "params": 106294,
+            "blocks": [
+              "mlp",
+              "dense",
+              "moe_mix",
+              "dilated"
+            ],
+            "width": 16,
+            "depth": 9,
+            "cell_kind": "mlp",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 219,
+            "champ_raw": 0.9345240294933319,
+            "t_ms": 4.852099998970516,
+            "params": 94784,
+            "blocks": [
+              "mlp",
+              "dense",
+              "moe_mix",
+              "dilated"
+            ],
+            "width": 12,
+            "depth": 9,
+            "cell_kind": "mlp",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 247,
+            "champ_raw": 0.9419469237327576,
+            "t_ms": 5.148033330139394,
+            "params": 94784,
+            "blocks": [
+              "mlp",
+              "dense",
+              "moe_mix",
+              "dilated"
+            ],
+            "width": 12,
+            "depth": 9,
+            "cell_kind": "mlp",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 2458,
+            "champ_raw": 0.9462953507900238,
+            "t_ms": 8.566666666107873,
+            "params": 94784,
+            "blocks": [
+              "mlp",
+              "dense",
+              "moe_mix",
+              "dilated"
+            ],
+            "width": 12,
+            "depth": 9,
+            "cell_kind": "mlp",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 2775,
+            "champ_raw": 0.9474350810050964,
+            "t_ms": 5.633666665138056,
+            "params": 208566,
+            "blocks": [
+              "mlp",
+              "dense",
+              "moe_mix",
+              "dilated"
+            ],
+            "width": 48,
+            "depth": 11,
+            "cell_kind": "mlp",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 3902,
+            "champ_raw": 0.9476515352725983,
+            "t_ms": 5.773400000180118,
+            "params": 208566,
+            "blocks": [
+              "mlp",
+              "dense",
+              "moe_mix",
+              "dilated"
+            ],
+            "width": 48,
+            "depth": 11,
+            "cell_kind": "mlp",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 4816,
+            "champ_raw": 0.950415164232254,
+            "t_ms": 7.260633331801121,
+            "params": 201704,
+            "blocks": [
+              "mlp",
+              "dual_path",
+              "unet",
+              "dense",
+              "lstm"
+            ],
+            "width": 48,
+            "depth": 11,
+            "cell_kind": "mlp",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 4820,
+            "champ_raw": 0.953599363565445,
+            "t_ms": 7.284433328701804,
+            "params": 210368,
+            "blocks": [
+              "mlp",
+              "dual_path",
+              "unet",
+              "dense",
+              "lstm"
+            ],
+            "width": 48,
+            "depth": 12,
+            "cell_kind": "mlp",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          }
+        ],
+        "summary": {
+          "n_updates": 20,
+          "with_params": 20,
+          "params_min": 5928,
+          "params_median": 119504.0,
+          "params_max": 210368,
+          "params_mean": 129016.7,
+          "params_std": 47385.75001527358,
+          "final_params": 210368,
+          "final_r_blend": 0.953599363565445,
+          "final_t_ms": 7.284433328701804,
+          "final_beats_n2n": false
+        },
+        "live_champ_cell": {
+          "params": 210368,
+          "r_blend": 0.953599363565445,
+          "t_ms": 7.284433328701804,
+          "blocks": [
+            "mlp",
+            "dual_path",
+            "unet",
+            "dense",
+            "lstm"
+          ],
+          "cell_kind": "mlp",
+          "depth": 12,
+          "width": 48
+        },
+        "checkpoint_iters_done": 5000
       }
     },
     "2026072701": {
@@ -425,8 +2034,8 @@
         "champ_updates": [
           {
             "iter": 1,
-            "champ_raw": 0.8485620617866516,
-            "t_ms": 7.241866666542289,
+            "champ_raw": 0.8485404849052429,
+            "t_ms": 9.822333333431743,
             "params": 166132,
             "blocks": [
               "dilated",
@@ -444,8 +2053,8 @@
           },
           {
             "iter": 5,
-            "champ_raw": 0.9126352667808533,
-            "t_ms": 69.51236666645855,
+            "champ_raw": 0.9126352965831757,
+            "t_ms": 85.07653333557148,
             "params": 156982,
             "blocks": [
               "xlstm",
@@ -463,8 +2072,8 @@
           },
           {
             "iter": 7,
-            "champ_raw": 0.9187584221363068,
-            "t_ms": 68.05793333296606,
+            "champ_raw": 0.9187584817409515,
+            "t_ms": 85.57803333193685,
             "params": 249166,
             "blocks": [
               "dilated",
@@ -480,34 +2089,3755 @@
             "lstm_in_champ": true,
             "xlstm_in_champ": true,
             "beats_n2n": false
+          },
+          {
+            "iter": 17,
+            "champ_raw": 0.9193569123744965,
+            "t_ms": 4.779599999892525,
+            "params": 52068,
+            "blocks": [
+              "gated",
+              "attn",
+              "noise_cond"
+            ],
+            "width": 40,
+            "depth": 12,
+            "cell_kind": "gated",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 19,
+            "champ_raw": 0.9434491395950317,
+            "t_ms": 2.1800333342980593,
+            "params": 26782,
+            "blocks": [
+              "tf_split"
+            ],
+            "width": 48,
+            "depth": 3,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 31,
+            "champ_raw": 0.9483311474323273,
+            "t_ms": 2.662433335596385,
+            "params": 26782,
+            "blocks": [
+              "tf_split"
+            ],
+            "width": 48,
+            "depth": 6,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 111,
+            "champ_raw": 0.9532785415649414,
+            "t_ms": 3.1064333306858316,
+            "params": 8746,
+            "blocks": [
+              "tf_split"
+            ],
+            "width": 15,
+            "depth": 10,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 131,
+            "champ_raw": 0.9565146863460541,
+            "t_ms": 2.9255333356559277,
+            "params": 32975,
+            "blocks": [
+              "tf_split"
+            ],
+            "width": 48,
+            "depth": 12,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 145,
+            "champ_raw": 0.9592936038970947,
+            "t_ms": 2.7574666649646438,
+            "params": 14470,
+            "blocks": [
+              "tf_split"
+            ],
+            "width": 24,
+            "depth": 12,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 147,
+            "champ_raw": 0.9614818096160889,
+            "t_ms": 1.9964333332609385,
+            "params": 26782,
+            "blocks": [
+              "tf_split"
+            ],
+            "width": 48,
+            "depth": 10,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 178,
+            "champ_raw": 0.9657456874847412,
+            "t_ms": 2.1828666649525985,
+            "params": 14470,
+            "blocks": [
+              "tf_split"
+            ],
+            "width": 24,
+            "depth": 12,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 192,
+            "champ_raw": 0.9660550951957703,
+            "t_ms": 2.0245333338001124,
+            "params": 14470,
+            "blocks": [
+              "tf_split"
+            ],
+            "width": 25,
+            "depth": 12,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 202,
+            "champ_raw": 0.9722116887569427,
+            "t_ms": 2.0343999979862324,
+            "params": 14470,
+            "blocks": [
+              "tf_split"
+            ],
+            "width": 24,
+            "depth": 12,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 551,
+            "champ_raw": 0.973026692867279,
+            "t_ms": 1.8949666603778799,
+            "params": 25271,
+            "blocks": [
+              "tf_split"
+            ],
+            "width": 37,
+            "depth": 12,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
           }
         ],
         "summary": {
-          "n_updates": 3,
-          "with_params": 3,
-          "params_min": 156982,
-          "params_median": 166132.0,
+          "n_updates": 14,
+          "with_params": 14,
+          "params_min": 8746,
+          "params_median": 26782.0,
           "params_max": 249166,
-          "params_mean": 190760.0,
-          "params_std": 41467.86910368074,
-          "final_params": 249166,
-          "final_r_blend": 0.9187584221363068,
-          "final_t_ms": 68.05793333296606,
+          "params_mean": 59254.71428571428,
+          "params_std": 72048.63554317079,
+          "final_params": 25271,
+          "final_r_blend": 0.973026692867279,
+          "final_t_ms": 1.8949666603778799,
           "final_beats_n2n": false
         },
         "live_champ_cell": {
-          "params": 136484,
-          "r_blend": 0.9156511425971985,
-          "t_ms": 7.705199999691104,
+          "params": 25271,
+          "r_blend": 0.973026692867279,
+          "t_ms": 1.8949666603778799,
           "blocks": [
+            "tf_split"
+          ],
+          "cell_kind": "tf_split",
+          "depth": 12,
+          "width": 37
+        },
+        "checkpoint_iters_done": 5000
+      },
+      "random": {
+        "approach": "random",
+        "champ_updates": [
+          {
+            "iter": 1,
+            "champ_raw": 0.9075968861579895,
+            "t_ms": 4.126833334642773,
+            "params": 43116,
+            "blocks": [
+              "soft_mix"
+            ],
+            "width": 56,
+            "depth": 13,
+            "cell_kind": "soft_mix",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 116,
+            "champ_raw": 0.9113799035549164,
+            "t_ms": 2.3096000077202916,
+            "params": 37221,
+            "blocks": [
+              "moe_mix"
+            ],
+            "width": 40,
+            "depth": 17,
+            "cell_kind": "moe_mix",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 467,
+            "champ_raw": 0.9176225066184998,
+            "t_ms": 7.4693333299364895,
+            "params": 115292,
+            "blocks": [
+              "noise_cond",
+              "conv1d",
+              "attn",
+              "residual",
+              "unet",
+              "n2n_unet"
+            ],
+            "width": 4,
+            "depth": 6,
+            "cell_kind": "noise_cond",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 733,
+            "champ_raw": 0.9191348552703857,
+            "t_ms": 3.535266664888089,
+            "params": 35464,
+            "blocks": [
+              "moe_mix",
+              "noise_cond"
+            ],
+            "width": 40,
+            "depth": 8,
+            "cell_kind": "moe_mix",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 939,
+            "champ_raw": 0.9197566509246826,
+            "t_ms": 4.268133333728959,
+            "params": 39153,
+            "blocks": [
+              "dual_path",
+              "lstm"
+            ],
+            "width": 56,
+            "depth": 10,
+            "cell_kind": "dual_path",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 958,
+            "champ_raw": 0.9255509376525879,
+            "t_ms": 10.322233332165828,
+            "params": 176279,
+            "blocks": [
+              "unet",
+              "dilated",
+              "dense",
+              "noise_cond",
+              "bottleneck"
+            ],
+            "width": 32,
+            "depth": 15,
+            "cell_kind": "unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 2727,
+            "champ_raw": 0.9283460378646851,
+            "t_ms": 4.612733338338633,
+            "params": 165238,
+            "blocks": [
+              "mlp",
+              "dense"
+            ],
+            "width": 48,
+            "depth": 15,
+            "cell_kind": "mlp",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 2931,
+            "champ_raw": 0.932739645242691,
+            "t_ms": 15.26640000520274,
+            "params": 236712,
+            "blocks": [
+              "dense",
+              "n2n_unet",
+              "unet",
+              "attn",
+              "lstm"
+            ],
+            "width": 24,
+            "depth": 17,
+            "cell_kind": "dense",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 3328,
+            "champ_raw": 0.9352470636367798,
+            "t_ms": 4.566166666336358,
+            "params": 122148,
+            "blocks": [
+              "dense"
+            ],
+            "width": 56,
+            "depth": 16,
+            "cell_kind": "dense",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          }
+        ],
+        "summary": {
+          "n_updates": 9,
+          "with_params": 9,
+          "params_min": 35464,
+          "params_median": 115292.0,
+          "params_max": 236712,
+          "params_mean": 107847.0,
+          "params_std": 69903.98090555676,
+          "final_params": 122148,
+          "final_r_blend": 0.9352470636367798,
+          "final_t_ms": 4.566166666336358,
+          "final_beats_n2n": false
+        },
+        "live_champ_cell": {
+          "params": 122148,
+          "r_blend": 0.9352470636367798,
+          "t_ms": 4.566166666336358,
+          "blocks": [
+            "dense"
+          ],
+          "cell_kind": "dense",
+          "depth": 16,
+          "width": 56
+        },
+        "checkpoint_iters_done": 5000
+      },
+      "cmaes": {
+        "approach": "cmaes",
+        "champ_updates": [
+          {
+            "iter": 1,
+            "champ_raw": 0.4779890477657318,
+            "t_ms": 7.437099993694574,
+            "params": 215522,
+            "blocks": [
+              "n2n_unet",
+              "gated",
+              "dilated",
+              "dense",
+              "noise_cond"
+            ],
+            "width": 24,
+            "depth": 6,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 2,
+            "champ_raw": 0.7838118076324463,
+            "t_ms": 62.67939999816008,
+            "params": 10250,
+            "blocks": [
+              "conv1d",
+              "xlstm",
+              "bottleneck",
+              "moe_mix"
+            ],
+            "width": 12,
+            "depth": 4,
+            "cell_kind": "conv1d",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 18,
+            "champ_raw": 0.8753666877746582,
+            "t_ms": 6.5977999959917115,
+            "params": 16456,
+            "blocks": [
+              "conv1d",
+              "tf_split",
+              "soft_mix",
+              "dilated"
+            ],
+            "width": 12,
+            "depth": 5,
+            "cell_kind": "conv1d",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 33,
+            "champ_raw": 0.8772688806056976,
+            "t_ms": 4.308766666023682,
+            "params": 26978,
+            "blocks": [
+              "bottleneck",
+              "soft_mix",
+              "conv1d"
+            ],
+            "width": 24,
+            "depth": 6,
+            "cell_kind": "conv1d",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 51,
+            "champ_raw": 0.9260616898536682,
+            "t_ms": 7.779566668129216,
+            "params": 128044,
+            "blocks": [
+              "bottleneck",
+              "soft_mix",
+              "n2n_unet"
+            ],
+            "width": 24,
+            "depth": 6,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 80,
+            "champ_raw": 0.9273086786270142,
+            "t_ms": 5.898366662828873,
+            "params": 41126,
+            "blocks": [
+              "bottleneck",
+              "conv1d",
+              "soft_mix",
+              "unet",
+              "gated"
+            ],
+            "width": 24,
+            "depth": 5,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 109,
+            "champ_raw": 0.930951327085495,
+            "t_ms": 5.949799999749909,
+            "params": 56772,
+            "blocks": [
+              "bottleneck",
+              "moe_mix",
+              "conv1d",
+              "dilated",
+              "soft_mix"
+            ],
+            "width": 32,
+            "depth": 5,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 131,
+            "champ_raw": 0.933157205581665,
+            "t_ms": 5.814633332192898,
+            "params": 53542,
+            "blocks": [
+              "bottleneck",
+              "soft_mix",
+              "unet",
+              "moe_mix"
+            ],
+            "width": 32,
+            "depth": 6,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 205,
+            "champ_raw": 0.9357314109802246,
+            "t_ms": 6.836633333781113,
+            "params": 140666,
+            "blocks": [
+              "bottleneck",
+              "soft_mix",
+              "n2n_unet",
+              "unet"
+            ],
+            "width": 32,
+            "depth": 4,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 209,
+            "champ_raw": 0.9375918209552765,
+            "t_ms": 5.602999997790903,
+            "params": 143092,
+            "blocks": [
+              "n2n_unet",
+              "moe_mix",
+              "soft_mix"
+            ],
+            "width": 40,
+            "depth": 5,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 218,
+            "champ_raw": 0.9391846358776093,
+            "t_ms": 5.493066661680738,
+            "params": 62518,
+            "blocks": [
+              "bottleneck",
+              "soft_mix",
+              "unet",
+              "mlp"
+            ],
+            "width": 40,
+            "depth": 5,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 237,
+            "champ_raw": 0.9416742920875549,
+            "t_ms": 4.975266667315736,
+            "params": 154252,
+            "blocks": [
+              "bottleneck",
+              "moe_mix",
+              "noise_cond",
+              "dense"
+            ],
+            "width": 48,
+            "depth": 6,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 280,
+            "champ_raw": 0.9449270963668823,
+            "t_ms": 4.3311333283782005,
+            "params": 91622,
+            "blocks": [
+              "bottleneck",
+              "soft_mix",
+              "noise_cond",
+              "mlp",
+              "moe_mix"
+            ],
+            "width": 48,
+            "depth": 4,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 299,
+            "champ_raw": 0.9479966163635254,
+            "t_ms": 4.349433331905554,
+            "params": 59430,
+            "blocks": [
+              "bottleneck",
+              "soft_mix",
+              "noise_cond",
+              "moe_mix"
+            ],
+            "width": 40,
+            "depth": 4,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 566,
+            "champ_raw": 0.9496129155158997,
+            "t_ms": 4.4907666645788895,
+            "params": 59272,
+            "blocks": [
+              "bottleneck",
+              "soft_mix",
+              "moe_mix"
+            ],
+            "width": 48,
+            "depth": 4,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 596,
+            "champ_raw": 0.9498026072978973,
+            "t_ms": 4.0622000039244694,
+            "params": 59272,
+            "blocks": [
+              "bottleneck",
+              "soft_mix",
+              "moe_mix"
+            ],
+            "width": 48,
+            "depth": 4,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 1066,
+            "champ_raw": 0.9508686065673828,
+            "t_ms": 4.604033340001479,
+            "params": 79020,
+            "blocks": [
+              "bottleneck",
+              "soft_mix",
+              "moe_mix",
+              "mlp"
+            ],
+            "width": 48,
+            "depth": 4,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 1243,
+            "champ_raw": 0.9516991376876831,
+            "t_ms": 4.9106666701845825,
+            "params": 98768,
+            "blocks": [
+              "bottleneck",
+              "mlp",
+              "soft_mix",
+              "residual",
+              "moe_mix"
+            ],
+            "width": 48,
+            "depth": 4,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 1291,
+            "champ_raw": 0.9549533128738403,
+            "t_ms": 4.653933331913625,
+            "params": 98768,
+            "blocks": [
+              "bottleneck",
+              "moe_mix",
+              "mlp",
+              "residual",
+              "soft_mix"
+            ],
+            "width": 48,
+            "depth": 4,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 3910,
+            "champ_raw": 0.9556275010108948,
+            "t_ms": 3.848566673696041,
+            "params": 67212,
+            "blocks": [
+              "moe_mix",
+              "soft_mix",
+              "residual",
+              "mlp"
+            ],
+            "width": 48,
+            "depth": 3,
+            "cell_kind": "residual",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          }
+        ],
+        "summary": {
+          "n_updates": 20,
+          "with_params": 20,
+          "params_min": 10250,
+          "params_median": 64865.0,
+          "params_max": 215522,
+          "params_mean": 83129.1,
+          "params_std": 50353.75369314586,
+          "final_params": 67212,
+          "final_r_blend": 0.9556275010108948,
+          "final_t_ms": 3.848566673696041,
+          "final_beats_n2n": false
+        },
+        "live_champ_cell": {
+          "params": 67212,
+          "r_blend": 0.9556275010108948,
+          "t_ms": 3.848566673696041,
+          "blocks": [
+            "moe_mix",
             "soft_mix",
+            "residual",
+            "mlp"
+          ],
+          "cell_kind": "residual",
+          "depth": 3,
+          "width": 48
+        },
+        "checkpoint_iters_done": 5000
+      },
+      "tpe": {
+        "approach": "tpe",
+        "champ_updates": [
+          {
+            "iter": 1,
+            "champ_raw": 0.8901497423648834,
+            "t_ms": 5.404833335584651,
+            "params": 28208,
+            "blocks": [
+              "moe_mix",
+              "bottleneck",
+              "lstm",
+              "attn"
+            ],
+            "width": 24,
+            "depth": 6,
+            "cell_kind": "moe_mix",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 63,
+            "champ_raw": 0.9041863083839417,
+            "t_ms": 62.25096666215298,
+            "params": 138390,
+            "blocks": [
+              "moe_mix",
+              "n2n_unet",
+              "bottleneck",
+              "dual_path",
+              "xlstm"
+            ],
+            "width": 24,
+            "depth": 7,
+            "cell_kind": "moe_mix",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 85,
+            "champ_raw": 0.9093589782714844,
+            "t_ms": 61.60739999419699,
+            "params": 139242,
+            "blocks": [
+              "moe_mix",
+              "n2n_unet",
+              "attn",
+              "residual",
+              "noise_cond",
+              "xlstm"
+            ],
+            "width": 24,
+            "depth": 6,
+            "cell_kind": "moe_mix",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 98,
+            "champ_raw": 0.9103618562221527,
+            "t_ms": 6.923799994789685,
+            "params": 143482,
+            "blocks": [
+              "tf_split",
+              "n2n_unet",
+              "attn",
+              "residual",
+              "noise_cond"
+            ],
+            "width": 24,
+            "depth": 7,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 143,
+            "champ_raw": 0.9143874645233154,
+            "t_ms": 5.370966663273673,
+            "params": 129038,
+            "blocks": [
+              "n2n_unet",
+              "attn",
+              "residual",
+              "noise_cond"
+            ],
+            "width": 24,
+            "depth": 7,
+            "cell_kind": "residual",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 148,
+            "champ_raw": 0.9199699759483337,
+            "t_ms": 4.295566672226414,
+            "params": 117886,
+            "blocks": [
+              "n2n_unet",
+              "moe_mix"
+            ],
+            "width": 24,
+            "depth": 7,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 179,
+            "champ_raw": 0.9266446828842163,
+            "t_ms": 5.16783333538721,
+            "params": 129038,
+            "blocks": [
+              "n2n_unet",
+              "attn",
+              "residual",
+              "noise_cond"
+            ],
+            "width": 24,
+            "depth": 7,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 240,
+            "champ_raw": 0.932254284620285,
+            "t_ms": 5.063966663631921,
+            "params": 74878,
+            "blocks": [
+              "moe_mix",
+              "soft_mix",
+              "unet",
+              "bottleneck"
+            ],
+            "width": 40,
+            "depth": 7,
+            "cell_kind": "moe_mix",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 595,
+            "champ_raw": 0.9337335526943207,
+            "t_ms": 6.566800002474338,
+            "params": 138740,
+            "blocks": [
+              "moe_mix",
+              "n2n_unet",
+              "soft_mix",
+              "lstm"
+            ],
+            "width": 24,
+            "depth": 7,
+            "cell_kind": "moe_mix",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 649,
+            "champ_raw": 0.9356658160686493,
+            "t_ms": 5.247666665430491,
+            "params": 45652,
+            "blocks": [
+              "tf_split",
+              "soft_mix",
+              "unet",
+              "bottleneck"
+            ],
+            "width": 24,
+            "depth": 10,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 969,
+            "champ_raw": 0.9364024996757507,
+            "t_ms": 4.069833327472831,
+            "params": 191148,
+            "blocks": [
+              "n2n_unet",
+              "noise_cond",
+              "dense"
+            ],
+            "width": 24,
+            "depth": 4,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 1019,
+            "champ_raw": 0.9387128949165344,
+            "t_ms": 3.9883000038874648,
+            "params": 213032,
+            "blocks": [
+              "mlp",
+              "soft_mix",
+              "unet",
+              "bottleneck"
+            ],
+            "width": 48,
+            "depth": 2,
+            "cell_kind": "mlp",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 2151,
+            "champ_raw": 0.9395350813865662,
+            "t_ms": 4.4833666664392995,
+            "params": 49024,
+            "blocks": [
+              "soft_mix",
+              "unet",
+              "bottleneck"
+            ],
+            "width": 40,
+            "depth": 6,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 2341,
+            "champ_raw": 0.9463729560375214,
+            "t_ms": 6.894533338102822,
+            "params": 63616,
+            "blocks": [
+              "moe_mix",
+              "soft_mix",
+              "unet",
+              "bottleneck"
+            ],
+            "width": 40,
+            "depth": 5,
+            "cell_kind": "moe_mix",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          }
+        ],
+        "summary": {
+          "n_updates": 14,
+          "with_params": 14,
+          "params_min": 28208,
+          "params_median": 129038.0,
+          "params_max": 213032,
+          "params_mean": 114383.85714285714,
+          "params_std": 52955.79951762621,
+          "final_params": 63616,
+          "final_r_blend": 0.9463729560375214,
+          "final_t_ms": 6.894533338102822,
+          "final_beats_n2n": false
+        },
+        "live_champ_cell": {
+          "params": 63616,
+          "r_blend": 0.9463729560375214,
+          "t_ms": 6.894533338102822,
+          "blocks": [
+            "moe_mix",
+            "soft_mix",
+            "unet",
+            "bottleneck"
+          ],
+          "cell_kind": "moe_mix",
+          "depth": 5,
+          "width": 40
+        },
+        "checkpoint_iters_done": 5000
+      },
+      "aging_evo": {
+        "approach": "aging_evo",
+        "champ_updates": [
+          {
+            "iter": 1,
+            "champ_raw": 0.5163570642471313,
+            "t_ms": 7.132900005672127,
+            "params": 118217,
+            "blocks": [
+              "mlp",
+              "moe_mix",
+              "n2n_unet",
+              "bottleneck",
+              "lstm"
+            ],
+            "width": 4,
+            "depth": 14,
+            "cell_kind": "mlp",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 2,
+            "champ_raw": 0.6879749000072479,
+            "t_ms": 6.937833328265697,
+            "params": 118217,
+            "blocks": [
+              "mlp",
+              "moe_mix",
+              "n2n_unet",
+              "bottleneck",
+              "lstm"
+            ],
+            "width": 4,
+            "depth": 14,
+            "cell_kind": "mlp",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 10,
+            "champ_raw": 0.7495723366737366,
+            "t_ms": 75.81650000065565,
+            "params": 120791,
+            "blocks": [
+              "mlp",
+              "moe_mix",
+              "n2n_unet",
+              "bottleneck",
+              "lstm",
+              "xlstm"
+            ],
+            "width": 4,
+            "depth": 14,
+            "cell_kind": "mlp",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 11,
+            "champ_raw": 0.8039755821228027,
+            "t_ms": 63.48906666971743,
+            "params": 121614,
+            "blocks": [
+              "mlp",
+              "moe_mix",
+              "n2n_unet",
+              "bottleneck",
+              "lstm",
+              "xlstm"
+            ],
+            "width": 8,
+            "depth": 14,
+            "cell_kind": "mlp",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 14,
+            "champ_raw": 0.8058560788631439,
+            "t_ms": 64.98043333219054,
+            "params": 120791,
+            "blocks": [
+              "mlp",
+              "moe_mix",
+              "n2n_unet",
+              "bottleneck",
+              "lstm",
+              "xlstm"
+            ],
+            "width": 4,
+            "depth": 14,
+            "cell_kind": "mlp",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 19,
+            "champ_raw": 0.823590874671936,
+            "t_ms": 8.03973333677277,
+            "params": 116152,
+            "blocks": [
+              "mlp",
+              "moe_mix",
+              "n2n_unet",
+              "bottleneck",
+              "lstm"
+            ],
+            "width": 4,
+            "depth": 16,
+            "cell_kind": "mlp",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 21,
+            "champ_raw": 0.8810769021511078,
+            "t_ms": 7.43769999826327,
+            "params": 116152,
+            "blocks": [
+              "mlp",
+              "moe_mix",
+              "n2n_unet",
+              "bottleneck",
+              "lstm"
+            ],
+            "width": 4,
+            "depth": 14,
+            "cell_kind": "mlp",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 30,
+            "champ_raw": 0.8840725123882294,
+            "t_ms": 10.199999999410162,
+            "params": 194780,
+            "blocks": [
+              "mlp",
+              "moe_mix",
+              "n2n_unet",
+              "bottleneck",
+              "lstm",
+              "dense"
+            ],
+            "width": 4,
+            "depth": 17,
+            "cell_kind": "mlp",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 34,
+            "champ_raw": 0.8922979831695557,
+            "t_ms": 8.072533334294954,
+            "params": 116152,
+            "blocks": [
+              "mlp",
+              "moe_mix",
+              "n2n_unet",
+              "bottleneck",
+              "lstm"
+            ],
+            "width": 4,
+            "depth": 14,
+            "cell_kind": "mlp",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 36,
+            "champ_raw": 0.907884269952774,
+            "t_ms": 65.84716666839086,
+            "params": 194780,
+            "blocks": [
+              "mlp",
+              "moe_mix",
+              "n2n_unet",
+              "bottleneck",
+              "lstm",
+              "dense"
+            ],
+            "width": 4,
+            "depth": 15,
+            "cell_kind": "moe_mix",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 61,
+            "champ_raw": 0.9275951683521271,
+            "t_ms": 9.410600003320724,
+            "params": 43854,
+            "blocks": [
+              "bottleneck",
+              "tf_split"
+            ],
+            "width": 48,
+            "depth": 3,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 74,
+            "champ_raw": 0.9403058290481567,
+            "t_ms": 4.040100000565872,
+            "params": 51332,
+            "blocks": [
+              "bottleneck",
+              "residual"
+            ],
+            "width": 48,
+            "depth": 6,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 93,
+            "champ_raw": 0.9442786872386932,
+            "t_ms": 6.2599666707683355,
+            "params": 150102,
+            "blocks": [
+              "bottleneck",
+              "attn",
+              "dense",
+              "soft_mix"
+            ],
+            "width": 48,
+            "depth": 6,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 659,
+            "champ_raw": 0.945542186498642,
+            "t_ms": 10.293833339043582,
+            "params": 267049,
+            "blocks": [
+              "n2n_unet",
+              "dense",
+              "dual_path",
+              "noise_cond"
+            ],
+            "width": 54,
+            "depth": 20,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 981,
+            "champ_raw": 0.9519569277763367,
+            "t_ms": 7.002899995616947,
+            "params": 226322,
+            "blocks": [
+              "soft_mix",
+              "moe_mix",
+              "dense",
+              "dual_path"
+            ],
+            "width": 49,
+            "depth": 12,
+            "cell_kind": "soft_mix",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 4283,
+            "champ_raw": 0.954269528388977,
+            "t_ms": 6.793266666742663,
+            "params": 119314,
+            "blocks": [
+              "tf_split",
+              "attn",
+              "dense",
+              "dilated"
+            ],
+            "width": 26,
+            "depth": 8,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 4422,
+            "champ_raw": 0.9586635828018188,
+            "t_ms": 8.269099994019294,
+            "params": 269641,
+            "blocks": [
+              "tf_split",
+              "moe_mix",
+              "dense",
+              "noise_cond",
+              "n2n_unet"
+            ],
+            "width": 30,
+            "depth": 12,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          }
+        ],
+        "summary": {
+          "n_updates": 17,
+          "with_params": 17,
+          "params_min": 43854,
+          "params_median": 120791.0,
+          "params_max": 269641,
+          "params_mean": 145015.29411764705,
+          "params_std": 62938.364890969235,
+          "final_params": 269641,
+          "final_r_blend": 0.9586635828018188,
+          "final_t_ms": 8.269099994019294,
+          "final_beats_n2n": false
+        },
+        "live_champ_cell": {
+          "params": 269641,
+          "r_blend": 0.9586635828018188,
+          "t_ms": 8.269099994019294,
+          "blocks": [
+            "tf_split",
+            "moe_mix",
             "dense",
+            "noise_cond",
+            "n2n_unet"
+          ],
+          "cell_kind": "n2n_unet",
+          "depth": 12,
+          "width": 30
+        },
+        "checkpoint_iters_done": 5000
+      },
+      "reinforce": {
+        "approach": "reinforce",
+        "champ_updates": [
+          {
+            "iter": 1,
+            "champ_raw": 0.5667484104633331,
+            "t_ms": 6.998966671138381,
+            "params": 119472,
+            "blocks": [
+              "tf_split",
+              "attn",
+              "n2n_unet"
+            ],
+            "width": 16,
+            "depth": 16,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 2,
+            "champ_raw": 0.6481161117553711,
+            "t_ms": 6.441733334213495,
+            "params": 115864,
+            "blocks": [
+              "n2n_unet",
+              "residual"
+            ],
+            "width": 16,
+            "depth": 16,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 3,
+            "champ_raw": 0.6510231494903564,
+            "t_ms": 5.7554333373749005,
+            "params": 115864,
+            "blocks": [
+              "n2n_unet",
+              "residual"
+            ],
+            "width": 16,
+            "depth": 16,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 4,
+            "champ_raw": 0.6591856777667999,
+            "t_ms": 6.143500000083198,
+            "params": 115864,
+            "blocks": [
+              "n2n_unet",
+              "residual"
+            ],
+            "width": 16,
+            "depth": 16,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 5,
+            "champ_raw": 0.6829340755939484,
+            "t_ms": 3.571466659195721,
+            "params": 115314,
+            "blocks": [
+              "n2n_unet",
+              "residual"
+            ],
+            "width": 16,
+            "depth": 16,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 6,
+            "champ_raw": 0.7009613513946533,
+            "t_ms": 3.6573999968823045,
+            "params": 115314,
+            "blocks": [
+              "n2n_unet",
+              "residual"
+            ],
+            "width": 16,
+            "depth": 16,
+            "cell_kind": "residual",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 8,
+            "champ_raw": 0.7097493708133698,
+            "t_ms": 3.884700000829374,
+            "params": 115314,
+            "blocks": [
+              "n2n_unet",
+              "residual"
+            ],
+            "width": 16,
+            "depth": 16,
+            "cell_kind": "residual",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 13,
+            "champ_raw": 0.7144651710987091,
+            "t_ms": 4.407866673621659,
+            "params": 115314,
+            "blocks": [
+              "n2n_unet",
+              "residual"
+            ],
+            "width": 16,
+            "depth": 17,
+            "cell_kind": "residual",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 18,
+            "champ_raw": 0.7193136215209961,
+            "t_ms": 6.067066666825364,
+            "params": 115314,
+            "blocks": [
+              "n2n_unet",
+              "residual"
+            ],
+            "width": 16,
+            "depth": 19,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 28,
+            "champ_raw": 0.7214991748332977,
+            "t_ms": 7.054599991533905,
+            "params": 123588,
+            "blocks": [
+              "n2n_unet",
+              "residual",
+              "moe_mix"
+            ],
+            "width": 16,
+            "depth": 19,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 30,
+            "champ_raw": 0.7300618886947632,
+            "t_ms": 7.288866666688894,
+            "params": 123588,
+            "blocks": [
+              "n2n_unet",
+              "residual",
+              "moe_mix"
+            ],
+            "width": 16,
+            "depth": 19,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 38,
+            "champ_raw": 0.7468627393245697,
+            "t_ms": 7.206866663182154,
+            "params": 123588,
+            "blocks": [
+              "n2n_unet",
+              "residual",
+              "moe_mix"
+            ],
+            "width": 16,
+            "depth": 20,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 44,
+            "champ_raw": 0.7482981383800507,
+            "t_ms": 7.329266673574845,
+            "params": 125653,
+            "blocks": [
+              "n2n_unet",
+              "residual",
+              "moe_mix"
+            ],
+            "width": 16,
+            "depth": 20,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 45,
+            "champ_raw": 0.8498890995979309,
+            "t_ms": 72.23356666509062,
+            "params": 131763,
+            "blocks": [
+              "n2n_unet",
+              "unet",
+              "residual",
+              "dual_path",
+              "conv1d",
+              "dilated"
+            ],
+            "width": 16,
+            "depth": 20,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 46,
+            "champ_raw": 0.8780213594436646,
+            "t_ms": 71.2641666662724,
+            "params": 127912,
+            "blocks": [
+              "n2n_unet",
+              "unet",
+              "residual",
+              "dual_path",
+              "conv1d",
+              "dilated"
+            ],
+            "width": 14,
+            "depth": 20,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 47,
+            "champ_raw": 0.8993834555149078,
+            "t_ms": 10.477933334186673,
+            "params": 131812,
+            "blocks": [
+              "n2n_unet",
+              "tf_split",
+              "dual_path",
+              "unet",
+              "bottleneck"
+            ],
+            "width": 14,
+            "depth": 20,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 51,
+            "champ_raw": 0.9161461889743805,
+            "t_ms": 10.677699998874838,
+            "params": 206929,
+            "blocks": [
+              "n2n_unet",
+              "soft_mix",
+              "dense",
+              "attn"
+            ],
+            "width": 14,
+            "depth": 20,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 52,
+            "champ_raw": 0.9237866699695587,
+            "t_ms": 10.339933331124485,
+            "params": 206929,
+            "blocks": [
+              "n2n_unet",
+              "soft_mix",
+              "dense",
+              "attn"
+            ],
+            "width": 14,
+            "depth": 20,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 74,
+            "champ_raw": 0.92429119348526,
+            "t_ms": 9.990133325724551,
+            "params": 207415,
+            "blocks": [
+              "n2n_unet",
+              "soft_mix",
+              "dense",
+              "attn"
+            ],
+            "width": 15,
+            "depth": 20,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 90,
+            "champ_raw": 0.9345803260803223,
+            "t_ms": 10.09226666064933,
+            "params": 216085,
+            "blocks": [
+              "n2n_unet",
+              "soft_mix",
+              "dense",
+              "attn"
+            ],
+            "width": 16,
+            "depth": 20,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 99,
+            "champ_raw": 0.9360199868679047,
+            "t_ms": 10.711333326374492,
+            "params": 220779,
+            "blocks": [
+              "lstm",
+              "n2n_unet",
+              "soft_mix",
+              "dense",
+              "attn"
+            ],
+            "width": 16,
+            "depth": 20,
+            "cell_kind": "lstm",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 105,
+            "champ_raw": 0.9373371601104736,
+            "t_ms": 12.301533337449655,
+            "params": 229053,
+            "blocks": [
+              "lstm",
+              "n2n_unet",
+              "soft_mix",
+              "dense",
+              "attn",
+              "moe_mix"
+            ],
+            "width": 16,
+            "depth": 20,
+            "cell_kind": "lstm",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 130,
+            "champ_raw": 0.9543336033821106,
+            "t_ms": 4.3169333366677165,
+            "params": 88713,
+            "blocks": [
+              "tf_split",
+              "noise_cond",
+              "dense"
+            ],
+            "width": 8,
+            "depth": 11,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 131,
+            "champ_raw": 0.9604060649871826,
+            "t_ms": 4.277000000001863,
+            "params": 86648,
+            "blocks": [
+              "tf_split",
+              "noise_cond",
+              "dense"
+            ],
+            "width": 8,
+            "depth": 11,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 143,
+            "champ_raw": 0.9732869863510132,
+            "t_ms": 4.175266658421606,
+            "params": 86648,
+            "blocks": [
+              "tf_split",
+              "noise_cond",
+              "dense"
+            ],
+            "width": 8,
+            "depth": 11,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          }
+        ],
+        "summary": {
+          "n_updates": 25,
+          "with_params": 25,
+          "params_min": 86648,
+          "params_median": 123588.0,
+          "params_max": 229053,
+          "params_mean": 139229.48,
+          "params_std": 44076.161803060844,
+          "final_params": 86648,
+          "final_r_blend": 0.9732869863510132,
+          "final_t_ms": 4.175266658421606,
+          "final_beats_n2n": false
+        },
+        "live_champ_cell": {
+          "params": 86648,
+          "r_blend": 0.9732869863510132,
+          "t_ms": 4.175266658421606,
+          "blocks": [
+            "tf_split",
+            "noise_cond",
+            "dense"
+          ],
+          "cell_kind": "tf_split",
+          "depth": 11,
+          "width": 8
+        },
+        "checkpoint_iters_done": 5000
+      }
+    },
+    "2026072702": {
+      "hybrid_lstm": {
+        "approach": "hybrid_lstm",
+        "champ_updates": [
+          {
+            "iter": 1,
+            "champ_raw": 0.5270776748657227,
+            "t_ms": 7.463633335040261,
+            "params": 129364,
+            "blocks": [
+              "moe_mix",
+              "n2n_unet",
+              "unet",
+              "tf_split",
+              "bottleneck",
+              "lstm"
+            ],
+            "width": 12,
+            "depth": 10,
+            "cell_kind": "moe_mix",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 2,
+            "champ_raw": 0.7309526801109314,
+            "t_ms": 8.759899996221066,
+            "params": 122302,
+            "blocks": [
+              "moe_mix",
+              "n2n_unet",
+              "unet",
+              "attn",
+              "tf_split",
+              "bottleneck"
+            ],
+            "width": 8,
+            "depth": 12,
+            "cell_kind": "moe_mix",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 3,
+            "champ_raw": 0.887578934431076,
+            "t_ms": 7.891133340308443,
+            "params": 200494,
+            "blocks": [
+              "dense",
+              "n2n_unet",
+              "unet",
+              "attn",
+              "lstm"
+            ],
+            "width": 40,
+            "depth": 2,
+            "cell_kind": "dense",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 14,
+            "champ_raw": 0.9085560142993927,
+            "t_ms": 62.713933332512774,
+            "params": 83188,
+            "blocks": [
+              "xlstm",
+              "bottleneck",
+              "gated",
+              "residual",
+              "dense"
+            ],
+            "width": 6,
+            "depth": 8,
+            "cell_kind": "xlstm",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 20,
+            "champ_raw": 0.9143441915512085,
+            "t_ms": 5.93730000158151,
+            "params": 173543,
+            "blocks": [
+              "dense",
+              "moe_mix",
+              "unet",
+              "dual_path"
+            ],
+            "width": 48,
+            "depth": 9,
+            "cell_kind": "moe_mix",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 27,
+            "champ_raw": 0.9269422292709351,
+            "t_ms": 9.44520000484772,
+            "params": 270557,
+            "blocks": [
+              "moe_mix",
+              "dense",
+              "n2n_unet",
+              "dual_path",
+              "bottleneck",
+              "lstm"
+            ],
+            "width": 44,
+            "depth": 6,
+            "cell_kind": "dense",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 28,
+            "champ_raw": 0.9325326681137085,
+            "t_ms": 6.055366665047283,
+            "params": 139144,
+            "blocks": [
+              "dense",
+              "dilated",
+              "unet",
+              "soft_mix"
+            ],
+            "width": 44,
+            "depth": 6,
+            "cell_kind": "dense",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 52,
+            "champ_raw": 0.9382398426532745,
+            "t_ms": 2.9905666694200286,
+            "params": 100545,
+            "blocks": [
+              "dense"
+            ],
+            "width": 44,
+            "depth": 7,
+            "cell_kind": "dense",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 96,
+            "champ_raw": 0.9391493797302246,
+            "t_ms": 4.284899992247422,
+            "params": 212960,
+            "blocks": [
+              "dense",
+              "n2n_unet"
+            ],
+            "width": 44,
+            "depth": 9,
+            "cell_kind": "dense",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 182,
+            "champ_raw": 0.9444239437580109,
+            "t_ms": 5.064799993609388,
+            "params": 213006,
+            "blocks": [
+              "dense",
+              "noise_cond",
+              "n2n_unet"
+            ],
+            "width": 30,
+            "depth": 8,
+            "cell_kind": "dense",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 379,
+            "champ_raw": 0.9536952674388885,
+            "t_ms": 2.8492666703338423,
+            "params": 28340,
+            "blocks": [
+              "tf_split",
+              "residual"
+            ],
+            "width": 24,
+            "depth": 11,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 392,
+            "champ_raw": 0.9566724300384521,
+            "t_ms": 5.4533333362390595,
+            "params": 41120,
+            "blocks": [
+              "tf_split",
+              "residual"
+            ],
+            "width": 32,
+            "depth": 12,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 403,
+            "champ_raw": 0.9682085514068604,
+            "t_ms": 2.8391333374505243,
+            "params": 28340,
+            "blocks": [
+              "tf_split",
+              "residual"
+            ],
+            "width": 24,
+            "depth": 11,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 405,
+            "champ_raw": 0.9707387387752533,
+            "t_ms": 4.094333329703659,
+            "params": 32193,
+            "blocks": [
+              "tf_split",
+              "residual"
+            ],
+            "width": 24,
+            "depth": 12,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 804,
+            "champ_raw": 0.9724947512149811,
+            "t_ms": 2.1041999959076443,
+            "params": 27839,
+            "blocks": [
+              "tf_split"
+            ],
+            "width": 40,
+            "depth": 7,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 876,
+            "champ_raw": 0.9733862280845642,
+            "t_ms": 2.0129666663706303,
+            "params": 22678,
+            "blocks": [
+              "tf_split"
+            ],
+            "width": 40,
+            "depth": 7,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 882,
+            "champ_raw": 0.9736241102218628,
+            "t_ms": 2.22096666887713,
+            "params": 22703,
+            "blocks": [
+              "tf_split"
+            ],
+            "width": 32,
+            "depth": 8,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 912,
+            "champ_raw": 0.9743790328502655,
+            "t_ms": 2.050899997508774,
+            "params": 22678,
+            "blocks": [
+              "tf_split"
+            ],
+            "width": 40,
+            "depth": 7,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 966,
+            "champ_raw": 0.9746860265731812,
+            "t_ms": 2.1348333393689245,
+            "params": 22703,
+            "blocks": [
+              "tf_split"
+            ],
+            "width": 32,
+            "depth": 8,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 1211,
+            "champ_raw": 0.9747295379638672,
+            "t_ms": 2.1669333315609642,
+            "params": 22678,
+            "blocks": [
+              "tf_split"
+            ],
+            "width": 40,
+            "depth": 10,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 1240,
+            "champ_raw": 0.9748305976390839,
+            "t_ms": 2.143766663114851,
+            "params": 21419,
+            "blocks": [
+              "tf_split"
+            ],
+            "width": 31,
+            "depth": 11,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          }
+        ],
+        "summary": {
+          "n_updates": 21,
+          "with_params": 21,
+          "params_min": 21419,
+          "params_median": 41120.0,
+          "params_max": 270557,
+          "params_mean": 92275.90476190476,
+          "params_std": 79178.0431275915,
+          "final_params": 21419,
+          "final_r_blend": 0.9748305976390839,
+          "final_t_ms": 2.143766663114851,
+          "final_beats_n2n": false
+        },
+        "live_champ_cell": {
+          "params": 21419,
+          "r_blend": 0.9748305976390839,
+          "t_ms": 2.143766663114851,
+          "blocks": [
+            "tf_split"
+          ],
+          "cell_kind": "tf_split",
+          "depth": 11,
+          "width": 31
+        },
+        "checkpoint_iters_done": 5000
+      },
+      "random": {
+        "approach": "random",
+        "champ_updates": [
+          {
+            "iter": 1,
+            "champ_raw": 0.6487228572368622,
+            "t_ms": 8.34263333429893,
+            "params": 25512,
+            "blocks": [
+              "lstm",
+              "moe_mix",
+              "mlp",
+              "bottleneck",
+              "residual"
+            ],
+            "width": 12,
+            "depth": 15,
+            "cell_kind": "lstm",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 3,
+            "champ_raw": 0.8408469259738922,
+            "t_ms": 8.2473000123476,
+            "params": 182781,
+            "blocks": [
+              "soft_mix",
+              "n2n_unet",
+              "unet",
+              "attn",
+              "lstm"
+            ],
+            "width": 56,
+            "depth": 9,
+            "cell_kind": "soft_mix",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 8,
+            "champ_raw": 0.8696834444999695,
+            "t_ms": 63.37766665577268,
+            "params": 183154,
+            "blocks": [
+              "xlstm",
+              "n2n_unet",
+              "unet",
+              "attn",
+              "tf_split",
+              "lstm"
+            ],
+            "width": 56,
+            "depth": 11,
+            "cell_kind": "xlstm",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 15,
+            "champ_raw": 0.9137623310089111,
+            "t_ms": 5.519600003026426,
+            "params": 48932,
+            "blocks": [
+              "dilated",
+              "tf_split",
+              "mlp"
+            ],
+            "width": 32,
+            "depth": 13,
+            "cell_kind": "dilated",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 135,
+            "champ_raw": 0.9171952605247498,
+            "t_ms": 5.695200001355261,
+            "params": 86394,
+            "blocks": [
+              "bottleneck",
+              "attn",
+              "gated",
+              "lstm"
+            ],
+            "width": 40,
+            "depth": 13,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 238,
+            "champ_raw": 0.9239976704120636,
+            "t_ms": 1.831299993985643,
+            "params": 43116,
+            "blocks": [
+              "mlp"
+            ],
+            "width": 56,
+            "depth": 13,
+            "cell_kind": "mlp",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 2151,
+            "champ_raw": 0.9357633590698242,
+            "t_ms": 7.100733326903234,
+            "params": 134212,
+            "blocks": [
+              "soft_mix",
+              "noise_cond",
+              "mlp",
+              "dual_path",
+              "lstm"
+            ],
+            "width": 48,
+            "depth": 12,
+            "cell_kind": "soft_mix",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          }
+        ],
+        "summary": {
+          "n_updates": 7,
+          "with_params": 7,
+          "params_min": 25512,
+          "params_median": 86394.0,
+          "params_max": 183154,
+          "params_mean": 100585.85714285714,
+          "params_std": 61542.848581707854,
+          "final_params": 134212,
+          "final_r_blend": 0.9357633590698242,
+          "final_t_ms": 7.100733326903234,
+          "final_beats_n2n": false
+        },
+        "live_champ_cell": {
+          "params": 52710,
+          "r_blend": 0.9345309734344482,
+          "t_ms": 2.710199992482861,
+          "blocks": [
+            "tf_split",
+            "mlp"
+          ],
+          "cell_kind": "tf_split",
+          "depth": 6,
+          "width": 56
+        },
+        "checkpoint_iters_done": 5000
+      },
+      "cmaes": {
+        "approach": "cmaes",
+        "champ_updates": [
+          {
+            "iter": 1,
+            "champ_raw": 0.627226859331131,
+            "t_ms": 6.092533333382259,
+            "params": 105358,
+            "blocks": [
+              "conv1d",
+              "dense",
+              "moe_mix",
+              "lstm"
+            ],
+            "width": 24,
+            "depth": 6,
+            "cell_kind": "conv1d",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 2,
+            "champ_raw": 0.6564034819602966,
+            "t_ms": 64.4048999917383,
+            "params": 113672,
+            "blocks": [
+              "conv1d",
+              "bottleneck",
+              "n2n_unet",
+              "xlstm"
+            ],
+            "width": 12,
+            "depth": 6,
+            "cell_kind": "conv1d",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 3,
+            "champ_raw": 0.8093520402908325,
+            "t_ms": 6.511466674661885,
+            "params": 206444,
+            "blocks": [
+              "unet",
+              "n2n_unet",
+              "dense",
+              "moe_mix"
+            ],
+            "width": 24,
+            "depth": 6,
+            "cell_kind": "unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 4,
+            "champ_raw": 0.8156858384609222,
+            "t_ms": 5.473866670702894,
+            "params": 27256,
+            "blocks": [
+              "conv1d",
+              "bottleneck",
+              "dual_path"
+            ],
+            "width": 24,
+            "depth": 7,
+            "cell_kind": "conv1d",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 37,
+            "champ_raw": 0.8419747352600098,
+            "t_ms": 6.7885333361725015,
+            "params": 122294,
+            "blocks": [
+              "n2n_unet",
+              "soft_mix",
+              "dual_path",
+              "conv1d"
+            ],
+            "width": 16,
+            "depth": 6,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 49,
+            "champ_raw": 0.8688000440597534,
+            "t_ms": 5.369933322072029,
+            "params": 45946,
+            "blocks": [
+              "conv1d",
+              "dual_path",
+              "bottleneck",
+              "soft_mix"
+            ],
+            "width": 32,
+            "depth": 5,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 60,
+            "champ_raw": 0.8959717154502869,
+            "t_ms": 5.312000013267,
+            "params": 48602,
+            "blocks": [
+              "bottleneck",
+              "dual_path",
+              "conv1d",
+              "soft_mix"
+            ],
+            "width": 32,
+            "depth": 6,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 87,
+            "champ_raw": 0.9044920802116394,
+            "t_ms": 7.366566666557143,
+            "params": 140808,
+            "blocks": [
+              "n2n_unet",
+              "conv1d",
+              "soft_mix",
+              "dual_path"
+            ],
+            "width": 32,
+            "depth": 5,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 98,
+            "champ_raw": 0.9147080779075623,
+            "t_ms": 5.473333333308498,
+            "params": 122960,
+            "blocks": [
+              "dense",
+              "dual_path",
+              "bottleneck",
+              "soft_mix"
+            ],
+            "width": 32,
+            "depth": 5,
+            "cell_kind": "dense",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 136,
+            "champ_raw": 0.9213063716888428,
+            "t_ms": 6.259500010249515,
+            "params": 49700,
+            "blocks": [
+              "bottleneck",
+              "dual_path",
+              "conv1d",
+              "soft_mix"
+            ],
+            "width": 32,
+            "depth": 6,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 172,
+            "champ_raw": 0.9223619401454926,
+            "t_ms": 7.303600005495052,
+            "params": 169978,
+            "blocks": [
+              "dual_path",
+              "n2n_unet",
+              "soft_mix",
+              "residual"
+            ],
+            "width": 40,
+            "depth": 8,
+            "cell_kind": "residual",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 189,
+            "champ_raw": 0.922425776720047,
+            "t_ms": 6.693399996341516,
+            "params": 148352,
+            "blocks": [
+              "dense",
+              "soft_mix",
+              "dual_path",
+              "dilated"
+            ],
+            "width": 40,
+            "depth": 8,
+            "cell_kind": "dense",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 191,
+            "champ_raw": 0.9314354360103607,
+            "t_ms": 7.4773666565306485,
+            "params": 164262,
+            "blocks": [
+              "dense",
+              "dual_path",
+              "soft_mix",
+              "lstm",
+              "mlp"
+            ],
+            "width": 40,
+            "depth": 7,
+            "cell_kind": "dense",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 261,
+            "champ_raw": 0.9362412989139557,
+            "t_ms": 6.195133338527133,
+            "params": 85298,
+            "blocks": [
+              "dual_path",
+              "moe_mix",
+              "soft_mix",
+              "residual"
+            ],
+            "width": 48,
+            "depth": 5,
+            "cell_kind": "residual",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 265,
+            "champ_raw": 0.9364565014839172,
+            "t_ms": 5.056366673670709,
+            "params": 152352,
+            "blocks": [
+              "dense",
+              "soft_mix",
+              "moe_mix"
+            ],
+            "width": 48,
+            "depth": 7,
+            "cell_kind": "dense",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 279,
+            "champ_raw": 0.9445278942584991,
+            "t_ms": 5.357533344067633,
+            "params": 153318,
+            "blocks": [
+              "dense",
+              "soft_mix",
+              "dual_path",
+              "moe_mix",
+              "bottleneck"
+            ],
+            "width": 40,
+            "depth": 5,
+            "cell_kind": "dense",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 608,
+            "champ_raw": 0.9475381672382355,
+            "t_ms": 4.98410000000149,
+            "params": 59272,
+            "blocks": [
+              "soft_mix",
+              "moe_mix",
+              "residual"
+            ],
+            "width": 48,
+            "depth": 4,
+            "cell_kind": "residual",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 813,
+            "champ_raw": 0.9515865743160248,
+            "t_ms": 4.698866667846839,
+            "params": 33620,
+            "blocks": [
+              "residual",
+              "soft_mix"
+            ],
+            "width": 48,
+            "depth": 3,
+            "cell_kind": "residual",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 835,
+            "champ_raw": 0.9554031789302826,
+            "t_ms": 4.343800013884902,
+            "params": 79020,
+            "blocks": [
+              "mlp",
+              "residual",
+              "soft_mix",
+              "moe_mix"
+            ],
+            "width": 48,
+            "depth": 4,
+            "cell_kind": "mlp",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 2124,
+            "champ_raw": 0.9582505524158478,
+            "t_ms": 3.657833323813975,
+            "params": 39524,
+            "blocks": [
+              "mlp",
+              "soft_mix"
+            ],
+            "width": 48,
+            "depth": 4,
+            "cell_kind": "mlp",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          }
+        ],
+        "summary": {
+          "n_updates": 20,
+          "with_params": 20,
+          "params_min": 27256,
+          "params_median": 109515.0,
+          "params_max": 206444,
+          "params_mean": 103401.8,
+          "params_std": 52304.90894705773,
+          "final_params": 39524,
+          "final_r_blend": 0.9582505524158478,
+          "final_t_ms": 3.657833323813975,
+          "final_beats_n2n": false
+        },
+        "live_champ_cell": {
+          "params": 39524,
+          "r_blend": 0.9582505524158478,
+          "t_ms": 3.657833323813975,
+          "blocks": [
+            "mlp",
+            "soft_mix"
+          ],
+          "cell_kind": "mlp",
+          "depth": 4,
+          "width": 48
+        },
+        "checkpoint_iters_done": 5000
+      },
+      "tpe": {
+        "approach": "tpe",
+        "champ_updates": [
+          {
+            "iter": 1,
+            "champ_raw": 0.8331777453422546,
+            "t_ms": 5.296633326603721,
+            "params": 38912,
+            "blocks": [
+              "dilated",
+              "tf_split",
+              "lstm"
+            ],
+            "width": 32,
+            "depth": 10,
+            "cell_kind": "dilated",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 16,
+            "champ_raw": 0.8674715459346771,
+            "t_ms": 5.996366671752185,
+            "params": 120472,
+            "blocks": [
+              "residual",
+              "n2n_unet",
+              "unet",
+              "attn"
+            ],
+            "width": 16,
+            "depth": 12,
+            "cell_kind": "residual",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 26,
+            "champ_raw": 0.9129034578800201,
+            "t_ms": 7.504999986849725,
+            "params": 146274,
+            "blocks": [
+              "dilated",
+              "residual",
+              "n2n_unet",
+              "unet",
+              "attn"
+            ],
+            "width": 32,
+            "depth": 6,
+            "cell_kind": "dilated",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 66,
+            "champ_raw": 0.9204401671886444,
+            "t_ms": 6.545833331377556,
+            "params": 161008,
+            "blocks": [
+              "bottleneck",
+              "residual",
+              "n2n_unet",
+              "unet",
+              "attn"
+            ],
+            "width": 32,
+            "depth": 9,
+            "cell_kind": "bottleneck",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 133,
+            "champ_raw": 0.9268783330917358,
+            "t_ms": 5.928100009138386,
+            "params": 136774,
+            "blocks": [
+              "dilated",
+              "dense",
+              "lstm"
+            ],
+            "width": 32,
+            "depth": 11,
+            "cell_kind": "dilated",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 228,
+            "champ_raw": 0.928342342376709,
+            "t_ms": 4.005733334148924,
+            "params": 130510,
+            "blocks": [
+              "dilated",
+              "dense"
+            ],
+            "width": 32,
+            "depth": 12,
+            "cell_kind": "dilated",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 242,
+            "champ_raw": 0.932363361120224,
+            "t_ms": 3.2276333464930453,
+            "params": 24420,
+            "blocks": [
+              "residual",
+              "soft_mix"
+            ],
+            "width": 32,
+            "depth": 4,
+            "cell_kind": "residual",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 390,
+            "champ_raw": 0.9329289793968201,
+            "t_ms": 1.5327333433864017,
+            "params": 13276,
+            "blocks": [
+              "residual"
+            ],
+            "width": 32,
+            "depth": 5,
+            "cell_kind": "residual",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 565,
+            "champ_raw": 0.9358455538749695,
+            "t_ms": 3.5105333275472126,
+            "params": 107932,
+            "blocks": [
+              "dense",
+              "dilated"
+            ],
+            "width": 24,
+            "depth": 10,
+            "cell_kind": "dilated",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 957,
+            "champ_raw": 0.9406168758869171,
+            "t_ms": 5.47706667566672,
+            "params": 120262,
+            "blocks": [
+              "dense",
+              "residual",
+              "soft_mix",
+              "dilated"
+            ],
+            "width": 32,
+            "depth": 5,
+            "cell_kind": "dense",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 2216,
+            "champ_raw": 0.9422245621681213,
+            "t_ms": 6.760633337156226,
+            "params": 237482,
+            "blocks": [
+              "dense",
+              "noise_cond",
+              "residual",
+              "bottleneck",
+              "soft_mix"
+            ],
+            "width": 48,
+            "depth": 10,
+            "cell_kind": "dense",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 4870,
+            "champ_raw": 0.9429396390914917,
+            "t_ms": 4.123366670683026,
+            "params": 104924,
+            "blocks": [
+              "dense",
+              "soft_mix"
+            ],
+            "width": 32,
+            "depth": 6,
+            "cell_kind": "dense",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          }
+        ],
+        "summary": {
+          "n_updates": 12,
+          "with_params": 12,
+          "params_min": 13276,
+          "params_median": 120367.0,
+          "params_max": 237482,
+          "params_mean": 111853.83333333333,
+          "params_std": 60030.22322940522,
+          "final_params": 104924,
+          "final_r_blend": 0.9429396390914917,
+          "final_t_ms": 4.123366670683026,
+          "final_beats_n2n": false
+        },
+        "live_champ_cell": {
+          "params": 104924,
+          "r_blend": 0.9429396390914917,
+          "t_ms": 4.123366670683026,
+          "blocks": [
+            "dense",
+            "soft_mix"
+          ],
+          "cell_kind": "dense",
+          "depth": 6,
+          "width": 32
+        },
+        "checkpoint_iters_done": 5000
+      },
+      "aging_evo": {
+        "approach": "aging_evo",
+        "champ_updates": [
+          {
+            "iter": 1,
+            "champ_raw": 0.5686117708683014,
+            "t_ms": 7.787466670076053,
+            "params": 112366,
+            "blocks": [
+              "residual",
+              "n2n_unet",
+              "unet",
+              "attn",
+              "lstm"
+            ],
+            "width": 6,
+            "depth": 14,
+            "cell_kind": "residual",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 2,
+            "champ_raw": 0.5896114706993103,
+            "t_ms": 7.345566661873211,
+            "params": 198775,
+            "blocks": [
+              "residual",
+              "unet",
+              "dense",
+              "n2n_unet"
+            ],
+            "width": 12,
+            "depth": 10,
+            "cell_kind": "residual",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 13,
+            "champ_raw": 0.6040777266025543,
+            "t_ms": 5.6056666653603315,
+            "params": 99313,
+            "blocks": [
+              "residual",
+              "moe_mix",
+              "dense",
+              "noise_cond"
+            ],
+            "width": 12,
+            "depth": 10,
+            "cell_kind": "residual",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 15,
+            "champ_raw": 0.6398687362670898,
+            "t_ms": 74.15773333438362,
+            "params": 207268,
+            "blocks": [
+              "residual",
+              "unet",
+              "dense",
+              "n2n_unet",
+              "xlstm",
+              "dilated"
+            ],
+            "width": 12,
+            "depth": 10,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 16,
+            "champ_raw": 0.7682882249355316,
+            "t_ms": 67.2783666717199,
+            "params": 207268,
+            "blocks": [
+              "residual",
+              "unet",
+              "dense",
+              "n2n_unet",
+              "xlstm",
+              "dilated"
+            ],
+            "width": 12,
+            "depth": 10,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 23,
+            "champ_raw": 0.8239916563034058,
+            "t_ms": 66.57820000934105,
+            "params": 205622,
+            "blocks": [
+              "residual",
+              "unet",
+              "dense",
+              "n2n_unet",
+              "xlstm",
+              "dilated"
+            ],
+            "width": 12,
+            "depth": 10,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 26,
+            "champ_raw": 0.8547617197036743,
+            "t_ms": 5.428066671205063,
+            "params": 6824,
+            "blocks": [
+              "residual",
+              "bottleneck"
+            ],
+            "width": 6,
+            "depth": 18,
+            "cell_kind": "residual",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 27,
+            "champ_raw": 0.8738994896411896,
+            "t_ms": 5.505433325500538,
+            "params": 7170,
+            "blocks": [
+              "residual",
+              "bottleneck"
+            ],
+            "width": 7,
+            "depth": 18,
+            "cell_kind": "residual",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 30,
+            "champ_raw": 0.8909693956375122,
+            "t_ms": 5.429899999095748,
+            "params": 9235,
+            "blocks": [
+              "residual",
+              "bottleneck"
+            ],
+            "width": 7,
+            "depth": 18,
+            "cell_kind": "residual",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 36,
+            "champ_raw": 0.8932022154331207,
+            "t_ms": 6.3239999969179435,
+            "params": 10602,
+            "blocks": [
+              "residual",
+              "bottleneck",
+              "lstm"
+            ],
+            "width": 7,
+            "depth": 18,
+            "cell_kind": "residual",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 38,
+            "champ_raw": 0.9066152572631836,
+            "t_ms": 5.273400010385861,
+            "params": 9235,
+            "blocks": [
+              "residual",
+              "bottleneck"
+            ],
+            "width": 7,
+            "depth": 19,
+            "cell_kind": "residual",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 61,
+            "champ_raw": 0.9142151474952698,
+            "t_ms": 3.607266660158833,
+            "params": 92399,
+            "blocks": [
+              "residual",
+              "bottleneck"
+            ],
+            "width": 56,
+            "depth": 20,
+            "cell_kind": "residual",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 82,
+            "champ_raw": 0.9228238761425018,
+            "t_ms": 3.2359999992574253,
+            "params": 238264,
+            "blocks": [
+              "dense",
+              "gated",
+              "n2n_unet"
+            ],
+            "width": 40,
+            "depth": 9,
+            "cell_kind": "dense",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 97,
+            "champ_raw": 0.9268293380737305,
+            "t_ms": 2.0753333422665796,
+            "params": 105396,
+            "blocks": [
+              "dense"
+            ],
+            "width": 40,
+            "depth": 9,
+            "cell_kind": "dense",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 128,
+            "champ_raw": 0.9295995831489563,
+            "t_ms": 2.1524333278648555,
+            "params": 122148,
+            "blocks": [
+              "dense"
+            ],
+            "width": 40,
+            "depth": 12,
+            "cell_kind": "dense",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 191,
+            "champ_raw": 0.9423510432243347,
+            "t_ms": 4.925666667986661,
+            "params": 139097,
+            "blocks": [
+              "dense",
+              "dilated"
+            ],
+            "width": 48,
+            "depth": 20,
+            "cell_kind": "dense",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 509,
+            "champ_raw": 0.9446896314620972,
+            "t_ms": 8.7804999978592,
+            "params": 287050,
+            "blocks": [
+              "n2n_unet",
+              "dense",
+              "soft_mix",
+              "noise_cond"
+            ],
+            "width": 56,
+            "depth": 20,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 680,
+            "champ_raw": 0.9525039196014404,
+            "t_ms": 4.189900006167591,
+            "params": 32696,
+            "blocks": [
+              "tf_split",
+              "lstm"
+            ],
+            "width": 30,
+            "depth": 11,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 3968,
+            "champ_raw": 0.9684269726276398,
+            "t_ms": 4.077866666648333,
+            "params": 30776,
+            "blocks": [
+              "tf_split",
+              "lstm"
+            ],
+            "width": 30,
+            "depth": 7,
+            "cell_kind": "tf_split",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          }
+        ],
+        "summary": {
+          "n_updates": 19,
+          "with_params": 19,
+          "params_min": 6824,
+          "params_median": 105396.0,
+          "params_max": 287050,
+          "params_mean": 111658.1052631579,
+          "params_std": 88495.199091247,
+          "final_params": 30776,
+          "final_r_blend": 0.9684269726276398,
+          "final_t_ms": 4.077866666648333,
+          "final_beats_n2n": false
+        },
+        "live_champ_cell": {
+          "params": 30776,
+          "r_blend": 0.9684269726276398,
+          "t_ms": 4.077866666648333,
+          "blocks": [
+            "tf_split",
             "lstm"
           ],
-          "cell_kind": "soft_mix",
-          "depth": 9,
-          "width": 32
-        }
+          "cell_kind": "tf_split",
+          "depth": 7,
+          "width": 30
+        },
+        "checkpoint_iters_done": 5000
+      },
+      "reinforce": {
+        "approach": "reinforce",
+        "champ_updates": [
+          {
+            "iter": 1,
+            "champ_raw": 0.7517614960670471,
+            "t_ms": 72.79099999990042,
+            "params": 5397,
+            "blocks": [
+              "xlstm",
+              "gated"
+            ],
+            "width": 4,
+            "depth": 7,
+            "cell_kind": "xlstm",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 2,
+            "champ_raw": 0.8001573383808136,
+            "t_ms": 63.39753333365176,
+            "params": 111861,
+            "blocks": [
+              "xlstm",
+              "gated",
+              "n2n_unet"
+            ],
+            "width": 4,
+            "depth": 7,
+            "cell_kind": "xlstm",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 7,
+            "champ_raw": 0.8187916576862335,
+            "t_ms": 67.05256666646164,
+            "params": 109796,
+            "blocks": [
+              "xlstm",
+              "gated",
+              "n2n_unet"
+            ],
+            "width": 4,
+            "depth": 7,
+            "cell_kind": "xlstm",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 8,
+            "champ_raw": 0.8301318883895874,
+            "t_ms": 4.46153333359689,
+            "params": 75612,
+            "blocks": [
+              "moe_mix",
+              "noise_cond",
+              "dilated",
+              "dual_path"
+            ],
+            "width": 48,
+            "depth": 9,
+            "cell_kind": "moe_mix",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 10,
+            "champ_raw": 0.8385543823242188,
+            "t_ms": 4.508566666724316,
+            "params": 75612,
+            "blocks": [
+              "moe_mix",
+              "noise_cond",
+              "dilated",
+              "dual_path"
+            ],
+            "width": 48,
+            "depth": 9,
+            "cell_kind": "moe_mix",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 11,
+            "champ_raw": 0.8639473617076874,
+            "t_ms": 5.070500000025883,
+            "params": 76710,
+            "blocks": [
+              "moe_mix",
+              "noise_cond",
+              "dilated",
+              "dual_path"
+            ],
+            "width": 48,
+            "depth": 9,
+            "cell_kind": "moe_mix",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 12,
+            "champ_raw": 0.8658238649368286,
+            "t_ms": 5.325600000408788,
+            "params": 166076,
+            "blocks": [
+              "moe_mix",
+              "dense",
+              "attn",
+              "dual_path"
+            ],
+            "width": 48,
+            "depth": 9,
+            "cell_kind": "moe_mix",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 17,
+            "champ_raw": 0.8939822614192963,
+            "t_ms": 68.9083666663161,
+            "params": 203468,
+            "blocks": [
+              "moe_mix",
+              "dense",
+              "attn",
+              "dual_path",
+              "lstm",
+              "xlstm"
+            ],
+            "width": 48,
+            "depth": 10,
+            "cell_kind": "moe_mix",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": true,
+            "beats_n2n": false
+          },
+          {
+            "iter": 25,
+            "champ_raw": 0.8992845416069031,
+            "t_ms": 7.186766666563926,
+            "params": 204770,
+            "blocks": [
+              "noise_cond",
+              "moe_mix",
+              "dense",
+              "attn",
+              "dual_path",
+              "lstm"
+            ],
+            "width": 48,
+            "depth": 10,
+            "cell_kind": "noise_cond",
+            "lstm_in_champ": true,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 27,
+            "champ_raw": 0.9330086708068848,
+            "t_ms": 8.263466666903696,
+            "params": 295746,
+            "blocks": [
+              "n2n_unet",
+              "noise_cond",
+              "moe_mix",
+              "dense",
+              "attn",
+              "dual_path"
+            ],
+            "width": 48,
+            "depth": 10,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 28,
+            "champ_raw": 0.9378862679004669,
+            "t_ms": 8.196666666359912,
+            "params": 295746,
+            "blocks": [
+              "n2n_unet",
+              "noise_cond",
+              "moe_mix",
+              "dense",
+              "attn",
+              "dual_path"
+            ],
+            "width": 48,
+            "depth": 10,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 29,
+            "champ_raw": 0.9456340074539185,
+            "t_ms": 8.753466666651851,
+            "params": 295746,
+            "blocks": [
+              "n2n_unet",
+              "noise_cond",
+              "moe_mix",
+              "dense",
+              "attn",
+              "dual_path"
+            ],
+            "width": 48,
+            "depth": 10,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 51,
+            "champ_raw": 0.9470573365688324,
+            "t_ms": 9.573133333712272,
+            "params": 295746,
+            "blocks": [
+              "n2n_unet",
+              "noise_cond",
+              "moe_mix",
+              "dense",
+              "attn",
+              "dual_path"
+            ],
+            "width": 48,
+            "depth": 10,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 68,
+            "champ_raw": 0.9495853185653687,
+            "t_ms": 8.510533333416484,
+            "params": 287338,
+            "blocks": [
+              "n2n_unet",
+              "noise_cond",
+              "moe_mix",
+              "dense",
+              "attn",
+              "dual_path"
+            ],
+            "width": 48,
+            "depth": 9,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 156,
+            "champ_raw": 0.9502323567867279,
+            "t_ms": 8.493566666705496,
+            "params": 312946,
+            "blocks": [
+              "n2n_unet",
+              "noise_cond",
+              "moe_mix",
+              "dense",
+              "attn",
+              "dual_path"
+            ],
+            "width": 48,
+            "depth": 12,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 1403,
+            "champ_raw": 0.952748566865921,
+            "t_ms": 8.797933332971297,
+            "params": 312946,
+            "blocks": [
+              "n2n_unet",
+              "noise_cond",
+              "moe_mix",
+              "dense",
+              "attn",
+              "dual_path"
+            ],
+            "width": 48,
+            "depth": 12,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          },
+          {
+            "iter": 2424,
+            "champ_raw": 0.9527857005596161,
+            "t_ms": 8.625633333091779,
+            "params": 319139,
+            "blocks": [
+              "n2n_unet",
+              "noise_cond",
+              "moe_mix",
+              "dense",
+              "attn",
+              "dual_path"
+            ],
+            "width": 48,
+            "depth": 12,
+            "cell_kind": "n2n_unet",
+            "lstm_in_champ": false,
+            "xlstm_in_champ": false,
+            "beats_n2n": false
+          }
+        ],
+        "summary": {
+          "n_updates": 17,
+          "with_params": 17,
+          "params_min": 5397,
+          "params_median": 204770.0,
+          "params_max": 319139,
+          "params_mean": 202626.76470588235,
+          "params_std": 104316.79034586083,
+          "final_params": 319139,
+          "final_r_blend": 0.9527857005596161,
+          "final_t_ms": 8.625633333091779,
+          "final_beats_n2n": false
+        },
+        "live_champ_cell": {
+          "params": 319139,
+          "r_blend": 0.9527857005596161,
+          "t_ms": 8.625633333091779,
+          "blocks": [
+            "n2n_unet",
+            "noise_cond",
+            "moe_mix",
+            "dense",
+            "attn",
+            "dual_path"
+          ],
+          "cell_kind": "n2n_unet",
+          "depth": 12,
+          "width": 48
+        },
+        "checkpoint_iters_done": 5000
       }
     }
   }

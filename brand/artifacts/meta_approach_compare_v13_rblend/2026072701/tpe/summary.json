@@ -1,0 +1,81 @@
+{
+  "approach": "tpe",
+  "iters": 5000,
+  "iters_done": 5000,
+  "seed": 2026072701,
+  "champ_r": 0.9377254755326518,
+  "champ_raw": 0.9463729560375214,
+  "champ_j": 0.9358629755326519,
+  "champ_t_ms": 6.894533338102822,
+  "champ_beats_n2n": false,
+  "n2n_gate_r": 0.9750486612319946,
+  "primary_metric": "r_blend",
+  "search_objective": "J=R_blend-lambda*latency_norm",
+  "lambda_latency": 0.02,
+  "delta_r_vs_dual_cosine": 0.3926359713077545,
+  "baseline_dual_cosine": 0.5537369847297668,
+  "wall_s": 13395.845562458038,
+  "wall_h": 3.7210682117938996,
+  "lstm_in_champ": false,
+  "xlstm_in_champ": false,
+  "champ_arch": {
+    "depth": 5,
+    "width": 40,
+    "act": "tanh",
+    "ops": [
+      "edge_pin",
+      "classic",
+      "hann_blend",
+      "fir3",
+      "cycle_net",
+      "skip_blend"
+    ],
+    "wet": 0.5211545930382692,
+    "fir": [
+      0.3043131578027289,
+      0.5027973556360408,
+      0.1980789897375992,
+      0.12384958958009536,
+      0.31765196751961877
+    ],
+    "cell_kind": "moe_mix",
+    "soft_logits": [
+      -0.22468683669496192,
+      -0.6381924669083128,
+      -0.6639488059604475,
+      -0.5305961303046514,
+      0.28571837643436937,
+      -0.05412061598716145,
+      -0.3514647369086328,
+      -0.9817157850043419,
+      -0.7121688332787313,
+      0.6031946171829485,
+      -0.3064357590394955,
+      0.6622838965836766,
+      0.42371931289677356,
+      0.38008702533199945,
+      0.8232096279060466
+    ],
+    "blocks": [
+      "moe_mix",
+      "soft_mix",
+      "unet",
+      "bottleneck"
+    ],
+    "use_adv_aux": false,
+    "moe_mode": "moe_parallel"
+  },
+  "champ_hp": {
+    "lr": 0.007286109256193954,
+    "fit_steps": 48,
+    "batch": 64,
+    "entropy_coef": 0.02,
+    "ppo_clip": 0.2,
+    "adv_coef": 0.05,
+    "reward_mode": "vs_dualcosine"
+  },
+  "champ_cell_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare_v13_rblend\\2026072701\\tpe\\champ_cell.pt",
+  "history_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare_v13_rblend\\2026072701\\tpe\\history.jsonl",
+  "finished_at": "20260729T122228Z",
+  "protocol": "paper_v10"
+}

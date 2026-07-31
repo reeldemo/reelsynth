@@ -1,0 +1,76 @@
+{
+  "approach": "hybrid_lstm",
+  "iters": 5000,
+  "iters_done": 5000,
+  "seed": 2026072701,
+  "champ_r": 0.9692863364664195,
+  "champ_raw": 0.973026692867279,
+  "champ_j": 0.9676196697997528,
+  "champ_t_ms": 1.8949666603778799,
+  "champ_beats_n2n": false,
+  "n2n_gate_r": 0.9750486612319946,
+  "primary_metric": "r_blend",
+  "search_objective": "J=R_blend-lambda*latency_norm",
+  "lambda_latency": 0.02,
+  "delta_r_vs_dual_cosine": 0.4192897081375122,
+  "baseline_dual_cosine": 0.5537369847297668,
+  "wall_s": 30346.382134199142,
+  "wall_h": 8.429550592833095,
+  "lstm_in_champ": false,
+  "xlstm_in_champ": false,
+  "champ_arch": {
+    "depth": 12,
+    "width": 37,
+    "act": "silu",
+    "ops": [
+      "pin",
+      "median3",
+      "fade_pull",
+      "polish"
+    ],
+    "wet": 0.6837134003401684,
+    "fir": [
+      0.42734687932349974,
+      0.24299604951767828,
+      0.31804083655834453,
+      0.589020089082215,
+      0.28192292260581575
+    ],
+    "cell_kind": "tf_split",
+    "soft_logits": [
+      -0.011990421091677805,
+      0.05259173312090021,
+      -0.7325276870709249,
+      0.05675784387671651,
+      0.17891980143663488,
+      0.24714276244115452,
+      -0.19838984655154604,
+      -0.21765171848079187,
+      0.16474300754462134,
+      1.025456311704358,
+      -0.4581487557004045,
+      -0.6462542600968036,
+      0.4500111551470692,
+      -0.6637333769033211,
+      -0.9152814556942942
+    ],
+    "blocks": [
+      "tf_split"
+    ],
+    "use_adv_aux": true,
+    "moe_mode": "sequential"
+  },
+  "champ_hp": {
+    "lr": 0.05143524965858326,
+    "fit_steps": 64,
+    "batch": 64,
+    "entropy_coef": 0.001,
+    "ppo_clip": 0.4,
+    "adv_coef": 0.038030016681884965,
+    "reward_mode": "vs_dualcosine"
+  },
+  "champ_cell_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare_v13_rblend\\2026072701\\hybrid_lstm\\champ_cell.pt",
+  "history_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare_v13_rblend\\2026072701\\hybrid_lstm\\history.jsonl",
+  "finished_at": "20260729T014447Z",
+  "protocol": "paper_v10"
+}

@@ -1,0 +1,81 @@
+{
+  "approach": "aging_evo",
+  "iters": 5000,
+  "iters_done": 5000,
+  "seed": 1902771841,
+  "champ_r": 0.9548718758694348,
+  "champ_raw": 0.9632943272590637,
+  "champ_j": 0.9519552092027681,
+  "champ_t_ms": 8.292166666554598,
+  "champ_beats_n2n": false,
+  "n2n_gate_r": 0.9750486612319946,
+  "primary_metric": "r_blend",
+  "search_objective": "J=R_blend-lambda*latency_norm",
+  "lambda_latency": 0.02,
+  "delta_r_vs_dual_cosine": 0.45929986238479614,
+  "baseline_dual_cosine": 0.5039944648742676,
+  "wall_s": 28144.86462855339,
+  "wall_h": 7.818017952375942,
+  "lstm_in_champ": false,
+  "xlstm_in_champ": false,
+  "champ_arch": {
+    "depth": 12,
+    "width": 44,
+    "act": "relu",
+    "ops": [
+      "fir5",
+      "mlp_seam",
+      "cycle_net",
+      "median3"
+    ],
+    "wet": 0.7787495416759485,
+    "fir": [
+      0.40519299772230855,
+      0.5094379685555663,
+      0.4417918705960619,
+      0.17621577171506142,
+      0.3082904288852229
+    ],
+    "cell_kind": "dual_path",
+    "soft_logits": [
+      -0.809927195047782,
+      -0.2883172360064168,
+      0.1809284006523173,
+      0.8732355561031198,
+      0.5013306024735078,
+      -0.4562808798888929,
+      0.03434061193444249,
+      -0.6401939296214321,
+      0.5515173221767047,
+      -0.39085685012131544,
+      0.31210322319619266,
+      0.03444363015919616,
+      -0.712365165962012,
+      -0.2501087638222581,
+      -0.3179991727226592
+    ],
+    "blocks": [
+      "tf_split",
+      "mlp",
+      "bottleneck",
+      "dual_path",
+      "attn",
+      "moe_mix"
+    ],
+    "use_adv_aux": false,
+    "moe_mode": "sequential"
+  },
+  "champ_hp": {
+    "lr": 0.02926369221639713,
+    "fit_steps": 64,
+    "batch": 64,
+    "entropy_coef": 0.07644273253025219,
+    "ppo_clip": 0.4,
+    "adv_coef": 0.2,
+    "reward_mode": "vs_nobake"
+  },
+  "champ_cell_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare_v13_rblend\\1902771841\\aging_evo\\champ_cell.pt",
+  "history_path": "C:\\Users\\Julian\\Documents\\Programming\\github\\reeldemo\\reelsynth\\brand\\artifacts\\meta_approach_compare_v13_rblend\\1902771841\\aging_evo\\history.jsonl",
+  "finished_at": "20260728T104531Z",
+  "protocol": "paper_v10"
+}
