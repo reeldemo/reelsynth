@@ -127,12 +127,12 @@ def main() -> int:
     torch.cuda.synchronize()
 
     # Search-step proxy: refit champion + random arch trials (FitCell)
-    r_fit, _ = og.fit_cell(cell, cfg.ops, device, steps=args.fit_steps, batch=args.batch, lr=hp.lr)
+    r_fit, *_ = og.fit_cell(cell, cfg.ops, device, steps=args.fit_steps, batch=args.batch, lr=hp.lr)
     rng = __import__("random").Random(1902771841)
     for _ in range(args.search_iters):
         trial_cfg = og.random_arch(rng)
         trial = og.SeamCell(trial_cfg).to(device)
-        _rf, _ = og.fit_cell(
+        _rf, *_ = og.fit_cell(
             trial,
             trial_cfg.ops,
             device,

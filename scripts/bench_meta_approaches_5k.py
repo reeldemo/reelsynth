@@ -161,6 +161,18 @@ def evaluate(
     _LAST_EVAL_METRICS["r_blend"] = float(r_blend)
     _LAST_EVAL_METRICS["j"] = float(j)
     _LAST_EVAL_METRICS["t_ms"] = float(t_ms)
+    fit_stats = getattr(og, "_LAST_FIT_STATS", {}) or {}
+    _LAST_EVAL_METRICS["fit_steps_used"] = int(fit_stats.get("fit_steps_used", 0))
+    _LAST_EVAL_METRICS["fit_converged"] = bool(fit_stats.get("fit_converged", False))
+    _LAST_EVAL_METRICS["fit_max_steps"] = int(fit_stats.get("fit_max_steps", 0))
+    _LAST_EVAL_METRICS["fit_patience"] = int(fit_stats.get("fit_patience", 0))
+    _LAST_EVAL_METRICS["fit_rel_eps"] = float(fit_stats.get("fit_rel_eps", 0.0))
+    _LAST_EVAL_METRICS["lambda_latency"] = float(
+        getattr(hp, "lambda_latency", fit_stats.get("lambda_latency", og.LAMBDA_LATENCY))
+    )
+    _LAST_EVAL_METRICS["cuda_free_mib"] = float(
+        og.cuda_free_mib() if hasattr(og, "cuda_free_mib") else 0.0
+    )
     # Debug components on a fresh batch (no grad).
     with torch.no_grad():
         ideal, eng = og.make_batch(max(32, batch_default), og.N, device)
@@ -168,6 +180,81 @@ def evaluate(
         _LAST_EVAL_METRICS["r_seam"] = float(og.residual_score_seam(ideal, out).mean().item())
         _LAST_EVAL_METRICS["r_body"] = float(og.residual_score_body(eng, out).mean().item())
     return r_blend, j_scored, cell
+
+
+def evaluate_best_of_proposals(
+    proposals: list[tuple[og.ArchConfig, og.HyperParams]],
+    device: torch.device,
+    *,
+    baseline: float,
+    fit_steps_default: int,
+    batch_default: int,
+    fit_parallel: int = 1,
+    min_free_mib: float = 4096.0,
+) -> tuple[og.ArchConfig, og.HyperParams, float, float, og.SeamCell]:
+    """Fit several proposals; return the best by scored J. Never dual-seed.
+
+    fit_parallel=2 only when free VRAM >= min_free_mib; otherwise sequential.
+    Concurrent fits use threads but share one CUDA context — still one process.
+    """
+    if not proposals:
+        raise ValueError("proposals must be non-empty")
+    if len(proposals) == 1:
+        cfg, hp = proposals[0]
+        r_raw, r, cell = evaluate(
+            cfg,
+            hp,
+            device,
+            baseline=baseline,
+            fit_steps_default=fit_steps_default,
+            batch_default=batch_default,
+        )
+        return cfg, hp, r_raw, r, cell
+
+    use_parallel = (
+        int(fit_parallel) >= 2
+        and len(proposals) >= 2
+        and device.type == "cuda"
+        and hasattr(og, "cuda_free_mib")
+        and og.cuda_free_mib() >= float(min_free_mib)
+    )
+
+    results: list[tuple[og.ArchConfig, og.HyperParams, float, float, og.SeamCell, dict]] = []
+
+    def _one(pair: tuple[og.ArchConfig, og.HyperParams]):
+        cfg, hp = pair
+        r_raw, r, cell = evaluate(
+            cfg,
+            hp,
+            device,
+            baseline=baseline,
+            fit_steps_default=fit_steps_default,
+            batch_default=batch_default,
+        )
+        metrics = dict(_LAST_EVAL_METRICS)
+        return cfg, hp, r_raw, r, cell, metrics
+
+    if use_parallel:
+        from concurrent.futures import ThreadPoolExecutor
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futs = [pool.submit(_one, p) for p in proposals[:2]]
+            for fut in futs:
+                results.append(fut.result())
+            # Drop any leftover proposals beyond 2 (VRAM guard).
+            for p in proposals[2:]:
+                results.append(_one(p))
+    else:
+        for p in proposals:
+            results.append(_one(p))
+
+    best = max(results, key=lambda t: t[3])
+    cfg, hp, r_raw, r, cell, metrics = best
+    _LAST_EVAL_METRICS.clear()
+    _LAST_EVAL_METRICS.update(metrics)
+    if hasattr(og, "cuda_cleanup"):
+        og.cuda_cleanup()
+    return cfg, hp, r_raw, r, cell
 
 
 def append_hist(path: Path, row: dict[str, Any]) -> None:
@@ -421,8 +508,8 @@ def decode_cma(vec: list[float], rng: random.Random) -> tuple[og.ArchConfig, og.
     width = width_choices[min(len(width_choices) - 1, int(sig(vec[1]) * len(width_choices)))]
     wet = 0.05 + 0.9 * sig(vec[2])
     lr = 10 ** (-4.0 + 2.0 * sig(vec[3]))
-    fit_steps = [16, 20, 24, 32, 40, 48][min(5, int(sig(vec[4]) * 6))]
-    batch = [32, 48, 64][min(2, int(sig(vec[5]) * 3))]
+    fit_max = [512, 768, 1024, 1536, 2048][min(4, int(sig(vec[4]) * 5))]
+    batch = [48, 64, 96, 128][min(3, int(sig(vec[5]) * 4))]
     cell = CELL_KINDS[min(len(CELL_KINDS) - 1, int(sig(vec[6]) * len(CELL_KINDS)))]
     act = og.ACTS[min(len(og.ACTS) - 1, int(sig(vec[7]) * len(og.ACTS)))]
     moe = "moe_parallel" if sig(vec[8]) > 0.55 else "sequential"
@@ -451,7 +538,19 @@ def decode_cma(vec: list[float], rng: random.Random) -> tuple[og.ArchConfig, og.
         use_adv_aux=False,
         moe_mode=moe,
     )
-    hp = og.HyperParams(lr=lr, fit_steps=fit_steps, batch=batch)
+    # Re-use CMA dims for converge HPs (no CMA_DIM bump → v13 ckpt-compatible length).
+    fit_patience = [10, 15, 20, 30][min(3, int(sig(vec[3] + 0.31) * 4))]
+    fit_rel_eps = [1e-4, 3e-5, 1e-5, 3e-6][min(3, int(sig(-vec[4]) * 4))]
+    lambda_latency = [0.01, 0.02, 0.05, 0.1][min(3, int(sig(vec[5] + 0.77) * 4))]
+    hp = og.HyperParams(
+        lr=lr,
+        fit_steps=min(64, fit_max),
+        fit_max_steps=fit_max,
+        fit_patience=fit_patience,
+        fit_rel_eps=fit_rel_eps,
+        lambda_latency=lambda_latency,
+        batch=batch,
+    )
     return cfg, hp
 
 
@@ -478,8 +577,11 @@ class TinyTPE:
             "ops_k": self.rng.randint(2, 6),
             "wet": self.rng.uniform(0.1, 0.95),
             "lr_exp": self.rng.uniform(-4.0, -2.0),
-            "fit_steps": self.rng.choice([16, 20, 24, 32, 40, 48]),
-            "batch": self.rng.choice([32, 48, 64]),
+            "fit_max_steps": self.rng.choice([512, 768, 1024, 1536, 2048]),
+            "fit_patience": self.rng.choice([10, 15, 20, 30]),
+            "fit_rel_eps": self.rng.choice([1e-4, 3e-5, 1e-5, 3e-6]),
+            "lambda_latency": self.rng.choice([0.01, 0.02, 0.05, 0.1]),
+            "batch": self.rng.choice([48, 64, 96, 128]),
             "use_lstm": self.rng.random() < 0.28,
             "use_xlstm": self.rng.random() < 0.28,
         }
@@ -518,8 +620,11 @@ class TinyTPE:
             "ops_k": pick("ops_k", list(range(2, 7))),
             "wet": float(pick("wet", [self.rng.uniform(0.1, 0.95)])),
             "lr_exp": float(pick("lr_exp", [self.rng.uniform(-4.0, -2.0)])),
-            "fit_steps": pick("fit_steps", [16, 20, 24, 32, 40, 48]),
-            "batch": pick("batch", [32, 48, 64]),
+            "fit_max_steps": pick("fit_max_steps", [512, 768, 1024, 1536, 2048]),
+            "fit_patience": pick("fit_patience", [10, 15, 20, 30]),
+            "fit_rel_eps": pick("fit_rel_eps", [1e-4, 3e-5, 1e-5, 3e-6]),
+            "lambda_latency": pick("lambda_latency", [0.01, 0.02, 0.05, 0.1]),
+            "batch": pick("batch", [48, 64, 96, 128]),
             "use_lstm": pick("use_lstm", [True, False]),
             "use_xlstm": pick("use_xlstm", [True, False]),
         }
@@ -567,7 +672,11 @@ def tpe_to_arch(sample: dict[str, Any], rng: random.Random) -> tuple[og.ArchConf
     )
     hp = og.HyperParams(
         lr=10 ** float(sample["lr_exp"]),
-        fit_steps=int(sample["fit_steps"]),
+        fit_steps=min(64, int(sample.get("fit_max_steps", sample.get("fit_steps", 1024)))),
+        fit_max_steps=int(sample.get("fit_max_steps", sample.get("fit_steps", 1024))),
+        fit_patience=int(sample.get("fit_patience", 20)),
+        fit_rel_eps=float(sample.get("fit_rel_eps", 1e-5)),
+        lambda_latency=float(sample.get("lambda_latency", 0.02)),
         batch=int(sample["batch"]),
     )
     return cfg, hp
@@ -643,6 +752,9 @@ def run_approach(
     ckpt_every: int,
     resume: bool,
     all_approaches: list[str] | None = None,
+    proposals_per_iter: int = 1,
+    fit_parallel: int = 1,
+    min_free_mib: float = 4096.0,
 ) -> dict[str, Any]:
     approach_dir = out_dir / name
     approach_dir.mkdir(parents=True, exist_ok=True)
@@ -806,8 +918,43 @@ def run_approach(
         f"n2n_gate_R_blend={n2n_gate_r} "
         f"blocks_has_lstm={'lstm' in BLOCKS} blocks_has_xlstm={'xlstm' in BLOCKS} "
         f"hp_reward_sweep=on plateau_every={plateau_every} "
-        f"primary_metric=r_blend search_objective=J"
+        f"primary_metric=r_blend search_objective=J "
+        f"fit_max_default={fit_steps} batch_default={batch} "
+        f"proposals_per_iter={proposals_per_iter} fit_parallel={fit_parallel} "
+        f"min_free_mib={min_free_mib}"
     )
+
+    def eval_trial(
+        cfg: og.ArchConfig, hp: og.HyperParams
+    ) -> tuple[og.ArchConfig, og.HyperParams, float, float, og.SeamCell]:
+        """Optional multi-proposal FitCell; VRAM-guarded parallel when allowed."""
+        n = max(1, int(proposals_per_iter))
+        props: list[tuple[og.ArchConfig, og.HyperParams]] = [(cfg, hp)]
+        for _ in range(n - 1):
+            twin_cfg = inject_search_priors(
+                og.mutate_arch(cfg, rng.randrange(og.N_ACTIONS), rng, None), rng
+            )
+            twin_hp = og.mutate_hp(hp, rng)
+            props.append((twin_cfg, twin_hp))
+        if len(props) == 1:
+            r_raw, r, cell = evaluate(
+                cfg,
+                hp,
+                device,
+                baseline=baseline,
+                fit_steps_default=fit_steps,
+                batch_default=batch,
+            )
+            return cfg, hp, r_raw, r, cell
+        return evaluate_best_of_proposals(
+            props,
+            device,
+            baseline=baseline,
+            fit_steps_default=fit_steps,
+            batch_default=batch,
+            fit_parallel=fit_parallel,
+            min_free_mib=min_free_mib,
+        )
 
     # Hybrid: reuse overnight branch rotation with LSTM vocabulary already live
     hybrid_branches = ("ppo", "ga", "pbt", "nas", "combo")
@@ -826,14 +973,7 @@ def run_approach(
         if name == "random":
             trial_cfg = inject_search_priors(og.random_arch(rng), rng)
             trial_hp = og.random_hp(rng)
-            r_raw, r, cell = evaluate(
-                trial_cfg,
-                trial_hp,
-                device,
-                baseline=baseline,
-                fit_steps_default=fit_steps,
-                batch_default=batch,
-            )
+            trial_cfg, trial_hp, r_raw, r, cell = eval_trial(trial_cfg, trial_hp)
         elif name == "cmaes":
             assert cma is not None
             if not pending_cma:
@@ -841,14 +981,7 @@ def run_approach(
                 pending_fit = []
             vec = pending_cma[len(pending_fit)]
             trial_cfg, trial_hp = decode_cma(vec, rng)
-            r_raw, r, cell = evaluate(
-                trial_cfg,
-                trial_hp,
-                device,
-                baseline=baseline,
-                fit_steps_default=fit_steps,
-                batch_default=batch,
-            )
+            trial_cfg, trial_hp, r_raw, r, cell = eval_trial(trial_cfg, trial_hp)
             pending_fit.append(r)
             if len(pending_fit) >= len(pending_cma):
                 cma.tell(pending_cma, pending_fit)
@@ -858,14 +991,7 @@ def run_approach(
             assert tpe is not None
             sample = tpe.ask()
             trial_cfg, trial_hp = tpe_to_arch(sample, rng)
-            r_raw, r, cell = evaluate(
-                trial_cfg,
-                trial_hp,
-                device,
-                baseline=baseline,
-                fit_steps_default=fit_steps,
-                batch_default=batch,
-            )
+            trial_cfg, trial_hp, r_raw, r, cell = eval_trial(trial_cfg, trial_hp)
             tpe.tell(sample, r)
             proposal = "tpe"
         elif name == "aging_evo":
@@ -884,14 +1010,7 @@ def run_approach(
             trial_cfg = og.mutate_arch(cur_cfg, action, rng, None)
             trial_cfg = inject_search_priors(trial_cfg, rng)
             trial_hp = og.mutate_hp(cur_hp, rng)
-            r_raw, r, cell = evaluate(
-                trial_cfg,
-                trial_hp,
-                device,
-                baseline=baseline,
-                fit_steps_default=fit_steps,
-                batch_default=batch,
-            )
+            trial_cfg, trial_hp, r_raw, r, cell = eval_trial(trial_cfg, trial_hp)
             reward = og.finite_scalar(
                 og.shaped_reward(
                     r,
@@ -964,14 +1083,7 @@ def run_approach(
                 trial_hp = og.mutate_hp(hp, rng)
                 proposal = "PPO_MUTATION"
             trial_cfg = inject_search_priors(trial_cfg, rng)
-            r_raw, r, cell = evaluate(
-                trial_cfg,
-                trial_hp,
-                device,
-                baseline=baseline,
-                fit_steps_default=fit_steps,
-                batch_default=batch,
-            )
+            trial_cfg, trial_hp, r_raw, r, cell = eval_trial(trial_cfg, trial_hp)
             branch_best[branch] = max(branch_best[branch], r_raw)
             reward = og.finite_scalar(
                 og.shaped_reward(
@@ -1055,8 +1167,11 @@ def run_approach(
                 f"R_seam={_LAST_EVAL_METRICS.get('r_seam')} "
                 f"R_body={_LAST_EVAL_METRICS.get('r_body')} "
                 f"J={champ_j:.6f} t_ms={champ_t_ms:.3f} "
+                f"fit_steps={_LAST_EVAL_METRICS.get('fit_steps_used')} "
+                f"fit_converged={_LAST_EVAL_METRICS.get('fit_converged')} "
                 f"beats_n2n={champ_beats_n2n} lstm={champ_lstm} xlstm={champ_xlstm} "
-                f"reward_mode={getattr(trial_hp, 'reward_mode', None)}"
+                f"reward_mode={getattr(trial_hp, 'reward_mode', None)} "
+                f"lambda={_LAST_EVAL_METRICS.get('lambda_latency')}"
             )
         else:
             iters_since_improve += 1
@@ -1091,7 +1206,19 @@ def run_approach(
             "hp": trial_hp.to_dict(),
             "primary_metric": "r_blend",
             "search_objective": "J=R_blend-lambda*latency_norm",
-            "lambda_latency": og.LAMBDA_LATENCY,
+            "lambda_latency": _LAST_EVAL_METRICS.get(
+                "lambda_latency", getattr(trial_hp, "lambda_latency", og.LAMBDA_LATENCY)
+            ),
+            "fit_steps_used": _LAST_EVAL_METRICS.get("fit_steps_used"),
+            "fit_converged": _LAST_EVAL_METRICS.get("fit_converged"),
+            "fit_max_steps": _LAST_EVAL_METRICS.get(
+                "fit_max_steps", getattr(trial_hp, "fit_max_steps", None)
+            ),
+            "fit_patience": getattr(trial_hp, "fit_patience", None),
+            "fit_rel_eps": getattr(trial_hp, "fit_rel_eps", None),
+            "cuda_free_mib": _LAST_EVAL_METRICS.get("cuda_free_mib"),
+            "proposals_per_iter": proposals_per_iter,
+            "fit_parallel": fit_parallel,
         }
         append_hist(hist_path, row)
         tb_log(
@@ -1149,8 +1276,14 @@ def run_approach(
                 payload["policy_path"] = str(pol_path)
             save_ckpt(ckpt_path, payload)
             refresh_status("running", it)
-            if it % max(50, ckpt_every) == 0:
-                log(f"CKPT approach={name} iter={it}/{iters} champ={champ_r:.6f}")
+            if it % max(10, ckpt_every) == 0:
+                log(
+                    f"CKPT approach={name} iter={it}/{iters} champ_R={champ_raw:.6f} "
+                    f"champ_J={champ_j:.6f} "
+                    f"fit_steps={_LAST_EVAL_METRICS.get('fit_steps_used')} "
+                    f"fit_ok={_LAST_EVAL_METRICS.get('fit_converged')} "
+                    f"free_mib={_LAST_EVAL_METRICS.get('cuda_free_mib')}"
+                )
 
     wall_s = elapsed_prev + (time.time() - t0)
     summary = {
@@ -1455,13 +1588,37 @@ def plot_compare(aggregate: dict[str, Any], out_png: Path) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--iters", type=int, default=5000)
+    ap.add_argument("--iters", type=int, default=750)
     ap.add_argument("--seed", type=int, default=DEFAULT_SEED)
-    ap.add_argument("--batch", type=int, default=48)
-    ap.add_argument("--fit-steps", type=int, default=24)
+    ap.add_argument("--batch", type=int, default=96)
+    ap.add_argument(
+        "--fit-steps",
+        type=int,
+        default=1024,
+        help="Default FitCell hard cap / fit_max_steps when HP omits it (converge protocol).",
+    )
     ap.add_argument("--pop-size", type=int, default=12)
-    ap.add_argument("--ckpt-every", type=int, default=25)
+    ap.add_argument("--ckpt-every", type=int, default=10)
     ap.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
+    ap.add_argument(
+        "--proposals-per-iter",
+        type=int,
+        default=2,
+        help="Fit this many mutated proposals per outer iter; keep best (GPU fill, one process).",
+    )
+    ap.add_argument(
+        "--fit-parallel",
+        type=int,
+        default=1,
+        choices=[1, 2],
+        help="Concurrent FitCells when free VRAM >= --min-free-mib (never dual-seed).",
+    )
+    ap.add_argument(
+        "--min-free-mib",
+        type=float,
+        default=4096.0,
+        help="Minimum free CUDA MiB required before fit-parallel=2.",
+    )
     ap.add_argument(
         "--approaches",
         type=str,
@@ -1571,6 +1728,9 @@ def main() -> int:
                 ckpt_every=args.ckpt_every,
                 resume=resume,
                 all_approaches=names,
+                proposals_per_iter=args.proposals_per_iter,
+                fit_parallel=args.fit_parallel,
+                min_free_mib=args.min_free_mib,
             )
         )
 

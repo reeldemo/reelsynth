@@ -113,7 +113,7 @@ def refit_champ(
     batch = int(hp.get("batch", 64))
     lr = float(hp.get("lr", 3e-3))
     adv = float(hp.get("adv_coef", 0.0))
-    train_r, converged = og.fit_cell(
+    train_r, converged, *_ = og.fit_cell(
         cell, cfg.ops, device, steps=fit_steps, batch=batch, lr=lr, adv_coef=adv
     )
     cell.eval()

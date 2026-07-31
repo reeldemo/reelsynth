@@ -191,8 +191,12 @@ class HyperParams:
     """Per-individual trainable/search hyperparams (PBT genome)."""
 
     lr: float = 3e-3
-    fit_steps: int = 24
-    batch: int = 48
+    fit_steps: int = 24  # legacy alias; prefer fit_max_steps for converge protocol
+    fit_max_steps: int = 1024
+    fit_patience: int = 20
+    fit_rel_eps: float = 1e-5
+    lambda_latency: float = 0.02
+    batch: int = 96
     entropy_coef: float = 0.02
     ppo_clip: float = 0.2
     adv_coef: float = 0.05  # weight for optional adv aux
@@ -208,7 +212,11 @@ class HyperParams:
         if not d:
             return cls()
         known = {f.name for f in cls.__dataclass_fields__.values()}  # type: ignore[attr-defined]
-        return cls(**{k: v for k, v in d.items() if k in known})
+        cleaned = {k: v for k, v in d.items() if k in known}
+        # Back-compat: old checkpoints only had fit_steps
+        if "fit_max_steps" not in cleaned and "fit_steps" in cleaned:
+            cleaned["fit_max_steps"] = max(int(cleaned["fit_steps"]), 64)
+        return cls(**cleaned)
 
 
 REWARD_MODES = ("abs_r", "vs_dualcosine", "vs_nobake", "neglog_gap")
@@ -643,7 +651,7 @@ def arch_state_vec(cfg: ArchConfig, hp: HyperParams, device: torch.device) -> to
         finite_scalar(cell_id),
         finite_scalar(abs(cfg.fir[1]) if cfg.fir else 0.5, 0.5),
         finite_scalar(math.log10(max(lr_safe, 1e-6)) / -2.0),
-        finite_scalar(hp.fit_steps / 64.0),
+        finite_scalar(getattr(hp, "fit_max_steps", hp.fit_steps) / 2048.0),
         finite_scalar(hp.entropy_coef),
         finite_scalar(soft_max),
         1.0 if cfg.use_adv_aux else 0.0,
@@ -712,15 +720,41 @@ def random_arch(rng: random.Random, adapt: PlateauAdaptState | None = None) -> A
 
 
 def random_hp(rng: random.Random) -> HyperParams:
+    fit_max = rng.choice([512, 768, 1024, 1536, 2048])
     return HyperParams(
         lr=10 ** rng.uniform(-4.0, -2.0),
-        fit_steps=rng.choice([16, 20, 24, 32, 40, 48]),
-        batch=rng.choice([32, 48, 64]),
+        fit_steps=min(64, fit_max),  # legacy field kept in sync for old readers
+        fit_max_steps=fit_max,
+        fit_patience=rng.choice([10, 15, 20, 30]),
+        fit_rel_eps=rng.choice([1e-4, 3e-5, 1e-5, 3e-6]),
+        lambda_latency=rng.choice([0.01, 0.02, 0.05, 0.1]),
+        batch=rng.choice([48, 64, 96, 128]),
         entropy_coef=rng.uniform(0.005, 0.06),
         ppo_clip=rng.choice([0.1, 0.2, 0.25, 0.3]),
         adv_coef=rng.choice([0.02, 0.05, 0.1]),
         reward_mode=rng.choice(list(REWARD_MODES)),
     )
+
+
+def mutate_hp(hp: HyperParams, rng: random.Random) -> HyperParams:
+    h = HyperParams(**hp.to_dict())
+    h.lr = float(max(1e-5, min(1e-1, h.lr * (10 ** rng.uniform(-0.4, 0.4)))))
+    h.fit_max_steps = int(
+        rng.choice([512, 768, 1024, 1536, 2048, max(256, h.fit_max_steps + rng.choice([-256, 0, 256]))])
+    )
+    h.fit_max_steps = int(max(256, min(4096, h.fit_max_steps)))
+    h.fit_steps = int(min(64, h.fit_max_steps))
+    h.fit_patience = int(rng.choice([10, 15, 20, 30, max(5, h.fit_patience + rng.choice([-5, 0, 5]))]))
+    h.fit_patience = int(max(5, min(60, h.fit_patience)))
+    h.fit_rel_eps = float(rng.choice([1e-4, 3e-5, 1e-5, 3e-6]))
+    h.lambda_latency = float(rng.choice([0.01, 0.02, 0.05, 0.1]))
+    h.entropy_coef = float(max(0.001, min(0.1, h.entropy_coef + rng.uniform(-0.01, 0.01))))
+    h.ppo_clip = float(max(0.05, min(0.4, h.ppo_clip + rng.choice([-0.05, 0.0, 0.05]))))
+    h.batch = int(rng.choice([48, 64, 96, 128]))
+    h.adv_coef = float(max(0.0, min(0.2, h.adv_coef + rng.uniform(-0.02, 0.02))))
+    if rng.random() < 0.25:
+        h.reward_mode = rng.choice(list(REWARD_MODES))
+    return h
 
 
 def mutate_arch(
@@ -940,18 +974,6 @@ def pick_branch(
             return b
     return names[-1]
 
-def mutate_hp(hp: HyperParams, rng: random.Random) -> HyperParams:
-    h = HyperParams(**hp.to_dict())
-    h.lr = float(max(1e-5, min(1e-1, h.lr * (10 ** rng.uniform(-0.4, 0.4)))))
-    h.fit_steps = int(max(8, min(64, h.fit_steps + rng.choice([-8, -4, 0, 4, 8]))))
-    h.entropy_coef = float(max(0.001, min(0.1, h.entropy_coef + rng.uniform(-0.01, 0.01))))
-    h.ppo_clip = float(max(0.05, min(0.4, h.ppo_clip + rng.choice([-0.05, 0.0, 0.05]))))
-    h.batch = int(rng.choice([32, 48, 64]))
-    h.adv_coef = float(max(0.0, min(0.2, h.adv_coef + rng.uniform(-0.02, 0.02))))
-    if rng.random() < 0.25:
-        h.reward_mode = rng.choice(list(REWARD_MODES))
-    return h
-
 
 def pbt_exploit_mutate(
     pop: list[Individual],
@@ -1014,11 +1036,19 @@ def fit_cell(
     cell: SeamCell,
     ops: list[str],
     device: torch.device,
-    steps: int = 24,
-    batch: int = 32,
+    steps: int = 1024,
+    batch: int = 96,
     lr: float = 3e-3,
     adv_coef: float = 0.05,
-) -> tuple[float, bool]:
+    *,
+    patience: int = 20,
+    rel_eps: float = 1e-5,
+    check_every: int = 1,
+) -> tuple[float, bool, int]:
+    """Train until R plateau or hard cap.
+
+    Returns (last_r, converged, steps_used).
+    """
     trainable_ops = {
         "mlp_seam",
         "fade_pull",
@@ -1041,21 +1071,25 @@ def fit_cell(
         lr_safe = 3e-3
     opt = torch.optim.Adam(cell.parameters(), lr=lr_safe) if can_train else None
     prev = None
-    patience = 0
+    stagnant = 0
     last_r = 0.0
     converged = False
-    for _ in range(steps):
+    max_steps = max(1, int(steps))
+    pat = max(1, int(patience))
+    eps = float(max(rel_eps, 0.0))
+    every = max(1, int(check_every))
+    steps_used = 0
+    for step_i in range(max_steps):
+        steps_used = step_i + 1
         ideal, eng = make_batch(batch, N, device)
         out = apply_ops(eng, cell, ops)
         r = residual_score_blend(ideal, eng, out).mean()
         last_r = finite_scalar(float(r.detach().item()), 0.0)
         if can_train and opt is not None:
             loss = 1.0 - r
-            # Optional tiny adv aux: push generator outputs toward ideal discriminator score
             if cell.adv_head is not None and adv_coef > 0:
                 fake_logit = cell.adv_head(out)
                 real_logit = cell.adv_head(ideal.detach())
-                # Non-saturating generator term + discriminator BCE (joint, light)
                 adv_g = F.binary_cross_entropy_with_logits(
                     fake_logit, torch.ones_like(fake_logit)
                 )
@@ -1075,20 +1109,54 @@ def fit_cell(
                     opt.step()
                 else:
                     opt.zero_grad(set_to_none=True)
-        if prev is not None:
-            rel = abs(prev - last_r) / max(abs(prev), 1e-6)
-            if rel < 1e-4:
-                patience += 1
-                if patience >= 3:
-                    converged = True
-                    break
-            else:
-                patience = 0
-        prev = last_r
         if not can_train:
             converged = True
             break
-    return last_r, converged
+        if steps_used % every == 0:
+            if prev is not None:
+                rel = abs(prev - last_r) / max(abs(prev), 1e-6)
+                if rel < eps:
+                    stagnant += 1
+                    if stagnant >= pat:
+                        converged = True
+                        break
+                else:
+                    stagnant = 0
+            prev = last_r
+    return last_r, converged, steps_used
+
+
+# Last FitCell stats for reporters / outer-loop history.
+_LAST_FIT_STATS: dict[str, Any] = {
+    "fit_steps_used": 0,
+    "fit_converged": False,
+    "fit_max_steps": 0,
+    "fit_patience": 0,
+    "fit_rel_eps": 0.0,
+    "lambda_latency": LAMBDA_LATENCY,
+}
+
+
+def cuda_free_mib() -> float:
+    if not torch.cuda.is_available():
+        return 0.0
+    try:
+        free, _total = torch.cuda.mem_get_info()
+        return float(free) / (1024.0 * 1024.0)
+    except Exception:
+        return 0.0
+
+
+def cuda_cleanup() -> None:
+    """Best-effort VRAM release between FitCell trials (no dual-seed)."""
+    gc = __import__("gc")
+    gc.collect()
+    if torch.cuda.is_available():
+        try:
+            torch.cuda.synchronize()
+            torch.cuda.empty_cache()
+        except Exception:
+            pass
 
 
 @torch.no_grad()
@@ -1121,18 +1189,39 @@ def evaluate_candidate(
     fit_steps_default: int,
     batch_default: int,
 ) -> tuple[float, float, float, float, SeamCell]:
-    """Fit + R_blend eval + latency → (r_blend, j, j_scored, t_ms, cell)."""
+    """Fit-to-convergence + R_blend eval + latency → (r_blend, j, j_scored, t_ms, cell)."""
     cell = SeamCell(cfg).to(device)
-    fit_steps = int(hp.fit_steps or fit_steps_default)
+    # Prefer converge-protocol max steps; fall back to legacy fit_steps / default.
+    fit_max = int(getattr(hp, "fit_max_steps", 0) or 0)
+    if fit_max <= 0:
+        fit_max = int(hp.fit_steps or fit_steps_default or 1024)
+        if fit_max < 256:
+            fit_max = max(fit_max * 16, 512)  # old 24-step HPs → real converge budget
     batch = int(hp.batch or batch_default)
-    r_fit, _ = fit_cell(
+    patience = int(getattr(hp, "fit_patience", 20) or 20)
+    rel_eps = float(getattr(hp, "fit_rel_eps", 1e-5) or 1e-5)
+    lam = float(getattr(hp, "lambda_latency", LAMBDA_LATENCY) or LAMBDA_LATENCY)
+    r_fit, converged, steps_used = fit_cell(
         cell,
         cfg.ops,
         device,
-        steps=fit_steps,
+        steps=fit_max,
         batch=batch,
         lr=hp.lr,
         adv_coef=hp.adv_coef if cfg.use_adv_aux else 0.0,
+        patience=patience,
+        rel_eps=rel_eps,
+    )
+    _LAST_FIT_STATS.update(
+        {
+            "fit_steps_used": int(steps_used),
+            "fit_converged": bool(converged),
+            "fit_max_steps": int(fit_max),
+            "fit_patience": int(patience),
+            "fit_rel_eps": float(rel_eps),
+            "lambda_latency": float(lam),
+            "fit_batch": int(batch),
+        }
     )
     r_eval = eval_cell(cell, cfg.ops, device, batch=max(64, batch))
     r_blend = finite_scalar(0.5 * r_fit + 0.5 * r_eval, 0.0)
@@ -1140,7 +1229,7 @@ def evaluate_candidate(
         measure_forward_latency_ms(cell, cfg.ops, device, batch=min(32, max(8, batch))),
         0.0,
     )
-    j = finite_scalar(objective_j(r_blend, t_ms), 0.0)
+    j = finite_scalar(objective_j(r_blend, t_ms, lam=lam), 0.0)
     dmb = finite_scalar(
         depth_mixture_bonus(
             r_blend,
@@ -1151,6 +1240,7 @@ def evaluate_candidate(
         ),
         0.0,
     )
+    cuda_cleanup()
     return r_blend, j, j + dmb, t_ms, cell
 
 
@@ -1360,8 +1450,9 @@ def main() -> int:
         default=1,
         help="Append one JSONL history row every N iters (default 1 = every iter).",
     )
-    ap.add_argument("--batch", type=int, default=48)
-    ap.add_argument("--fit-steps", type=int, default=24)
+    ap.add_argument("--batch", type=int, default=96)
+    ap.add_argument("--fit-steps", type=int, default=1024)
+    ap.add_argument("--fit-max-steps", type=int, default=1024)
     ap.add_argument("--device", type=str, default="cuda")
     ap.add_argument("--run-id", type=str, default="")
     ap.add_argument("--max-hours", type=float, default=240.0)
@@ -1786,42 +1877,25 @@ def main() -> int:
         if it == 1 or it % args.ckpt_every == 1:
             save_unfitted(run_dir, trial_cfg, f"iter_{it:06d}", trial_hp)
 
-        cell = SeamCell(trial_cfg).to(device)
-        fit_steps = trial_hp.fit_steps or args.fit_steps
-        batch = trial_hp.batch or args.batch
-        r_fit, converged = fit_cell(
-            cell,
-            trial_cfg.ops,
+        residual_raw, j_raw, residual, t_ms, cell = evaluate_candidate(
+            trial_cfg,
+            trial_hp,
             device,
-            steps=fit_steps,
-            batch=batch,
-            lr=trial_hp.lr,
-            adv_coef=trial_hp.adv_coef if trial_cfg.use_adv_aux else 0.0,
+            baseline=baseline,
+            fit_steps_default=int(getattr(args, "fit_max_steps", 0) or args.fit_steps),
+            batch_default=args.batch,
         )
-        r_eval = eval_cell(cell, trial_cfg.ops, device, batch=max(64, batch))
-        raw_sum = 0.5 * r_fit + 0.5 * r_eval
-        residual_raw = finite_scalar(raw_sum, 0.0)  # R_seam
-        if not math.isfinite(raw_sum):
+        converged = bool(_LAST_FIT_STATS.get("fit_converged", False))
+        if not math.isfinite(residual_raw):
             log_line(
                 log_path,
-                f"NAN_RESIDUAL iter={it} r_fit={r_fit!r} r_eval={r_eval!r} -> 0.0",
+                f"NAN_RESIDUAL iter={it} r_blend={residual_raw!r} -> 0.0",
             )
-        t_ms = finite_scalar(
-            measure_forward_latency_ms(
-                cell, trial_cfg.ops, device, batch=min(32, max(8, batch))
-            ),
-            0.0,
-        )
-        j_raw = finite_scalar(objective_j(residual_raw, t_ms), 0.0)
-        dmb = depth_mixture_bonus(
-            residual_raw,
-            baseline,
-            trial_cfg.depth,
-            len(trial_cfg.blocks),
-            trial_cfg.moe_mode,
-        )
-        dmb = finite_scalar(dmb, 0.0)
-        residual = j_raw + dmb  # scored selection objective (J + depth mix bonus)
+            residual_raw = 0.0
+            residual = 0.0
+            j_raw = 0.0
+        dmb = finite_scalar(residual - j_raw, 0.0)
+        batch = int(trial_hp.batch or args.batch)
         branch_best[branch] = max(branch_best[branch], j_raw)
         recent_residuals.append(residual_raw)
 
@@ -1951,9 +2025,18 @@ def main() -> int:
                 "plateau_soft_boredom": plateau.soft_boredom,
                 "max_search_depth": arch_blocks.MAX_SEARCH_DEPTH,
                 "max_graph_len": arch_blocks.MAX_GRAPH_LEN,
-                "lambda_latency": LAMBDA_LATENCY,
+                "lambda_latency": float(
+                    getattr(trial_hp, "lambda_latency", _LAST_FIT_STATS.get("lambda_latency", LAMBDA_LATENCY))
+                ),
                 "primary_metric": "r_blend",
                 "search_objective": "J=R_blend-lambda*latency_norm",
+                "fit_steps_used": int(_LAST_FIT_STATS.get("fit_steps_used", 0)),
+                "fit_converged": bool(_LAST_FIT_STATS.get("fit_converged", False)),
+                "fit_max_steps": int(_LAST_FIT_STATS.get("fit_max_steps", 0)),
+                "fit_patience": int(_LAST_FIT_STATS.get("fit_patience", 0)),
+                "fit_rel_eps": float(_LAST_FIT_STATS.get("fit_rel_eps", 0.0)),
+                "fit_batch": int(_LAST_FIT_STATS.get("fit_batch", batch)),
+                "cuda_free_mib": round(cuda_free_mib(), 1),
             }
             # Optional whole-curve debug (cheap single batch already on device path)
             try:

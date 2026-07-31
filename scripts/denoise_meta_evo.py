@@ -138,14 +138,36 @@ def crossover_arch(
 
 def crossover_hp(hp_a: Any, hp_b: Any, rng: random.Random, *, HyperParams: type) -> Any:
     da, db = hp_a.to_dict(), hp_b.to_dict()
-    return HyperParams(
-        lr=float(10 ** (0.5 * (math_log10(da["lr"]) + math_log10(db["lr"])))),
-        fit_steps=int(round(0.5 * (da["fit_steps"] + db["fit_steps"]))),
-        batch=int(rng.choice([da["batch"], db["batch"]])),
-        entropy_coef=float(0.5 * (da["entropy_coef"] + db["entropy_coef"])),
-        ppo_clip=float(rng.choice([da["ppo_clip"], db["ppo_clip"]])),
-        adv_coef=float(0.5 * (da["adv_coef"] + db["adv_coef"])),
+    fit_max = int(
+        round(
+            0.5
+            * (
+                float(da.get("fit_max_steps", da.get("fit_steps", 1024)))
+                + float(db.get("fit_max_steps", db.get("fit_steps", 1024)))
+            )
+        )
     )
+    fit_max = max(256, min(4096, fit_max))
+    kwargs = {
+        "lr": float(10 ** (0.5 * (math_log10(da["lr"]) + math_log10(db["lr"])))),
+        "fit_steps": int(min(64, fit_max)),
+        "fit_max_steps": fit_max,
+        "fit_patience": int(rng.choice([da.get("fit_patience", 20), db.get("fit_patience", 20)])),
+        "fit_rel_eps": float(rng.choice([da.get("fit_rel_eps", 1e-5), db.get("fit_rel_eps", 1e-5)])),
+        "lambda_latency": float(
+            rng.choice([da.get("lambda_latency", 0.02), db.get("lambda_latency", 0.02)])
+        ),
+        "batch": int(rng.choice([da["batch"], db["batch"]])),
+        "entropy_coef": float(0.5 * (da["entropy_coef"] + db["entropy_coef"])),
+        "ppo_clip": float(rng.choice([da["ppo_clip"], db["ppo_clip"]])),
+        "adv_coef": float(0.5 * (da["adv_coef"] + db["adv_coef"])),
+    }
+    if "reward_mode" in da or "reward_mode" in db:
+        kwargs["reward_mode"] = rng.choice(
+            [da.get("reward_mode", "vs_dualcosine"), db.get("reward_mode", "vs_dualcosine")]
+        )
+    known = {f.name for f in HyperParams.__dataclass_fields__.values()}  # type: ignore[attr-defined]
+    return HyperParams(**{k: v for k, v in kwargs.items() if k in known})
 
 
 def math_log10(x: float) -> float:

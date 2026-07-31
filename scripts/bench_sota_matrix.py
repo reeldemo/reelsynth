@@ -247,7 +247,7 @@ def train_fixed_baseline(
         moe_mode="sequential",
     )
     cell = og.SeamCell(cfg).to(device)
-    train_r, _ = og.fit_cell(
+    train_r, *_ = og.fit_cell(
         cell, cfg.ops, device, steps=steps, batch=batch, lr=lr, adv_coef=0.0
     )
     cell.eval()
