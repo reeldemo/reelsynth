@@ -58,29 +58,35 @@ while ($true) {
 
     $totalTarget = $Seeds.Count * $Iters
     $totalDone = 0
-    $lines = @()
+    $lines = New-Object System.Collections.Generic.List[string]
     foreach ($Seed in $Seeds) {
         $ad = Join-Path (Join-Path $BaseOut "$Seed") $Ap
         $st = Read-Done $ad
         $done = [int]$st.Done
         if ($done -gt $Iters) { $done = $Iters }
         $totalDone += $done
-        $pct = 100.0 * $done / $Iters
+        $pct = [Math]::Round(100.0 * $done / $Iters, 1)
         $barLen = 20
-        $filled = [int][Math]::Round($barLen * $done / $Iters)
+        $filled = [int][Math]::Round($barLen * $done / [double]$Iters)
         if ($filled -gt $barLen) { $filled = $barLen }
+        if ($filled -lt 0) { $filled = 0 }
         $bar = ("#" * $filled) + ("-" * ($barLen - $filled))
-        $champStr = if ($null -ne $st.Champ) { ("R={0:N6}" -f $st.Champ) } else { "R=—" }
-        $lines += ("  {0} [{1}] {2,3}/{3} {4,5:N1}%  {5}" -f $Seed, $bar, $done, $Iters, $pct, $champStr)
+        if ($null -ne $st.Champ) {
+            $champStr = "R=" + ("{0:N6}" -f $st.Champ)
+        } else {
+            $champStr = "R=n/a"
+        }
+        $line = "  $Seed [$bar] $done/$Iters ${pct}pct  $champStr"
+        [void]$lines.Add($line)
     }
-    $overall = 100.0 * $totalDone / $totalTarget
+    $overall = [Math]::Round(100.0 * $totalDone / $totalTarget, 1)
     $ts = Get-Date -Format "HH:mm:ss"
     Clear-Host
-    Write-Host ("v14 hybrid-only  {0}  {1}  overall {2}/{3} ({4:N1}%)" -f $ts, $run, $totalDone, $totalTarget, $overall)
-    Write-Host ("out: {0}" -f $BaseOut)
+    Write-Host "v14 hybrid-only  $ts  $run  overall $totalDone/$totalTarget (${overall}pct)"
+    Write-Host "out: $BaseOut"
     Write-Host ""
-    $lines | ForEach-Object { Write-Host $_ }
+    foreach ($line in $lines) { Write-Host $line }
     Write-Host ""
-    Write-Host "Ctrl+C to stop  |  refresh ${IntervalSec}s"
+    Write-Host ("Ctrl+C to stop  |  refresh {0}s" -f $IntervalSec)
     Start-Sleep -Seconds $IntervalSec
 }
