@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUT = ROOT / "brand" / "artifacts" / "meta_approach_compare_v14_converge"
 SEEDS = (1902771841, 2026072701, 2026072702)
-APPROACHES = ("hybrid_lstm", "random", "cmaes", "tpe", "aging_evo", "reinforce")
+APPROACHES = ("hybrid_lstm",)
 
 
 def last_hist(path: Path) -> dict | None:

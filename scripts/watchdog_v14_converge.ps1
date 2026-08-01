@@ -16,7 +16,7 @@ function Log([string]$m) {
 
 function AllComplete {
     $seeds = @(1902771841, 2026072701, 2026072702)
-    $aps = @("hybrid_lstm", "random", "cmaes", "tpe", "aging_evo", "reinforce")
+    $aps = @("hybrid_lstm")
     foreach ($s in $seeds) {
         foreach ($ap in $aps) {
             $sum = Join-Path $Out "$s\$ap\summary.json"

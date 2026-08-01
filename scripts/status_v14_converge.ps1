@@ -3,7 +3,7 @@ $ErrorActionPreference = "Continue"
 $Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $BaseOut = Join-Path $Root "brand\artifacts\meta_approach_compare_v14_converge"
 $Seeds = @(1902771841, 2026072701, 2026072702)
-$Approaches = @("hybrid_lstm", "random", "cmaes", "tpe", "aging_evo", "reinforce")
+$Approaches = @("hybrid_lstm")
 $Iters = 750
 
 Write-Host "=== v14 converge status ($BaseOut) ==="

@@ -15,7 +15,7 @@ $FitMax = 1024
 $Proposals = 2
 $FitParallel = 1
 $MinFreeMib = 4096
-$Approaches = @("hybrid_lstm", "random", "cmaes", "tpe", "aging_evo", "reinforce")
+$Approaches = @("hybrid_lstm")
 $ApproachesCsv = $Approaches -join ","
 $BaseOut = Join-Path $Root "brand\artifacts\meta_approach_compare_v14_converge"
 New-Item -ItemType Directory -Force -Path $BaseOut | Out-Null
