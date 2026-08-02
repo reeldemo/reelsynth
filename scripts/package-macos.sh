@@ -228,13 +228,16 @@ cat > "$STAGE/conclusion.html" <<HTML
 </body></html>
 HTML
 
-# productbuild needs component beside distribution or use --package-path
+# productbuild needs component beside distribution; run with paths relative to STAGE
 cp "$COMPONENT" "$STAGE/"
-( cd "$STAGE" && productbuild \
-  --distribution "$DIST_XML" \
-  --resources "$STAGE" \
-  --package-path "$STAGE" \
-  "$FINAL_PKG" )
+(
+  cd "$STAGE"
+  productbuild \
+    --distribution distribution.xml \
+    --resources . \
+    --package-path . \
+    "$FINAL_PKG"
+)
 
 rm -f "$COMPONENT"
 echo "Created $FINAL_PKG"
