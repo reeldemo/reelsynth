@@ -55,7 +55,7 @@ impl ShapeEditor<'_> {
         let mid_y = rect.center().y;
         painter.line_segment(
             [Pos2::new(rect.min.x, mid_y), Pos2::new(rect.max.x, mid_y)],
-            egui::Stroke::new(0.5, tokens.border),
+            egui::Stroke::new(0.5_f32, tokens.border),
         );
 
         let handle_radius = if n > 64 { 3.0 } else { 4.5 };
@@ -72,7 +72,7 @@ impl ShapeEditor<'_> {
                 continue;
             }
             painter.circle_filled(pt, handle_radius, tokens.accent);
-            painter.circle_stroke(pt, handle_radius, egui::Stroke::new(1.0, tokens.accent_on));
+            painter.circle_stroke(pt, handle_radius, egui::Stroke::new(1.0_f32, tokens.accent_on));
         }
 
         painter.text(

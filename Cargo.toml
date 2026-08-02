@@ -4,7 +4,7 @@ resolver = "2"
 
 [package]
 name = "reelsynth"
-version = "0.4.1"
+version = "0.4.2"
 edition = "2021"
 description = "Open-source wavetable synthesizer engine for Reeldemo"
 license = "MIT"

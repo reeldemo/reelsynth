@@ -234,7 +234,7 @@ impl WtViewResult<'_> {
         let mut painter = ui.painter_at(rect);
         painter.set_clip_rect(inner.expand(1.0));
         painter.rect_filled(rect, RADIUS_SM, tokens.bg);
-        painter.rect_stroke(rect, RADIUS_SM, egui::Stroke::new(1.0, tokens.border));
+        painter.rect_stroke(rect, RADIUS_SM, egui::Stroke::new(1.0_f32, tokens.border));
         paint_grid(&painter, inner, tokens.border);
 
         if quant_active {
@@ -243,7 +243,7 @@ impl WtViewResult<'_> {
                 let x = slot_x(i, quant, inner);
                 painter.line_segment(
                     [Pos2::new(x, inner.min.y), Pos2::new(x, inner.max.y)],
-                    egui::Stroke::new(0.5, tokens.border.gamma_multiply(0.5)),
+                    egui::Stroke::new(0.5_f32, tokens.border.gamma_multiply(0.5)),
                 );
             }
         }
@@ -305,22 +305,22 @@ impl WtViewResult<'_> {
                 let is_sel = selected == Some(i);
                 let is_hover = hovered_curve == Some(i);
                 let (alpha, stroke_w) = if is_hover {
-                    (0.72, 2.2)
+                    (0.72, 2.2_f32)
                 } else if is_sel {
                     if curve_hover_active {
-                        (0.42, 1.4)
+                        (0.42, 1.4_f32)
                     } else {
-                        (0.55, 1.6)
+                        (0.55, 1.6_f32)
                     }
                 } else if curve_hover_active {
-                    (0.16, 0.9)
+                    (0.16, 0.9_f32)
                 } else {
-                    (0.28, 1.0)
+                    (0.28, 1.0_f32)
                 };
                 if is_hover {
                     painter.add(Shape::line(
                         pts.clone(),
-                        egui::Stroke::new(stroke_w + 1.6, color.gamma_multiply(0.28)),
+                        egui::Stroke::new(stroke_w + 1.6_f32, color.gamma_multiply(0.28)),
                     ));
                 }
                 painter.add(Shape::line(
@@ -394,12 +394,12 @@ impl WtViewResult<'_> {
                     Pos2::new(inner.min.x, baseline_y),
                     Pos2::new(inner.max.x, baseline_y),
                 ],
-                egui::Stroke::new(1.0, tokens.border.gamma_multiply(0.75)),
+                egui::Stroke::new(1.0_f32, tokens.border.gamma_multiply(0.75)),
             );
         } else {
             painter.line_segment(
                 [Pos2::new(inner.min.x, mid_y), Pos2::new(inner.max.x, mid_y)],
-                egui::Stroke::new(1.0, tokens.border.gamma_multiply(0.75)),
+                egui::Stroke::new(1.0_f32, tokens.border.gamma_multiply(0.75)),
             );
         }
 
@@ -818,7 +818,7 @@ impl WtViewResult<'_> {
 
 fn paint_grid(painter: &egui::Painter, rect: Rect, border: Color32) {
     let step = 24.0;
-    let stroke = egui::Stroke::new(0.5, border.gamma_multiply(0.75));
+    let stroke = egui::Stroke::new(0.5_f32, border.gamma_multiply(0.75));
     let mut x = rect.min.x;
     while x <= rect.max.x {
         painter.line_segment(

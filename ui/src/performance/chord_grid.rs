@@ -47,7 +47,7 @@ pub fn draw_chord_grid(ui: &mut Ui, rect: Rect, state: &mut UiState) -> ChordGri
                 ui.painter_at(cell).rect_stroke(
                     cell,
                     6.0,
-                    egui::Stroke::new(1.0, tokens.border_strong),
+                    egui::Stroke::new(1.0_f32, tokens.border_strong),
                 );
                 ui.painter_at(cell).text(
                     cell.center(),

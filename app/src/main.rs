@@ -28,15 +28,20 @@ fn main() -> eframe::Result<()> {
     let audio_devices = AudioOutputDevices::enumerate();
     let (midi_event_tx, midi_event_rx) = crossbeam_channel::unbounded::<MidiEvent>();
 
-    let mut viewport = egui::ViewportBuilder::default()
-        .with_inner_size([APP_MIN_WIDTH, APP_HEIGHT_FULL])
-        .with_min_inner_size([APP_MIN_WIDTH, APP_MIN_HEIGHT])
-        .with_title("ReelSynth");
-
-    #[cfg(windows)]
-    {
-        viewport = viewport.with_drag_and_drop(false);
-    }
+    let viewport = {
+        let vp = egui::ViewportBuilder::default()
+            .with_inner_size([APP_MIN_WIDTH, APP_HEIGHT_FULL])
+            .with_min_inner_size([APP_MIN_WIDTH, APP_MIN_HEIGHT])
+            .with_title("ReelSynth");
+        #[cfg(windows)]
+        {
+            vp.with_drag_and_drop(false)
+        }
+        #[cfg(not(windows))]
+        {
+            vp
+        }
+    };
 
     let renderer = settings.graphics_backend.to_renderer();
     let gpu_waveforms = settings.gpu_waveforms;

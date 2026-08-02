@@ -20,24 +20,28 @@ jobs:
             rust_target: ""
             target_dir: target/release
             ext: zip
+            build_installer: true
           - runner: macos-latest
             platform: macos
             arch: x86_64
             rust_target: x86_64-apple-darwin
             target_dir: target/x86_64-apple-darwin/release
             ext: zip
+            build_installer: true
           - runner: ubuntu-latest
             platform: linux
             arch: x86_64
             rust_target: ""
             target_dir: target/release
             ext: tar.gz
+            build_installer: false
           - runner: windows-latest
             platform: windows
             arch: x86_64
             rust_target: ""
             target_dir: target/release
             ext: zip
+            build_installer: true
 
     runs-on: ${{ matrix.runner }}
     steps:
@@ -62,6 +66,10 @@ jobs:
             libxcb-shape0-dev \
             libxcb-xfixes0-dev
 
+      - name: Install NSIS (Windows installer)
+        if: matrix.platform == 'windows'
+        run: choco install nsis -y
+
       - name: Build release binaries (Unix)
         if: matrix.platform != 'windows'
         run: |
@@ -72,19 +80,21 @@ jobs:
           fi
           cargo build --release $TARGET_FLAG -p reelsynth-app
           cargo build --release $TARGET_FLAG -p reelsynth --bin reelsynth-export
-          cargo build --release $TARGET_FLAG \
-            -p reelsynth-plugin --bin reelsynth-plugin-editor || true
+          # Full plugin crate: cdylib (VST3) + editor binary
+          cargo build --release $TARGET_FLAG -p reelsynth-plugin
 
       - name: Build release binaries (Windows)
         if: matrix.platform == 'windows'
         shell: pwsh
         run: |
           cargo build --release -p reelsynth-app
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cargo build --release -p reelsynth --bin reelsynth-export
-          cargo build --release -p reelsynth-plugin --bin reelsynth-plugin-editor
-          if ($LASTEXITCODE -ne 0) { Write-Host "plugin editor optional — skipped" }
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo build --release -p reelsynth-plugin
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Package artifacts (Unix)
+      - name: Package archives (Unix)
         if: matrix.platform != 'windows'
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
@@ -97,8 +107,17 @@ jobs:
           if [[ -f "$TARGET_DIR/reelsynth-plugin-editor" ]]; then
             cp "$TARGET_DIR/reelsynth-plugin-editor" "$STAGE/bin/"
           fi
+          for dll in "$TARGET_DIR/libreelsynth_plugin.dylib" "$TARGET_DIR/reelsynth_plugin.dylib" \
+                     "$TARGET_DIR/libreelsynth_plugin.so" "$TARGET_DIR/reelsynth_plugin.so"; do
+            if [[ -f "$dll" ]]; then
+              cp "$dll" "$STAGE/bin/"
+            fi
+          done
           cat >"$STAGE/RELEASE_NOTES.md" <<EOF
           # ReelSynth v${VERSION}
+
+          Prefer the **installer** (`.pkg` on macOS, setup `.exe` on Windows) from the website
+          or this release. Archives below are a portable/advanced fallback.
 
           ## Standalone app
           \`\`\`bash
@@ -125,7 +144,18 @@ jobs:
               "$(basename "$STAGE")")
           fi
 
-      - name: Package artifacts (Windows)
+      - name: Package macOS .pkg installer
+        if: matrix.platform == 'macos' && matrix.build_installer
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          chmod +x scripts/package-macos.sh
+          ./scripts/package-macos.sh \
+            --version "$VERSION" \
+            --target-dir "${{ matrix.target_dir }}" \
+            --arch "${{ matrix.arch }}" \
+            --out dist
+
+      - name: Package archives (Windows)
         if: matrix.platform == 'windows'
         shell: pwsh
         run: |
@@ -139,13 +169,25 @@ jobs:
           if (Test-Path "$TARGET_DIR/reelsynth-plugin-editor.exe") {
             Copy-Item "$TARGET_DIR/reelsynth-plugin-editor.exe" "$STAGE/bin/"
           }
+          if (Test-Path "$TARGET_DIR/reelsynth_plugin.dll") {
+            Copy-Item "$TARGET_DIR/reelsynth_plugin.dll" "$STAGE/bin/"
+          }
           Compress-Archive -Path $STAGE -DestinationPath "dist/reelsynth-$VERSION-${{ matrix.platform }}-${{ matrix.arch }}.zip"
+
+      - name: Package Windows NSIS installer
+        if: matrix.platform == 'windows' && matrix.build_installer
+        shell: pwsh
+        run: |
+          $VERSION = "${{ github.ref_name }}".Substring(1)
+          & .\scripts\package-windows.ps1 -Version $VERSION -TargetDir "${{ matrix.target_dir }}" -OutDir dist
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: reelsynth-${{ matrix.platform }}-${{ matrix.arch }}
-          path: dist/reelsynth-*-${{ matrix.platform }}-${{ matrix.arch }}.*
+          path: |
+            dist/reelsynth-*-${{ matrix.platform }}-${{ matrix.arch }}.*
+            dist/reelsynth-*-${{ matrix.platform }}-${{ matrix.arch }}-setup.exe
           if-no-files-found: error
 
   release:
@@ -162,3 +204,16 @@ jobs:
         with:
           files: dist/**
           generate_release_notes: true
+          body: |
+            ## Installers (recommended)
+
+            - **macOS:** `reelsynth-*-macos-*.pkg` — installs app + VST3 + Ableton editor config
+            - **Windows:** `reelsynth-*-windows-x86_64-setup.exe` — NSIS wizard (system VST3, or user folder without admin)
+
+            Website downloads: https://reeldemo.github.io/reelsynth/#download
+
+            Zip/tar.gz archives remain available as a portable fallback.
+
+            **Unsigned builds:** macOS may need right-click → Open; Windows SmartScreen → More info → Run anyway.
+
+            After install: quit Live → Preferences → Plug-ins → Rescan → load ReelSynth.

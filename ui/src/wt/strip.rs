@@ -145,7 +145,7 @@ fn paint_layer_chips(
 ) -> bool {
     let painter = ui.painter_at(rect);
     painter.rect_filled(rect, RADIUS_SM, tokens.surface2);
-    painter.rect_stroke(rect, RADIUS_SM, egui::Stroke::new(1.0, tokens.border));
+    painter.rect_stroke(rect, RADIUS_SM, egui::Stroke::new(1.0_f32, tokens.border));
 
     let mut changed = false;
     let add_remove_w = if layers_mode { 44.0 } else { 0.0 };
@@ -162,9 +162,9 @@ fn paint_layer_chips(
         let cell = Rect::from_min_size(Pos2::new(x, chips_rect.min.y), Vec2::new(chip_w, chips_rect.height()));
         let is_sel = *selected == Some(i);
         if is_sel {
-            painter.rect_stroke(cell, 4.0, egui::Stroke::new(1.5, accent_ui));
+            painter.rect_stroke(cell, 4.0, egui::Stroke::new(1.5_f32, accent_ui));
         } else {
-            painter.rect_stroke(cell, 4.0, egui::Stroke::new(1.0, tokens.border));
+            painter.rect_stroke(cell, 4.0, egui::Stroke::new(1.0_f32, tokens.border));
         }
         painter.rect_filled(cell, 4.0, tokens.bg);
 
@@ -331,7 +331,7 @@ fn paint_va_chip_thumbnail(
         .collect();
     if points.len() >= 2 {
         let color = if active { accent } else { accent_ui };
-        painter.add(Shape::line(points, egui::Stroke::new(if active { 2.0 } else { 1.5 }, color)));
+        painter.add(Shape::line(points, egui::Stroke::new(if active { 2.0_f32 } else { 1.5_f32 }, color)));
     }
 }
 

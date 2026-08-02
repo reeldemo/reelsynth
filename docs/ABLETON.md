@@ -6,8 +6,8 @@ How to get ReelSynth into Live. Studio handoff is separate — [REELDEMO_INTEGRA
 
 | OS | Live | Installer |
 |----|------|-----------|
-| Windows | Yes | [`scripts/install-ableton.ps1`](../scripts/install-ableton.ps1) |
-| macOS | Yes | [`scripts/install-ableton.sh`](../scripts/install-ableton.sh) |
+| Windows | Yes | Website setup `.exe` (end users) · [`scripts/install-ableton.ps1`](../scripts/install-ableton.ps1) (from source) |
+| macOS | Yes | Website `.pkg` (end users) · [`scripts/install-ableton.sh`](../scripts/install-ableton.sh) (from source) |
 | Linux | No — Ableton isn’t on Linux | Use another host / CLAP elsewhere |
 
 ## Plugin + external editor
@@ -24,7 +24,9 @@ Ableton Live                    External window
 
 ### Install
 
-**Windows** (PowerShell; Admin if you want the system VST3 folder):
+**End users:** download the macOS `.pkg` or Windows setup `.exe` from [reeldemo.github.io/reelsynth](https://reeldemo.github.io/reelsynth/#download). The installer places the VST3, external editor, and `auto_editor` config — then Rescan in Live.
+
+**Contributors / from source** (PowerShell; Admin if you want the system VST3 folder):
 
 ```powershell
 cd path\to\reelsynth
@@ -35,7 +37,7 @@ cd path\to\reelsynth
 
 Quit Live before overwriting an installed VST3.
 
-**macOS:**
+**macOS (from source):**
 
 ```bash
 cd path/to/reelsynth

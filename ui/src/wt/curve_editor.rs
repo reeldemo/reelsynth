@@ -32,7 +32,7 @@ impl CurveEditor<'_> {
         ui.allocate_rect(rect, Sense::hover());
 
         let painter = ui.painter_at(rect);
-        let grid_stroke = egui::Stroke::new(0.5, tokens.border.gamma_multiply(0.4));
+        let grid_stroke = egui::Stroke::new(0.5_f32, tokens.border.gamma_multiply(0.4));
         for i in 0..=4 {
             let y = egui::lerp(rect.min.y..=rect.max.y, i as f32 / 4.0);
             painter.line_segment(
@@ -57,7 +57,7 @@ impl CurveEditor<'_> {
         if curve_pts.len() >= 2 {
             painter.add(Shape::line(
                 curve_pts.clone(),
-                egui::Stroke::new(1.5, tokens.accent.gamma_multiply(0.6)),
+                egui::Stroke::new(1.5_f32, tokens.accent.gamma_multiply(0.6)),
             ));
         }
 
@@ -96,7 +96,7 @@ impl CurveEditor<'_> {
             }
 
             painter.circle_filled(*pt, handle_radius, tokens.accent);
-            painter.circle_stroke(*pt, handle_radius, egui::Stroke::new(1.0, tokens.accent_on));
+            painter.circle_stroke(*pt, handle_radius, egui::Stroke::new(1.0_f32, tokens.accent_on));
             if quant <= 32 {
                 painter.text(
                     *pt + egui::vec2(0.0, -8.0),

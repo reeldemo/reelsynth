@@ -361,7 +361,7 @@ fn paint_note_grid(
                     Pos2::new(grid_left, y),
                     Pos2::new(rect.max.x, y),
                 ],
-                egui::Stroke::new(1.0, tokens.border_strong),
+                egui::Stroke::new(1.0_f32, tokens.border_strong),
             );
         }
     }
@@ -432,9 +432,9 @@ fn paint_note_grid(
             [Pos2::new(x, rect.min.y), Pos2::new(x, rect.max.y)],
             egui::Stroke::new(
                 if (beat - beat.floor()).abs() < 0.001 {
-                    1.0
+                    1.0_f32
                 } else {
-                    0.5
+                    0.5_f32
                 },
                 tokens.border,
             ),
@@ -451,7 +451,7 @@ fn paint_note_grid(
                 Pos2::new(playhead_x, rect.min.y),
                 Pos2::new(playhead_x, rect.max.y),
             ],
-            egui::Stroke::new(1.5, ACCENT_UI),
+            egui::Stroke::new(1.5_f32, ACCENT_UI),
         );
     }
 
@@ -910,7 +910,7 @@ fn paint_key_column(
             Color32::from_rgb(0xe8, 0xea, 0xef)
         };
         painter.rect_filled(key_rect, 1.0, fill);
-        painter.rect_stroke(key_rect, 1.0, egui::Stroke::new(0.5, tokens.border));
+        painter.rect_stroke(key_rect, 1.0, egui::Stroke::new(0.5_f32, tokens.border));
         if p % 12 == 0 {
             painter.text(
                 Pos2::new(key_rect.min.x + 3.0, key_rect.min.y + 1.0),
@@ -1050,7 +1050,7 @@ fn paint_automation_lane(
 
     painter.line_segment(
         [graph.left_bottom(), graph.right_bottom()],
-        egui::Stroke::new(0.5, tokens.border),
+        egui::Stroke::new(0.5_f32, tokens.border),
     );
 
     let snap = compose.snap_division;
@@ -1091,7 +1091,7 @@ fn paint_automation_lane(
                 let y1 = graph.max.y - b.value * graph_h;
                 painter.line_segment(
                     [pos2(x0, y0), pos2(x1, y1)],
-                    egui::Stroke::new(1.5, ACCENT_UI),
+                    egui::Stroke::new(1.5_f32, ACCENT_UI),
                 );
             }
         }
@@ -1193,7 +1193,7 @@ fn paint_note(
         note_rect,
         3.0,
         egui::Stroke::new(
-            if selected { 1.5 } else { 1.0 },
+            if selected { 1.5_f32 } else { 1.0_f32 },
             if selected {
                 tokens.text
             } else {

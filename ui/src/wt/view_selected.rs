@@ -236,7 +236,7 @@ impl WtSelectedLayerView<'_> {
         let mut painter = ui.painter_at(rect);
         painter.set_clip_rect(inner.expand(1.0));
         painter.rect_filled(rect, RADIUS_SM, tokens.bg);
-        painter.rect_stroke(rect, RADIUS_SM, egui::Stroke::new(1.0, tokens.border));
+        painter.rect_stroke(rect, RADIUS_SM, egui::Stroke::new(1.0_f32, tokens.border));
         paint_grid(&painter, inner, tokens.border);
 
         // Zero line / fill baseline follow zoom-pan (curve points are already mapped).
@@ -254,14 +254,14 @@ impl WtSelectedLayerView<'_> {
                 painter.add(fill);
             }
             let (stroke_w, stroke_alpha) = if curve_hovered {
-                (3.4, 1.0)
+                (3.4_f32, 1.0)
             } else {
-                (2.8, 0.98)
+                (2.8_f32, 0.98)
             };
             if curve_hovered {
                 painter.add(Shape::line(
                     pts.clone(),
-                    egui::Stroke::new(stroke_w + 2.0, color.gamma_multiply(0.35)),
+                    egui::Stroke::new(stroke_w + 2.0_f32, color.gamma_multiply(0.35)),
                 ));
             }
             painter.add(Shape::line(
@@ -275,7 +275,7 @@ impl WtSelectedLayerView<'_> {
                 Pos2::new(inner.min.x, baseline_y),
                 Pos2::new(inner.max.x, baseline_y),
             ],
-            egui::Stroke::new(1.0, tokens.border.gamma_multiply(0.75)),
+            egui::Stroke::new(1.0_f32, tokens.border.gamma_multiply(0.75)),
         );
 
         // Always paint Quant knobs on the same painter as the wave when editable.
@@ -597,13 +597,13 @@ fn paint_grid(painter: &egui::Painter, inner: Rect, border: Color32) {
         let x = egui::lerp(inner.min.x..=inner.max.x, t);
         painter.line_segment(
             [Pos2::new(x, inner.min.y), Pos2::new(x, inner.max.y)],
-            egui::Stroke::new(1.0, border.gamma_multiply(0.35)),
+            egui::Stroke::new(1.0_f32, border.gamma_multiply(0.35)),
         );
         let y = egui::lerp(inner.min.y..=inner.max.y, t);
         if (y - mid_y).abs() > 2.0 {
             painter.line_segment(
                 [Pos2::new(inner.min.x, y), Pos2::new(inner.max.x, y)],
-                egui::Stroke::new(1.0, border.gamma_multiply(0.25)),
+                egui::Stroke::new(1.0_f32, border.gamma_multiply(0.25)),
             );
         }
     }

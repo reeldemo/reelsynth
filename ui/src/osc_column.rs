@@ -678,7 +678,7 @@ fn draw_osc_scroll_strip(
                 if ui.is_rect_visible(add_rect) {
                     let painter = ui.painter_at(add_rect);
                     painter.rect_filled(add_rect, 6.0, tokens.surface2);
-                    painter.rect_stroke(add_rect, 6.0, egui::Stroke::new(1.0, tokens.border));
+                    painter.rect_stroke(add_rect, 6.0, egui::Stroke::new(1.0_f32, tokens.border));
                     painter.text(
                         add_rect.center(),
                         egui::Align2::CENTER_CENTER,
@@ -745,9 +745,9 @@ fn draw_osc_preview_card_with_remove(
         };
         painter.rect_filled(rect, 6.0, bg);
         let stroke = if selected {
-            egui::Stroke::new(1.5, tokens.accent)
+            egui::Stroke::new(1.5_f32, tokens.accent)
         } else {
-            egui::Stroke::new(1.0, tokens.border)
+            egui::Stroke::new(1.0_f32, tokens.border)
         };
         painter.rect_stroke(rect, 6.0, stroke);
 
@@ -769,7 +769,7 @@ fn draw_osc_preview_card_with_remove(
         if points.len() >= 2 {
             painter.add(Shape::line(
                 points,
-                egui::Stroke::new(1.1, accent.gamma_multiply(0.9)),
+                egui::Stroke::new(1.1_f32, accent.gamma_multiply(0.9)),
             ));
             let mid = wave_rect.center().y;
             painter.line_segment(
@@ -777,7 +777,7 @@ fn draw_osc_preview_card_with_remove(
                     Pos2::new(wave_rect.min.x, mid),
                     Pos2::new(wave_rect.max.x, mid),
                 ],
-                egui::Stroke::new(0.5, tokens.border),
+                egui::Stroke::new(0.5_f32, tokens.border),
             );
         }
 
