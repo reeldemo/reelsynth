@@ -222,22 +222,31 @@ cat > "$DIST_XML" <<XML
 </installer-gui-script>
 XML
 
-cat > "$STAGE/welcome.html" <<HTML
-<html><body style="font-family:-apple-system,sans-serif;font-size:13px;">
+# Installer.app HTML resources historically mis-decode UTF-8 (shows "bat" mojibake
+# for arrows/dashes). Use ASCII + HTML entities only.
+cat > "$STAGE/welcome.html" <<'HTML'
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"></head>
+<body style="font-family:-apple-system,sans-serif;font-size:13px;">
 <h2>Install ReelSynth</h2>
 <p>This installs the standalone app, the Ableton VST3 plugin, and the external editor so Live can open the full Design UI automatically.</p>
-<p><b>Unsigned build:</b> the first time you open the app, right-click → Open if Gatekeeper blocks it.</p>
+<p><b>Unsigned build:</b> the first open may be blocked. Open the app once, then go to
+<b>System Settings &rarr; Privacy &amp; Security</b>, scroll to the Security section, and click
+<b>Open Anyway</b> for ReelSynth (and ReelSynth Editor if prompted). Confirm with your password.</p>
 </body></html>
 HTML
 
-cat > "$STAGE/conclusion.html" <<HTML
-<html><body style="font-family:-apple-system,sans-serif;font-size:13px;">
+cat > "$STAGE/conclusion.html" <<'HTML'
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"></head>
+<body style="font-family:-apple-system,sans-serif;font-size:13px;">
 <h2>Installed</h2>
 <ol>
 <li>Quit Ableton Live if it was open.</li>
-<li>Preferences → Plug-ins → enable VST3 → Rescan.</li>
-<li>Load <b>ReelSynth</b> on a MIDI track — the editor should open automatically.</li>
+<li>Preferences &rarr; Plug-ins &rarr; enable VST3 &rarr; Rescan.</li>
+<li>Load <b>ReelSynth</b> on a MIDI track &mdash; the editor should open automatically.</li>
 </ol>
+<p>If macOS blocks the app: <b>System Settings &rarr; Privacy &amp; Security</b> &rarr; <b>Open Anyway</b>.</p>
 <p>Standalone app: <code>/Applications/ReelSynth.app</code></p>
 </body></html>
 HTML

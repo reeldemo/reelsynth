@@ -41,7 +41,8 @@ Ship familiar installers so users get standalone ReelSynth **and** Ableton-ready
 | Editor + config | `%LOCALAPPDATA%\ReelSynth\` |
 | CLI (optional) | same install dir |
 
-Finish page: quit Live if open → Rescan VST3 → load ReelSynth; unsigned Gatekeeper/SmartScreen note.
+Finish page: quit Live if open → Rescan VST3 → load ReelSynth; unsigned note uses System Settings → Privacy & Security → Open Anyway (Installer HTML must avoid raw UTF-8 arrows — use HTML entities).
+
 
 ## Build & release
 

@@ -6,6 +6,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.5] - 2026-08-02
+
+### Fixed
+
+- **Mac installer copy** — Installer.app was showing mojibake (`â†'`, `â€"`) for arrows/dashes; welcome/conclusion HTML now uses ASCII-safe HTML entities and documents the real Gatekeeper path: **System Settings → Privacy & Security → Open Anyway** (not right-click Open).
+
 ## [0.4.4] - 2026-08-02
 
 ### Fixed

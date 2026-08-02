@@ -11,7 +11,7 @@ ReelSynth is a free (MIT) wavetable synth. Play and tweak in the standalone app,
 2. Run the installer. It places the standalone app, the VST3, and the Ableton external editor/config.
 3. **Ableton:** quit Live if open → Preferences → Plug-ins → Rescan VST3 → load **ReelSynth** on a MIDI track (editor should open automatically).
 
-**Unsigned builds (v1):** macOS may need right-click the app → **Open** the first time (Gatekeeper). Windows SmartScreen: **More info** → **Run anyway**.
+**Unsigned builds (v1):** macOS — open the app once; if blocked, **System Settings → Privacy & Security → Open Anyway** (password confirm). Windows SmartScreen: **More info → Run anyway**.
 
 Archives (zip/tar.gz) remain on [GitHub Releases](https://github.com/reeldemo/reelsynth/releases/latest) as a portable fallback. Contributor/dev Ableton scripts: [ABLETON.md](ABLETON.md).
 

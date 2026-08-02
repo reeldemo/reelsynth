@@ -20,7 +20,7 @@ Index: [docs/README.md](docs/README.md)
 
 Installers (recommended): [reeldemo.github.io/reelsynth](https://reeldemo.github.io/reelsynth/#download) — macOS `.pkg` / Windows setup `.exe` (app + VST3 + Ableton editor). Archives also on [GitHub Releases](https://github.com/reeldemo/reelsynth/releases/latest).
 
-## What works (roughly v0.4.4)
+## What works (roughly v0.4.5)
 
 | Yes | Not yet / partial |
 |-----|-------------------|
