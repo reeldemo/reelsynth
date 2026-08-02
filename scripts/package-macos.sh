@@ -173,8 +173,10 @@ POST
 chmod +x "$SCRIPTS/postinstall"
 
 PKG_ID="xyz.reelsynth.installer"
-COMPONENT="$OUT_DIR/reelsynth-${VERSION}-macos-${ARCH}-component.pkg"
-FINAL_PKG="$OUT_DIR/reelsynth-${VERSION}-macos-${ARCH}.pkg"
+mkdir -p "$OUT_DIR"
+OUT_DIR_ABS="$(cd "$OUT_DIR" && pwd)"
+COMPONENT="$OUT_DIR_ABS/reelsynth-${VERSION}-macos-${ARCH}-component.pkg"
+FINAL_PKG="$OUT_DIR_ABS/reelsynth-${VERSION}-macos-${ARCH}.pkg"
 
 pkgbuild \
   --root "$ROOTFS" \
