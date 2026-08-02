@@ -6,6 +6,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-08-02
+
+### Fixed
+
+- **Orange L3 square curve cliff** — VA square/pulse/triangle BLEP used Rust `.fract()` on `(t − pw)`, which stays negative and spiked the display (and audio) to huge values. Phase wrap now uses `rem_euclid` so L3 draws as a proper square again.
+
 ## [0.4.3] - 2026-08-02
 
 ### Fixed
