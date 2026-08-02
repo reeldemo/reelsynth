@@ -13,7 +13,7 @@ Ship familiar installers so users get standalone ReelSynth **and** Ableton-ready
 | Topic | Choice |
 |-------|--------|
 | Contents | Standalone app + VST3 + plugin editor + `auto_editor` config |
-| Signing (v1) | Unsigned; document Gatekeeper / SmartScreen |
+| Signing (v1) | Ad-hoc `codesign` on Mac bundles (required for Live VST3 scan); no Developer ID / notarization yet. Document Gatekeeper / SmartScreen |
 | Mac format | `.pkg` (Installer.app wizard) |
 | Windows format | NSIS `.exe` setup wizard |
 | Win privileges | Prefer system VST3; fall back to per-user VST3 if no admin |

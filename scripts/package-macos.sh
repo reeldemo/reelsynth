@@ -92,6 +92,8 @@ cat > "$EDITOR_APP/Contents/Info.plist" <<PLIST
 PLIST
 
 # --- VST3 ---
+# Ableton's scanner validates the bundle signature. A linker-signed dylib inside an
+# unsigned .vst3 fails with: "code has no resources but signature indicates they must be present".
 BUNDLE="$ROOTFS/Library/Audio/Plug-Ins/VST3/ReelSynth.vst3"
 mkdir -p "$BUNDLE/Contents/MacOS"
 cp "$DLL" "$BUNDLE/Contents/MacOS/ReelSynth"
@@ -110,12 +112,24 @@ cat > "$BUNDLE/Contents/Info.plist" <<PLIST
   <key>CFBundlePackageType</key><string>BNDL</string>
   <key>CFBundleShortVersionString</key><string>${VERSION}</string>
   <key>CFBundleVersion</key><string>${VERSION}</string>
+  <key>NSHighResolutionCapable</key><true/>
 </dict>
 </plist>
 PLIST
 
 cp "$EXPORT_BIN" "$ROOTFS/usr/local/bin/reelsynth-export"
 chmod +x "$ROOTFS/usr/local/bin/reelsynth-export"
+
+# Ad-hoc sign bundles so Live's PluginScanner can dlopen the VST3 (and Gatekeeper is happier).
+sign_bundle() {
+  local path="$1"
+  codesign --force --deep --sign - "$path"
+  codesign --verify --deep --strict "$path"
+}
+sign_bundle "$APP"
+sign_bundle "$EDITOR_APP"
+sign_bundle "$BUNDLE"
+codesign --force --sign - "$ROOTFS/usr/local/bin/reelsynth-export"
 
 # Payload copy of editor for postinstall into user Application Support
 cp "$EDITOR_BIN" "$PAYLOAD/reelsynth-plugin-editor"

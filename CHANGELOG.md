@@ -6,6 +6,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-08-02
+
+### Fixed
+
+- **Ableton VST3 scan on macOS** — Live's PluginScanner rejected the installed `.vst3` with `code has no resources but signature indicates they must be present` (path was correct; load failed). Mac packaging and `install-ableton.sh` now ad-hoc sign the VST3 (and app) bundles so Rescan can register ReelSynth.
+
 ## [0.4.2] - 2026-08-02
 
 ### Added

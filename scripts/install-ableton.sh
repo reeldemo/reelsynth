@@ -83,9 +83,14 @@ cat > "$BUNDLE/Contents/Info.plist" <<'PLIST'
   <key>CFBundleName</key><string>ReelSynth</string>
   <key>CFBundlePackageType</key><string>BNDL</string>
   <key>CFBundleVersion</key><string>0.3.0</string>
+  <key>NSHighResolutionCapable</key><true/>
 </dict>
 </plist>
 PLIST
+# Ad-hoc sign: unsigned linker-signed dylib in a .vst3 bundle fails Live's scanner
+# ("code has no resources but signature indicates they must be present").
+codesign --force --deep --sign - "$BUNDLE"
+codesign --verify --deep --strict "$BUNDLE"
 echo "VST3  -> $BUNDLE"
 
 echo ""

@@ -54,6 +54,8 @@ The script:
 
 Then: **Preferences → Plug-ins → Rescan**, add **ReelSynth** on a MIDI track. Editor should open with the plug-in.
 
+If Rescan still misses it after a `.pkg` install older than **0.4.3**, the bundle may be unsigned: Live logs `Failed to load plugin: code has no resources…`. Reinstall from a newer build, or from source run `./scripts/install-ableton.sh`, then Option-click **Rescan**.
+
 ### Editor won’t open
 
 Open the plug-in window in Live and click **Open Editor**, or flip the **Open Editor** switch on the device itself (no floating window needed). Manual launch:
