@@ -89,7 +89,7 @@ pub fn paint_quant_knob(
         painter.circle_stroke(
             center,
             glow_r,
-            egui::Stroke::new(2.0, stroke.gamma_multiply(visual.glow_alpha * 2.2)),
+            egui::Stroke::new(2.0_f32, stroke.gamma_multiply(visual.glow_alpha * 2.2)),
         );
         painter.circle_filled(center, glow_r, stroke.gamma_multiply(visual.glow_alpha));
     }
@@ -99,7 +99,7 @@ pub fn paint_quant_knob(
                 Pos2::new(center.x, plot.min.y),
                 Pos2::new(center.x, plot.max.y),
             ],
-            egui::Stroke::new(1.25, stroke.gamma_multiply(0.55)),
+            egui::Stroke::new(1.25_f32, stroke.gamma_multiply(0.55)),
         );
     }
     painter.circle_filled(center, visual.radius, fill);

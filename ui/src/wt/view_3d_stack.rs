@@ -209,7 +209,7 @@ pub(crate) fn layer_quant_display_scale(layer: &WaveLayerUi) -> f32 {
 
 fn paint_grid(painter: &egui::Painter, rect: Rect, border: Color32) {
     let step = 24.0;
-    let stroke = egui::Stroke::new(0.5, border.gamma_multiply(0.75));
+    let stroke = egui::Stroke::new(0.5_f32, border.gamma_multiply(0.75));
     let mut x = rect.min.x;
     while x <= rect.max.x {
         painter.line_segment(
@@ -663,12 +663,12 @@ impl WtView3dStack<'_> {
         let mut painter = ui.painter_at(rect);
         painter.set_clip_rect(inner.expand(1.0));
         painter.rect_filled(rect, RADIUS_SM, tokens.bg);
-        painter.rect_stroke(rect, RADIUS_SM, egui::Stroke::new(1.0, tokens.border));
+        painter.rect_stroke(rect, RADIUS_SM, egui::Stroke::new(1.0_f32, tokens.border));
 
         paint_grid(&painter, inner, tokens.border);
         painter.line_segment(
             [Pos2::new(inner.min.x, mid_y), Pos2::new(inner.max.x, mid_y)],
-            egui::Stroke::new(1.0, tokens.border.gamma_multiply(0.75)),
+            egui::Stroke::new(1.0_f32, tokens.border.gamma_multiply(0.75)),
         );
 
         if quant_active {
@@ -679,7 +679,7 @@ impl WtView3dStack<'_> {
                     .x;
                 painter.line_segment(
                     [Pos2::new(x, inner.min.y), Pos2::new(x, inner.max.y)],
-                    egui::Stroke::new(0.5, tokens.border.gamma_multiply(0.5)),
+                    egui::Stroke::new(0.5_f32, tokens.border.gamma_multiply(0.5)),
                 );
             }
         }
@@ -776,19 +776,19 @@ impl WtView3dStack<'_> {
                         .ctx()
                         .data(|d| d.get_temp::<usize>(drag_layer_id) == Some(orig_idx)));
             let (alpha, stroke_w) = if quant_hot {
-                (0.95, 3.2)
+                (0.95, 3.2_f32)
             } else if is_hover {
-                (0.92, 2.9)
+                (0.92, 2.9_f32)
             } else if is_sel {
                 if curve_hover_active {
-                    (0.62, 1.9)
+                    (0.62, 1.9_f32)
                 } else {
-                    (0.75, 2.0)
+                    (0.75, 2.0_f32)
                 }
             } else if curve_hover_active {
-                (0.28, 1.15)
+                (0.28, 1.15_f32)
             } else {
-                (0.45, 1.4)
+                (0.45, 1.4_f32)
             };
             if inverted {
                 let dash_stroke = egui::Stroke::new(stroke_w, color.gamma_multiply(alpha));
@@ -802,7 +802,7 @@ impl WtView3dStack<'_> {
                     // Subtle outline so the preview target reads before click.
                     painter.add(Shape::line(
                         pts.clone(),
-                        egui::Stroke::new(stroke_w + 2.0, color.gamma_multiply(0.35)),
+                        egui::Stroke::new(stroke_w + 2.0_f32, color.gamma_multiply(0.35)),
                     ));
                 }
                 painter.add(Shape::line(

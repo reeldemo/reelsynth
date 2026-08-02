@@ -485,7 +485,7 @@ impl WtView2d<'_> {
                 let x = slot_x(i, quant, inner);
                 painter.line_segment(
                     [Pos2::new(x, inner.min.y), Pos2::new(x, inner.max.y)],
-                    egui::Stroke::new(0.5, tokens.border.gamma_multiply(0.5)),
+                    egui::Stroke::new(0.5_f32, tokens.border.gamma_multiply(0.5)),
                 );
             }
             let slot_t = if quant > 1 {
@@ -500,7 +500,7 @@ impl WtView2d<'_> {
                 Pos2::new(band_x + band_w * 0.5, inner.max.y),
             );
             painter.rect_filled(band, 0.0, tokens.accent.gamma_multiply(0.08));
-            painter.rect_stroke(band, 0.0, egui::Stroke::new(1.0, accent_ui.gamma_multiply(0.35)));
+            painter.rect_stroke(band, 0.0, egui::Stroke::new(1.0_f32, accent_ui.gamma_multiply(0.35)));
         }
 
         if stack_overlay && *self.tool != WtEditTool::Curve {
@@ -525,7 +525,7 @@ impl WtView2d<'_> {
                 let color = layer_palette(i);
                 let is_sel = selected == Some(i);
                 let alpha = if is_sel { 0.85 } else { 0.40 };
-                let stroke_w = if is_sel { 1.8 } else { 1.2 };
+                let stroke_w = if is_sel { 1.8_f32 } else { 1.2_f32 };
                 painter.add(Shape::line(
                     pts,
                     egui::Stroke::new(stroke_w, color.gamma_multiply(alpha)),
@@ -542,14 +542,14 @@ impl WtView2d<'_> {
                 }
                 painter.add(Shape::line(
                     result_pts.clone(),
-                    egui::Stroke::new(2.6, accent_ui),
+                    egui::Stroke::new(2.6_f32, accent_ui),
                 ));
                 if let Some(peak) = peak_point(&result_pts) {
                     painter.circle_filled(peak, 4.0, tokens.accent);
                     painter.circle_stroke(
                         peak,
                         4.0,
-                        egui::Stroke::new(1.0, tokens.accent_on),
+                        egui::Stroke::new(1.0_f32, tokens.accent_on),
                     );
                 }
                 record_region(ui.ctx(), AuditId::CenterWt2dResult, inner, inner);

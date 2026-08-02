@@ -9,6 +9,7 @@ use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub struct SendAbletonResult {
+    #[allow(dead_code)] // reserved for UI / callers
     pub inbox_dir: PathBuf,
     #[allow(dead_code)] // reserved for UI / callers
     pub osc_online: bool,
