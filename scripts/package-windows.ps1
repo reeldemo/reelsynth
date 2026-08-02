@@ -17,6 +17,17 @@ if (-not $Version) {
 if (-not $TargetDir) { $TargetDir = Join-Path $Root "target\release" }
 if (-not $OutDir) { $OutDir = Join-Path $Root "dist" }
 
+# makensis resolves relative OutFile paths against the .nsi directory — always use abs paths
+if (-not [System.IO.Path]::IsPathRooted($OutDir)) {
+    $OutDir = Join-Path $Root $OutDir
+}
+if (-not [System.IO.Path]::IsPathRooted($TargetDir)) {
+    $TargetDir = Join-Path $Root $TargetDir
+}
+New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
+$OutDir = (Resolve-Path $OutDir).Path
+$TargetDir = (Resolve-Path $TargetDir).Path
+
 $App = Join-Path $TargetDir "reelsynth-app.exe"
 $Export = Join-Path $TargetDir "reelsynth-export.exe"
 $Editor = Join-Path $TargetDir "reelsynth-plugin-editor.exe"
@@ -28,7 +39,6 @@ foreach ($f in @($App, $Export, $Editor, $Dll)) {
     }
 }
 
-New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
 $Stage = Join-Path $OutDir "nsis-stage-windows-x86_64"
 if (Test-Path $Stage) { Remove-Item -Recurse -Force $Stage }
 New-Item -ItemType Directory -Force -Path $Stage | Out-Null
@@ -59,13 +69,14 @@ if (-not $makensis) {
 
 $makensisPath = if ($makensis.Source) { $makensis.Source } else { $makensis.FullName }
 $stageAbs = (Resolve-Path $Stage).Path
-$outAbs = $OutExe
 
+Write-Host "makensis OutFile -> $OutExe"
 & $makensisPath `
     "/DREELSYNTH_VERSION=$Version" `
     "/DREELSYNTH_STAGE=$stageAbs" `
-    "/DREELSYNTH_OUT=$outAbs" `
+    "/DREELSYNTH_OUT=$OutExe" `
     $Nsi
 
 if ($LASTEXITCODE -ne 0) { throw "makensis failed with exit $LASTEXITCODE" }
+if (-not (Test-Path $OutExe)) { throw "makensis reported success but missing $OutExe" }
 Write-Host "Created $OutExe"

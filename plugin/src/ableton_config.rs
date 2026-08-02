@@ -105,7 +105,7 @@ pub fn editor_candidates(cfg: &AbletonInstallConfig) -> Vec<PathBuf> {
     {
         if let Ok(home) = std::env::var("HOME") {
             out.push(
-                PathBuf::from(home)
+                PathBuf::from(&home)
                     .join("Applications")
                     .join("ReelSynth Editor.app")
                     .join("Contents")
@@ -113,7 +113,7 @@ pub fn editor_candidates(cfg: &AbletonInstallConfig) -> Vec<PathBuf> {
                     .join("reelsynth-plugin-editor"),
             );
             out.push(
-                PathBuf::from(home)
+                PathBuf::from(&home)
                     .join("Library")
                     .join("Application Support")
                     .join("ReelSynth")
