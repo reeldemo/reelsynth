@@ -6,6 +6,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-08-02
+
+### Added
+
+- **Mac `.pkg` + Windows NSIS installers** — release CI builds `reelsynth-*-macos-*.pkg` and `reelsynth-*-windows-x86_64-setup.exe` that install standalone app, VST3, and Ableton editor/`auto_editor` config. Website download cards point at installers; zip/tar.gz archives remain on GitHub Releases.
+- Packaging scripts: `scripts/package-macos.sh`, `scripts/package-windows.ps1`, `installer/windows/reelsynth.nsi`.
+
+### Changed
+
+- Release workflow builds the full `reelsynth-plugin` crate (VST3 cdylib + editor), not only the editor binary.
+- Getting started leads with website installers; unsigned Gatekeeper / SmartScreen notes documented.
+
 ## [0.4.1] - 2026-07-26
 
 ### Fixed

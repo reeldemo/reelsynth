@@ -16,7 +16,11 @@ MIT wavetable synth — Rust DSP, standalone egui app, Python bindings, export C
 
 Index: [docs/README.md](docs/README.md)
 
-## What works (roughly v0.4.1)
+## Download
+
+Installers (recommended): [reeldemo.github.io/reelsynth](https://reeldemo.github.io/reelsynth/#download) — macOS `.pkg` / Windows setup `.exe` (app + VST3 + Ableton editor). Archives also on [GitHub Releases](https://github.com/reeldemo/reelsynth/releases/latest).
+
+## What works (roughly v0.4.2)
 
 | Yes | Not yet / partial |
 |-----|-------------------|
@@ -24,7 +28,8 @@ Index: [docs/README.md](docs/README.md)
 | Save/load `.reelpreset` + `.reelwt` | Perfect 1:1 Vital/Serum/Ableton round-trip |
 | Export Vital, Serum, Ableton, SFZ, `reelpack/` | — |
 | VST3 in Live (Win/macOS) + external Design UI | Full editor *inside* Live’s tiny pane |
-| Python + CLI offline render | Signed installers / AU |
+| Unsigned Mac `.pkg` / Windows NSIS installers | Signed / notarized installers · AU |
+| Python + CLI offline render | — |
 
 ## Features (engine)
 
