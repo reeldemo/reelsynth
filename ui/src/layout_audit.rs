@@ -563,6 +563,7 @@ mod tests {
                                     show_osc_column: true,
                                     show_mod_matrix: mod_on,
                                     show_fx_rack: fx_on,
+                                    host_io_only: false,
                                 };
                                 let inner = layout.center.shrink(SPACE_SM * layout.scale.ui());
                                 let regions = compute_center_regions(
