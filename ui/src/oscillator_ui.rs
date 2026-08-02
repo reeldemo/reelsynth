@@ -210,7 +210,7 @@ impl OscillatorUi {
             wave_slot_fine: 0.0,
             wave_slots: Vec::new(),
             wave_layers: Vec::new(),
-            stack_mode: "add".into(),
+            stack_mode: "avg".into(),
         }
     }
 

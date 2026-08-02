@@ -550,7 +550,7 @@ pub fn run_default_product_cases(n: usize) -> serde_json::Value {
     };
 
     json!({
-        "ui_default_stack_mode": "add",
+        "ui_default_stack_mode": "avg",
         "ui_default_layers": ["saw@0.5", "sine@0.35", "square@0.25"],
         "factory_lead_stack_mode": lead_osc.stack_mode,
         "patch_crackle_default": lead.crackle,
@@ -675,7 +675,7 @@ mod tests {
         ] {
             assert!(ids.contains(&need), "missing default case {need} in {ids:?}");
         }
-        assert_eq!(d["ui_default_stack_mode"], "add");
+        assert_eq!(d["ui_default_stack_mode"], "avg");
         assert!(
             d["assertions_hint"]["factory_crackle_is_zero"]
                 .as_bool()

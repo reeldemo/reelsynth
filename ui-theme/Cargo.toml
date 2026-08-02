@@ -1,6 +1,6 @@
 [package]
 name = "reelsynth-ui-theme"
-version = "0.4.5"
+version = "0.4.6"
 edition = "2021"
 description = "Majico design tokens → egui theme for ReelSynth"
 license = "MIT"

@@ -3,7 +3,10 @@
 pub mod stack;
 pub mod va;
 
-pub use stack::{bank_for_layer, layer_sign, sample_layer, sample_stack, uses_wave_stack, StackMode};
+pub use stack::{
+    bank_for_layer, finish_add_sum, layer_sign, sample_layer, sample_stack, uses_wave_stack,
+    StackMode,
+};
 pub use va::{VaWaveform, sample_va};
 
 /// Wavetable warp modes applied before lookup.

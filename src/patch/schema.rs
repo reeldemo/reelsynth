@@ -192,7 +192,7 @@ pub(crate) fn default_saw_type() -> String {
     "saw".into()
 }
 pub(crate) fn default_stack_mode() -> String {
-    "add".into()
+    "avg".into()
 }
 pub(crate) fn default_quant_interp() -> String {
     "hold".into()

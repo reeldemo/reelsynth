@@ -7,8 +7,10 @@ use crate::wavetable::WavetableBank;
 /// How stacked layer samples are combined.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum StackMode {
-    #[default]
+    /// Peak-safe sum: identical to raw add when Σ|level| ≤ 1, otherwise
+    /// divided by Σ|level| so overlays cannot hard-clip into crackle.
     Add,
+    #[default]
     Avg,
     AvgEqual,
 }
@@ -18,9 +20,29 @@ impl StackMode {
         match s.to_ascii_lowercase().as_str() {
             "avg" | "average" => Self::Avg,
             "avg_equal" | "avgequal" | "avg equal" => Self::AvgEqual,
+            "add" => Self::Add,
+            // Legacy / unknown → peak-safe Add (never unbounded raw sum).
             _ => Self::Add,
         }
     }
+}
+
+/// Soft unit limiter (matches engine `soft_bus`) — catches residual BLEP overshoot.
+#[inline]
+fn soft_limit_unit(x: f32) -> f32 {
+    let a = x.clamp(-1.5, 1.5);
+    a - (a * a * a) * (1.0 / 6.75)
+}
+
+/// Finish an Add-mode stack sum so multi-layer overlays stay near ±1.
+#[inline]
+pub fn finish_add_sum(sum: f32, level_weight: f32) -> f32 {
+    let scaled = if level_weight > 1.0 {
+        sum / level_weight
+    } else {
+        sum
+    };
+    soft_limit_unit(scaled)
 }
 
 /// Signed contribution multiplier for a stack layer.
@@ -118,8 +140,7 @@ pub fn sample_stack(
         let sign = layer_sign(layer);
         let signed = sign * sample * layer.level;
         match mode {
-            StackMode::Add => sum += signed,
-            StackMode::Avg => {
+            StackMode::Add | StackMode::Avg => {
                 sum += signed;
                 weight += layer.level.abs();
             }
@@ -131,7 +152,7 @@ pub fn sample_stack(
     }
 
     match mode {
-        StackMode::Add => sum,
+        StackMode::Add => finish_add_sum(sum, weight),
         StackMode::Avg => {
             if weight <= 0.0 {
                 0.0
@@ -433,7 +454,10 @@ mod tests {
             0.0,
             1.0,
         );
-        let simultaneous_add_ok = (sum - (a + b)).abs() < 1e-5;
+        let simultaneous_add_ok = {
+            let expected = finish_add_sum(a + b, 2.0);
+            (sum - expected).abs() < 1e-5
+        };
 
         let pairs: &[(&str, &[&str], f32)] = &[
             ("sine+sine", &["sine", "sine"], 0.0),
@@ -502,6 +526,90 @@ mod tests {
             "saw+saw wrap much worse than sine+sine"
         );
         assert!(hf_harshness(&saw_saw) > hf_harshness(&sine_sine));
+    }
+
+    /// Add-mode overlay of equal-loud layers must stay peak-safe
+    /// (saw+saw Add peaks at ~2 without normalization → clip overtones / Mac crackle).
+    #[test]
+    fn ui_default_add_overlay_peak_safe() {
+        let bank = WavetableBank::factory_saw_morph();
+        let osc = Oscillator {
+            wave_layers: vec![
+                WaveLayer {
+                    source_type: "saw".into(),
+                    level: 1.0,
+                    ..WaveLayer::default()
+                },
+                WaveLayer {
+                    source_type: "saw".into(),
+                    level: 1.0,
+                    ..WaveLayer::default()
+                },
+            ],
+            stack_mode: "add".into(),
+            ..Oscillator::default_va()
+        };
+        let n = 256usize;
+        let mut peak = 0.0f32;
+        let mut prev = 0.0f32;
+        for i in 0..n {
+            let phase = i as f32 / n as f32;
+            let s = sample_stack(
+                &osc,
+                &bank,
+                std::slice::from_ref(&bank),
+                &[],
+                phase,
+                1.0 / n as f32,
+                0.0,
+                WtWarpMode::None,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+            );
+            peak = peak.max(s.abs());
+            prev = s;
+        }
+        let _ = prev;
+        // Also check wrap from last→first
+        let first = sample_stack(
+            &osc,
+            &bank,
+            std::slice::from_ref(&bank),
+            &[],
+            0.0,
+            1.0 / n as f32,
+            0.0,
+            WtWarpMode::None,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+        );
+        let last = sample_stack(
+            &osc,
+            &bank,
+            std::slice::from_ref(&bank),
+            &[],
+            (n - 1) as f32 / n as f32,
+            1.0 / n as f32,
+            0.0,
+            WtWarpMode::None,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+        );
+        let wrap = (first - last).abs();
+        assert!(
+            peak <= 1.05,
+            "saw+saw Add overlay peak={peak} (expect peak-safe sum)"
+        );
+        assert!(
+            wrap < 0.55,
+            "saw+saw Add wrap={wrap} too steep after peak-safe sum"
+        );
     }
 
     /// Result / composite curve must not have a near-vertical wrap cliff at A4.

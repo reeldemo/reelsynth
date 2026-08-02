@@ -77,6 +77,7 @@ pub fn composite_stack_sample(
     phase: f32,
     wt_pos_offset: f32,
 ) -> f32 {
+    use reelsynth::osc::finish_add_sum;
     let mode = StackMode::from_str(stack_mode);
     let mut sum = 0.0f32;
     let mut weight = 0.0f32;
@@ -90,8 +91,7 @@ pub fn composite_stack_sample(
         let s = sample_layer_at_phase(layer, bank, phase, wt_pos_offset);
         let signed = sign * s * layer.level;
         match mode {
-            StackMode::Add => sum += signed,
-            StackMode::Avg => {
+            StackMode::Add | StackMode::Avg => {
                 sum += signed;
                 weight += layer.level.abs();
             }
@@ -102,7 +102,7 @@ pub fn composite_stack_sample(
         }
     }
     match mode {
-        StackMode::Add => sum,
+        StackMode::Add => finish_add_sum(sum, weight),
         StackMode::Avg => {
             if weight <= 0.0 {
                 0.0

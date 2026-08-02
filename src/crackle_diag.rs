@@ -218,7 +218,7 @@ pub fn run_automated_crackle_report() -> serde_json::Value {
             "conclusions": [
                 "Soft/Adaptive close wrap on Quant frames but leave non-zero tail_step",
                 "VA saw never sees Seam — cracks there are expected regardless of Seam UI",
-                "Stack Add often exceeds ±1 (clip overtones); Avg reduces that",
+                "Stack Add is peak-safe (Σ|level|>1 scales down) so overlays do not hard-clip",
                 "Seam alone cannot silence all crackle modes"
             ]
         },
@@ -273,9 +273,13 @@ mod tests {
 
         let add = &data["stack_pairs"]["saw_saw_add"];
         let avg = &data["stack_pairs"]["saw_saw_avg"];
-        assert!(add["above_1"].as_u64().unwrap() > 0);
-        assert!(avg["peak"].as_f64().unwrap() <= add["peak"].as_f64().unwrap() + 1e-3);
+        // Peak-safe Add must not hard-clip.
+        assert_eq!(add["above_1"].as_u64().unwrap(), 0);
+        assert!(add["peak"].as_f64().unwrap() <= 1.05);
+        assert!(avg["peak"].as_f64().unwrap() <= 1.05);
+        assert_eq!(avg["above_1"].as_u64().unwrap(), 0);
 
+        // Naive frame doubling (not sample_stack) still documents clip risk.
         assert!(data["soft_seam_then_add_two"]["above_1"].as_u64().unwrap() > 0);
 
         let lead_step = data["held_note_1s"]["factory_lead"]["max_step"]

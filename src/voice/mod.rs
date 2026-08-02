@@ -254,6 +254,68 @@ mod tests {
         );
     }
 
+    /// Overlaying the UI default stack (saw+sine+square, Add) and drifting WT
+    /// position away from the factory morph point must not reintroduce wrap
+    /// crackle — especially at 48 kHz (typical Mac CoreAudio rate).
+    #[test]
+    fn overlay_and_drift_sustain_step_bounded_at_48k() {
+        let bank = WavetableBank::factory_saw_morph();
+        let mut patch = Patch::factory_lead();
+        patch.effects.clear();
+        patch.lfo.depth = 0.0;
+        patch.lfo2.depth = 0.0;
+        for slot in &mut patch.mod_matrix {
+            if slot.source == "lfo1" || slot.source == "lfo2" {
+                slot.enabled = false;
+            }
+        }
+        // Drift: loud multi-layer Add overlay (two saws + WT) off the factory morph point.
+        patch.oscillators[0].unison = 1;
+        patch.oscillators[0].level = 0.9;
+        patch.oscillators[0].stack_mode = "add".into();
+        patch.oscillators[0].wave_layers = vec![
+            crate::patch::WaveLayer {
+                source_type: "saw".into(),
+                level: 0.85,
+                ..crate::patch::WaveLayer::default()
+            },
+            crate::patch::WaveLayer {
+                source_type: "saw".into(),
+                level: 0.85,
+                detune: 7.0,
+                ..crate::patch::WaveLayer::default()
+            },
+            crate::patch::WaveLayer {
+                source_type: "wavetable".into(),
+                level: 0.55,
+                wt_position: 40.0, // drifted from factory 108
+                wavetable_id: Some("saw_morph".into()),
+                ..crate::patch::WaveLayer::default()
+            },
+        ];
+        let sr = 48_000u32;
+        let audio = render_note_single_bank(&bank, 440.0, 0.45, sr, &patch);
+        let start = (0.10 * sr as f32) as usize;
+        let end = (0.35 * sr as f32) as usize;
+        let max_step = audio[start..end]
+            .windows(2)
+            .map(|w| (w[1] - w[0]).abs())
+            .fold(0.0f32, f32::max);
+        let peak = audio[start..end]
+            .iter()
+            .copied()
+            .map(f32::abs)
+            .fold(0.0f32, f32::max);
+        assert!(
+            max_step < 0.22,
+            "overlay/drift sustain crackle at 48k: step={max_step} peak={peak}"
+        );
+        assert!(
+            peak < 1.05,
+            "overlay Add must stay near unity (soft-safe): peak={peak}"
+        );
+    }
+
     /// Held note with a discontinuous wavetable must not produce near-full-scale
     /// sample steps after band-limited wrap (naive was ≈1.1–2.0 per wrap).
     #[test]

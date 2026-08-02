@@ -6,6 +6,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.6] - 2026-08-02
+
+### Fixed
+
+- **Overlay / drift crackle (esp. Mac 48 kHz)** — Stack **Add** summed layer levels without bound, so saw+saw (and other loud overlays) peaked near ±2, hard-clipped into harsh overtones when drifting from the factory Avg mix. Add is now peak-safe (scale by Σ|level| when > 1, plus soft limit); UI/schema default stack mode is **avg** to match Factory Lead.
+
 ## [0.4.5] - 2026-08-02
 
 ### Fixed
