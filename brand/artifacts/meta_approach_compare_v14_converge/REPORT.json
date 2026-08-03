@@ -1,0 +1,90 @@
+{
+  "schema": "denoiseopt.v14_converge_report.v1",
+  "updated_at": "2026-08-03T04:07:50.681260+00:00",
+  "seeds": {
+    "1902771841": {
+      "hybrid_lstm": {
+        "iters_done": 750,
+        "champ_r": 0.9911795258522034,
+        "fit": {
+          "n": 50,
+          "fit_steps_mean": 1308.2,
+          "fit_steps_p50": 1472.0,
+          "fit_steps_max": 2304,
+          "converged_frac": 0.0
+        },
+        "last": {
+          "fit_steps_used": 768,
+          "fit_converged": false,
+          "lambda_latency": 0.01,
+          "t_ms": 9.959866661423197,
+          "j": 0.9768695871680344,
+          "cuda_free_mib": 23210.0,
+          "hp": {
+            "lr": 0.003461798919503607,
+            "fit_steps": 64,
+            "fit_max_steps": 768,
+            "fit_patience": 20,
+            "fit_rel_eps": 1e-05,
+            "lambda_latency": 0.01,
+            "batch": 96,
+            "entropy_coef": 0.03529860698350138,
+            "ppo_clip": 0.3,
+            "adv_coef": 0.07776944680956742,
+            "reward_mode": "vs_nobake"
+          }
+        }
+      }
+    },
+    "2026072701": {
+      "hybrid_lstm": {
+        "iters_done": 171,
+        "champ_r": 0.9895298779010773,
+        "fit": {
+          "n": 50,
+          "fit_steps_mean": 1310.7,
+          "fit_steps_p50": 1280.0,
+          "fit_steps_max": 2560,
+          "converged_frac": 0.0
+        },
+        "last": {
+          "fit_steps_used": 2048,
+          "fit_converged": false,
+          "lambda_latency": 0.05,
+          "t_ms": 67.39546666115832,
+          "j": 0.9339111813443374,
+          "cuda_free_mib": 23198.0,
+          "hp": {
+            "lr": 0.0005013030201960385,
+            "fit_steps": 64,
+            "fit_max_steps": 2048,
+            "fit_patience": 10,
+            "fit_rel_eps": 3e-06,
+            "lambda_latency": 0.05,
+            "batch": 64,
+            "entropy_coef": 0.001,
+            "ppo_clip": 0.25,
+            "adv_coef": 0.0801120409628842,
+            "reward_mode": "vs_nobake"
+          }
+        }
+      }
+    },
+    "2026072702": {
+      "hybrid_lstm": {
+        "iters_done": 0,
+        "champ_r": null,
+        "fit": {},
+        "last": {
+          "fit_steps_used": null,
+          "fit_converged": null,
+          "lambda_latency": null,
+          "t_ms": null,
+          "j": null,
+          "cuda_free_mib": null,
+          "hp": null
+        }
+      }
+    }
+  }
+}

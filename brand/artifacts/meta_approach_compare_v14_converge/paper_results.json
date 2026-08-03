@@ -1,0 +1,40 @@
+﻿{
+    "as_of":  "2026-08-03T04:07:50Z",
+    "n2n_gate_r":  0.97504866123199463,
+    "paused_for_gpu":  true,
+    "schema":  "denoiseopt.v14_hybrid_converge.v1",
+    "rationale":  "D1 matched-5k showed hybrid_lstm best (0.9748+/-0.0018); follow-up is hybrid-only FitCell-to-convergence",
+    "seeds":  {
+                  "2026072702":  {
+                                     "status":  "pending",
+                                     "iters_done":  0
+                                 },
+                  "2026072701":  {
+                                     "beats_n2n":  true,
+                                     "status":  "paused",
+                                     "champ_r_blend":  0.98952987790107727,
+                                     "iters_done":  170
+                                 },
+                  "1902771841":  {
+                                     "wall_h":  46.93,
+                                     "champ_r_blend":  0.99117952585220337,
+                                     "beats_n2n":  true,
+                                     "n2n_gate":  0.97504866123199463,
+                                     "status":  "complete",
+                                     "champ_j":  0.98540051850896759,
+                                     "iters":  750,
+                                     "champ_t_ms":  8.7007666685773675
+                                 }
+              },
+    "protocol":  {
+                     "fit_max_steps":  "512-2048 searchable",
+                     "fit_patience":  "10-30 searchable",
+                     "approaches":  [
+                                        "hybrid_lstm"
+                                    ],
+                     "batch":  96,
+                     "objective":  "J=R_blend-lambda*latency_norm",
+                     "outer_iters":  750,
+                     "proposals_per_iter":  2
+                 }
+}
