@@ -6,6 +6,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Multicycle WAV import/export** — Serum / Echo Sound Works style tables (frames concatenated in one `.wav`). WT menu: **WAV table (multicycle)…** and **Export multicycle WAV…**. CLI/SDK: `import_wavetable("wav_table", …)` / `export` target `wav_multicycle` (float32 mono). Folder import still uses one cycle per file; passing a `.wav` file to source `"wav"` auto-selects multicycle.
+
 ## [0.4.6] - 2026-08-02
 
 ### Fixed
