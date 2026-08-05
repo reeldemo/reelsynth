@@ -32,9 +32,9 @@ pub use analysis::{decompose_frame, resynthesis_error, resynthesize_frame};
 pub use engine::{BankSet, MidiEvent, SynthEngine, VoiceMpe};
 pub use export::{
     default_ableton_inbox_root, export_ableton_map, export_ableton_map_v2,
-    export_ableton_multicycle_wav, export_preset, export_reelpack, export_wavetable, load_preset,
-    parse_targets, resolve_bank_for_preset, write_ableton_send_bundle, ExportOptions, ExportReport,
-    ExportTarget, ABLETON_MAP_SCHEMA, INBOX_ENV,
+    export_ableton_multicycle_wav, export_preset, export_reelpack, export_wav_multicycle,
+    export_wavetable, load_preset, parse_targets, resolve_bank_for_preset, write_ableton_send_bundle,
+    ExportOptions, ExportReport, ExportTarget, ABLETON_MAP_SCHEMA, INBOX_ENV,
 };
 pub use fx::{default_effects, effects_from_bypass, EffectSlot, EffectType, FxBypass, FxChain};
 pub use lfo::{lfo_value, LfoRuntime};

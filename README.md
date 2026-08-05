@@ -35,7 +35,7 @@ Installers (recommended): [reeldemo.github.io/reelsynth](https://reeldemo.github
 
 - **WavetableBank** — 256 × 2048, linear + spectral crossfade
 - **Voice** — multi-osc, ADSR, SVF, mod matrix
-- **Import** — Vital `.vitaltable`, WAV cycle folders, Serum `.fxp` (WT subset)
+- **Import** — Vital `.vitaltable`, multicycle WAV tables (Serum/ESW), WAV cycle folders, Serum `.fxp` (WT subset)
 - **Export** — Vital, WAV frames, Serum RSWT, Ableton map, SFZ, MIDI demo note, 24-bit stem, `reelpack/`
 - **Formats** — [docs/FORMAT.md](docs/FORMAT.md)
 

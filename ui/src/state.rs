@@ -103,7 +103,9 @@ pub struct ShellActions {
     pub import_factory_wt: Option<String>,
     pub import_vital_wt: bool,
     pub import_wav_folder: bool,
+    pub import_wav_multicycle: bool,
     pub import_serum_fxp: bool,
+    pub export_wav_multicycle: bool,
     pub frame_edited: bool,
     /// Header / toolbar seam mode changed — app rebakes the wavetable bank.
     pub ai_seam_changed: bool,

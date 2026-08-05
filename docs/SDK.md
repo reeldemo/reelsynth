@@ -59,6 +59,8 @@ Import foreign format → `.reelwt`.
 ```python
 reelsynth.import_wavetable("vital", "table.vitaltable", "out/table.reelwt")
 reelsynth.import_wavetable("wav", "/path/to/cycles/", "out/table.reelwt")
+reelsynth.import_wavetable("wav", "table_multicycle.wav", "out/table.reelwt")  # file → multicycle
+reelsynth.import_wavetable("wav_table", "esw_analog_303.wav", "out/table.reelwt")
 reelsynth.import_wavetable("serum", "patch.fxp", "out/table.reelwt")
 ```
 
@@ -109,6 +111,7 @@ cargo run --bin reelsynth-export -- <target> <input> -o <output> [options]
 |--------|-------|--------|
 | `vital` | `.reelwt` | `.vitaltable` |
 | `wav` | `.reelwt` | folder of frame WAVs |
+| `wav_multicycle` | `.reelwt` | single multicycle WAV (float32) |
 | `serum` | `.reelpreset` + bank | `.fxp` (WT subset) |
 | `ableton` | `.reelpreset` | `wavetable_map.json` |
 | `sfz` | `.reelpreset` + bank | `.sfz` + sample WAV |
@@ -236,7 +239,7 @@ Constants: `BLOCK_SIZE` = 64
 
 | Type / fn | Description |
 |-----------|-------------|
-| `ExportTarget` | `Vital`, `Wav`, `Serum`, `Ableton`, `Sfz`, `Midi`, `Audio`, `Reelpack` |
+| `ExportTarget` | `Vital`, `Wav`, `WavMulticycle`, `Serum`, `Ableton`, `Sfz`, `Midi`, `Audio`, `Reelpack` |
 | `ExportOptions` | Render/export parameters |
 | `ExportReport` | Success, paths, dropped params, errors |
 | `export_wavetable` | Single-target WT export |
@@ -252,9 +255,10 @@ Submodules: `export_vital`, `export_serum_wt`, `export_ableton_map`, `export_sfz
 
 | Function | Description |
 |----------|-------------|
-| `import_to_reelwt(source, path, out)` | `vital` / `wav` / `serum` → `.reelwt` |
+| `import_to_reelwt(source, path, out)` | `vital` / `wav` / `wav_table` / `serum` → `.reelwt` |
 | `import_vital` | Vital table parser |
 | `import_wav_folder` | Sorted cycles |
+| `import_wav_multicycle` | Serum/ESW concatenated frames |
 | `import_serum_fxp` | Serum WT scan |
 
 ### Module: `fx`
