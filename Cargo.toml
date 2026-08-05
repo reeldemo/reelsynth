@@ -45,6 +45,16 @@ name = "export_reelsynth_wt_cycles"
 path = "src/bin/export_reelsynth_wt_cycles.rs"
 required-features = []
 
+[[bin]]
+name = "reelsynth-import-wav-tables"
+path = "src/bin/import_wav_tables.rs"
+required-features = []
+
+[[bin]]
+name = "reelsynth-pack-starter-tables"
+path = "src/bin/pack_starter_tables.rs"
+required-features = []
+
 [lib]
 name = "reelsynth"
 crate-type = ["cdylib", "rlib"]
