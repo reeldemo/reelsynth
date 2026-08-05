@@ -60,6 +60,11 @@ name = "reelsynth-pack-genre-leadmagnet"
 path = "src/bin/pack_genre_leadmagnet.rs"
 required-features = []
 
+[[bin]]
+name = "reelsynth-genre-previews"
+path = "src/bin/genre_previews.rs"
+required-features = []
+
 [lib]
 name = "reelsynth"
 crate-type = ["cdylib", "rlib"]
