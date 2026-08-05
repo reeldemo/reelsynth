@@ -55,6 +55,11 @@ name = "reelsynth-pack-starter-tables"
 path = "src/bin/pack_starter_tables.rs"
 required-features = []
 
+[[bin]]
+name = "reelsynth-pack-genre-leadmagnet"
+path = "src/bin/pack_genre_leadmagnet.rs"
+required-features = []
+
 [lib]
 name = "reelsynth"
 crate-type = ["cdylib", "rlib"]
