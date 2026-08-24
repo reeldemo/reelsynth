@@ -34,15 +34,17 @@ fn performance_summary(state: &UiState) -> String {
     let root = ROOT_NAMES[perf.root.min(ROOT_NAMES.len().saturating_sub(1))];
     let scale = SCALE_NAMES[perf.scale.min(SCALE_NAMES.len().saturating_sub(1))];
     let layout = LAYOUT_NAMES[perf.layout.min(LAYOUT_NAMES.len().saturating_sub(1))];
-    let mut summary = format!("{root} · {scale} · {layout}");
     if perf.layout == 2 {
         if let Some(deg) = state.active_chord_degree {
+            // A degree implies the chords layout, so drop the redundant layout
+            // word: the full "{root} · {scale} · Chords · {degree}" label is too
+            // wide for the fixed-width header combo and pushes the left cluster
+            // into the right one (see header cluster overlap audit).
             let label = CHORD_DEGREE_LABELS[deg.min(CHORD_DEGREE_LABELS.len().saturating_sub(1))];
-            summary.push_str(" · ");
-            summary.push_str(label);
+            return format!("{root} · {scale} · {label}");
         }
     }
-    summary
+    format!("{root} · {scale} · {layout}")
 }
 
 /// Compact Performance dropdown: key, scale, layout, input octave, and chord degree.
