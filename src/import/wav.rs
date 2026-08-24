@@ -36,7 +36,7 @@ pub fn import_wav_folder(path: &str) -> Result<WavetableBank, String> {
     Ok(bank)
 }
 
-fn decode_wav_mono(path: &Path) -> Result<Vec<f32>, String> {
+pub(crate) fn decode_wav_mono(path: &Path) -> Result<Vec<f32>, String> {
     let data = std::fs::read(path).map_err(|e| e.to_string())?;
     if data.len() < 44 {
         return Err("truncated wav".into());
