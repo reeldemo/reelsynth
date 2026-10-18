@@ -1,8 +1,12 @@
 mod serum;
+mod stem;
 mod vital;
 mod wav;
 
 pub use serum::import_serum_fxp;
+pub use stem::{
+    import_stem_file, stem_to_wavetable, StemMode, StemModeUsed, StemOptions, StemResult,
+};
 pub use vital::import_vital;
 pub use wav::{import_wav_folder, import_wav_multicycle};
 
@@ -21,6 +25,7 @@ pub fn import_to_reelwt(source: &str, path: &str, out_path: &str) -> Result<Wave
         }
         "wav_table" | "multicycle" | "wav_multicycle" => import_wav_multicycle(path)?,
         "serum" => import_serum_fxp(path)?,
+        "stem" => import_stem_file(path, &StemOptions::default())?.bank,
         other => return Err(format!("unknown import source: {other}")),
     };
     bank.write_file(out_path)?;
