@@ -11,6 +11,9 @@ jobs:
   dependency-review:
     name: Review dependency diffs
     runs-on: ubuntu-latest
+    # Requires Dependency graph in repo Settings → Code security.
+    # Keep advisory until that is enabled for reeldemo/reelsynth.
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
@@ -18,10 +21,5 @@ jobs:
         uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high
-          # Comment a summary on the PR when possible.
-          comment-summary-in-pr: on-failure
-          # Cargo.lock changes are the source of truth for Rust.
-          manifest-filters: |
-            exclude:
-              package-ecosystem: [npm, maven, nuget]
-
+          warn-only: true
+          comment-summary-in-pr: never
