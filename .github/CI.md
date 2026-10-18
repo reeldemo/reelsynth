@@ -37,4 +37,6 @@ cargo deny --workspace --all-features check advisories licenses sources
 - **rustfmt** is advisory until a dedicated `cargo fmt --all` PR lands (large existing drift).
 - **Ignored advisories** (egui-pinned `quick-xml`, optional `pyo3 ^0.22`) are listed in `deny.toml` and `.cargo/audit.toml` — revisit when those stacks bump.
 - **webbrowser** was bumped to `1.2.2` to clear RUSTSEC-2026-0257.
+- **Dependency Review** skips until Dependency graph is enabled under repo Settings → Code security.
+- **CodeQL** uses `build-mode: none` (Rust does not support manual builds).
 
