@@ -204,7 +204,7 @@ fn resolve_previews(input: &mut ScopeStripInput<'_>) -> ScopePreviews {
 
 fn detect_stack_clipping(patch: &Patch) -> bool {
     use crate::oscillator_ui::WaveLayerUi;
-    use crate::wt::composite_stack_sample;
+    use crate::wt::composite_stack_add_raw;
     use reelsynth::WavetableBank;
 
     let bank = WavetableBank::factory_saw_morph();
@@ -216,7 +216,7 @@ fn detect_stack_clipping(patch: &Patch) -> bool {
         let mut peak = 0.0f32;
         for i in 0..64 {
             let phase = i as f32 / 64.0;
-            let v = composite_stack_sample(&layers, &bank, "add", phase, 0.0).abs();
+            let v = composite_stack_add_raw(&layers, &bank, phase, 0.0).abs();
             peak = peak.max(v);
         }
         peak > 1.0

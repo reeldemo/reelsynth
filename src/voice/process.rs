@@ -3,7 +3,7 @@
 use crate::fm::{fm_mod_signal, sample_carrier_with_fm, FmSource};
 use crate::lfo::{lfo_for_target, lfo_value, LfoRuntime};
 use crate::modulation::{compute_macro_mods, compute_mods, merge_mods, ModSources};
-use crate::osc::WtWarpMode;
+use crate::osc::{soft_limit_unit, WtWarpMode};
 use crate::oversample::{process_os, OS_FACTOR};
 use crate::patch::{FilterSlot, Lfo, Oscillator, Patch};
 use crate::wt_quant::resolve_wt_position;
@@ -200,6 +200,7 @@ pub fn process_sample_stages(state: &mut VoiceState, ctx: &VoiceSampleContext<'_
 
     let mut left = 0.0f32;
     let mut right = 0.0f32;
+    let mut mix_weight = ctx.patch.sub_level.max(0.0) * 0.5 + ctx.patch.noise_level.max(0.0);
     let mut phase_idx = 0usize;
     let spread_cents = 15.0f32;
     let stereo_spread = ctx.patch.unison_stereo_spread.clamp(0.0, 1.0);
@@ -265,6 +266,7 @@ pub fn process_sample_stages(state: &mut VoiceState, ctx: &VoiceSampleContext<'_
         .clamp(0.0, 10.0);
 
         let osc_level = (osc.level + level_mod).clamp(0.0, 1.0);
+        mix_weight += osc_level;
 
         for u in 0..unison {
             let det_spread = if unison > 1 {
@@ -325,6 +327,12 @@ pub fn process_sample_stages(state: &mut VoiceState, ctx: &VoiceSampleContext<'_
         state.noise_seed = state.noise_seed.wrapping_add(1);
         left += noise;
         right += noise;
+    }
+
+    if mix_weight > 1.0 {
+        let inv = 1.0 / mix_weight;
+        left *= inv;
+        right *= inv;
     }
 
     let filt_env_level = filt_env;
@@ -400,8 +408,8 @@ pub fn process_sample_stages(state: &mut VoiceState, ctx: &VoiceSampleContext<'_
     // Allow enough slew for ~4× the fundamental, clamp residual wrap clicks.
     let max_delta = ((ctx.freq * 8.0) / ctx.sr).clamp(0.05, 0.22) * fade.max(0.05);
 
-    let target_l = (filtered_l * fade).clamp(-1.0, 1.0);
-    let target_r = (filtered_r * fade).clamp(-1.0, 1.0);
+    let target_l = soft_limit_unit(filtered_l * fade);
+    let target_r = soft_limit_unit(filtered_r * fade);
     let out_l = slew_limit(&mut state.last_out_l, target_l, max_delta);
     let out_r = slew_limit(&mut state.last_out_r, target_r, max_delta);
 

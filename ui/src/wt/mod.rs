@@ -48,7 +48,9 @@ pub use view_2d::{
     shape_template_source_type, va_source_to_shape_template, WtView2d, WtView2dResponse,
 };
 pub use view_3d::{WtView3d, WtView3dResponse};
-pub use view_3d_stack::{composite_stack_sample, WtView3dStack, WtView3dStackResponse};
+pub use view_3d_stack::{
+    composite_stack_add_raw, composite_stack_sample, WtView3dStack, WtView3dStackResponse,
+};
 pub use view_result::{WtViewResult, WtViewResultResponse};
 pub use view_selected::{WtSelectedLayerResponse, WtSelectedLayerView};
 pub use view_zoom::{consume_plot_scroll, WtCurveViewTransform};

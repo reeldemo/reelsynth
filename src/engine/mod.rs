@@ -607,7 +607,7 @@ impl SynthEngine {
             let mixed = (acc_l + acc_r) * 0.5 * gain;
             let cracked = self.crackle_l.process(mixed, self.scratch_patch.crackle);
             let suppressed = self.overtone.process_sample(cracked);
-            let mono = self.fx.process_sample(suppressed);
+            let mono = Self::soft_bus(self.fx.process_sample(suppressed));
             let fx_mono = mono;
             *sample = sanitize_sample(mono);
             self.scope
@@ -681,6 +681,8 @@ impl SynthEngine {
                 .process(acc_r * gain, self.scratch_patch.crackle);
             let [sl, sr_] = self.overtone.process_stereo(cl, cr);
             let [l, r] = self.fx.process_stereo(sl, sr_);
+            let l = Self::soft_bus(l);
+            let r = Self::soft_bus(r);
             let fx_mono = (l + r) * 0.5;
             let out_mono = fx_mono;
             out[frame * 2] = sanitize_sample(l);

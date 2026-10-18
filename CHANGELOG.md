@@ -6,6 +6,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Multi-osc voice clipping** — Summing several oscillators (e.g. VA Bass, loud Design patches) no longer hard-clamps at ±1 before the filter; voice mix scales by Σ levels (+ sub/noise weight) when > 1, per-voice targets use a transparent soft knee above unity, and the engine bus limiter runs again after FX.
+
 ### Added
 
 - **Multicycle WAV import/export** — Serum / Echo Sound Works style tables (frames concatenated in one `.wav`). WT menu: **WAV table (multicycle)…** and **Export multicycle WAV…**. CLI/SDK: `import_wavetable("wav_table", …)` / `export` target `wav_multicycle` (float32 mono). Folder import still uses one cycle per file; passing a `.wav` file to source `"wav"` auto-selects multicycle.

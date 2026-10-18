@@ -27,11 +27,17 @@ impl StackMode {
     }
 }
 
-/// Soft unit limiter (matches engine `soft_bus`) — catches residual BLEP overshoot.
+/// Soft unit limiter: transparent for |x| ≤ 1, gentle knee above (per-osc / stack residual).
 #[inline]
-fn soft_limit_unit(x: f32) -> f32 {
-    let a = x.clamp(-1.5, 1.5);
-    a - (a * a * a) * (1.0 / 6.75)
+pub fn soft_limit_unit(x: f32) -> f32 {
+    let a = x.abs();
+    if a <= 1.0 {
+        return x;
+    }
+    let sign = x.signum();
+    let a = a.min(1.5);
+    let t = a - 1.0;
+    sign * (1.0 + t * (0.5 - 0.5 * t))
 }
 
 /// Finish an Add-mode stack sum so multi-layer overlays stay near ±1.

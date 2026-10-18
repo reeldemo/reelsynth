@@ -70,6 +70,26 @@ fn sample_layer_at_phase(
     )
 }
 
+/// Add-mode stack sum **before** peak-safe scale / soft limit (for clip warnings).
+pub fn composite_stack_add_raw(
+    layers: &[WaveLayerUi],
+    bank: &WavetableBank,
+    phase: f32,
+    wt_pos_offset: f32,
+) -> f32 {
+    let mut sum = 0.0f32;
+    for layer in layers {
+        if !layer.enabled || layer.level <= 0.0 {
+            continue;
+        }
+        let patch = ui_layer_to_patch(layer);
+        let sign = layer_sign(&patch);
+        let s = sample_layer_at_phase(layer, bank, phase, wt_pos_offset);
+        sum += sign * s * layer.level;
+    }
+    sum
+}
+
 pub fn composite_stack_sample(
     layers: &[WaveLayerUi],
     bank: &WavetableBank,

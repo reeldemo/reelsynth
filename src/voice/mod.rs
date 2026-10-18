@@ -515,4 +515,61 @@ mod tests {
             "non-finite sample in fm bell render"
         );
     }
+
+    fn max_flat_top_run(samples: &[f32], eps: f32) -> usize {
+        let peak = samples.iter().map(|s| s.abs()).fold(0.0f32, f32::max);
+        if peak < 0.9 {
+            return 0;
+        }
+        let thresh = peak - eps;
+        let mut max_run = 0usize;
+        let mut run = 0usize;
+        for &s in samples {
+            if s.abs() >= thresh {
+                run += 1;
+                max_run = max_run.max(run);
+            } else {
+                run = 0;
+            }
+        }
+        max_run
+    }
+
+    #[test]
+    fn multi_osc_loud_sum_avoids_hard_clip_flats() {
+        use crate::patch::Oscillator;
+
+        let bank = WavetableBank::factory_sine();
+        let mut patch = Patch::default_mono();
+        patch.oscillators = (0..3)
+            .map(|_| Oscillator {
+                osc_type: "sine".into(),
+                level: 1.0,
+                wave_layers: Vec::new(),
+                ..Oscillator::default_va()
+            })
+            .collect();
+        patch.filters = Some(Vec::new());
+        patch.envelope = Envelope {
+            attack: 0.001,
+            decay: 0.001,
+            sustain: 1.0,
+            release: 0.05,
+        };
+        patch.filter_envelope = closed_filter_env();
+        let audio = render_note_single_bank(&bank, 220.0, 0.15, 44100, &patch);
+        let start = (0.02 * 44100.0) as usize;
+        let end = (0.12 * 44100.0) as usize;
+        let sustain = &audio[start..end.min(audio.len())];
+        let peak = sustain.iter().map(|s| s.abs()).fold(0.0f32, f32::max);
+        let flats = max_flat_top_run(sustain, 1e-4);
+        assert!(
+            peak > 0.55 && peak <= 1.05,
+            "expected near-unity peak without hard clip, got peak={peak}"
+        );
+        assert!(
+            flats < 12,
+            "hard clip flat-top run={flats} (peak={peak})"
+        );
+    }
 }
