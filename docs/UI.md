@@ -53,7 +53,7 @@ A default empty clip is auto-selected on the active track so you can draw immedi
 | **Open** | Load `.reelpreset`; resolves sibling `.reelwt` |
 | **Save** | Write current patch as `.reelpreset` |
 | **Design** / **Compose** | Switch shell mode — sound design vs mini-DAW |
-| **WT** menu | Open/Save `.reelwt`, **factory wavetables** (applies bank to the Design wave stack — promotes a wavetable layer so sound matches the editor), Vital/WAV/Serum import |
+| **WT** menu | Open/Save `.reelwt`, **factory wavetables** (applies bank to the Design wave stack — promotes a wavetable layer so sound matches the editor), Vital / multicycle WAV / WAV folder / Serum import, multicycle WAV export |
 | **Result heal** | Header dropdown (**Result·…**): Off / Soft / Adapt, DualCosine, Noise2Noise, or **ReelAI**. Bakes the **whole wavetable bank** (total/Result path) before playback. Session snapshot A/B. |
 | **Layer heal** | Selected toolbar (**Layer·…**): same methods, applied only to the **selected layer’s frame**. One oscillator can mix modes across layers (e.g. L1 DualCosine, L2 ReelAI). Persisted on each layer in `.reelpreset`. |
 | **Fit ends** | Selected toolbar one-shot DualCosine on the **selected layer frame** only. |

@@ -165,6 +165,10 @@ fn export_target_in_bundle(
             let path = out_dir.join("synth/wav_frames");
             export_wavetable(bank, target, &path, opts)
         }
+        ExportTarget::WavMulticycle => {
+            let path = out_dir.join("synth/wav_table/table_multicycle.wav");
+            export_wavetable(bank, target, &path, opts)
+        }
         ExportTarget::Serum => {
             let path = out_dir.join("synth/serum/patch_export.fxp");
             export_preset(preset, bank, target, &path, opts)

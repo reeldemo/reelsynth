@@ -8,11 +8,13 @@ use crate::keyboard_layout::{detect_layout, keyboard_note, qwer_index, ComputerL
 use crate::midi_host::{MidiDevices, MidiInputHandle};
 use crossbeam_channel::{Receiver, Sender};
 use eframe::egui;
-use reelsynth::import::{import_serum_fxp, import_vital, import_wav_folder};
+use reelsynth::import::{
+    import_serum_fxp, import_vital, import_wav_folder, import_wav_multicycle,
+};
 use reelsynth::{
-    load_preset, note_in_scale, resolve_bank_for_preset, resolve_diatonic_chord,
-    scale_degree_to_midi, snap_note, ArpEngine, ArpEvent, MidiEvent, Patch, PerformanceLayout,
-    PerformanceSettings, ScaleBehavior, ScopeMonitor, WavetableBank,
+    export_wav_multicycle, load_preset, note_in_scale, resolve_bank_for_preset,
+    resolve_diatonic_chord, scale_degree_to_midi, snap_note, ArpEngine, ArpEvent, MidiEvent, Patch,
+    PerformanceLayout, PerformanceSettings, ScaleBehavior, ScopeMonitor, WavetableBank,
 };
 use reelsynth_ui::{
     apply_loaded_bank_to_design, bake_bank_seams, compose_to_patch_sequence, draw_shell,
@@ -1033,6 +1035,72 @@ impl ReelSynthApp {
         }
     }
 
+    fn import_wav_multicycle(&mut self) {
+        let Some(path) = rfd::FileDialog::new()
+            .add_filter("Wavetable WAV", &["wav"])
+            .pick_file()
+        else {
+            return;
+        };
+        match import_wav_multicycle(path.to_str().unwrap_or_default()) {
+            Ok(bank) => {
+                let name = path
+                    .file_stem()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("WAV table")
+                    .replace('_', " ");
+                self.wt_path = None;
+                let frames = bank.num_frames;
+                let frame_size = bank.frame_size;
+                self.load_bank(bank, name, None);
+                self.state.status = format!(
+                    "Imported multicycle WAV {} ({}×{})",
+                    path.file_name()
+                        .and_then(|n| n.to_str())
+                        .unwrap_or("table"),
+                    frames,
+                    frame_size
+                );
+            }
+            Err(e) => self.state.status = format!("Multicycle WAV import failed: {e}"),
+        }
+    }
+
+    fn export_wav_multicycle_file(&mut self) {
+        let Some(bank) = self.bank_for_ui() else {
+            self.state.status = "No wavetable loaded".into();
+            return;
+        };
+        let default_name = format!(
+            "{}_multicycle.wav",
+            self.state.wt_bank_name.replace(['/', '\\'], "_").trim()
+        );
+        let Some(mut path) = rfd::FileDialog::new()
+            .add_filter("Wavetable WAV", &["wav"])
+            .set_file_name(&default_name)
+            .save_file()
+        else {
+            return;
+        };
+        if path.extension().is_none() {
+            path.set_extension("wav");
+        }
+        let report = export_wav_multicycle(&bank, &path);
+        if report.success {
+            self.state.status = format!(
+                "Exported multicycle WAV {}",
+                path.file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("table.wav")
+            );
+        } else {
+            self.state.status = format!(
+                "Multicycle WAV export failed: {}",
+                report.errors.join("; ")
+            );
+        }
+    }
+
     fn import_serum_fxp(&mut self) {
         let Some(path) = rfd::FileDialog::new()
             .add_filter("Serum Preset", &["fxp"])
@@ -1578,6 +1646,12 @@ impl eframe::App for ReelSynthApp {
                 }
                 if actions.import_wav_folder {
                     self.import_wav_folder();
+                }
+                if actions.import_wav_multicycle {
+                    self.import_wav_multicycle();
+                }
+                if actions.export_wav_multicycle {
+                    self.export_wav_multicycle_file();
                 }
                 if actions.import_serum_fxp {
                     self.import_serum_fxp();

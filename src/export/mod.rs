@@ -16,7 +16,7 @@ pub use reelpack::export_reelpack;
 pub use serum::export_serum_wt;
 pub use sfz::export_sfz;
 pub use vital::export_vital;
-pub use wav::write_wav_mono;
+pub use wav::{export_wav_multicycle, write_wav_mono, write_wav_mono_f32};
 
 use crate::patch::Patch;
 use crate::wavetable::WavetableBank;
@@ -95,6 +95,7 @@ impl ExportReport {
 pub enum ExportTarget {
     Vital,
     Wav,
+    WavMulticycle,
     Serum,
     Ableton,
     Sfz,
@@ -108,6 +109,7 @@ impl ExportTarget {
         match s.trim().to_ascii_lowercase().as_str() {
             "vital" => Some(Self::Vital),
             "wav" => Some(Self::Wav),
+            "wav_table" | "multicycle" | "wav_multicycle" => Some(Self::WavMulticycle),
             "serum" => Some(Self::Serum),
             "ableton" => Some(Self::Ableton),
             "sfz" => Some(Self::Sfz),
@@ -122,6 +124,7 @@ impl ExportTarget {
         match self {
             Self::Vital => "vital",
             Self::Wav => "wav",
+            Self::WavMulticycle => "wav_multicycle",
             Self::Serum => "serum",
             Self::Ableton => "ableton",
             Self::Sfz => "sfz",
@@ -168,6 +171,7 @@ pub fn export_wavetable(
     match target {
         ExportTarget::Vital => vital::export_vital(bank, out_path, &opts.table_name),
         ExportTarget::Wav => wav::export_wav_folder(bank, out_path),
+        ExportTarget::WavMulticycle => wav::export_wav_multicycle(bank, out_path),
         ExportTarget::Serum => {
             serum::export_serum_wt(bank, &Patch::default_mono(), out_path, &opts.table_name)
         }
@@ -192,6 +196,7 @@ pub fn export_preset(
     match target {
         ExportTarget::Vital => vital::export_vital(bank, out_path, &opts.table_name),
         ExportTarget::Wav => wav::export_wav_folder(bank, out_path),
+        ExportTarget::WavMulticycle => wav::export_wav_multicycle(bank, out_path),
         ExportTarget::Serum => serum::export_serum_wt(bank, preset, out_path, &opts.table_name),
         ExportTarget::Ableton => ableton::export_ableton_map_v2(preset, Some(bank), out_path),
         ExportTarget::Sfz => sfz::export_sfz(preset, bank, out_path, opts),

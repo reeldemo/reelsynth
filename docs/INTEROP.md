@@ -9,6 +9,7 @@ Canonical state is always `.reelwt` + `.reelpreset`. Foreign formats are export 
 | `.reelwt` + `.reelpreset` | Full | Full | Full (16 slots) | N/A | Native |
 | Vital `.vitaltable` | Frames + name | No | No | No | JSON `{name, samples[][]}` |
 | WAV folder | One file per frame | — | — | — | `frame_NNN.wav`, 16-bit mono |
+| WAV multicycle | Frames concatenated | — | — | — | Serum / ESW-style; float32 or 16-bit mono; frame size inferred (prefers 2048) |
 | Serum `.fxp` WT subset | RSWT blob | WT pos, cutoff, ADSR | 4 slots max | No | [SERUM_FXP.md](SERUM_FXP.md) |
 | Ableton map v2 | Multicycle WAV + frames | 5 params + aliases | 4 macro hints | No | One-drag sprite; OSC/Send for params |
 | SFZ | Rendered sample | Filter opcodes subset | Dropped | No | One region |
@@ -26,6 +27,7 @@ Every `reelpack/` still emits MIDI + 24-bit WAV even if a synth target fails. Fa
 |------|--------|--------|
 | Vital import → export → import | RMSE < 1e-5 | N/A |
 | WAV folder round-trip | Frame count kept | N/A |
+| WAV multicycle round-trip (float32) | RMSE < 1e-5 | N/A |
 | Serum RSWT export → import | Exact floats | Partial (4 mod slots) |
 
 ## v2 (documented, not shipped)

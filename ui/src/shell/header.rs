@@ -121,12 +121,22 @@ pub(super) fn draw_header(
                                 actions.import_vital_wt = true;
                                 ui.close_menu();
                             }
+                            if menu_action(ui, "WAV table (multicycle)…").clicked() {
+                                actions.import_wav_multicycle = true;
+                                ui.close_menu();
+                            }
                             if menu_action(ui, "WAV folder…").clicked() {
                                 actions.import_wav_folder = true;
                                 ui.close_menu();
                             }
                             if menu_action(ui, "Serum (.fxp)…").clicked() {
                                 actions.import_serum_fxp = true;
+                                ui.close_menu();
+                            }
+                            menu_divider(ui);
+                            menu_section_label(ui, "Export");
+                            if menu_action(ui, "Export multicycle WAV…").clicked() {
+                                actions.export_wav_multicycle = true;
                                 ui.close_menu();
                             }
                         });
