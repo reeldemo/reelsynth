@@ -1,0 +1,7 @@
+# Shared Clippy knobs for local + CI code-smell jobs.
+# CI denies correctness/suspicious; style/complexity stay warnings to avoid a
+# one-shot rewrite of the existing warning backlog (~80+ on the engine crate).
+
+too-many-arguments-threshold = 12
+type-complexity-threshold = 350
+

@@ -1,0 +1,13 @@
+# cargo-audit ignores — keep in sync with deny.toml [advisories].ignore
+# https://docs.rs/cargo-audit/latest/cargo_audit/
+
+[advisories]
+ignore = [
+    # Transitive via egui/eframe 0.30 — blocked until that stack bumps quick-xml.
+    "RUSTSEC-2026-0194",
+    "RUSTSEC-2026-0195",
+    # Optional pyo3 ^0.22 — bump with next python-binding release.
+    "RUSTSEC-2025-0020",
+    "RUSTSEC-2026-0177",
+]
+

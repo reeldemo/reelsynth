@@ -13,6 +13,10 @@ cargo run -p reelsynth-app --bin reelsynth-app
 
 Rust ≥ 1.85. Python: `maturin develop --features python`.
 
+## CI / security
+
+PRs run tests, Clippy (correctness/suspicious), `cargo audit`, `cargo deny`, CodeQL, and dependency review. Dependabot opens weekly Cargo / Actions update PRs. See [.github/CI.md](.github/CI.md).
+
 ## Docs
 
 | File | Role |
@@ -142,3 +146,4 @@ cargo build --release --target x86_64-apple-darwin -p reelsynth-app -p reelsynth
 ## License
 
 Contributions are MIT — same as the project.
+
