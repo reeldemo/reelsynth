@@ -1,0 +1,1 @@
+{"data":{"max_step_adaptive":0.3431607484817505,"max_step_soft":1.4216070175170898,"wrap_adaptive":0.0,"wrap_off":1.7999999523162842,"wrap_soft":0.0},"hypothesisId":"H-automate-debug","location":"agent_api.rs:automated_seam_modes_on_quant_frame","message":"AgentSession Seam A/B without GUI","runId":"automated-agent-seam","sessionId":"0ab8f9","timestamp":1787555258759}
