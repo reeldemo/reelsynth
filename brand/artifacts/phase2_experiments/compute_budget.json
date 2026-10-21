@@ -1,0 +1,41 @@
+{
+  "schema": "denoiseopt.phase2_compute.v1",
+  "rows": [
+    {
+      "method": "Noise2Noise_corrupt_corrupt",
+      "search_or_train_seeds": "train_424242",
+      "arch_evaluations": 20000,
+      "gpu_hours": "",
+      "notes": "One-shot train; each step is one forward+backward batch (default steps=20000). GPU-hours from n2n_baseline.json when present, else train once to log."
+    },
+    {
+      "method": "Overnight_hybrid_GA_PPO",
+      "search_or_train_seeds": "1902771841",
+      "arch_evaluations": 5925,
+      "gpu_hours": 6.494300404919518,
+      "notes": "gpu=NVIDIA GeForce RTX 3090; branch-best freeze ~6.9k iters"
+    },
+    {
+      "method": "Meta_hybrid_GA_PPO_5k",
+      "search_or_train_seeds": 1902771841,
+      "arch_evaluations": 5000,
+      "gpu_hours": 8.456805276208454,
+      "notes": "FitCell-to-plateau protocol; status=completed; summary=/workspace/brand/artifacts/meta_approach_compare/hybrid_lstm/summary.json"
+    },
+    {
+      "method": "Meta_hybrid_GA_PPO_5k",
+      "search_or_train_seeds": 2026072701,
+      "arch_evaluations": 1,
+      "gpu_hours": 0.0006199485725826687,
+      "notes": "FitCell-to-plateau protocol; status=completed; summary=/workspace/brand/artifacts/phase2_experiments/search_2026072701/hybrid_lstm/summary.json"
+    },
+    {
+      "method": "Meta_hybrid_GA_PPO_5k",
+      "search_or_train_seeds": 2026072702,
+      "arch_evaluations": 1,
+      "gpu_hours": 0.0004252109924952189,
+      "notes": "FitCell-to-plateau protocol; status=completed; summary=/workspace/brand/artifacts/phase2_experiments/search_2026072702/hybrid_lstm/summary.json"
+    }
+  ],
+  "honesty": "arch_evaluations = outer-loop trials (each includes FitCell). N2N row counts training steps."
+}

@@ -12,6 +12,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **DenoiseOpt phase-2 experiment scripts** — `scripts/phase2_experiments/` plus `brand/artifacts/phase2_experiments/` CSV/JSON for multi-search-seed holdout eval, α sensitivity, and compute budget (paper review B3/M3/M5). Restores `scripts/baselines/n2n_seam.py` from embedded `n2n_seam_weights.bin`.
+- **Pre-registered hybrid vs N2N case suite** — `PREREGISTRATION.md`, `run_cases.py` / `run_all.py --cases`, jump-local metric (±8 samples), `GPU_CASES.md` cost notes.
+
 - **Multicycle WAV import/export** — Serum / Echo Sound Works style tables (frames concatenated in one `.wav`). WT menu: **WAV table (multicycle)…** and **Export multicycle WAV…**. CLI/SDK: `import_wavetable("wav_table", …)` / `export` target `wav_multicycle` (float32 mono). Folder import still uses one cycle per file; passing a `.wav` file to source `"wav"` auto-selects multicycle.
 
 ## [0.4.6] - 2026-08-02
