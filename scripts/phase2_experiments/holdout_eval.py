@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
 import overnight_gpu_rl_arch as og  # noqa: E402
 from baselines.n2n_seam import embedded as n2n_embedded  # noqa: E402
+from phase2_experiments._seeds import load_config, require_min_search_seeds  # noqa: E402
 
 
 def set_seed(seed: int, device: torch.device) -> None:
@@ -94,14 +95,19 @@ def main() -> int:
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--out-dir", type=Path, default=ROOT / "brand/artifacts/phase2_experiments")
     ap.add_argument("--alpha", type=float, default=og.BLEND_ALPHA)
+    ap.add_argument("--smoke", action="store_true", help="Smaller batch for CI")
     args = ap.parse_args()
-    cfg_doc = json.loads(args.config.read_text(encoding="utf-8"))
+    cfg_doc = load_config(args.config)
+    search_seeds = [int(s) for s in cfg_doc["search_seeds"]]
+    require_min_search_seeds(search_seeds, cfg=cfg_doc)
     device = torch.device(args.device if args.device != "cuda" or torch.cuda.is_available() else "cpu")
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
     holdout_start = int(cfg_doc["holdout_eval_seed_start"])
     holdout_count = int(cfg_doc["holdout_eval_seed_count"])
     batch = int(cfg_doc.get("score_batch", 64))
+    if args.smoke:
+        batch = int(cfg_doc.get("smoke_holdout_batch", min(batch, 32)))
     reuse = cfg_doc.get("reuse_search_summary") or {}
 
     rows: list[dict[str, Any]] = []
@@ -142,7 +148,7 @@ def main() -> int:
 
     gate = float(cfg_doc.get("n2n_gate_reference", {}).get("gate_value", 0.975))
 
-    for search_seed in cfg_doc["search_seeds"]:
+    for search_seed in search_seeds:
         seed_s = str(search_seed)
         run_dir = args.out_dir / f"search_{search_seed}" / "hybrid_lstm"
         summary_path = run_dir / "summary.json"
@@ -195,7 +201,7 @@ def main() -> int:
     # Aggregate across search seeds (honest mean of per-seed holdout means)
     hybrid_means = [
         float(detail["search_runs"][str(s)]["holdout"]["R_mean"])
-        for s in cfg_doc["search_seeds"]
+        for s in search_seeds
         if str(s) in detail["search_runs"] and "holdout" in detail["search_runs"][str(s)]
     ]
     if hybrid_means:

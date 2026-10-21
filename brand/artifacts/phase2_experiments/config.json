@@ -1,7 +1,9 @@
 {
   "schema": "denoiseopt.phase2_experiments.v1",
   "protocol": "review-1 fixes B3, M3, M5 (multi-search-seed hybrid, holdout eval, alpha sweep, compute table)",
+  "min_search_seeds": 3,
   "search_seeds": [1902771841, 2026072701, 2026072702],
+  "gpu_plateau_search_seeds": [2026072701, 2026072702],
   "holdout_eval_seed_start": 20260719,
   "holdout_eval_seed_count": 5,
   "score_batch": 64,
@@ -14,6 +16,14 @@
     "ckpt_every": 25,
     "plateau_every": 500
   },
+  "smoke_hybrid": {
+    "iters": 1,
+    "batch": 12,
+    "fit_steps": 2,
+    "pop_size": 4,
+    "ckpt_every": 1
+  },
+  "smoke_holdout_batch": 32,
   "n2n_gate_reference": {
     "metric": "R_blend_mean_over_holdout_seeds",
     "gate_value": 0.975,

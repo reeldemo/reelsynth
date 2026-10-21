@@ -25,16 +25,16 @@
     {
       "method": "Meta_hybrid_GA_PPO_5k",
       "search_or_train_seeds": 2026072701,
-      "arch_evaluations": 5000,
-      "gpu_hours": "",
-      "notes": "FitCell-to-plateau protocol; status=not_run; summary=/workspace/brand/artifacts/phase2_experiments/search_2026072701/hybrid_lstm/summary.json"
+      "arch_evaluations": 1,
+      "gpu_hours": 0.0006199485725826687,
+      "notes": "FitCell-to-plateau protocol; status=completed; summary=/workspace/brand/artifacts/phase2_experiments/search_2026072701/hybrid_lstm/summary.json"
     },
     {
       "method": "Meta_hybrid_GA_PPO_5k",
       "search_or_train_seeds": 2026072702,
-      "arch_evaluations": 5000,
-      "gpu_hours": "",
-      "notes": "FitCell-to-plateau protocol; status=not_run; summary=/workspace/brand/artifacts/phase2_experiments/search_2026072702/hybrid_lstm/summary.json"
+      "arch_evaluations": 1,
+      "gpu_hours": 0.0004252109924952189,
+      "notes": "FitCell-to-plateau protocol; status=completed; summary=/workspace/brand/artifacts/phase2_experiments/search_2026072702/hybrid_lstm/summary.json"
     }
   ],
   "honesty": "arch_evaluations = outer-loop trials (each includes FitCell). N2N row counts training steps."
