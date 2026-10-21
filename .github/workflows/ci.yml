@@ -63,6 +63,7 @@ jobs:
         run: |
           python scripts/test_v10_seam_metric.py
           python scripts/test_plateau_adapt.py
+          python scripts/test_case_jump_metric.py
 
-      - name: Phase-2 orchestrator smoke (3 search seeds, CPU, tiny budget)
-        run: python scripts/phase2_experiments/run_all.py --device cpu --smoke
+      - name: Phase-2 smoke (3 search seeds + pre-registered cases, CPU)
+        run: python scripts/phase2_experiments/run_all.py --device cpu --smoke --cases

@@ -44,6 +44,16 @@ def main() -> int:
         action="store_true",
         help="CI/dev: tiny hybrid budget for plateau seeds + full CPU holdout/α/compute",
     )
+    ap.add_argument(
+        "--cases",
+        action="store_true",
+        help="Run pre-registered targeted case suite (PREREGISTRATION.md)",
+    )
+    ap.add_argument(
+        "--cases-only",
+        action="store_true",
+        help="With --cases: skip main holdout/α/compute pipeline",
+    )
     args = ap.parse_args()
 
     cfg_doc = load_config(args.config)
@@ -63,6 +73,11 @@ def main() -> int:
 
     reuse_map = cfg_doc.get("reuse_search_summary") or {}
     gpu_plateau_seeds = {int(s) for s in (cfg_doc.get("gpu_plateau_search_seeds") or [20_260_727_01, 20_260_727_02])}
+
+    run_cases = args.cases
+
+    if args.cases_only:
+        args.skip_search = True
 
     if not args.skip_search:
         for seed in seeds:
@@ -105,6 +120,23 @@ def main() -> int:
             "  python scripts/phase2_experiments/run_all.py --device cuda",
             flush=True,
         )
+
+    if run_cases:
+        extra = ["--config", str(args.config), "--device", args.device]
+        if args.smoke:
+            extra.append("--smoke")
+        rc = run_py("run_cases.py", *extra)
+        status["steps"]["cases"] = "ok" if rc == 0 else f"failed_rc_{rc}"
+        if rc != 0:
+            status["finished_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            (out_dir / "RUN_STATUS.json").write_text(json.dumps(status, indent=2), encoding="utf-8")
+            return rc
+
+    if args.cases_only:
+        status["finished_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        (out_dir / "RUN_STATUS.json").write_text(json.dumps(status, indent=2), encoding="utf-8")
+        print(json.dumps(status, indent=2))
+        return 0
 
     for step, script in (
         ("holdout_eval", "holdout_eval.py"),
