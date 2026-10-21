@@ -1,0 +1,16 @@
+{
+  "started_at": "2026-10-21T05:15:00Z",
+  "finished_at": "2026-10-21T05:20:00Z",
+  "device": "cpu",
+  "cuda_available": false,
+  "search_seeds": [1902771841, 2026072701, 2026072702],
+  "steps": {
+    "search_1902771841": "reused_existing_summary",
+    "search_2026072701": "blocked_no_cuda",
+    "search_2026072702": "blocked_no_cuda",
+    "holdout_eval": "ok",
+    "alpha_sweep": "ok",
+    "compute_table": "ok"
+  },
+  "blocker": "Cloud agent VM has no NVIDIA GPU. Run run_all.py --device cuda on RTX 3090 (or self-hosted worker) to train seeds 2026072701 and 2026072702."
+}

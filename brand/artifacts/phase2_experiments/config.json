@@ -1,0 +1,27 @@
+{
+  "schema": "denoiseopt.phase2_experiments.v1",
+  "protocol": "review-1 fixes B3, M3, M5 (multi-search-seed hybrid, holdout eval, alpha sweep, compute table)",
+  "search_seeds": [1902771841, 2026072701, 2026072702],
+  "holdout_eval_seed_start": 20260719,
+  "holdout_eval_seed_count": 5,
+  "score_batch": 64,
+  "hybrid": {
+    "approach": "hybrid_lstm",
+    "iters": 5000,
+    "batch": 48,
+    "fit_steps": 24,
+    "pop_size": 12,
+    "ckpt_every": 25,
+    "plateau_every": 500
+  },
+  "n2n_gate_reference": {
+    "metric": "R_blend_mean_over_holdout_seeds",
+    "gate_value": 0.975,
+    "note": "Noise2Noise corrupt→corrupt; paper reports ~0.9750 as 5-seed holdout mean vs sine+cliff make_batch"
+  },
+  "alpha_sweep": [0.5, 0.6, 0.7, 0.8, 0.9],
+  "alpha_sweep_search_seed": 1902771841,
+  "reuse_search_summary": {
+    "1902771841": "brand/artifacts/meta_approach_compare/hybrid_lstm/summary.json"
+  }
+}
