@@ -72,6 +72,15 @@ MLP_IN = SEAM_W * 2
 N = 256
 PROLONG = 16
 LAMBDA_LATENCY = 0.02
+
+# v14 FitCell-to-plateau searchable ranges (REPRO.md / paper Table v14-hybrid-converge).
+PLATEAU_FIT_MAX_STEPS = (512, 768, 1024, 1536, 2048)
+PLATEAU_BATCH = (64, 80, 96, 112, 128)
+PLATEAU_FIT_PATIENCE = (2, 3, 5, 7, 10)
+PLATEAU_FIT_REL_EPS = (1e-5, 3e-5, 1e-4, 3e-4, 1e-3)
+PLATEAU_LAMBDA_LATENCY = (0.005, 0.01, 0.02, 0.04, 0.06)
+DEFAULT_FIT_PATIENCE = 3
+DEFAULT_FIT_REL_EPS = 1e-4
 LATENCY_REF_MS = 50.0
 BLEND_ALPHA = msm.BLEND_ALPHA  # 0.7 — seam-weighted; body still strong
 LATENCY_WARMUP = 1
@@ -196,6 +205,12 @@ class HyperParams:
     entropy_coef: float = 0.02
     ppo_clip: float = 0.2
     adv_coef: float = 0.05  # weight for optional adv aux
+    # FitCell convergence (train-to-plateau). When fit_max_steps is set it is T_max; else fit_steps.
+    fit_max_steps: int | None = None
+    fit_patience: int = DEFAULT_FIT_PATIENCE
+    fit_rel_eps: float = DEFAULT_FIT_REL_EPS
+    # Per-candidate λ in J = R_blend − λ·latency_norm (None → global LAMBDA_LATENCY).
+    lambda_latency: float | None = None
     # Reward shaping for outer RL credit (objective remains maximize absolute R).
     # abs_r | vs_dualcosine | vs_nobake | neglog_gap
     reward_mode: str = "vs_dualcosine"
@@ -711,7 +726,21 @@ def random_arch(rng: random.Random, adapt: PlateauAdaptState | None = None) -> A
     )
 
 
-def random_hp(rng: random.Random) -> HyperParams:
+def random_hp(rng: random.Random, *, search_space: str = "default") -> HyperParams:
+    if search_space == "plateau":
+        return HyperParams(
+            lr=10 ** rng.uniform(-4.0, -2.0),
+            fit_steps=rng.choice([16, 20, 24, 32, 40, 48]),
+            fit_max_steps=int(rng.choice(PLATEAU_FIT_MAX_STEPS)),
+            fit_patience=int(rng.choice(PLATEAU_FIT_PATIENCE)),
+            fit_rel_eps=float(rng.choice(PLATEAU_FIT_REL_EPS)),
+            batch=int(rng.choice(PLATEAU_BATCH)),
+            lambda_latency=float(rng.choice(PLATEAU_LAMBDA_LATENCY)),
+            entropy_coef=rng.uniform(0.005, 0.06),
+            ppo_clip=rng.choice([0.1, 0.2, 0.25, 0.3]),
+            adv_coef=rng.choice([0.02, 0.05, 0.1]),
+            reward_mode=rng.choice(list(REWARD_MODES)),
+        )
     return HyperParams(
         lr=10 ** rng.uniform(-4.0, -2.0),
         fit_steps=rng.choice([16, 20, 24, 32, 40, 48]),
@@ -940,17 +969,46 @@ def pick_branch(
             return b
     return names[-1]
 
-def mutate_hp(hp: HyperParams, rng: random.Random) -> HyperParams:
+def mutate_hp(hp: HyperParams, rng: random.Random, *, search_space: str = "default") -> HyperParams:
     h = HyperParams(**hp.to_dict())
     h.lr = float(max(1e-5, min(1e-1, h.lr * (10 ** rng.uniform(-0.4, 0.4)))))
     h.fit_steps = int(max(8, min(64, h.fit_steps + rng.choice([-8, -4, 0, 4, 8]))))
     h.entropy_coef = float(max(0.001, min(0.1, h.entropy_coef + rng.uniform(-0.01, 0.01))))
     h.ppo_clip = float(max(0.05, min(0.4, h.ppo_clip + rng.choice([-0.05, 0.0, 0.05]))))
-    h.batch = int(rng.choice([32, 48, 64]))
+    if search_space == "plateau":
+        cap = int(h.fit_max_steps or h.fit_steps or PLATEAU_FIT_MAX_STEPS[2])
+        if rng.random() < 0.35:
+            h.fit_max_steps = int(rng.choice(PLATEAU_FIT_MAX_STEPS))
+        else:
+            h.fit_max_steps = int(
+                max(PLATEAU_FIT_MAX_STEPS[0], min(PLATEAU_FIT_MAX_STEPS[-1], cap + rng.choice([-256, 0, 256])))
+            )
+        if rng.random() < 0.3:
+            h.fit_patience = int(rng.choice(PLATEAU_FIT_PATIENCE))
+        if rng.random() < 0.3:
+            h.fit_rel_eps = float(rng.choice(PLATEAU_FIT_REL_EPS))
+        if rng.random() < 0.35:
+            h.batch = int(rng.choice(PLATEAU_BATCH))
+        if rng.random() < 0.3:
+            h.lambda_latency = float(rng.choice(PLATEAU_LAMBDA_LATENCY))
+    else:
+        h.batch = int(rng.choice([32, 48, 64]))
     h.adv_coef = float(max(0.0, min(0.2, h.adv_coef + rng.uniform(-0.02, 0.02))))
     if rng.random() < 0.25:
         h.reward_mode = rng.choice(list(REWARD_MODES))
     return h
+
+
+def resolve_fit_max_steps(hp: HyperParams, fit_steps_default: int) -> int:
+    if hp.fit_max_steps is not None:
+        return int(hp.fit_max_steps)
+    return int(hp.fit_steps or fit_steps_default)
+
+
+def resolve_lambda_latency(hp: HyperParams) -> float:
+    if hp.lambda_latency is not None:
+        return float(hp.lambda_latency)
+    return float(LAMBDA_LATENCY)
 
 
 def pbt_exploit_mutate(
@@ -1018,7 +1076,10 @@ def fit_cell(
     batch: int = 32,
     lr: float = 3e-3,
     adv_coef: float = 0.05,
-) -> tuple[float, bool]:
+    *,
+    patience: int = DEFAULT_FIT_PATIENCE,
+    rel_eps: float = DEFAULT_FIT_REL_EPS,
+) -> tuple[float, bool, int]:
     trainable_ops = {
         "mlp_seam",
         "fade_pull",
@@ -1041,10 +1102,12 @@ def fit_cell(
         lr_safe = 3e-3
     opt = torch.optim.Adam(cell.parameters(), lr=lr_safe) if can_train else None
     prev = None
-    patience = 0
+    stall = 0
     last_r = 0.0
     converged = False
+    steps_done = 0
     for _ in range(steps):
+        steps_done += 1
         ideal, eng = make_batch(batch, N, device)
         out = apply_ops(eng, cell, ops)
         r = residual_score_blend(ideal, eng, out).mean()
@@ -1077,18 +1140,18 @@ def fit_cell(
                     opt.zero_grad(set_to_none=True)
         if prev is not None:
             rel = abs(prev - last_r) / max(abs(prev), 1e-6)
-            if rel < 1e-4:
-                patience += 1
-                if patience >= 3:
+            if rel < float(rel_eps):
+                stall += 1
+                if stall >= int(patience):
                     converged = True
                     break
             else:
-                patience = 0
+                stall = 0
         prev = last_r
         if not can_train:
             converged = True
             break
-    return last_r, converged
+    return last_r, converged, steps_done
 
 
 @torch.no_grad()
@@ -1123,9 +1186,10 @@ def evaluate_candidate(
 ) -> tuple[float, float, float, float, SeamCell]:
     """Fit + R_blend eval + latency → (r_blend, j, j_scored, t_ms, cell)."""
     cell = SeamCell(cfg).to(device)
-    fit_steps = int(hp.fit_steps or fit_steps_default)
+    fit_steps = resolve_fit_max_steps(hp, fit_steps_default)
     batch = int(hp.batch or batch_default)
-    r_fit, _ = fit_cell(
+    lam = resolve_lambda_latency(hp)
+    r_fit, _, _fit_steps_done = fit_cell(
         cell,
         cfg.ops,
         device,
@@ -1133,6 +1197,8 @@ def evaluate_candidate(
         batch=batch,
         lr=hp.lr,
         adv_coef=hp.adv_coef if cfg.use_adv_aux else 0.0,
+        patience=hp.fit_patience,
+        rel_eps=hp.fit_rel_eps,
     )
     r_eval = eval_cell(cell, cfg.ops, device, batch=max(64, batch))
     r_blend = finite_scalar(0.5 * r_fit + 0.5 * r_eval, 0.0)
@@ -1140,7 +1206,7 @@ def evaluate_candidate(
         measure_forward_latency_ms(cell, cfg.ops, device, batch=min(32, max(8, batch))),
         0.0,
     )
-    j = finite_scalar(objective_j(r_blend, t_ms), 0.0)
+    j = finite_scalar(objective_j(r_blend, t_ms, lam=lam), 0.0)
     dmb = finite_scalar(
         depth_mixture_bonus(
             r_blend,
@@ -1787,9 +1853,9 @@ def main() -> int:
             save_unfitted(run_dir, trial_cfg, f"iter_{it:06d}", trial_hp)
 
         cell = SeamCell(trial_cfg).to(device)
-        fit_steps = trial_hp.fit_steps or args.fit_steps
+        fit_steps = resolve_fit_max_steps(trial_hp, args.fit_steps)
         batch = trial_hp.batch or args.batch
-        r_fit, converged = fit_cell(
+        r_fit, converged, _ = fit_cell(
             cell,
             trial_cfg.ops,
             device,
@@ -1797,6 +1863,8 @@ def main() -> int:
             batch=batch,
             lr=trial_hp.lr,
             adv_coef=trial_hp.adv_coef if trial_cfg.use_adv_aux else 0.0,
+            patience=trial_hp.fit_patience,
+            rel_eps=trial_hp.fit_rel_eps,
         )
         r_eval = eval_cell(cell, trial_cfg.ops, device, batch=max(64, batch))
         raw_sum = 0.5 * r_fit + 0.5 * r_eval

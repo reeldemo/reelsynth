@@ -595,7 +595,7 @@ def aging_step(
     action = rng.randrange(og.N_ACTIONS)
     child_cfg = og.mutate_arch(parent.cfg, action, rng, None)
     child_cfg = inject_search_priors(child_cfg, rng)
-    child_hp = og.mutate_hp(parent.hp, rng)
+    child_hp = og.mutate_hp(parent.hp, rng, search_space=search_space)
     r_raw, r, cell = evaluate(
         child_cfg, child_hp, device, baseline=baseline, fit_steps_default=fit_steps, batch_default=batch
     )
@@ -643,6 +643,8 @@ def run_approach(
     ckpt_every: int,
     resume: bool,
     all_approaches: list[str] | None = None,
+    protocol: str = "default",
+    proposals_per_iter: int = 1,
 ) -> dict[str, Any]:
     approach_dir = out_dir / name
     approach_dir.mkdir(parents=True, exist_ok=True)
@@ -692,7 +694,10 @@ def run_approach(
     champ_t_ms = 0.0
     champ_j = -1.0
     iters_since_improve = 0
-    plateau_every = 500
+    search_space = "plateau" if protocol == "plateau" else "default"
+    plateau_every = 10**9 if protocol == "plateau" else 500
+    proposals_per_iter = max(1, int(proposals_per_iter))
+    summary_protocol = "paper_v14_plateau" if protocol == "plateau" else "paper_v10"
     t0 = time.time()
     elapsed_prev = 0.0
 
@@ -704,7 +709,7 @@ def run_approach(
     policy_opt: torch.optim.Optimizer | None = None
     re_base = 0.0
     cur_cfg = og.random_arch(rng)
-    cur_hp = og.random_hp(rng)
+    cur_hp = og.random_hp(rng, search_space=search_space)
     cur_score = -1.0
     pending_cma: list[list[float]] = []
     pending_fit: list[float] = []
@@ -783,7 +788,7 @@ def run_approach(
 
     if name == "aging_evo" and not pop:
         pop = [
-            og.Individual(og.random_arch(rng), og.random_hp(rng), score=-1.0, age=i)
+            og.Individual(og.random_arch(rng), og.random_hp(rng, search_space=search_space), score=-1.0, age=i)
             for i in range(pop_size)
         ]
     if name == "cmaes" and cma is None:
@@ -806,6 +811,7 @@ def run_approach(
         f"n2n_gate_R_blend={n2n_gate_r} "
         f"blocks_has_lstm={'lstm' in BLOCKS} blocks_has_xlstm={'xlstm' in BLOCKS} "
         f"hp_reward_sweep=on plateau_every={plateau_every} "
+        f"protocol={protocol} proposals_per_iter={proposals_per_iter} "
         f"primary_metric=r_blend search_objective=J"
     )
 
@@ -817,293 +823,296 @@ def run_approach(
     plateau = og.PlateauAdaptState()
     if name == "hybrid_lstm" and not pop:
         pop = [
-            og.Individual(og.random_arch(rng), og.random_hp(rng), score=-1.0, age=0)
+            og.Individual(og.random_arch(rng), og.random_hp(rng, search_space=search_space), score=-1.0, age=0)
             for _ in range(pop_size)
         ]
 
     for it in range(start_it, iters + 1):
-        proposal = name
-        if name == "random":
-            trial_cfg = inject_search_priors(og.random_arch(rng), rng)
-            trial_hp = og.random_hp(rng)
-            r_raw, r, cell = evaluate(
-                trial_cfg,
-                trial_hp,
-                device,
-                baseline=baseline,
-                fit_steps_default=fit_steps,
-                batch_default=batch,
-            )
-        elif name == "cmaes":
-            assert cma is not None
-            if not pending_cma:
-                pending_cma = cma.ask()
-                pending_fit = []
-            vec = pending_cma[len(pending_fit)]
-            trial_cfg, trial_hp = decode_cma(vec, rng)
-            r_raw, r, cell = evaluate(
-                trial_cfg,
-                trial_hp,
-                device,
-                baseline=baseline,
-                fit_steps_default=fit_steps,
-                batch_default=batch,
-            )
-            pending_fit.append(r)
-            if len(pending_fit) >= len(pending_cma):
-                cma.tell(pending_cma, pending_fit)
-                pending_cma, pending_fit = [], []
-            proposal = f"cmaes_gen{cma.generation}"
-        elif name == "tpe":
-            assert tpe is not None
-            sample = tpe.ask()
-            trial_cfg, trial_hp = tpe_to_arch(sample, rng)
-            r_raw, r, cell = evaluate(
-                trial_cfg,
-                trial_hp,
-                device,
-                baseline=baseline,
-                fit_steps_default=fit_steps,
-                batch_default=batch,
-            )
-            tpe.tell(sample, r)
-            proposal = "tpe"
-        elif name == "aging_evo":
-            trial_cfg, trial_hp, r_raw, r, cell = aging_step(
-                pop, rng, device, baseline, fit_steps, batch
-            )
-            proposal = "aging_evo"
-        elif name == "reinforce":
-            assert policy is not None and policy_opt is not None
-            state = og.arch_state_vec(cur_cfg, cur_hp, device).unsqueeze(0)
-            logits, _ = policy(state)
-            dist = og.categorical_from_logits(logits)
-            action_t = dist.sample()
-            action = int(action_t.item())
-            logprob = dist.log_prob(action_t)
-            trial_cfg = og.mutate_arch(cur_cfg, action, rng, None)
-            trial_cfg = inject_search_priors(trial_cfg, rng)
-            trial_hp = og.mutate_hp(cur_hp, rng)
-            r_raw, r, cell = evaluate(
-                trial_cfg,
-                trial_hp,
-                device,
-                baseline=baseline,
-                fit_steps_default=fit_steps,
-                batch_default=batch,
-            )
-            reward = og.finite_scalar(
-                og.shaped_reward(
-                    r,
-                    mode=getattr(trial_hp, "reward_mode", "vs_dualcosine"),
-                    r_dualcosine=baseline,
-                    r_nobake=nobake_ref,
-                ),
-                0.0,
-            )
-            re_base = reinforce_update(policy, policy_opt, logprob, reward, re_base)
-            if r >= cur_score:
-                cur_cfg, cur_hp, cur_score = trial_cfg, trial_hp, r
-            proposal = f"reinforce_a{action}"
-        elif name == "hybrid_lstm":
-            assert policy is not None and policy_opt is not None and buf is not None
-            branch = hybrid_branches[(it - 1) % len(hybrid_branches)]
-            ind = pop[(it - 1) % len(pop)]
-            cfg, hp = ind.cfg, ind.hp
-            state = og.arch_state_vec(cfg, hp, device).unsqueeze(0)
-            logits, value = policy(state)
-            dist = og.categorical_from_logits(logits)
-            action_t = dist.sample()
-            action = int(action_t.item())
-            logprob = dist.log_prob(action_t)
-            if branch == "nas":
-                trial_cfg = og.random_arch(rng, plateau)
-                trial_hp = og.mutate_hp(hp, rng)
-                proposal = "NAS_RANDOM"
-            elif branch == "pbt":
-                # Exploit/mutate HPs + reward_mode (near-ceiling sweep lives here)
-                og.pbt_exploit_mutate(pop, rng)
+        _prop_range = range(proposals_per_iter) if name == "hybrid_lstm" else range(1)
+        for prop_idx in _prop_range:
+            proposal = name
+            if name == "random" and prop_idx == 0:
+                trial_cfg = inject_search_priors(og.random_arch(rng), rng)
+                trial_hp = og.random_hp(rng, search_space=search_space)
+                r_raw, r, cell = evaluate(
+                    trial_cfg,
+                    trial_hp,
+                    device,
+                    baseline=baseline,
+                    fit_steps_default=fit_steps,
+                    batch_default=batch,
+                )
+            elif name == "cmaes" and prop_idx == 0:
+                assert cma is not None
+                if not pending_cma:
+                    pending_cma = cma.ask()
+                    pending_fit = []
+                vec = pending_cma[len(pending_fit)]
+                trial_cfg, trial_hp = decode_cma(vec, rng)
+                r_raw, r, cell = evaluate(
+                    trial_cfg,
+                    trial_hp,
+                    device,
+                    baseline=baseline,
+                    fit_steps_default=fit_steps,
+                    batch_default=batch,
+                )
+                pending_fit.append(r)
+                if len(pending_fit) >= len(pending_cma):
+                    cma.tell(pending_cma, pending_fit)
+                    pending_cma, pending_fit = [], []
+                proposal = f"cmaes_gen{cma.generation}"
+            elif name == "tpe" and prop_idx == 0:
+                assert tpe is not None
+                sample = tpe.ask()
+                trial_cfg, trial_hp = tpe_to_arch(sample, rng)
+                r_raw, r, cell = evaluate(
+                    trial_cfg,
+                    trial_hp,
+                    device,
+                    baseline=baseline,
+                    fit_steps_default=fit_steps,
+                    batch_default=batch,
+                )
+                tpe.tell(sample, r)
+                proposal = "tpe"
+            elif name == "aging_evo" and prop_idx == 0:
+                trial_cfg, trial_hp, r_raw, r, cell = aging_step(
+                    pop, rng, device, baseline, fit_steps, batch
+                )
+                proposal = "aging_evo"
+            elif name == "reinforce" and prop_idx == 0:
+                assert policy is not None and policy_opt is not None
+                state = og.arch_state_vec(cur_cfg, cur_hp, device).unsqueeze(0)
+                logits, _ = policy(state)
+                dist = og.categorical_from_logits(logits)
+                action_t = dist.sample()
+                action = int(action_t.item())
+                logprob = dist.log_prob(action_t)
+                trial_cfg = og.mutate_arch(cur_cfg, action, rng, None)
+                trial_cfg = inject_search_priors(trial_cfg, rng)
+                trial_hp = og.mutate_hp(cur_hp, rng, search_space=search_space)
+                r_raw, r, cell = evaluate(
+                    trial_cfg,
+                    trial_hp,
+                    device,
+                    baseline=baseline,
+                    fit_steps_default=fit_steps,
+                    batch_default=batch,
+                )
+                reward = og.finite_scalar(
+                    og.shaped_reward(
+                        r,
+                        mode=getattr(trial_hp, "reward_mode", "vs_dualcosine"),
+                        r_dualcosine=baseline,
+                        r_nobake=nobake_ref,
+                    ),
+                    0.0,
+                )
+                re_base = reinforce_update(policy, policy_opt, logprob, reward, re_base)
+                if r >= cur_score:
+                    cur_cfg, cur_hp, cur_score = trial_cfg, trial_hp, r
+                proposal = f"reinforce_a{action}"
+            elif name == "hybrid_lstm":
+                assert policy is not None and policy_opt is not None and buf is not None
+                branch = hybrid_branches[((it - 1) * proposals_per_iter + prop_idx) % len(hybrid_branches)]
                 ind = pop[(it - 1) % len(pop)]
                 cfg, hp = ind.cfg, ind.hp
-                trial_cfg = og.mutate_arch(cfg, action, rng, plateau)
-                trial_hp = og.mutate_hp(hp, rng)
-                proposal = "PBT_MUTATE_HP"
-            elif branch == "ga":
-                parent = max(pop, key=lambda x: x.score)
-                from denoise_meta_evo import crossover_arch, crossover_hp
+                state = og.arch_state_vec(cfg, hp, device).unsqueeze(0)
+                logits, value = policy(state)
+                dist = og.categorical_from_logits(logits)
+                action_t = dist.sample()
+                action = int(action_t.item())
+                logprob = dist.log_prob(action_t)
+                if branch == "nas":
+                    trial_cfg = og.random_arch(rng, plateau)
+                    trial_hp = og.mutate_hp(hp, rng, search_space=search_space)
+                    proposal = "NAS_RANDOM"
+                elif branch == "pbt":
+                    # Exploit/mutate HPs + reward_mode (near-ceiling sweep lives here)
+                    og.pbt_exploit_mutate(pop, rng)
+                    ind = pop[(it - 1) % len(pop)]
+                    cfg, hp = ind.cfg, ind.hp
+                    trial_cfg = og.mutate_arch(cfg, action, rng, plateau)
+                    trial_hp = og.mutate_hp(hp, rng)
+                    proposal = "PBT_MUTATE_HP"
+                elif branch == "ga":
+                    parent = max(pop, key=lambda x: x.score)
+                    from denoise_meta_evo import crossover_arch, crossover_hp
 
-                if rng.random() < 0.6 and parent.score > -0.5:
-                    trial_cfg = crossover_arch(
-                        cfg,
-                        parent.cfg,
+                    if rng.random() < 0.6 and parent.score > -0.5:
+                        trial_cfg = crossover_arch(
+                            cfg,
+                            parent.cfg,
+                            rng,
+                            ArchConfig=og.ArchConfig,
+                            normalize_graph=og.normalize_graph,
+                            ensure_trainable_ops=og.ensure_trainable_ops,
+                            CELL_KINDS=CELL_KINDS,
+                            ACTS=og.ACTS,
+                        )
+                        trial_cfg = og.mutate_arch(trial_cfg, action, rng, plateau)
+                        trial_hp = crossover_hp(hp, parent.hp, rng, HyperParams=og.HyperParams)
+                        proposal = "GA_CROSSOVER"
+                    else:
+                        trial_cfg = og.mutate_arch(cfg, action, rng, plateau)
+                        trial_hp = og.mutate_hp(hp, rng)
+                        proposal = "GA_MUTATE"
+                elif branch == "combo":
+                    trial_cfg = og.mutate_arch(
+                        og.mutate_arch(cfg, action, rng, plateau),
+                        rng.randrange(og.N_ACTIONS),
                         rng,
-                        ArchConfig=og.ArchConfig,
-                        normalize_graph=og.normalize_graph,
-                        ensure_trainable_ops=og.ensure_trainable_ops,
-                        CELL_KINDS=CELL_KINDS,
-                        ACTS=og.ACTS,
+                        plateau,
                     )
-                    trial_cfg = og.mutate_arch(trial_cfg, action, rng, plateau)
-                    trial_hp = crossover_hp(hp, parent.hp, rng, HyperParams=og.HyperParams)
-                    proposal = "GA_CROSSOVER"
+                    trial_hp = og.mutate_hp(hp, rng)
+                    proposal = "COMBO"
                 else:
                     trial_cfg = og.mutate_arch(cfg, action, rng, plateau)
                     trial_hp = og.mutate_hp(hp, rng)
-                    proposal = "GA_MUTATE"
-            elif branch == "combo":
-                trial_cfg = og.mutate_arch(
-                    og.mutate_arch(cfg, action, rng, plateau),
-                    rng.randrange(og.N_ACTIONS),
-                    rng,
-                    plateau,
-                )
-                trial_hp = og.mutate_hp(hp, rng)
-                proposal = "COMBO"
-            else:
-                trial_cfg = og.mutate_arch(cfg, action, rng, plateau)
-                trial_hp = og.mutate_hp(hp, rng)
-                proposal = "PPO_MUTATION"
-            trial_cfg = inject_search_priors(trial_cfg, rng)
-            r_raw, r, cell = evaluate(
-                trial_cfg,
-                trial_hp,
-                device,
-                baseline=baseline,
-                fit_steps_default=fit_steps,
-                batch_default=batch,
-            )
-            branch_best[branch] = max(branch_best[branch], r_raw)
-            reward = og.finite_scalar(
-                og.shaped_reward(
-                    r,
-                    mode=getattr(trial_hp, "reward_mode", "vs_dualcosine"),
-                    r_dualcosine=baseline,
-                    r_nobake=nobake_ref,
-                ),
-                0.0,
-            )
-            buf.states.append(state.squeeze(0).detach())
-            buf.actions.append(action)
-            buf.logprobs.append(logprob.detach())
-            buf.rewards.append(reward)
-            buf.values.append(value.squeeze().detach())
-            buf.dones.append(False)
-            if len(buf) >= 16:
-                og.ppo_update(
-                    policy,
-                    policy_opt,
-                    buf,
+                    proposal = "PPO_MUTATION"
+                trial_cfg = inject_search_priors(trial_cfg, rng)
+                r_raw, r, cell = evaluate(
+                    trial_cfg,
+                    trial_hp,
                     device,
-                    clip_eps=trial_hp.ppo_clip,
-                    entropy_coef=trial_hp.entropy_coef,
-                    last_good=last_good_policy,
+                    baseline=baseline,
+                    fit_steps_default=fit_steps,
+                    batch_default=batch,
                 )
-                buf.clear()
-                if og.params_finite(policy):
-                    last_good_policy = og.snapshot_state_dict(policy)
-            if r >= ind.score:
-                ind.cfg, ind.hp, ind.score = trial_cfg, trial_hp, r
-            # Plateau adapt: deepen + crazier mixes when champ stalls
-            if iters_since_improve >= plateau_every and plateau.level < 8:
-                ev = og.apply_plateau_adapt(plateau, pop, rng, it=it, max_level=8)
+                branch_best[branch] = max(branch_best[branch], r_raw)
+                reward = og.finite_scalar(
+                    og.shaped_reward(
+                        r,
+                        mode=getattr(trial_hp, "reward_mode", "vs_dualcosine"),
+                        r_dualcosine=baseline,
+                        r_nobake=nobake_ref,
+                    ),
+                    0.0,
+                )
+                buf.states.append(state.squeeze(0).detach())
+                buf.actions.append(action)
+                buf.logprobs.append(logprob.detach())
+                buf.rewards.append(reward)
+                buf.values.append(value.squeeze().detach())
+                buf.dones.append(False)
+                if len(buf) >= 16:
+                    og.ppo_update(
+                        policy,
+                        policy_opt,
+                        buf,
+                        device,
+                        clip_eps=trial_hp.ppo_clip,
+                        entropy_coef=trial_hp.entropy_coef,
+                        last_good=last_good_policy,
+                    )
+                    buf.clear()
+                    if og.params_finite(policy):
+                        last_good_policy = og.snapshot_state_dict(policy)
+                if r >= ind.score:
+                    ind.cfg, ind.hp, ind.score = trial_cfg, trial_hp, r
+                # Plateau adapt: deepen + crazier mixes when champ stalls
+                if iters_since_improve >= plateau_every and plateau.level < 8:
+                    ev = og.apply_plateau_adapt(plateau, pop, rng, it=it, max_level=8)
+                    iters_since_improve = 0
+                    log(f"PLATEAU_ADAPT approach={name} iter={it} level={ev.get('level')}")
+            else:
+                raise ValueError(name)
+
+            beats = n2n_gate_r is None or r_raw > float(n2n_gate_r)
+            promote = False
+            if beats and (not champ_beats_n2n or r > champ_r):
+                # Gate-passing always replaces a non-passing champ; else need better J.
+                promote = True
+            elif (not champ_beats_n2n) and (not beats) and r > champ_r:
+                # Provisional champ while nobody has cleared the N2N gate yet.
+                promote = True
+            if promote:
+                champ_r = r
+                champ_raw = r_raw
+                champ_cfg = trial_cfg
+                champ_hp = trial_hp
+                champ_beats_n2n = bool(beats)
+                champ_t_ms = float(_LAST_EVAL_METRICS.get("t_ms") or 0.0)
+                champ_j = float(_LAST_EVAL_METRICS.get("j") or r)
+                flags = arch_recurrent_flags(trial_cfg)
+                champ_lstm = flags["lstm"]
+                champ_xlstm = flags["xlstm"]
                 iters_since_improve = 0
-                log(f"PLATEAU_ADAPT approach={name} iter={it} level={ev.get('level')}")
-        else:
-            raise ValueError(name)
+                torch.save(
+                    {
+                        "cell_state_dict": cell.state_dict(),
+                        "architecture": trial_cfg.to_dict(),
+                        "hyperparams": trial_hp.to_dict(),
+                        "r_blend": r_raw,
+                        "r_seam": _LAST_EVAL_METRICS.get("r_seam"),
+                        "r_body": _LAST_EVAL_METRICS.get("r_body"),
+                        "j": champ_j,
+                        "t_ms": champ_t_ms,
+                        "beats_n2n": champ_beats_n2n,
+                        "n2n_gate_r": n2n_gate_r,
+                        "primary_metric": "r_blend",
+                        "blend_alpha": og.BLEND_ALPHA,
+                        "search_objective": "J=R_blend-lambda*latency_norm",
+                    },
+                    approach_dir / "champ_cell.pt",
+                )
+                log(
+                    f"CHAMP approach={name} iter={it} J_scored={champ_r:.6f} "
+                    f"R_blend={champ_raw:.6f} "
+                    f"R_seam={_LAST_EVAL_METRICS.get('r_seam')} "
+                    f"R_body={_LAST_EVAL_METRICS.get('r_body')} "
+                    f"J={champ_j:.6f} t_ms={champ_t_ms:.3f} "
+                    f"beats_n2n={champ_beats_n2n} lstm={champ_lstm} xlstm={champ_xlstm} "
+                    f"reward_mode={getattr(trial_hp, 'reward_mode', None)}"
+                )
+            else:
+                iters_since_improve += 1
 
-        beats = n2n_gate_r is None or r_raw > float(n2n_gate_r)
-        promote = False
-        if beats and (not champ_beats_n2n or r > champ_r):
-            # Gate-passing always replaces a non-passing champ; else need better J.
-            promote = True
-        elif (not champ_beats_n2n) and (not beats) and r > champ_r:
-            # Provisional champ while nobody has cleared the N2N gate yet.
-            promote = True
-        if promote:
-            champ_r = r
-            champ_raw = r_raw
-            champ_cfg = trial_cfg
-            champ_hp = trial_hp
-            champ_beats_n2n = bool(beats)
-            champ_t_ms = float(_LAST_EVAL_METRICS.get("t_ms") or 0.0)
-            champ_j = float(_LAST_EVAL_METRICS.get("j") or r)
-            flags = arch_recurrent_flags(trial_cfg)
-            champ_lstm = flags["lstm"]
-            champ_xlstm = flags["xlstm"]
-            iters_since_improve = 0
-            torch.save(
-                {
-                    "cell_state_dict": cell.state_dict(),
-                    "architecture": trial_cfg.to_dict(),
-                    "hyperparams": trial_hp.to_dict(),
-                    "r_blend": r_raw,
-                    "r_seam": _LAST_EVAL_METRICS.get("r_seam"),
-                    "r_body": _LAST_EVAL_METRICS.get("r_body"),
-                    "j": champ_j,
-                    "t_ms": champ_t_ms,
-                    "beats_n2n": champ_beats_n2n,
-                    "n2n_gate_r": n2n_gate_r,
-                    "primary_metric": "r_blend",
-                    "blend_alpha": og.BLEND_ALPHA,
-                    "search_objective": "J=R_blend-lambda*latency_norm",
-                },
-                approach_dir / "champ_cell.pt",
+            trial_flags = arch_recurrent_flags(trial_cfg)
+            row = {
+                "iter": it,
+                "approach": name,
+                "proposal": proposal,
+            "proposal_index": prop_idx,
+                "residual": r_raw,
+                "r_blend": r_raw,
+                "r_seam": _LAST_EVAL_METRICS.get("r_seam"),
+                "r_body": _LAST_EVAL_METRICS.get("r_body"),
+                "t_ms": _LAST_EVAL_METRICS.get("t_ms"),
+                "j": _LAST_EVAL_METRICS.get("j"),
+                "residual_scored": r,
+                "champ": champ_r,
+                "champ_raw": champ_raw,
+                "beats_n2n": champ_beats_n2n,
+                "n2n_gate_r": n2n_gate_r,
+                "blend_alpha": og.BLEND_ALPHA,
+                "lstm_in_trial": trial_flags["lstm"],
+                "xlstm_in_trial": trial_flags["xlstm"],
+                "lstm_in_champ": champ_lstm,
+                "xlstm_in_champ": champ_xlstm,
+                "n2n_unet_in_trial": "n2n_unet" in trial_cfg.blocks or trial_cfg.cell_kind == "n2n_unet",
+                "baseline_dual_cosine": baseline,
+                "baseline_nobake": nobake_ref,
+                "reward_mode": getattr(trial_hp, "reward_mode", None),
+                "wall_s": elapsed_prev + (time.time() - t0),
+                "arch": trial_cfg.to_dict(),
+                "hp": trial_hp.to_dict(),
+                "primary_metric": "r_blend",
+                "search_objective": "J=R_blend-lambda*latency_norm",
+                "lambda_latency": og.resolve_lambda_latency(trial_hp),
+            }
+            append_hist(hist_path, row)
+            tb_log(
+                tb,
+                name,
+                it,
+                champ=champ_raw if champ_raw >= 0 else champ_r,
+                residual=r_raw,
+                wall_s=elapsed_prev + (time.time() - t0),
             )
-            log(
-                f"CHAMP approach={name} iter={it} J_scored={champ_r:.6f} "
-                f"R_blend={champ_raw:.6f} "
-                f"R_seam={_LAST_EVAL_METRICS.get('r_seam')} "
-                f"R_body={_LAST_EVAL_METRICS.get('r_body')} "
-                f"J={champ_j:.6f} t_ms={champ_t_ms:.3f} "
-                f"beats_n2n={champ_beats_n2n} lstm={champ_lstm} xlstm={champ_xlstm} "
-                f"reward_mode={getattr(trial_hp, 'reward_mode', None)}"
-            )
-        else:
-            iters_since_improve += 1
-
-        trial_flags = arch_recurrent_flags(trial_cfg)
-        row = {
-            "iter": it,
-            "approach": name,
-            "proposal": proposal,
-            "residual": r_raw,
-            "r_blend": r_raw,
-            "r_seam": _LAST_EVAL_METRICS.get("r_seam"),
-            "r_body": _LAST_EVAL_METRICS.get("r_body"),
-            "t_ms": _LAST_EVAL_METRICS.get("t_ms"),
-            "j": _LAST_EVAL_METRICS.get("j"),
-            "residual_scored": r,
-            "champ": champ_r,
-            "champ_raw": champ_raw,
-            "beats_n2n": champ_beats_n2n,
-            "n2n_gate_r": n2n_gate_r,
-            "blend_alpha": og.BLEND_ALPHA,
-            "lstm_in_trial": trial_flags["lstm"],
-            "xlstm_in_trial": trial_flags["xlstm"],
-            "lstm_in_champ": champ_lstm,
-            "xlstm_in_champ": champ_xlstm,
-            "n2n_unet_in_trial": "n2n_unet" in trial_cfg.blocks or trial_cfg.cell_kind == "n2n_unet",
-            "baseline_dual_cosine": baseline,
-            "baseline_nobake": nobake_ref,
-            "reward_mode": getattr(trial_hp, "reward_mode", None),
-            "wall_s": elapsed_prev + (time.time() - t0),
-            "arch": trial_cfg.to_dict(),
-            "hp": trial_hp.to_dict(),
-            "primary_metric": "r_blend",
-            "search_objective": "J=R_blend-lambda*latency_norm",
-            "lambda_latency": og.LAMBDA_LATENCY,
-        }
-        append_hist(hist_path, row)
-        tb_log(
-            tb,
-            name,
-            it,
-            champ=champ_raw if champ_raw >= 0 else champ_r,
-            residual=r_raw,
-            wall_s=elapsed_prev + (time.time() - t0),
-        )
-        # Live STATUS every iter so dashboards see progress between checkpoints.
-        refresh_status("running", it)
+            # Live STATUS every iter so dashboards see progress between checkpoints.
+            refresh_status("running", it)
 
         if it % ckpt_every == 0 or it == iters:
             payload: dict[str, Any] = {
@@ -1166,7 +1175,7 @@ def run_approach(
         "n2n_gate_r": n2n_gate_r,
         "primary_metric": "r_blend",
         "search_objective": "J=R_blend-lambda*latency_norm",
-        "lambda_latency": og.LAMBDA_LATENCY,
+        "lambda_latency": og.resolve_lambda_latency(trial_hp),
         "delta_r_vs_dual_cosine": champ_raw - baseline if champ_raw >= 0 else None,
         "baseline_dual_cosine": baseline,
         "wall_s": wall_s,
@@ -1178,7 +1187,7 @@ def run_approach(
         "champ_cell_path": str(approach_dir / "champ_cell.pt"),
         "history_path": str(hist_path),
         "finished_at": utc_now(),
-        "protocol": "paper_v10",
+        "protocol": summary_protocol,
     }
     (approach_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     log(
@@ -1370,23 +1379,23 @@ def build_aggregate_from_summaries(
 
 
 def publish_aggregate_artifacts(aggregate: dict[str, Any], out_dir: Path) -> tuple[Path, Path, Path]:
-    """Write aggregate JSON, learning-curve PNG, bar chart, and TeX table into paper figures."""
-    paper_fig = META_ROOT / "paper" / "v7" / "figures"
-    paper_fig.mkdir(parents=True, exist_ok=True)
+    """Write aggregate JSON, learning-curve PNG, bar chart, and TeX table into out_dir."""
     agg_path = out_dir / "meta_approach_compare.json"
     agg_path.write_text(json.dumps(aggregate, indent=2), encoding="utf-8")
-    shutil.copy2(agg_path, paper_fig / "meta_approach_compare.json")
-
-    png = paper_fig / "fig_meta_approach_compare.png"
+    png = out_dir / "fig_meta_approach_compare.png"
     plot_compare(aggregate, png)
-    shutil.copy2(png, out_dir / "fig_meta_approach_compare.png")
-
-    bars_png = paper_fig / "meta_approach_bars.png"
-    bars_pdf = paper_fig / "meta_approach_bars.pdf"
+    bars_png = out_dir / "meta_approach_bars.png"
+    bars_pdf = out_dir / "meta_approach_bars.pdf"
     plot_bars(aggregate, bars_png, bars_pdf)
-    shutil.copy2(bars_png, out_dir / "meta_approach_bars.png")
-
-    write_meta_table_tex(aggregate, paper_fig / "meta_approaches_table.tex")
+    write_meta_table_tex(aggregate, out_dir / "meta_approaches_table.tex")
+    if META_ROOT.is_dir():
+        paper_fig = META_ROOT / "paper" / "v7" / "figures"
+        paper_fig.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(agg_path, paper_fig / "meta_approach_compare.json")
+        shutil.copy2(png, paper_fig / "fig_meta_approach_compare.png")
+        shutil.copy2(bars_png, paper_fig / "meta_approach_bars.png")
+        shutil.copy2(bars_pdf, paper_fig / "meta_approach_bars.pdf")
+        write_meta_table_tex(aggregate, paper_fig / "meta_approaches_table.tex")
     return agg_path, png, bars_png
 
 
@@ -1455,7 +1464,14 @@ def plot_compare(aggregate: dict[str, Any], out_png: Path) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--iters", type=int, default=5000)
+    ap.add_argument(
+        "--protocol",
+        choices=("default", "plateau"),
+        default="default",
+        help="plateau: v14 FitCell-to-convergence hybrid search (750 iters, 2 proposals/iter defaults).",
+    )
+    ap.add_argument("--proposals-per-iter", type=int, default=None)
+    ap.add_argument("--iters", type=int, default=None)
     ap.add_argument("--seed", type=int, default=DEFAULT_SEED)
     ap.add_argument("--batch", type=int, default=48)
     ap.add_argument("--fit-steps", type=int, default=24)
@@ -1489,6 +1505,10 @@ def main() -> int:
         help="Rebuild aggregate JSON + TeX + learning-curve/bar figures from summary.json; no search.",
     )
     args = ap.parse_args()
+    if args.proposals_per_iter is None:
+        args.proposals_per_iter = 2 if args.protocol == "plateau" else 1
+    if args.iters is None:
+        args.iters = 750 if args.protocol == "plateau" else 5000
 
     device = torch.device(args.device if args.device != "cuda" or torch.cuda.is_available() else "cpu")
     out_dir = args.out_dir
@@ -1542,7 +1562,11 @@ def main() -> int:
 
     print(f"lstm in BLOCKS: {'lstm' in BLOCKS}", flush=True)
     print(f"xlstm in BLOCKS: {'xlstm' in BLOCKS}", flush=True)
-    print(f"device={device} iters={args.iters} approaches={names} resume={resume}", flush=True)
+    print(
+        f"device={device} iters={args.iters} protocol={args.protocol} "
+        f"proposals_per_iter={args.proposals_per_iter} approaches={names} resume={resume}",
+        flush=True,
+    )
     write_status(
         out_dir,
         phase="launch",
@@ -1571,6 +1595,8 @@ def main() -> int:
                 ckpt_every=args.ckpt_every,
                 resume=resume,
                 all_approaches=names,
+                protocol=args.protocol,
+                proposals_per_iter=args.proposals_per_iter,
             )
         )
 

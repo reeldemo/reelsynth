@@ -2,12 +2,19 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [phase2-experiments, main, master]
   pull_request:
+    branches: [phase2-experiments, main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
+  rust:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -33,3 +40,32 @@ jobs:
 
       - name: Run UI library tests
         run: cargo test -p reelsynth-ui
+
+  python-phase2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: scripts/requirements-ci.txt
+
+      - name: Install Python deps (CPU PyTorch)
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install -r scripts/requirements-ci.txt
+
+      - name: DenoiseOpt / phase2 Python smoke tests
+        run: |
+          python scripts/test_v10_seam_metric.py
+          python scripts/test_plateau_adapt.py
+          python scripts/test_case_jump_metric.py
+          python scripts/test_fit_converge_criteria.py
+          python scripts/test_v14_plateau_resume.py
+
+      - name: Phase-2 smoke (3 search seeds + pre-registered cases, CPU)
+        run: python scripts/phase2_experiments/run_all.py --device cpu --smoke --cases

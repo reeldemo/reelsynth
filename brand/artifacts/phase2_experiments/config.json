@@ -1,0 +1,61 @@
+{
+  "schema": "denoiseopt.phase2_experiments.v2",
+  "protocol": "phase2 + v14 plateau converge (paper Table v14-hybrid-converge)",
+  "min_search_seeds": 3,
+  "search_seeds": [1902771841, 2026072701, 2026072702, 2026072703],
+  "gpu_plateau_search_seeds": [2026072701, 2026072702, 2026072703],
+  "holdout_eval_seed_start": 20260719,
+  "holdout_eval_seed_count": 5,
+  "score_batch": 64,
+  "hybrid": {
+    "approach": "hybrid_lstm",
+    "iters": 5000,
+    "batch": 48,
+    "fit_steps": 24,
+    "pop_size": 12,
+    "ckpt_every": 25,
+    "plateau_every": 500
+  },
+  "v14_plateau": {
+    "protocol": "plateau",
+    "approach": "hybrid_lstm",
+    "iters": 750,
+    "proposals_per_iter": 2,
+    "batch": 96,
+    "fit_steps": 2048,
+    "pop_size": 12,
+    "ckpt_every": 25,
+    "out_dir": "brand/artifacts/meta_approach_compare_v14_converge",
+    "headline_search_seed": 1902771841,
+    "note": "FitCell trains until relative plateau or T_max; patience/eps/batch/lambda are searchable via HyperParams"
+  },
+  "smoke_v14_plateau": {
+    "iters": 3,
+    "proposals_per_iter": 2,
+    "batch": 12,
+    "fit_steps": 4,
+    "pop_size": 4,
+    "ckpt_every": 1
+  },
+  "smoke_hybrid": {
+    "iters": 1,
+    "batch": 12,
+    "fit_steps": 2,
+    "pop_size": 4,
+    "ckpt_every": 1
+  },
+  "smoke_holdout_batch": 32,
+  "n2n_gate_reference": {
+    "metric": "R_blend_mean_over_holdout_seeds",
+    "gate_value": 0.975,
+    "note": "Noise2Noise corrupt→corrupt; paper reports ~0.9750 as 5-seed holdout mean vs sine+cliff make_batch"
+  },
+  "alpha_sweep": [0.5, 0.6, 0.7, 0.8, 0.9],
+  "alpha_sweep_search_seed": 1902771841,
+  "reuse_search_summary": {
+    "1902771841": "brand/artifacts/meta_approach_compare/hybrid_lstm/summary.json"
+  },
+  "v14_reuse_search_summary": {
+    "1902771841": "brand/artifacts/meta_approach_compare_v14_converge/hybrid_lstm/summary.json"
+  }
+}
