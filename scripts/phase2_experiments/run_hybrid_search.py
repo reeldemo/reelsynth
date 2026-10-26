@@ -9,6 +9,13 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+PHASE2_OUT = "brand/artifacts/phase2_experiments"
+
+
+def hybrid_search_out_dir(search_seed: int, *, protocol: str, root: Path = ROOT) -> Path:
+    """Artifact root for bench_meta_approaches_5k (--out-dir); holds hybrid_lstm/."""
+    _ = protocol
+    return root / PHASE2_OUT / f"search_{search_seed}"
 
 
 def hybrid_params(cfg_doc: dict, smoke: bool, protocol: str) -> dict:
@@ -50,11 +57,7 @@ def main() -> int:
     ckpt_every = int(h.get("ckpt_every", base.get("ckpt_every", 25)))
     proposals = int(h.get("proposals_per_iter", base.get("proposals_per_iter", 2 if protocol == "plateau" else 1)))
 
-    if protocol == "plateau":
-        out_rel = str(base.get("out_dir", "brand/artifacts/meta_approach_compare_v14_converge"))
-        out_dir = ROOT / out_rel
-    else:
-        out_dir = ROOT / "brand/artifacts/phase2_experiments" / f"search_{args.search_seed}"
+    out_dir = hybrid_search_out_dir(args.search_seed, protocol=protocol, root=ROOT)
 
     summary = out_dir / "hybrid_lstm" / "summary.json"
     if args.skip_if_summary and summary.is_file():
