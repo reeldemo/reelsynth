@@ -1,0 +1,55 @@
+{
+  "schema": "denoiseopt.phase2_alpha_sweep.v1",
+  "search_seed": 1902771841,
+  "summary_path": "/workspace/brand/artifacts/meta_approach_compare/hybrid_lstm/summary.json",
+  "holdout_seeds": [
+    20260719,
+    20260720,
+    20260721,
+    20260722,
+    20260723
+  ],
+  "note": "R_blend asymmetry: scores use R_seam(ideal,out) and R_body(eng,out); swapping ideal/eng changes \u03b1 weights.",
+  "rows": [
+    {
+      "alpha": 0.5,
+      "hybrid_holdout_R_mean": 0.9784232974052429,
+      "hybrid_holdout_R_std": 0.0021441527269930854,
+      "n2n_holdout_R_mean": 0.9807898759841919,
+      "n2n_holdout_R_std": 0.0011719594665794949,
+      "delta_hybrid_minus_n2n": -0.0023665785789489524
+    },
+    {
+      "alpha": 0.6,
+      "hybrid_holdout_R_mean": 0.9745426297187805,
+      "hybrid_holdout_R_std": 0.0025664374878443448,
+      "n2n_holdout_R_mean": 0.9777615070343018,
+      "n2n_holdout_R_std": 0.0014050153409369082,
+      "delta_hybrid_minus_n2n": -0.0032188773155212846
+    },
+    {
+      "alpha": 0.7,
+      "hybrid_holdout_R_mean": 0.9706618905067443,
+      "hybrid_holdout_R_std": 0.002989087285747755,
+      "n2n_holdout_R_mean": 0.9747331619262696,
+      "n2n_holdout_R_std": 0.0016381692777847653,
+      "delta_hybrid_minus_n2n": -0.004071271419525235
+    },
+    {
+      "alpha": 0.8,
+      "hybrid_holdout_R_mean": 0.966781210899353,
+      "hybrid_holdout_R_std": 0.0034119811366670255,
+      "n2n_holdout_R_mean": 0.9717047929763794,
+      "n2n_holdout_R_std": 0.0018712631160695593,
+      "delta_hybrid_minus_n2n": -0.004923582077026367
+    },
+    {
+      "alpha": 0.9,
+      "hybrid_holdout_R_mean": 0.9629005074501038,
+      "hybrid_holdout_R_std": 0.003834979663326712,
+      "n2n_holdout_R_mean": 0.9686763644218445,
+      "n2n_holdout_R_std": 0.0021044222244506836,
+      "delta_hybrid_minus_n2n": -0.005775856971740656
+    }
+  ]
+}
