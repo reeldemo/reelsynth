@@ -257,7 +257,8 @@ Canonical companion pseudocode lives in \texttt{docs/PSEUDOCODE.md} (mirrored Al
   \caption{Overnight hybrid search hyperparameters (RTX~3090 runner defaults from \texttt{overnight\_gpu\_rl\_arch.py} / \texttt{denoise\_meta\_evo.py}).}
   \label{tab:hyperparams}
   \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{@{}lp{0.48\columnwidth}@{}}
+  \resizebox{\columnwidth}{!}{%
+  \begin{tabular}{@{}ll@{}}
     \toprule
     Parameter & Value \\
     \midrule
@@ -276,5 +277,6 @@ Canonical companion pseudocode lives in \texttt{docs/PSEUDOCODE.md} (mirrored Al
     Fit steps / batch (default) & $24$ / $48$ \\
     Algo tag & \texttt{PPO+GA+PBT+NAS+depth+MoE} \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}%
+  }
 \end{table}

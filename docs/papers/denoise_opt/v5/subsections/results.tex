@@ -59,6 +59,7 @@ The neural favorite reaches $R\approx 0.991$ ($0.991\pm0.0002$ over five seeds) 
   \caption{Method scores on the canonical sine{+}cliff holdout (batch 64, seed \texttt{20260719}, $L{=}256$, $N{=}16$). Mean$\pm$std over five consecutive seeds. Identity is a no-op ceiling. Primary metric is prolonged $R$ (1~=~best).}
   \label{tab:canonical-methods}
   \setlength{\tabcolsep}{3pt}
+  \resizebox{\columnwidth}{!}{%
   \begin{tabular}{@{}lrrr@{}}
     \toprule
     Method & $R$ & $R$ (5-seed) & ms/batch \\
@@ -75,7 +76,8 @@ The neural favorite reaches $R\approx 0.991$ ($0.991\pm0.0002$ over five seeds) 
     detrend & 0.4079 & $0.4091\pm0.0386$ & 0.36 \\
     ensemble detrend{+}DC{+}FIR & 0.4024 & $0.4027\pm0.0387$ & 1.56 \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}%
+  }
 \end{table}
 
 \subsection{SOTA matrix (multi-family + secondary metrics)}
@@ -135,6 +137,7 @@ Table~\ref{tab:compute} summarizes the overnight compute budget. Peak VRAM is fr
   \caption{Ablations. Left block: overnight branch-best freeze (run \texttt{gpu-rl-arch-20260719T083019Z}, final iter $\approx 6{,}922$). Right block: isolated short-budget re-runs (150 iters, seed \texttt{1902771841}, plateau adapt off). $R$ is prolonged residual on the runner geometry.}
   \label{tab:ablation}
   \setlength{\tabcolsep}{3pt}
+  \resizebox{\columnwidth}{!}{%
   \begin{tabular}{@{}lrr@{}}
     \toprule
     Config & Overnight freeze $R$ & Isolated 150-it $R$ \\
@@ -148,7 +151,8 @@ Table~\ref{tab:compute} summarizes the overnight compute budget. Peak VRAM is fr
     NAS (branch best) & 0.98677 & --- \\
     DualCosine (runner) & 0.81658 & 0.81658 \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}%
+  }
 \end{table}
 
 \begin{table}[t]
@@ -156,6 +160,7 @@ Table~\ref{tab:compute} summarizes the overnight compute budget. Peak VRAM is fr
   \caption{Compute budget for the reported overnight freeze (RTX~3090, PyTorch $2.6$+cu124, search seed \texttt{1902771841}). Arch evaluations $\approx$ clean iterations.}
   \label{tab:compute}
   \setlength{\tabcolsep}{3pt}
+  \resizebox{\columnwidth}{!}{%
   \begin{tabular}{@{}lr@{}}
     \toprule
     Item & Value \\
@@ -168,7 +173,8 @@ Table~\ref{tab:compute} summarizes the overnight compute budget. Peak VRAM is fr
     DualCosine baseline (runner) & 0.81658 \\
     Peak VRAM (nvidia-smi replay) & $\approx 3.29$\,GiB \\
     \bottomrule
-  \end{tabular}\\[0.4em]
+  \end{tabular}%
+  }\\[0.4em]
   {\footnotesize Peak memory: max \texttt{nvidia-smi} \texttt{memory.used} during a 30-iter full-branch search probe ($\approx 3.29$\,GiB) and champion forward{+}FitCell replay ($\approx 3.17$\,GiB). The multi-hour overnight process itself left no memory log. Idle GPU occupancy was already $\approx 3.0$\,GiB from other sessions.}
 \end{table}
 
@@ -185,6 +191,7 @@ Honest transfer note: the favorite was searched on Python \texttt{make\_batch} s
   \caption{Secondary transfer on 20 Rust \texttt{sound\_bench} tiles (byte-aligned export). Mean$\pm$std prolonged $R$. Favorite vs DualCosine: mean $\Delta R{+}0.063$, $p{\approx}0.009$.}
   \label{tab:rust-bench}
   \setlength{\tabcolsep}{3pt}
+  \resizebox{\columnwidth}{!}{%
   \begin{tabular}{@{}lrr@{}}
     \toprule
     Method & $R$ (20 Rust tiles) & $\Delta R$ vs DualCosine \\
@@ -195,7 +202,8 @@ Honest transfer note: the favorite was searched on Python \texttt{make\_batch} s
     classic quadratic & $0.788\pm0.110$ & ${+}0.026$ \\
     DualCosine / cosine fade & $0.762\pm0.118$ & $0$ \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}%
+  }
 \end{table}
 
 \begin{figure}[t]
