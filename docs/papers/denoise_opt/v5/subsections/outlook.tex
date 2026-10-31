@@ -6,7 +6,7 @@ While the empirical evaluation in this work centers on single-period wavetable s
 Formally, let $x \in \mathbb{R}^T$ denote a discrete observation sampled over a nominal cycle interval $[0, T)$.
 Whenever $x$ is periodically extended or concatenated, any boundary mismatch between the terminal sample $x[T-1]$ and initial sample $x[0]$ introduces a boundary jump $\Delta_{\text{wrap}} = x[0] - x[T-1]$, injecting broadband impulse energy across harmonic spectra.
 The bake-cell operator $B_\theta$ acts as a cycle-local boundary operator restricted to an $\varepsilon$-neighborhood of the wrap boundary, $\mathcal{I}_{\text{seam}} = [0, \delta] \cup [T-\delta, T-1]$, optimized to maximize the prolonged multi-period continuity score $R$.
-This boundary-regularization problem appears fundamentally across several disciplines in engineering and the physical sciences:
+This boundary-regularization problem appears across several disciplines in engineering and physical science.
 
 \paragraph{Rotational Mechanical Engineering and Turbomachinery Telemetry.}
 In high-speed rotating machinery—such as jet engine turbines, wind turbine planetary gearboxes, and industrial centrifugal compressors—vibration telemetry is resampled from continuous time into synchronous angular coordinates via computed order tracking.
@@ -14,11 +14,15 @@ Signals are partitioned into shaft-period segments indexed by rotation angle $\t
 Tachometer pulse jitter, rapid torque transients, and speed fluctuations frequently induce fictitious phase boundary steps when wrapping individual revolutions.
 These seam artifacts corrupt high-frequency resonance demodulation, envelope spectra, and kurtosis metrics used for bearing fault detection (e.g., inner- and outer-race defect frequencies BPFI and BPFO).
 Deploying an unsupervised bake-cell operator at angular cycle seams suppresses wrap-induced spectral spikes while preserving authentic mechanical shock transients situated inside the cycle interior.
-Empirical transfer on bearing benchmarks confirms this advantage: on Case Western Reserve University (CWRU) vibration cycles, DenoiseOpt improves prolonged continuity from $R = 0.8451$ (no-bake) and $0.8686$ (supervised SeamN2N) to $R = \mathbf{0.9623}$; on MFPT machinery data, it improves from $0.8657$ to $\mathbf{0.9411}$; and on Paderborn KAT telemetry, it improves from $0.8376$ to $\mathbf{0.9270}$ ($+0.0894$ gain).
+Empirical transfer on bearing benchmarks confirms this advantage.
+On CWRU vibration telemetry, DenoiseOpt improves continuity from $R = 0.8451$ (no-bake) and $0.8686$ (supervised SeamN2N) to $\mathbf{0.9623}$.
+On MFPT machinery data, it advances continuity from $0.8657$ to $\mathbf{0.9411}$.
+On Paderborn KAT telemetry, it improves from $0.8376$ to $\mathbf{0.9270}$ ($+0.0894$ gain).
 
 \paragraph{Acoustic and Audio Signal Processing.}
 Beyond wavetable oscillators, seam discontinuities are pervasive in phase-vocoder time-scale modification, pitch-synchronous overlap-add (PSOLA) speech concatenation, and granular synthesis.
-When granular grains or pitch periods are looped in circular delay buffers, phase mismatches at grain boundaries generate audible clicks that require aggressive Hann windowing, which in turn attenuates signal energy and causes amplitude modulation flutter.
+When looping granular grains or pitch periods in circular delay buffers, boundary phase mismatches produce audible clicks.
+Standard practice applies aggressive Hann windowing, but this attenuates signal energy and induces amplitude modulation flutter.
 Residual-guided bake cells offer a learned alternative that provides seamless cyclic looping without sacrificing spectral brightness or transient punch.
 
 \paragraph{Turbulence and Computational Fluid Dynamics (CFD).}
@@ -35,7 +39,8 @@ Unsupervised seam optimization provides a data-driven path to align multi-cycle 
 \paragraph{Biomedical Signal Processing and Cardiac Telemetry.}
 Long-term electrocardiogram (ECG) and photoplethysmogram (PPG) monitoring relies on segmenting continuous cardiac waveforms into individual heartbeat cycles aligned to R-peaks or systolic peaks.
 Heart rate variability (HRV), respiration-induced baseline wander, and electrode motion artifacts produce vertical offsets between the termination of the T-wave and the onset of the subsequent P-wave.
-When constructing synthetic cardiac beats or training generative physiological models, cycle-local bake cells synthesize continuous beat-to-beat transitions that eliminate unphysiological boundary steps while faithfully retaining morphological diagnostic indicators (such as ST-segment elevation or QT-interval duration).
+In generative cardiac modeling or synthetic beat synthesis, cycle-local bake cells ensure continuous beat-to-beat transitions.
+They suppress unphysiological boundary steps while faithfully retaining morphological clinical indicators, such as ST-segment elevation or QT-interval duration.
 Empirical evaluations demonstrate substantial improvements: on the MIT-BIH Arrhythmia benchmark, DenoiseOpt advances wrap continuity from $R = 0.7495$ to $\mathbf{0.9565}$ ($+0.2070$ gain over no-bake, outperforming SeamN2N at $0.6530$); on the PTB-XL multi-lead database, it achieves $R = \mathbf{0.9379}$ compared to $0.7617$ (no-bake) and $0.5702$ (SeamN2N).
 
 \paragraph{Industrial Machining and Power Grid Telemetry.}

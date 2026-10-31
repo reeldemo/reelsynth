@@ -41,7 +41,7 @@ Zoph and Le couple RL controllers to architecture search~\cite{zoph2017nas}.
 ENAS adds parameter sharing for efficient discrete search~\cite{pham2018}.
 Progressive and platform-aware NAS add staged evaluation and latency-aware rewards~\cite{liu2018pnas,tan2019mnasnet}.
 We \textbf{use} this family as the ancestor of RL proposing architecture edits (add/remove/mutate ops, toggle residual-primary, mutate MLP/FIR), scored with prolonged residual.
-PPO supplies the clipped-surrogate policy update when the overnight loop logs PPO mutation branches~\cite{schulman2017}.
+PPO supplies the clipped-surrogate policy update when executing reinforcement learning mutation branches~\cite{schulman2017}.
 
 \subsection{Evolutionary NAS and population schedules}
 Large-scale and regularized / aging evolution showed that evolutionary NAS can discover competitive image classifiers when population turnover is carefully regularized~\cite{real2017large,real2019}.
@@ -77,12 +77,15 @@ We \textbf{use} MoE as motivation for soft gates over heterogeneous seam blocks 
 \begin{itemize}
   \item \textbf{MAML}~\cite{finn2017}: bi-level / fast-adaptation framing. We do not differentiate through a deep task network. Inner fits are coordinate-style updates on bake parameters. Outer rank is residual $R$.
   \item \textbf{DARTS}~\cite{liu2019}: continuous relaxation of architecture search. We keep discrete ops + small cells under residual scoring.
-  \item \textbf{Demucs / Hybrid Demucs / realtime waveform enhancement}~\cite{dfossez2019,dfossez2021,dfossez2020}: strong separators and enhancers, but full multi-scale / hybrid STFT stacks are too heavy per meta trial under overnight bake budgets.
+  \item \textbf{Demucs / Hybrid Demucs / realtime waveform enhancement}~\cite{dfossez2019,dfossez2021,dfossez2020}: strong separators and enhancers, but full multi-scale / hybrid STFT stacks are too heavy per meta trial under tight per-trial evaluation budgets.
   \item \textbf{DiffWave}~\cite{kong2021}: diffusion vocoder. Screened as a generative sampling stack outside the seam bake operator set.
   \item \textbf{SEGAN-style adversarial enhancement}~\cite{pascual2017}: optional tiny adversarial cues only. Full GAN training loops screened for per-trial cost.
 \end{itemize}
 
 \paragraph{Positioning.}
-Relative to this map, the present work contributes (i)~a prolonged residual objective for periodic seam denoising, (ii)~an explicitly hybrid RL+GA(+PBT) meta-outer loop with honest branch naming, and (iii)~a used/screened literature protocol with downloaded source PDFs.
+Relative to this map, this work contributes three primary components.
+First, we introduce a prolonged residual metric $R$ for periodic seam restoration.
+Second, we formulate a hybrid RL+GA(+PBT) meta-search loop with explicit branch attribution.
+Third, we establish an open literature audit protocol with downloaded source PDFs.
 Claims stay inside cycle-local seam restoration under a declared compute budget.
 The primary claim is protocol-level: residual-scored meta-search for cycle-local audio denoise operators.

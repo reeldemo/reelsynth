@@ -4,7 +4,9 @@
 Wavetable oscillators store a single period of a waveform and advance a read pointer modulo the table length.
 When $x[0]\neq x[L-1]$, the wrap is a hard discontinuity that, under cyclic playback, becomes a periodic click with a broadband spectrum locked to the fundamental.
 The same geometry appears whenever a short loop buffer is tiled for listening or for objective evaluation.
-We define the repair task as \emph{cycle-local seam restoration}: edit a neighborhood of the wrap (and optionally a lightweight residual cell over the period) so that multi-period playback matches an ideal reference that never opens the wrap cliff.
+We define the repair task as \emph{cycle-local seam restoration}.
+Specifically, the operator edits a localized boundary neighborhood, optionally followed by a compact residual cell.
+The objective ensures that multi-period playback matches an ideal reference that withholds the wrap cliff.
 That outer agreement is scored by the prolonged residual $R$ for this periodic seam artifact class.
 
 Figure~\ref{fig:intro-sine} shows one real sine-wrap edge case from the frozen canonical holdout (same \texttt{make\_batch} tile, seed~\texttt{20260719}).
@@ -28,7 +30,10 @@ They leave open which bake parameters and which residual cell, if any, minimize 
 Label-free restoration work such as Noise2Noise shows that useful reconstructors can be ranked without paired clean targets when the evaluation geometry is explicit~\cite{lehtinen2018}.
 Speech-domain Noise2Noise denoisers extend that idea to audio waveforms~\cite{kashyap2021n2n}.
 Mixture-invariant unsupervised separation likewise avoids paired clean stems for ranking~\cite{wisdom2020}.
-On the search side, NAS surveys~\cite{elsken2019}, RL controllers~\cite{zoph2017nas,pham2018}, aging evolution~\cite{real2017large,real2019}, population-based hyperparameter schedules~\cite{jaderberg2017}, CMA-ES tutorials~\cite{hansen2016cmaes}, and evolution-guided policy gradients~\cite{khadka2018} motivate a hybrid outer loop: GA for population diversity, PPO for discrete architecture edits~\cite{schulman2017}, and PBT-style exploit--mutate on elites.
+On the search side, evolutionary reinforcement learning motivates our hybrid outer loop.
+Genetic algorithms maintain population diversity across discrete operator graphs~\cite{real2019}.
+PPO guides discrete architecture edits via clipped surrogate updates~\cite{schulman2017}.
+Simultaneously, PBT-style mechanics exploit and mutate continuous parameters across elites~\cite{jaderberg2017}.
 Platform-aware and progressive NAS add compute-aware search priors~\cite{tan2019mnasnet,liu2018pnas}.
 MoE soft gates suggest routing among heterogeneous tiny cells under one residual score~\cite{shazeer2017}.
 Waveform separation nets (Wave-U-Net, Conv-TasNet, dual-path RNN, SepFormer) and audio DL surveys inform the searchable cell family at bake-scale width~\cite{stoller2018,macartney2018,luo2019,luo2020dprnn,subakan2021,purwins2019,gong2021ast}, with U-Net / ResNet / attention primitives as block ancestors~\cite{ronneberger2015,he2016resnet,vaswani2017,jansson2017}.
@@ -39,7 +44,7 @@ Each candidate is scored by prolonged residual $R\in[0,1]$ (1~=~best) between en
 Paired studio-clean wavetables are not required for every trial.
 Differentiable DSP modules~\cite{engel2020} place DualCosine / FIR / MLP seam ops in an interpretable stack.
 Bayesian HPO~\cite{snoek2012} informs prior families that compete under the same $R$.
-A CUDA overnight campaign (PPO+GA+PBT+NAS, depth and MoE biases) has passed a $5{,}000$-iteration clean gate with champion $R\approx 0.9909$ versus DualCosine $\approx 0.8166$ on the runner geometry.
+An asynchronous GPU meta-search campaign (PPO+GA+PBT+NAS, depth and MoE biases) has completed a $5{,}000$-iteration search budget with champion $R\approx 0.9909$ versus DualCosine $\approx 0.8166$ under identical evaluation geometry.
 The frozen canonical holdout and inference benches in Section~\ref{sec:results} are the measured evaluation matrices for this report.
 We do not claim general speech or music enhancement SOTA.
 

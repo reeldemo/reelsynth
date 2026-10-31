@@ -15,7 +15,7 @@ These symbols are fixed for the residual objective. They follow a different conv
 
 \begin{table}[t]
   \centering
-  \caption{Core symbols used in Methods.}
+  \caption{\textbf{Core mathematical symbols and notation defined in Methods.} Summarizes cycle dimensions ($L=256$, $N=16$ tiles), seam neighborhood width $W=8$, raw engine input $x$, baked output $y=\Theta(x;\theta)$, procedural ideal sibling $r^\star$, and the normalized prolonged residual metric $R\in[0,1]$.}
   \label{tab:symbols}
   \setlength{\tabcolsep}{3pt}
   \begin{tabular}{@{}cl@{}}
@@ -138,8 +138,10 @@ Bake parameters $\theta$ live in a bounded box. Architecture strings are discret
 \subsection{Search space}
 \label{sec:search-space}
 
-Each genome encodes: ordered op list (fade, polish, FIR, pin, residual write), depth (number of composed blocks), residual cell type (none, MLP, FIR, U-Net-lite, attn-lite), optional MoE expert count $K\in\{2,3,4\}$, and continuous $\theta$ in box bounds used by the overnight runner (fade widths, FIR taps, residual scales).
-The live tag is \texttt{PPO+GA+PBT+NAS+depth+MoE}.
+Each genome specifies discrete operations and continuous parameters.
+Discrete attributes include the operator sequence (fade, polish, FIR, pin, residual write), block depth, residual cell type (MLP, FIR, U-Net-lite, attention), and optional MoE expert count $K\in\{2,3,4\}$.
+Continuous parameters $\theta$ include fade widths, filter coefficients, and residual scales.
+The search space configuration is tagged \texttt{PPO+GA+PBT+NAS+depth+MoE}.
 
 \subsection{Training / fit inner loop}
 \label{sec:fit}
@@ -248,13 +250,13 @@ Bake-width caps (tiny residual cells) keep $C_{\mathrm{fwd}}$ far below full-ban
 \subsection{Hyperparameters}
 \label{sec:hyperparams}
 
-Table~\ref{tab:hyperparams} lists the overnight CUDA defaults used for the $5$k-gate freeze reported in Results.
-Canonical companion pseudocode lives in \texttt{docs/PSEUDOCODE.md} (mirrored Algorithms~\ref{alg:residual}--\ref{alg:hybrid}).
+Table~\ref{tab:hyperparams} lists the default search parameters used for the $5$k-iteration evaluation gate reported in Results.
+Canonical companion pseudocode lives in the repository documentation (Algorithms~\ref{alg:residual}--\ref{alg:hybrid}).
 
 \begin{table}[t]
   \centering
   \small
-  \caption{Overnight hybrid search hyperparameters (RTX~3090 runner defaults from \texttt{overnight\_gpu\_rl\_arch.py} / \texttt{denoise\_meta\_evo.py}).}
+  \caption{\textbf{Hybrid meta-search configuration, optimization hyperparameters, and GPU execution parameters.} Lists population sizes, learning rates, mutation variances, tournament parameters, and discount factors across PPO, GA, and PBT outer-loop search branches running on an RTX~3090 (PyTorch 2.6). All branches evaluate architectures on the identical frozen canonical batch geometry ($L=256$, $N=16$).}
   \label{tab:hyperparams}
   \setlength{\tabcolsep}{3pt}
   \resizebox{\columnwidth}{!}{%

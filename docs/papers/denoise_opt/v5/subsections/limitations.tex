@@ -6,10 +6,10 @@ The prolonged residual $R$ is evaluated against a procedural no-cliff reference 
 Formal listening evaluations (MOS, MUSHRA) require controlled subjective listening panels and are deferred to dedicated perceptual studies.
 Speech-oriented objective metrics (PESQ, STOI) are excluded because the evaluation cycles consist of non-speech synthetic wavetable tiles; applying speech intelligibility models to elementary harmonic and multi-family geometric tiles represents an ecological domain mismatch.
 
-\begin{itemize}[leftmargin=1.2em, itemsep=1pt, topsep=1pt, parsep=0pt]
+\begin{itemize}
   \item \textbf{Reference geometry.} Residual scores quantify agreement against a procedural ideal sibling rather than subjective acoustic preferences.
-  \item \textbf{Transfer domain.} The primary overnight search operates on Python \texttt{make\_batch} multi-family draws; the Rust \texttt{sound\_bench} suite serves as an out-of-distribution transfer benchmark.
-  \item \textbf{Search bounds.} Per-trial architecture depth and width are bounded to preserve overnight search throughput ($5{,}000$ iterations on a single GPU). Diffusion models and full-scale Demucs variants were screened out.
+  \item \textbf{Transfer domain.} The primary meta-search operates on synthetic multi-family procedural draws; the Rust audio suite serves as an out-of-distribution transfer benchmark.
+  \item \textbf{Search bounds.} Per-trial architecture depth and width are bounded to preserve high search throughput ($5{,}000$ iterations on a single GPU). Diffusion models and full-scale Demucs variants were screened out.
   \item \textbf{Freeze vs.\ re-run protocols.} The $5$k-gate freeze captures organic branch co-evolution, whereas ablation re-runs test isolated mechanics over constrained budgets under the identical pseudo-random seed.
   \item \textbf{Classical baselines.} VA and bandlimited BLEP implementations follow canonical formulations from open-access literature~\cite{stilson1996,nam2009polyblep,esqueda2016blamp}.
 \end{itemize}
