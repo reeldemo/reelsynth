@@ -6,6 +6,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **DenoiseOpt v14 plateau meta-search** — `--protocol plateau` on `bench_meta_approaches_5k.py` (750×2 hybrid proposals, searchable FitCell patience/ε/T_max/batch/λ), Linux launch/status/report scripts, phase-2 config seeds `2026072701–03`, and design note `docs/superpowers/specs/2026-07-31-fitcell-converge-meta-search-design.md`.
+
 ### Fixed
 
 - **Multi-osc voice clipping** — Summing several oscillators (e.g. VA Bass, loud Design patches) no longer hard-clamps at ±1 before the filter; voice mix scales by Σ levels (+ sub/noise weight) when > 1, per-voice targets use a transparent soft knee above unity, and the engine bus limiter runs again after FX.
