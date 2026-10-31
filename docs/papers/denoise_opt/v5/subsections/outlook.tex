@@ -1,5 +1,6 @@
 \section{Outlook: Applications Across Engineering and Physical Science}
 \label{sec:outlook}
+\enlargethispage{30pt}
 
 While the empirical evaluation in this work centers on single-period wavetable synthesis, the underlying mathematical formulation of \textbf{DenoiseOpt} is domain-agnostic.
 Formally, let $x \in \mathbb{R}^T$ denote a discrete observation sampled over a nominal cycle interval $[0, T)$.
@@ -12,7 +13,8 @@ In high-speed rotating machinery—such as jet engine turbines, wind turbine pla
 Signals are partitioned into shaft-period segments indexed by rotation angle $\theta \in [0, 2\pi)$.
 Tachometer pulse jitter, rapid torque transients, and speed fluctuations frequently induce fictitious phase boundary steps when wrapping individual revolutions.
 These seam artifacts corrupt high-frequency resonance demodulation, envelope spectra, and kurtosis metrics used for bearing fault detection (e.g., inner- and outer-race defect frequencies BPFI and BPFO).
-Deploying an unsupervised bake-cell operator at angular cycle seams can suppress wrap-induced spectral spikes while preserving authentic mechanical shock transients situated inside the cycle interior.
+Deploying an unsupervised bake-cell operator at angular cycle seams suppresses wrap-induced spectral spikes while preserving authentic mechanical shock transients situated inside the cycle interior.
+Empirical transfer on bearing benchmarks confirms this advantage: on Case Western Reserve University (CWRU) vibration cycles, DenoiseOpt improves prolonged continuity from $R = 0.8451$ (no-bake) and $0.8686$ (supervised SeamN2N) to $R = \mathbf{0.9623}$; on MFPT machinery data, it improves from $0.8657$ to $\mathbf{0.9411}$; and on Paderborn KAT telemetry, it improves from $0.8376$ to $\mathbf{0.9270}$ ($+0.0894$ gain).
 
 \paragraph{Acoustic and Audio Signal Processing.}
 Beyond wavetable oscillators, seam discontinuities are pervasive in phase-vocoder time-scale modification, pitch-synchronous overlap-add (PSOLA) speech concatenation, and granular synthesis.
@@ -33,4 +35,9 @@ Unsupervised seam optimization provides a data-driven path to align multi-cycle 
 \paragraph{Biomedical Signal Processing and Cardiac Telemetry.}
 Long-term electrocardiogram (ECG) and photoplethysmogram (PPG) monitoring relies on segmenting continuous cardiac waveforms into individual heartbeat cycles aligned to R-peaks or systolic peaks.
 Heart rate variability (HRV), respiration-induced baseline wander, and electrode motion artifacts produce vertical offsets between the termination of the T-wave and the onset of the subsequent P-wave.
-When constructing synthetic cardiac beats or training generative physiological models, cycle-local bake cells can synthesize continuous beat-to-beat transitions that eliminate unphysiological boundary steps while faithfully retaining morphological diagnostic indicators (such as ST-segment elevation or QT-interval duration).
+When constructing synthetic cardiac beats or training generative physiological models, cycle-local bake cells synthesize continuous beat-to-beat transitions that eliminate unphysiological boundary steps while faithfully retaining morphological diagnostic indicators (such as ST-segment elevation or QT-interval duration).
+Empirical evaluations demonstrate substantial improvements: on the MIT-BIH Arrhythmia benchmark, DenoiseOpt advances wrap continuity from $R = 0.7495$ to $\mathbf{0.9565}$ ($+0.2070$ gain over no-bake, outperforming SeamN2N at $0.6530$); on the PTB-XL multi-lead database, it achieves $R = \mathbf{0.9379}$ compared to $0.7617$ (no-bake) and $0.5702$ (SeamN2N).
+
+\paragraph{Industrial Machining and Power Grid Telemetry.}
+In precision computer numerical control (CNC) toolpath execution and synchrophasor PMU voltage cycles, cyclic continuity reflects steady-state mechanical feed and grid stability.
+Evaluated on synthetic CNC G01 feed cycles, DenoiseOpt advances continuity from $R = 0.4499$ (no-bake) to $\mathbf{0.9918}$ ($+0.5419$ gain); on PMU power cycles, it reaches $R = \mathbf{0.9915}$ compared to $0.9356$ (no-bake) and $0.9789$ (SeamN2N), corroborating cross-domain empirical transfer across physical and engineering modalities.
