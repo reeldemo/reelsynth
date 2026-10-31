@@ -1,0 +1,36 @@
+\section{Outlook: Applications Across Engineering and Physical Science}
+\label{sec:outlook}
+
+While the empirical evaluation in this work centers on single-period wavetable synthesis, the underlying mathematical formulation of \textbf{DenoiseOpt} is domain-agnostic.
+Formally, let $x \in \mathbb{R}^T$ denote a discrete observation sampled over a nominal cycle interval $[0, T)$.
+Whenever $x$ is periodically extended or concatenated, any boundary mismatch between the terminal sample $x[T-1]$ and initial sample $x[0]$ introduces a boundary jump $\Delta_{\text{wrap}} = x[0] - x[T-1]$, injecting broadband impulse energy across harmonic spectra.
+The bake-cell operator $B_\theta$ acts as a cycle-local boundary operator restricted to an $\varepsilon$-neighborhood of the wrap boundary, $\mathcal{I}_{\text{seam}} = [0, \delta] \cup [T-\delta, T-1]$, optimized to maximize the prolonged multi-period continuity score $R$.
+This boundary-regularization problem appears fundamentally across several disciplines in engineering and the physical sciences:
+
+\paragraph{Rotational Mechanical Engineering and Turbomachinery Telemetry.}
+In high-speed rotating machinery—such as jet engine turbines, wind turbine planetary gearboxes, and industrial centrifugal compressors—vibration telemetry is resampled from continuous time into synchronous angular coordinates via computed order tracking.
+Signals are partitioned into shaft-period segments indexed by rotation angle $\theta \in [0, 2\pi)$.
+Tachometer pulse jitter, rapid torque transients, and speed fluctuations frequently induce fictitious phase boundary steps when wrapping individual revolutions.
+These seam artifacts corrupt high-frequency resonance demodulation, envelope spectra, and kurtosis metrics used for bearing fault detection (e.g., inner- and outer-race defect frequencies BPFI and BPFO).
+Deploying an unsupervised bake-cell operator at angular cycle seams can suppress wrap-induced spectral spikes while preserving authentic mechanical shock transients situated inside the cycle interior.
+
+\paragraph{Acoustic and Audio Signal Processing.}
+Beyond wavetable oscillators, seam discontinuities are pervasive in phase-vocoder time-scale modification, pitch-synchronous overlap-add (PSOLA) speech concatenation, and granular synthesis.
+When granular grains or pitch periods are looped in circular delay buffers, phase mismatches at grain boundaries generate audible clicks that require aggressive Hann windowing, which in turn attenuates signal energy and causes amplitude modulation flutter.
+Residual-guided bake cells offer a learned alternative that provides seamless cyclic looping without sacrificing spectral brightness or transient punch.
+
+\paragraph{Turbulence and Computational Fluid Dynamics (CFD).}
+Direct Numerical Simulations (DNS) and Large Eddy Simulations (LES) of homogeneous isotropic turbulence commonly enforce periodic boundary conditions (PBCs) along spatial Cartesian coordinates $(x, y, z) \in [0, L)^3$.
+When synthetic velocity fields, turbulent inflow patches, or spectral forcing perturbations are periodically tiled across domain faces, unphysical vorticity shear layers and spurious acoustic pressure waves emerge at opposing boundary faces.
+Applying a multi-dimensional variant of DenoiseOpt's residual repair operator along periodic grid interfaces can enforce divergence-free velocity continuity $\nabla \cdot \mathbf{u} = 0$ while mitigating synthetic seam shear.
+
+\paragraph{Molecular Dynamics and Materials Modeling.}
+In condensed-matter simulations of macromolecular systems, ionic liquids, and solid-state battery electrolytes, periodic boundary conditions are applied under the minimum-image convention.
+When reconstructing continuous atomic trajectories or computing molecular dipole moments from wrapped coordinates, boundary crossing events induce discontinuous coordinate jumps.
+Similarly, in experimental electrochemistry and cyclic voltammetry (CV), cycle-to-cycle sweep concatenation for impedance spectroscopy (EIS) suffers from non-steady-state baseline offsets at potential sweep turnarounds.
+Unsupervised seam optimization provides a data-driven path to align multi-cycle voltammograms without manual polynomial drift subtraction.
+
+\paragraph{Biomedical Signal Processing and Cardiac Telemetry.}
+Long-term electrocardiogram (ECG) and photoplethysmogram (PPG) monitoring relies on segmenting continuous cardiac waveforms into individual heartbeat cycles aligned to R-peaks or systolic peaks.
+Heart rate variability (HRV), respiration-induced baseline wander, and electrode motion artifacts produce vertical offsets between the termination of the T-wave and the onset of the subsequent P-wave.
+When constructing synthetic cardiac beats or training generative physiological models, cycle-local bake cells can synthesize continuous beat-to-beat transitions that eliminate unphysiological boundary steps while faithfully retaining morphological diagnostic indicators (such as ST-segment elevation or QT-interval duration).

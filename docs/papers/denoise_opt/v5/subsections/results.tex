@@ -255,16 +255,18 @@ Honest transfer note: the favorite was searched on Python \texttt{make\_batch} s
   \label{fig:overnight-panel}
 \end{figure*}
 
-\begin{figure}[t]
+\begin{figure*}[t]
   \centering
-  \includegraphics[width=\columnwidth]{figures/residual_by_branch.png}
-  \caption{Per-trial residual scatter by search branch for the first $5{,}000$ iterations at the $5$k-gate freeze, with champion overlay. Branch markers match Figure~\ref{fig:branch-bests}.}
-  \label{fig:residual-branch}
-\end{figure}
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\columnwidth]{figures/champion_timeline.png}
-  \caption{Champion update timeline for the first $5{,}000$ iterations at the $5$k-gate freeze. Sparse $R$ labels mark first, mid-peak, and latest improvements for twocolumn legibility.}
-  \label{fig:champ-timeline}
-\end{figure}
+  \begin{minipage}[t]{0.485\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/residual_by_branch.png}
+    \caption{Per-trial residual scatter by search branch for the first $5{,}000$ iterations at the $5$k-gate freeze, with champion overlay. Branch markers match Figure~\ref{fig:branch-bests}.}
+    \label{fig:residual-branch}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.485\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/champion_timeline.png}
+    \caption{Champion update timeline for the first $5{,}000$ iterations at the $5$k-gate freeze. Sparse $R$ labels mark first, mid-peak, and latest improvements for twocolumn legibility.}
+    \label{fig:champ-timeline}
+  \end{minipage}
+\end{figure*}
