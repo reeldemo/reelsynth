@@ -1,0 +1,83 @@
+{
+  "approach": "hybrid_lstm",
+  "iters": 1,
+  "iters_done": 1,
+  "seed": 2026072702,
+  "champ_r": 0.40379697489376737,
+  "champ_raw": 0.4136776030063629,
+  "champ_j": 0.40379697489376737,
+  "champ_t_ms": 5.975788333368352,
+  "champ_beats_n2n": true,
+  "n2n_gate_r": null,
+  "primary_metric": "r_blend",
+  "search_objective": "J=R_blend-lambda*latency_norm",
+  "lambda_latency": 0.02,
+  "delta_r_vs_dual_cosine": -0.14291295409202576,
+  "baseline_dual_cosine": 0.5565905570983887,
+  "wall_s": 1.530759572982788,
+  "wall_h": 0.0004252109924952189,
+  "lstm_in_champ": false,
+  "xlstm_in_champ": false,
+  "champ_arch": {
+    "depth": 7,
+    "width": 12,
+    "act": "tanh",
+    "ops": [
+      "mlp_seam",
+      "edge_pin",
+      "pin",
+      "median3",
+      "polish",
+      "hann_blend",
+      "cycle_net"
+    ],
+    "wet": 0.5688916598811388,
+    "fir": [
+      0.05438318086643869,
+      0.3476335222843458,
+      0.10196584675945437,
+      0.2277918147928646,
+      0.4165859890487766
+    ],
+    "cell_kind": "n2n_unet",
+    "soft_logits": [
+      -1.174733575666792,
+      0.8176907571289347,
+      0.020515853984831245,
+      0.6561475418723604,
+      0.9960412957866118,
+      -1.054494088080879,
+      -1.1144787763271533,
+      0.4625768377699975,
+      -0.3281726545441914,
+      -0.07644128206106415,
+      -0.3845082894981747,
+      -0.19121213362337153,
+      -0.5959207336424155,
+      -0.3425514749320062,
+      0.5203665762421619
+    ],
+    "blocks": [
+      "moe_mix",
+      "n2n_unet",
+      "unet",
+      "tf_split",
+      "bottleneck"
+    ],
+    "use_adv_aux": false,
+    "moe_mode": "sequential"
+  },
+  "champ_hp": {
+    "lr": 0.0006175057545923615,
+    "fit_steps": 24,
+    "batch": 64,
+    "entropy_coef": 0.05759937645431666,
+    "ppo_clip": 0.2,
+    "adv_coef": 0.039701050852269056,
+    "reward_mode": "vs_nobake"
+  },
+  "champ_cell_path": "/workspace/brand/artifacts/phase2_experiments/search_2026072702/hybrid_lstm/champ_cell.pt",
+  "history_path": "/workspace/brand/artifacts/phase2_experiments/search_2026072702/hybrid_lstm/history.jsonl",
+  "finished_at": "20261021T051315Z",
+  "protocol": "paper_v10"
+}

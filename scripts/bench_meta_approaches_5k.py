@@ -1370,23 +1370,31 @@ def build_aggregate_from_summaries(
 
 
 def publish_aggregate_artifacts(aggregate: dict[str, Any], out_dir: Path) -> tuple[Path, Path, Path]:
-    """Write aggregate JSON, learning-curve PNG, bar chart, and TeX table into paper figures."""
-    paper_fig = META_ROOT / "paper" / "v7" / "figures"
-    paper_fig.mkdir(parents=True, exist_ok=True)
+    """Write aggregate JSON, learning-curve PNG, bar chart, and TeX table into out_dir.
+
+    Copies into denoise-opt-meta paper figures only when that sibling repo exists locally.
+    """
     agg_path = out_dir / "meta_approach_compare.json"
     agg_path.write_text(json.dumps(aggregate, indent=2), encoding="utf-8")
-    shutil.copy2(agg_path, paper_fig / "meta_approach_compare.json")
 
-    png = paper_fig / "fig_meta_approach_compare.png"
+    png = out_dir / "fig_meta_approach_compare.png"
     plot_compare(aggregate, png)
-    shutil.copy2(png, out_dir / "fig_meta_approach_compare.png")
 
-    bars_png = paper_fig / "meta_approach_bars.png"
-    bars_pdf = paper_fig / "meta_approach_bars.pdf"
+    bars_png = out_dir / "meta_approach_bars.png"
+    bars_pdf = out_dir / "meta_approach_bars.pdf"
     plot_bars(aggregate, bars_png, bars_pdf)
-    shutil.copy2(bars_png, out_dir / "meta_approach_bars.png")
 
-    write_meta_table_tex(aggregate, paper_fig / "meta_approaches_table.tex")
+    write_meta_table_tex(aggregate, out_dir / "meta_approaches_table.tex")
+
+    if META_ROOT.is_dir():
+        paper_fig = META_ROOT / "paper" / "v7" / "figures"
+        paper_fig.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(agg_path, paper_fig / "meta_approach_compare.json")
+        shutil.copy2(png, paper_fig / "fig_meta_approach_compare.png")
+        shutil.copy2(bars_png, paper_fig / "meta_approach_bars.png")
+        shutil.copy2(bars_pdf, paper_fig / "meta_approach_bars.pdf")
+        write_meta_table_tex(aggregate, paper_fig / "meta_approaches_table.tex")
+
     return agg_path, png, bars_png
 
 
