@@ -184,6 +184,48 @@ def residual_score_blend(
 
 
 @torch.no_grad()
+def jump_local_rmse(
+    ref: torch.Tensor,
+    out: torch.Tensor,
+    jump_indices: torch.Tensor,
+    *,
+    half_w: int = 8,
+) -> torch.Tensor:
+    """RMSE(ref−out) pooled over ±half_w windows around each jump index (per sample).
+
+    ``jump_indices`` shape [B, J] with indices in [0, L−1] (replicated per batch row).
+    """
+    b, n = out.shape
+    hw = max(1, int(half_w))
+    j_count = jump_indices.shape[1]
+    per: list[torch.Tensor] = []
+    for row in range(b):
+        parts = []
+        for j in range(j_count):
+            c = int(jump_indices[row, j].long().clamp(0, n - 1).item())
+            lo = max(0, c - hw)
+            hi = min(n, c + hw + 1)
+            parts.append((out[row, lo:hi] - ref[row, lo:hi]).pow(2))
+        per.append(torch.cat(parts).mean().sqrt().clamp_min(1e-12))
+    return torch.stack(per)
+
+
+@torch.no_grad()
+def jump_local_r(
+    ref: torch.Tensor,
+    out: torch.Tensor,
+    jump_indices: torch.Tensor,
+    *,
+    half_w: int = 8,
+    eps: float = 1e-6,
+) -> torch.Tensor:
+    """Unit-interval jump-local score: clamp(1 − RMSE_jump / RMS_ref, 0, 1)."""
+    rmse = jump_local_rmse(ref, out, jump_indices, half_w=half_w)
+    ref_rms = ref.pow(2).mean(dim=1).sqrt().clamp_min(eps)
+    return (1.0 - rmse / ref_rms).clamp(0.0, 1.0)
+
+
+@torch.no_grad()
 def click_energy(cycle: torch.Tensor, *, periods: int = 2) -> torch.Tensor:
     """Mean square of first difference across tiled wrap boundaries.
 

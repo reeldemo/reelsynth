@@ -1,0 +1,80 @@
+{
+  "approach": "hybrid_lstm",
+  "iters": 1,
+  "iters_done": 1,
+  "seed": 2026072701,
+  "champ_r": 0.7925636718362891,
+  "champ_raw": 0.8013487458229065,
+  "champ_j": 0.7907303385029557,
+  "champ_t_ms": 7.064617666666588,
+  "champ_beats_n2n": true,
+  "n2n_gate_r": null,
+  "primary_metric": "r_blend",
+  "search_objective": "J=R_blend-lambda*latency_norm",
+  "lambda_latency": 0.02,
+  "delta_r_vs_dual_cosine": 0.2618309259414673,
+  "baseline_dual_cosine": 0.5395178198814392,
+  "wall_s": 2.2318148612976074,
+  "wall_h": 0.0006199485725826687,
+  "lstm_in_champ": false,
+  "xlstm_in_champ": false,
+  "champ_arch": {
+    "depth": 7,
+    "width": 32,
+    "act": "tanh",
+    "ops": [
+      "hann_blend",
+      "classic",
+      "median3",
+      "pin"
+    ],
+    "wet": 0.3804113407304024,
+    "fir": [
+      0.07646996985573924,
+      0.24380617506311147,
+      0.5057927043141134,
+      0.5378234567975493,
+      0.4330778331348212
+    ],
+    "cell_kind": "dilated",
+    "soft_logits": [
+      0.40951864917304803,
+      -0.386755704904167,
+      -0.797273464172966,
+      0.784897370701108,
+      0.39672997883322125,
+      0.8858652755375127,
+      -0.12000913751857012,
+      0.21143650461426788,
+      0.3726507708319706,
+      -0.8461259166147757,
+      0.16163180389145126,
+      0.5445148785296672,
+      0.8952277099072958,
+      -0.1780599301008461,
+      0.6439795265338699
+    ],
+    "blocks": [
+      "dilated",
+      "n2n_unet",
+      "unet",
+      "tf_split",
+      "conv1d"
+    ],
+    "use_adv_aux": false,
+    "moe_mode": "sequential"
+  },
+  "champ_hp": {
+    "lr": 0.0008534721845779159,
+    "fit_steps": 52,
+    "batch": 32,
+    "entropy_coef": 0.008967051932571392,
+    "ppo_clip": 0.3,
+    "adv_coef": 0.036108226794420176,
+    "reward_mode": "abs_r"
+  },
+  "champ_cell_path": "/workspace/brand/artifacts/phase2_experiments/search_2026072701/hybrid_lstm/champ_cell.pt",
+  "history_path": "/workspace/brand/artifacts/phase2_experiments/search_2026072701/hybrid_lstm/history.jsonl",
+  "finished_at": "20261021T051310Z",
+  "protocol": "paper_v10"
+}
