@@ -67,6 +67,47 @@ import metrics_snr_sdr as msm  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 META_ROOT = ROOT.parent / "denoise-opt-meta"
+
+# Optional extra-graph restriction (None = full BLOCKS vocabulary); set in main().
+GRAPH_BLOCKS_ALLOWED: list[str] | None = None
+
+
+def _graph_allowed_blocks() -> list[str] | None:
+    return GRAPH_BLOCKS_ALLOWED
+
+
+def _graph_normalize(blocks, cell_kind: str) -> list[str]:
+    return normalize_graph(blocks, cell_kind, _graph_allowed_blocks())
+
+
+def _block_mutation_pool() -> list[str]:
+    if GRAPH_BLOCKS_ALLOWED is not None:
+        return list(GRAPH_BLOCKS_ALLOWED)
+    return list(BLOCKS)
+
+
+def _parse_csv_flag(raw: str) -> tuple[str, ...]:
+    return tuple(x.strip() for x in str(raw).split(",") if x.strip())
+
+
+def configure_search_space_flags(cell_kinds: str, extra_blocks: str) -> int:
+    """Apply --cell-kinds / --extra-blocks; return 2 on invalid names."""
+    global CELL_KINDS, GRAPH_BLOCKS_ALLOWED
+    ck = _parse_csv_flag(cell_kinds)
+    eb = _parse_csv_flag(extra_blocks)
+    for label, names in (("cell-kinds", ck), ("extra-blocks", eb)):
+        bad = [n for n in names if n not in BLOCKS]
+        if bad:
+            print(
+                f"ERROR: unknown --{label} {bad}; each name must be in BLOCKS",
+                file=sys.stderr,
+            )
+            return 2
+    cell_allowed = list(ck) if ck else list(BLOCKS)
+    CELL_KINDS = cell_allowed
+    arch_blocks.CELL_KINDS = cell_allowed
+    GRAPH_BLOCKS_ALLOWED = list(eb) if eb else None
+    return 0
 SEAM_W = 8
 MLP_IN = SEAM_W * 2
 N = 256
@@ -628,7 +669,7 @@ def measure_forward_latency_ms(
 def arch_state_vec(cfg: ArchConfig, hp: HyperParams, device: torch.device) -> torch.Tensor:
     op_bits = [1.0 if o in cfg.ops else 0.0 for o in OPS]
     act_id = {a: i / max(len(ACTS) - 1, 1) for i, a in enumerate(ACTS)}.get(cfg.act, 0.0)
-    cell_id = {c: i / max(len(CELL_KINDS) - 1, 1) for i, c in enumerate(CELL_KINDS)}.get(
+    cell_id = {c: i / max(len(BLOCKS) - 1, 1) for i, c in enumerate(BLOCKS)}.get(
         cfg.cell_kind, 0.0
     )
     finite_soft = [x for x in (cfg.soft_logits or []) if math.isfinite(float(x))]
@@ -705,6 +746,7 @@ def random_arch(rng: random.Random, adapt: PlateauAdaptState | None = None) -> A
             cell,
             max_extra=min(4 + (adapt.level if adapt else 0), arch_blocks.MAX_GRAPH_LEN - 1),
             crazy_mix_p=crazy_p,
+            allowed_blocks=_graph_allowed_blocks(),
         ),
         use_adv_aux=rng.random() < 0.15,
         moe_mode=random_moe_mode(rng, moe_p=moe_p),
@@ -755,7 +797,7 @@ def mutate_arch(
         c.fir = [rng.uniform(0.05, 0.6) for _ in range(5)]
     elif action == 6:
         c.cell_kind = rng.choice(CELL_KINDS)
-        c.blocks = normalize_graph(c.blocks, c.cell_kind)
+        c.blocks = _graph_normalize(c.blocks, c.cell_kind)
     elif action == 7:
         c.soft_logits = [
             float(x + rng.uniform(-0.5, 0.5)) for x in (c.soft_logits or [0.0] * len(OPS))
@@ -776,11 +818,11 @@ def mutate_arch(
         c = random_arch(rng, adapt)
     elif action == 10:
         # Add/remove a lit block
-        b = rng.choice(BLOCKS)
+        b = rng.choice(_block_mutation_pool())
         if b in c.blocks and len(c.blocks) > 1:
             c.blocks = [x for x in c.blocks if x != b]
         else:
-            c.blocks = normalize_graph(list(c.blocks) + [b], c.cell_kind)
+            c.blocks = _graph_normalize(list(c.blocks) + [b], c.cell_kind)
     elif action == 11:
         crazy_p = adapt.crazy_mix_p if adapt is not None else 0.35
         c.blocks = random_block_graph(
@@ -788,6 +830,7 @@ def mutate_arch(
             c.cell_kind,
             max_extra=min(5 + (adapt.level if adapt else 0), max_g - 1),
             crazy_mix_p=crazy_p,
+            allowed_blocks=_graph_allowed_blocks(),
         )
     elif action == 12:
         c.use_adv_aux = not c.use_adv_aux
@@ -799,17 +842,24 @@ def mutate_arch(
         c.moe_mode = "moe_parallel" if c.moe_mode != "moe_parallel" else "sequential"
         if c.moe_mode == "moe_parallel" and len(c.blocks) < 2:
             crazy_p = adapt.crazy_mix_p if adapt is not None else 0.35
-            c.blocks = random_block_graph(rng, c.cell_kind, max_extra=3, crazy_mix_p=crazy_p)
+            c.blocks = random_block_graph(
+                rng,
+                c.cell_kind,
+                max_extra=3,
+                crazy_mix_p=crazy_p,
+                allowed_blocks=_graph_allowed_blocks(),
+            )
     else:
         # Diversify mixture toward heterogeneous experts
+        pool = set(_block_mutation_pool())
         prefer = [
             b
             for b in ("unet", "attn", "dilated", "dual_path", "dense", "moe_mix", "noise_cond", "soft_mix")
-            if b != c.cell_kind
+            if b != c.cell_kind and b in pool
         ]
         n_extra = min(3 + (adapt.level if adapt else 0), len(prefer), max_g - 1)
         extra = rng.sample(prefer, k=max(1, n_extra)) if prefer else []
-        c.blocks = normalize_graph([c.cell_kind] + extra, c.cell_kind)
+        c.blocks = _graph_normalize([c.cell_kind] + extra, c.cell_kind)
         moe_p = adapt.moe_p if adapt is not None else 0.5
         if rng.random() < moe_p:
             c.moe_mode = "moe_parallel"
@@ -817,7 +867,7 @@ def mutate_arch(
         if deepen_extra:
             c.depth = max(1, min(max_d, c.depth + rng.randint(1, deepen_extra + 1)))
     c.ops = ensure_trainable_ops(c.ops)
-    c.blocks = normalize_graph(c.blocks, c.cell_kind)
+    c.blocks = _graph_normalize(c.blocks, c.cell_kind)
     if c.moe_mode not in MOE_MODES:
         c.moe_mode = "sequential"
     c.depth = max(1, min(max_d, c.depth))
@@ -1406,6 +1456,18 @@ def main() -> int:
         default="ppo,nas,pbt,ga,combo",
         help="Comma-separated branch names to rotate (isolated ablations: ga / ppo / ga,ppo / full set).",
     )
+    ap.add_argument(
+        "--cell-kinds",
+        type=str,
+        default="",
+        help="Comma list restricting searchable cell kinds (names in BLOCKS); empty = full vocabulary.",
+    )
+    ap.add_argument(
+        "--extra-blocks",
+        type=str,
+        default="",
+        help="Comma list restricting composable graph blocks (names in BLOCKS); empty = full vocabulary.",
+    )
     args = ap.parse_args()
     if args.history_every < 1:
         print("ERROR: --history-every must be >= 1", file=sys.stderr)
@@ -1431,6 +1493,14 @@ def main() -> int:
         print(f"ERROR: unknown --branches {bad}; allowed={sorted(allowed_branches)}", file=sys.stderr)
         return 2
     args.branch_tuple = branch_list
+
+    rc = configure_search_space_flags(args.cell_kinds, args.extra_blocks)
+    if rc != 0:
+        return rc
+    cell_kinds_allowed = list(CELL_KINDS)
+    extra_blocks_allowed = (
+        list(GRAPH_BLOCKS_ALLOWED) if GRAPH_BLOCKS_ALLOWED is not None else list(BLOCKS)
+    )
 
     # Fresh process defaults (module may have been mutated in prior imports/tests)
     arch_blocks.set_search_caps(depth=12, graph=6, width=48)
@@ -1513,6 +1583,8 @@ def main() -> int:
                 "n_ops": len(OPS),
                 "ops": OPS,
                 "cell_kinds": CELL_KINDS,
+                "cell_kinds_allowed": cell_kinds_allowed,
+                "extra_blocks_allowed": extra_blocks_allowed,
                 "blocks": BLOCKS,
                 "moe_modes": list(MOE_MODES),
                 "primary_metric": "r_blend",
@@ -1608,8 +1680,9 @@ def main() -> int:
             moe_mode="moe_parallel",
         ),
     ]
+    allowed_cells = set(CELL_KINDS)
     for i, spec in enumerate(seed_specs):
-        if i < len(pop):
+        if i < len(pop) and spec.cell_kind in allowed_cells:
             pop[i].cfg = spec
 
     warm_residual = -1.0
@@ -1754,7 +1827,7 @@ def main() -> int:
                     parent.cfg,
                     rng,
                     ArchConfig=ArchConfig,
-                    normalize_graph=normalize_graph,
+                    normalize_graph=_graph_normalize,
                     ensure_trainable_ops=ensure_trainable_ops,
                     CELL_KINDS=CELL_KINDS,
                     ACTS=ACTS,
@@ -1877,7 +1950,7 @@ def main() -> int:
                 mutate_hp=mutate_hp,
                 ArchConfig=ArchConfig,
                 HyperParams=HyperParams,
-                normalize_graph=normalize_graph,
+                normalize_graph=_graph_normalize,
                 ensure_trainable_ops=ensure_trainable_ops,
                 CELL_KINDS=CELL_KINDS,
                 ACTS=ACTS,
@@ -2142,6 +2215,8 @@ def main() -> int:
                 "plateau_adapt_every": args.plateau_adapt_every,
                 "ga_every": args.ga_every,
                 "algo_tag": args.algo_tag,
+                "cell_kinds_allowed": cell_kinds_allowed,
+                "extra_blocks_allowed": extra_blocks_allowed,
             }
             if checkpoint:
                 ckpt_path = ckpt_dir / f"ckpt_iter_{iter_n:06d}.json"
@@ -2233,6 +2308,8 @@ def main() -> int:
         "history_path": str(history_path),
         "log_path": str(log_path),
         "seed": args.seed,
+        "cell_kinds_allowed": cell_kinds_allowed,
+        "extra_blocks_allowed": extra_blocks_allowed,
         "champion_arch": champion_cfg.to_dict(),
     }
     (run_dir / "final_summary.json").write_text(json.dumps(final, indent=2), encoding="utf-8")
