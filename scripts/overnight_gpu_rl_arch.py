@@ -67,6 +67,47 @@ import metrics_snr_sdr as msm  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 META_ROOT = ROOT.parent / "denoise-opt-meta"
+
+# Optional extra-graph restriction (None = full BLOCKS vocabulary); set in main().
+GRAPH_BLOCKS_ALLOWED: list[str] | None = None
+
+
+def _graph_allowed_blocks() -> list[str] | None:
+    return GRAPH_BLOCKS_ALLOWED
+
+
+def _graph_normalize(blocks, cell_kind: str) -> list[str]:
+    return normalize_graph(blocks, cell_kind, _graph_allowed_blocks())
+
+
+def _block_mutation_pool() -> list[str]:
+    if GRAPH_BLOCKS_ALLOWED is not None:
+        return list(GRAPH_BLOCKS_ALLOWED)
+    return list(BLOCKS)
+
+
+def _parse_csv_flag(raw: str) -> tuple[str, ...]:
+    return tuple(x.strip() for x in str(raw).split(",") if x.strip())
+
+
+def configure_search_space_flags(cell_kinds: str, extra_blocks: str) -> int:
+    """Apply --cell-kinds / --extra-blocks; return 2 on invalid names."""
+    global CELL_KINDS, GRAPH_BLOCKS_ALLOWED
+    ck = _parse_csv_flag(cell_kinds)
+    eb = _parse_csv_flag(extra_blocks)
+    for label, names in (("cell-kinds", ck), ("extra-blocks", eb)):
+        bad = [n for n in names if n not in BLOCKS]
+        if bad:
+            print(
+                f"ERROR: unknown --{label} {bad}; each name must be in BLOCKS",
+                file=sys.stderr,
+            )
+            return 2
+    cell_allowed = list(ck) if ck else list(BLOCKS)
+    CELL_KINDS = cell_allowed
+    arch_blocks.CELL_KINDS = cell_allowed
+    GRAPH_BLOCKS_ALLOWED = list(eb) if eb else None
+    return 0
 SEAM_W = 8
 MLP_IN = SEAM_W * 2
 N = 256
@@ -628,7 +669,7 @@ def measure_forward_latency_ms(
 def arch_state_vec(cfg: ArchConfig, hp: HyperParams, device: torch.device) -> torch.Tensor:
     op_bits = [1.0 if o in cfg.ops else 0.0 for o in OPS]
     act_id = {a: i / max(len(ACTS) - 1, 1) for i, a in enumerate(ACTS)}.get(cfg.act, 0.0)
-    cell_id = {c: i / max(len(CELL_KINDS) - 1, 1) for i, c in enumerate(CELL_KINDS)}.get(
+    cell_id = {c: i / max(len(BLOCKS) - 1, 1) for i, c in enumerate(BLOCKS)}.get(
         cfg.cell_kind, 0.0
     )
     finite_soft = [x for x in (cfg.soft_logits or []) if math.isfinite(float(x))]
@@ -705,6 +746,7 @@ def random_arch(rng: random.Random, adapt: PlateauAdaptState | None = None) -> A
             cell,
             max_extra=min(4 + (adapt.level if adapt else 0), arch_blocks.MAX_GRAPH_LEN - 1),
             crazy_mix_p=crazy_p,
+            allowed_blocks=_graph_allowed_blocks(),
         ),
         use_adv_aux=rng.random() < 0.15,
         moe_mode=random_moe_mode(rng, moe_p=moe_p),
@@ -755,7 +797,7 @@ def mutate_arch(
         c.fir = [rng.uniform(0.05, 0.6) for _ in range(5)]
     elif action == 6:
         c.cell_kind = rng.choice(CELL_KINDS)
-        c.blocks = normalize_graph(c.blocks, c.cell_kind)
+        c.blocks = _graph_normalize(c.blocks, c.cell_kind)
     elif action == 7:
         c.soft_logits = [
             float(x + rng.uniform(-0.5, 0.5)) for x in (c.soft_logits or [0.0] * len(OPS))
@@ -776,11 +818,11 @@ def mutate_arch(
         c = random_arch(rng, adapt)
     elif action == 10:
         # Add/remove a lit block
-        b = rng.choice(BLOCKS)
+        b = rng.choice(_block_mutation_pool())
         if b in c.blocks and len(c.blocks) > 1:
             c.blocks = [x for x in c.blocks if x != b]
         else:
-            c.blocks = normalize_graph(list(c.blocks) + [b], c.cell_kind)
+            c.blocks = _graph_normalize(list(c.blocks) + [b], c.cell_kind)
     elif action == 11:
         crazy_p = adapt.crazy_mix_p if adapt is not None else 0.35
         c.blocks = random_block_graph(
@@ -788,6 +830,7 @@ def mutate_arch(
             c.cell_kind,
             max_extra=min(5 + (adapt.level if adapt else 0), max_g - 1),
             crazy_mix_p=crazy_p,
+            allowed_blocks=_graph_allowed_blocks(),
         )
     elif action == 12:
         c.use_adv_aux = not c.use_adv_aux
@@ -799,17 +842,24 @@ def mutate_arch(
         c.moe_mode = "moe_parallel" if c.moe_mode != "moe_parallel" else "sequential"
         if c.moe_mode == "moe_parallel" and len(c.blocks) < 2:
             crazy_p = adapt.crazy_mix_p if adapt is not None else 0.35
-            c.blocks = random_block_graph(rng, c.cell_kind, max_extra=3, crazy_mix_p=crazy_p)
+            c.blocks = random_block_graph(
+                rng,
+                c.cell_kind,
+                max_extra=3,
+                crazy_mix_p=crazy_p,
+                allowed_blocks=_graph_allowed_blocks(),
+            )
     else:
         # Diversify mixture toward heterogeneous experts
+        pool = set(_block_mutation_pool())
         prefer = [
             b
             for b in ("unet", "attn", "dilated", "dual_path", "dense", "moe_mix", "noise_cond", "soft_mix")
-            if b != c.cell_kind
+            if b != c.cell_kind and b in pool
         ]
         n_extra = min(3 + (adapt.level if adapt else 0), len(prefer), max_g - 1)
         extra = rng.sample(prefer, k=max(1, n_extra)) if prefer else []
-        c.blocks = normalize_graph([c.cell_kind] + extra, c.cell_kind)
+        c.blocks = _graph_normalize([c.cell_kind] + extra, c.cell_kind)
         moe_p = adapt.moe_p if adapt is not None else 0.5
         if rng.random() < moe_p:
             c.moe_mode = "moe_parallel"
@@ -817,7 +867,7 @@ def mutate_arch(
         if deepen_extra:
             c.depth = max(1, min(max_d, c.depth + rng.randint(1, deepen_extra + 1)))
     c.ops = ensure_trainable_ops(c.ops)
-    c.blocks = normalize_graph(c.blocks, c.cell_kind)
+    c.blocks = _graph_normalize(c.blocks, c.cell_kind)
     if c.moe_mode not in MOE_MODES:
         c.moe_mode = "sequential"
     c.depth = max(1, min(max_d, c.depth))
@@ -1098,18 +1148,39 @@ def eval_cell(cell: SeamCell, ops: list[str], device: torch.device, batch: int =
     return finite_scalar(float(residual_score_blend(ideal, eng, out).mean().item()), 0.0)
 
 
+BASELINE_EVAL_SEED = 20260719
+
+
 @torch.no_grad()
 def dual_cosine_baseline(device: torch.device, batch: int = 128) -> float:
+    cpu_state = torch.get_rng_state()
+    cuda_states = torch.cuda.get_rng_state_all() if device.type == "cuda" else None
+    torch.manual_seed(BASELINE_EVAL_SEED)
+    if device.type == "cuda":
+        torch.cuda.manual_seed_all(BASELINE_EVAL_SEED)
     ideal, eng = make_batch(batch, N, device)
     out = dual_cosine_blend(eng)
-    return float(residual_score_blend(ideal, eng, out).mean().item())
+    score = float(residual_score_blend(ideal, eng, out).mean().item())
+    torch.set_rng_state(cpu_state)
+    if cuda_states is not None:
+        torch.cuda.set_rng_state_all(cuda_states)
+    return score
 
 
 @torch.no_grad()
 def nobake_baseline(device: torch.device, batch: int = 128) -> float:
     """Unrepaired engine vs ideal sibling (near-ceiling body; seam still damaged)."""
+    cpu_state = torch.get_rng_state()
+    cuda_states = torch.cuda.get_rng_state_all() if device.type == "cuda" else None
+    torch.manual_seed(BASELINE_EVAL_SEED + 1)
+    if device.type == "cuda":
+        torch.cuda.manual_seed_all(BASELINE_EVAL_SEED + 1)
     ideal, eng = make_batch(batch, N, device)
-    return float(residual_score_blend(ideal, eng, eng).mean().item())
+    score = float(residual_score_blend(ideal, eng, eng).mean().item())
+    torch.set_rng_state(cpu_state)
+    if cuda_states is not None:
+        torch.cuda.set_rng_state_all(cuda_states)
+    return score
 
 
 def evaluate_candidate(
@@ -1215,6 +1286,256 @@ def log_line(log_path: Path, msg: str) -> None:
 def append_history(history_path: Path, row: dict[str, Any]) -> None:
     with history_path.open("a", encoding="utf-8") as f:
         f.write(json.dumps(row, separators=(",", ":")) + "\n")
+
+
+SEARCH_CKPT_PREFIX = "search_state_iter_"
+SEARCH_CKPT_KEEP = 2
+SEARCH_CKPT_SCHEMA = "denoiseopt.overnight_search.v1"
+
+
+def atomic_torch_save(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f"{path.stem}.{os.getpid()}.tmp")
+    torch.save(payload, tmp)
+    os.replace(str(tmp), str(path))
+
+
+def atomic_json_save(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    text = json.dumps(payload, indent=2)
+    tmp = path.with_name(f"{path.stem}.{os.getpid()}.tmp")
+    tmp.write_text(text, encoding="utf-8")
+    os.replace(str(tmp), str(path))
+
+
+def prune_search_checkpoints(ckpt_dir: Path) -> None:
+    pts = sorted(ckpt_dir.glob(f"{SEARCH_CKPT_PREFIX}*.pt"))
+    while len(pts) > SEARCH_CKPT_KEEP:
+        pts[0].unlink(missing_ok=True)
+        pts = pts[1:]
+
+
+def serialize_population(pop: list[Individual]) -> list[dict[str, Any]]:
+    return [
+        {
+            "cfg": ind.cfg.to_dict(),
+            "hp": ind.hp.to_dict(),
+            "score": float(ind.score),
+            "age": int(ind.age),
+        }
+        for ind in pop
+    ]
+
+
+def serialize_rollout_buffer(buf: RolloutBuffer) -> dict[str, Any]:
+    return {
+        "states": [s.detach().cpu() for s in buf.states],
+        "actions": list(buf.actions),
+        "logprobs": [lp.detach().cpu() for lp in buf.logprobs],
+        "rewards": list(buf.rewards),
+        "values": [v.detach().cpu() for v in buf.values],
+        "dones": list(buf.dones),
+    }
+
+
+def deserialize_rollout_buffer(data: dict[str, Any] | None) -> RolloutBuffer:
+    buf = RolloutBuffer()
+    if not data:
+        return buf
+    buf.states = [s for s in data.get("states") or []]
+    buf.actions = list(data.get("actions") or [])
+    buf.logprobs = [lp for lp in data.get("logprobs") or []]
+    buf.rewards = [float(x) for x in (data.get("rewards") or [])]
+    buf.values = [v for v in data.get("values") or []]
+    buf.dones = [bool(x) for x in (data.get("dones") or [])]
+    return buf
+
+
+def deserialize_population(rows: list[dict[str, Any]]) -> list[Individual]:
+    out: list[Individual] = []
+    for row in rows:
+        out.append(
+            Individual(
+                cfg=ArchConfig.from_dict(row["cfg"]),
+                hp=HyperParams.from_dict(row.get("hp")),
+                score=float(row.get("score", -1.0)),
+                age=int(row.get("age", 0)),
+            )
+        )
+    return out
+
+
+def search_protocol_fingerprint(args: argparse.Namespace) -> dict[str, Any]:
+    return {
+        "seed": int(args.seed),
+        "pop_size": int(args.pop_size),
+        "ppo_horizon": int(args.ppo_horizon),
+        "batch": int(args.batch),
+        "fit_steps": int(args.fit_steps),
+        "branches": list(args.branch_tuple),
+        "cell_kinds_allowed": list(CELL_KINDS),
+        "extra_blocks_allowed": (
+            list(GRAPH_BLOCKS_ALLOWED) if GRAPH_BLOCKS_ALLOWED is not None else list(BLOCKS)
+        ),
+        "plateau_adapt_every": int(args.plateau_adapt_every),
+        "lambda_latency": float(LAMBDA_LATENCY),
+    }
+
+
+def latest_search_checkpoint(ckpt_dir: Path) -> Path | None:
+    link = ckpt_dir / "search_state_latest.pt"
+    if link.is_file():
+        return link
+    pts = sorted(ckpt_dir.glob(f"{SEARCH_CKPT_PREFIX}*.pt"))
+    return pts[-1] if pts else None
+
+
+def load_champion_cell_from_run(
+    run_dir: Path,
+    cfg: ArchConfig,
+    device: torch.device,
+) -> SeamCell | None:
+    fitted = sorted((run_dir / "fitted").glob("champion_iter_*_fitted.pt"))
+    if not fitted:
+        return None
+    try:
+        blob = torch.load(fitted[-1], map_location="cpu", weights_only=False)
+        cell = SeamCell(cfg).to(device)
+        load_state_dict_compatible(cell, blob.get("cell_state_dict") or {})
+        cell.eval()
+        return cell
+    except Exception:
+        return None
+
+
+def save_search_checkpoint(
+    ckpt_dir: Path,
+    *,
+    iter_n: int,
+    args: argparse.Namespace,
+    run_id: str,
+    pop: list[Individual],
+    policy: ActorCritic,
+    policy_opt: torch.optim.Optimizer,
+    last_good_policy: dict[str, torch.Tensor],
+    champion_r: float,
+    champion_cfg: ArchConfig,
+    champion_hp: HyperParams,
+    champion_r_seam: float,
+    champion_t_ms: float,
+    iters_since_improve: int,
+    plateau: PlateauAdaptState,
+    branch_best: dict[str, float],
+    recent_residuals: deque[float],
+    rng: random.Random,
+    device: torch.device,
+    elapsed_sec: float,
+    last_ppo_stats: dict[str, float],
+    last_ga_stats: dict[str, float],
+    rate_note_written: bool,
+    buf: RolloutBuffer,
+) -> Path:
+    ckpt_path = ckpt_dir / f"{SEARCH_CKPT_PREFIX}{iter_n:06d}.pt"
+    payload: dict[str, Any] = {
+        "schema": SEARCH_CKPT_SCHEMA,
+        "iter": iter_n,
+        "run_id": run_id,
+        "protocol_fingerprint": search_protocol_fingerprint(args),
+        "pop": serialize_population(pop),
+        "policy_state": {k: v.detach().cpu() for k, v in policy.state_dict().items()},
+        "policy_opt_state": policy_opt.state_dict(),
+        "last_good_policy": last_good_policy,
+        "champion_r": float(champion_r),
+        "champion_cfg": champion_cfg.to_dict(),
+        "champion_hp": champion_hp.to_dict(),
+        "champion_r_seam": float(champion_r_seam),
+        "champion_t_ms": float(champion_t_ms),
+        "iters_since_improve": int(iters_since_improve),
+        "plateau": asdict(plateau),
+        "branch_best": dict(branch_best),
+        "recent_residuals": list(recent_residuals),
+        "rng_state": rng.getstate(),
+        "torch_rng_state": torch.get_rng_state(),
+        "cuda_rng_state": (
+            [t.cpu() for t in torch.cuda.get_rng_state_all()] if device.type == "cuda" else None
+        ),
+        "max_search_depth": arch_blocks.MAX_SEARCH_DEPTH,
+        "max_graph_len": arch_blocks.MAX_GRAPH_LEN,
+        "max_width": arch_blocks.MAX_WIDTH,
+        "elapsed_sec": float(elapsed_sec),
+        "last_ppo_stats": dict(last_ppo_stats),
+        "last_ga_stats": dict(last_ga_stats),
+        "rate_note_written": bool(rate_note_written),
+        "rollout_buffer": serialize_rollout_buffer(buf),
+    }
+    atomic_torch_save(ckpt_path, payload)
+    latest = ckpt_dir / "search_state_latest.pt"
+    atomic_torch_save(latest, {**payload, "canonical_path": str(ckpt_path)})
+    prune_search_checkpoints(ckpt_dir)
+    return ckpt_path
+
+
+def restore_search_checkpoint(
+    ckpt_path: Path,
+    *,
+    args: argparse.Namespace,
+    device: torch.device,
+    policy: ActorCritic,
+    policy_opt: torch.optim.Optimizer,
+) -> dict[str, Any]:
+    blob = torch.load(ckpt_path, map_location="cpu", weights_only=False)
+    if blob.get("schema") != SEARCH_CKPT_SCHEMA:
+        raise ValueError(f"unsupported checkpoint schema in {ckpt_path}")
+    proto_now = search_protocol_fingerprint(args)
+    proto_ck = blob.get("protocol_fingerprint") or {}
+    for key in proto_now:
+        if proto_now.get(key) != proto_ck.get(key):
+            raise ValueError(
+                f"checkpoint protocol mismatch on {key}: ckpt={proto_ck.get(key)!r} "
+                f"now={proto_now.get(key)!r}"
+            )
+    policy.load_state_dict(
+        {k: v.to(device) for k, v in (blob.get("policy_state") or {}).items()}
+    )
+    policy_opt.load_state_dict(blob.get("policy_opt_state") or {})
+    rng = random.Random()
+    if blob.get("rng_state") is not None:
+        rng.setstate(blob["rng_state"])
+    if blob.get("torch_rng_state") is not None:
+        torch.set_rng_state(blob["torch_rng_state"])
+    if device.type == "cuda" and blob.get("cuda_rng_state"):
+        states = [s.to(device) for s in blob["cuda_rng_state"]]
+        torch.cuda.set_rng_state_all(states)
+    pop = deserialize_population(blob.get("pop") or [])
+    last_good = blob.get("last_good_policy") or snapshot_state_dict(policy)
+    plateau_d = blob.get("plateau") or {}
+    plateau = PlateauAdaptState(**{k: plateau_d[k] for k in plateau_d if k in PlateauAdaptState.__dataclass_fields__})  # type: ignore[attr-defined]
+    champion_cfg = ArchConfig.from_dict(blob["champion_cfg"])
+    champion_hp = HyperParams.from_dict(blob.get("champion_hp"))
+    return {
+        "start_it": int(blob.get("iter") or 0) + 1,
+        "pop": pop,
+        "rng": rng,
+        "last_good_policy": last_good,
+        "plateau": plateau,
+        "champion_r": float(blob.get("champion_r", -1.0)),
+        "champion_cfg": champion_cfg,
+        "champion_hp": champion_hp,
+        "champion_r_seam": float(blob.get("champion_r_seam", -1.0)),
+        "champion_t_ms": float(blob.get("champion_t_ms", -1.0)),
+        "iters_since_improve": int(blob.get("iters_since_improve", 0)),
+        "branch_best": dict(blob.get("branch_best") or {}),
+        "recent_residuals": deque(
+            [float(x) for x in (blob.get("recent_residuals") or [])],
+            maxlen=100,
+        ),
+        "elapsed_sec": float(blob.get("elapsed_sec", 0.0)),
+        "last_ppo_stats": dict(blob.get("last_ppo_stats") or {}),
+        "last_ga_stats": dict(blob.get("last_ga_stats") or {}),
+        "rate_note_written": bool(blob.get("rate_note_written", False)),
+        "resume_iter": int(blob.get("iter") or 0),
+        "rollout_buffer": deserialize_rollout_buffer(blob.get("rollout_buffer")),
+    }
 
 
 class RolloutBuffer:
@@ -1406,6 +1727,28 @@ def main() -> int:
         default="ppo,nas,pbt,ga,combo",
         help="Comma-separated branch names to rotate (isolated ablations: ga / ppo / ga,ppo / full set).",
     )
+    ap.add_argument(
+        "--cell-kinds",
+        type=str,
+        default="",
+        help="Comma list restricting searchable cell kinds (names in BLOCKS); empty = full vocabulary.",
+    )
+    ap.add_argument(
+        "--extra-blocks",
+        type=str,
+        default="",
+        help="Comma list restricting composable graph blocks (names in BLOCKS); empty = full vocabulary.",
+    )
+    ap.add_argument(
+        "--resume",
+        action="store_true",
+        help="Continue from the latest search_state checkpoint in --run-id's run folder.",
+    )
+    ap.add_argument(
+        "--force-fresh",
+        action="store_true",
+        help="With --resume, ignore checkpoints and restart the loop state (keeps run_dir).",
+    )
     args = ap.parse_args()
     if args.history_every < 1:
         print("ERROR: --history-every must be >= 1", file=sys.stderr)
@@ -1432,8 +1775,20 @@ def main() -> int:
         return 2
     args.branch_tuple = branch_list
 
-    # Fresh process defaults (module may have been mutated in prior imports/tests)
+    # Fresh process / repeated main() defaults (prior runs may have raised caps or narrowed CELL_KINDS)
     arch_blocks.set_search_caps(depth=12, graph=6, width=48)
+    global CELL_KINDS, GRAPH_BLOCKS_ALLOWED
+    CELL_KINDS = list(BLOCKS)
+    arch_blocks.CELL_KINDS = list(BLOCKS)
+    GRAPH_BLOCKS_ALLOWED = None
+
+    rc = configure_search_space_flags(args.cell_kinds, args.extra_blocks)
+    if rc != 0:
+        return rc
+    cell_kinds_allowed = list(CELL_KINDS)
+    extra_blocks_allowed = (
+        list(GRAPH_BLOCKS_ALLOWED) if GRAPH_BLOCKS_ALLOWED is not None else list(BLOCKS)
+    )
 
     if args.device.startswith("cuda") and not torch.cuda.is_available():
         print("ERROR: CUDA requested but torch.cuda.is_available() is False", file=sys.stderr)
@@ -1443,6 +1798,9 @@ def main() -> int:
         args.device if torch.cuda.is_available() and args.device.startswith("cuda") else "cpu"
     )
     gpu_name = torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu"
+    if args.resume and not args.run_id:
+        print("ERROR: --resume requires --run-id naming the interrupted run folder", file=sys.stderr)
+        return 2
     run_id = args.run_id or f"gpu-rl-arch-{utc_now()}"
     run_dir = ROOT / "brand" / "artifacts" / "models" / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -1453,15 +1811,19 @@ def main() -> int:
     ckpt_dir = run_dir / "checkpoints"
     ckpt_dir.mkdir(parents=True, exist_ok=True)
 
-    rng = random.Random(args.seed)
-    torch.manual_seed(args.seed)
-    if device.type == "cuda":
-        torch.cuda.manual_seed_all(args.seed)
+    resume_ckpt_path = latest_search_checkpoint(ckpt_dir) if args.resume and not args.force_fresh else None
+    if args.resume and resume_ckpt_path is None:
+        print(f"ERROR: --resume but no search_state checkpoint in {ckpt_dir}", file=sys.stderr)
+        return 2
 
     history_path = run_dir / "history.jsonl"
     if not history_path.exists():
         history_path.write_text("", encoding="utf-8")
 
+    if not resume_ckpt_path:
+        torch.manual_seed(args.seed)
+        if device.type == "cuda":
+            torch.cuda.manual_seed_all(args.seed)
     baseline = dual_cosine_baseline(device)
     nobake_ref = nobake_baseline(device)
     now_local = datetime.now().astimezone()
@@ -1513,6 +1875,8 @@ def main() -> int:
                 "n_ops": len(OPS),
                 "ops": OPS,
                 "cell_kinds": CELL_KINDS,
+                "cell_kinds_allowed": cell_kinds_allowed,
+                "extra_blocks_allowed": extra_blocks_allowed,
                 "blocks": BLOCKS,
                 "moe_modes": list(MOE_MODES),
                 "primary_metric": "r_blend",
@@ -1541,10 +1905,82 @@ def main() -> int:
     # No AMP / GradScaler in this loop (FP32); kept explicit so NaN paths stay deterministic.
     last_good_policy = snapshot_state_dict(policy)
     buf = RolloutBuffer()
+    start_it = 1
+    elapsed_prev = 0.0
+    resumed_from: int | None = None
+    pop: list[Individual] = []
 
-    pop: list[Individual] = [
-        Individual(cfg=random_arch(rng), hp=random_hp(rng), score=-1.0) for _ in range(args.pop_size)
-    ]
+    if resume_ckpt_path is not None:
+        try:
+            restored = restore_search_checkpoint(
+                resume_ckpt_path,
+                args=args,
+                device=device,
+                policy=policy,
+                policy_opt=policy_opt,
+            )
+        except ValueError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
+        rng = restored["rng"]
+        pop = restored["pop"]
+        if len(pop) < args.pop_size:
+            print(
+                f"ERROR: checkpoint population size {len(pop)} < pop_size {args.pop_size}",
+                file=sys.stderr,
+            )
+            return 2
+        last_good_policy = restored["last_good_policy"]
+        plateau = restored["plateau"]
+        champion_r = restored["champion_r"]
+        champion_cfg = restored["champion_cfg"]
+        champion_hp = restored["champion_hp"]
+        champion_r_seam = restored["champion_r_seam"]
+        champion_t_ms = restored["champion_t_ms"]
+        iters_since_improve = restored["iters_since_improve"]
+        branch_best = restored["branch_best"]
+        recent_residuals = restored["recent_residuals"]
+        last_ppo_stats = restored["last_ppo_stats"]
+        last_ga_stats = restored["last_ga_stats"]
+        rate_note_written = restored["rate_note_written"]
+        buf = restored["rollout_buffer"]
+        start_it = restored["start_it"]
+        elapsed_prev = restored["elapsed_sec"]
+        resumed_from = restored["resume_iter"]
+        champion_cell = load_champion_cell_from_run(run_dir, champion_cfg, device)
+        last_plateau_event = None
+        log_line(
+            log_path,
+            f"RESUME from {resume_ckpt_path.name} iter={resumed_from} "
+            f"next_iter={start_it} champ_j={champion_r:.4f}",
+        )
+        resume_mode = True
+    else:
+        rng = random.Random(args.seed)
+        pop = [
+            Individual(cfg=random_arch(rng), hp=random_hp(rng), score=-1.0)
+            for _ in range(args.pop_size)
+        ]
+        resume_mode = False
+        champion_r = -1.0
+        champion_r_seam = -1.0
+        champion_t_ms = -1.0
+        champion_cfg = pop[0].cfg
+        champion_hp = pop[0].hp
+        champion_cell = None
+        iters_since_improve = 0
+        plateau = PlateauAdaptState()
+        last_plateau_event = None
+        branch_best = {"ppo": 0.0, "nas": 0.0, "pbt": 0.0, "ga": 0.0, "combo": 0.0}
+        last_ppo_stats = {
+            "policy_loss": 0.0,
+            "value_loss": 0.0,
+            "entropy": 0.0,
+            "nan_skipped": 0.0,
+        }
+        last_ga_stats = {"ga_crossover": 0.0, "ga_mutate": 0.0, "ga_elites": 0.0}
+        recent_residuals = deque(maxlen=100)
+        rate_note_written = False
     seed_specs = [
         ArchConfig(
             depth=6,
@@ -1608,13 +2044,15 @@ def main() -> int:
             moe_mode="moe_parallel",
         ),
     ]
-    for i, spec in enumerate(seed_specs):
-        if i < len(pop):
-            pop[i].cfg = spec
+    allowed_cells = set(CELL_KINDS)
+    if not resume_mode:
+        for i, spec in enumerate(seed_specs):
+            if i < len(pop) and spec.cell_kind in allowed_cells:
+                pop[i].cfg = spec
 
     warm_residual = -1.0
     warm_cell: SeamCell | None = None
-    if args.seed_fitted:
+    if not resume_mode and args.seed_fitted:
         fitted_path = Path(args.seed_fitted)
         if not fitted_path.is_file():
             print(f"ERROR: --seed-fitted not found: {fitted_path}", file=sys.stderr)
@@ -1660,32 +2098,26 @@ def main() -> int:
             f"tag={meta_blob.get('tag')} cell_loaded={warm_cell is not None}",
         )
 
-    save_unfitted(run_dir, pop[0].cfg, "init", pop[0].hp)
-    save_unfitted(meta_run, pop[0].cfg, "init", pop[0].hp)
+    if not resume_mode:
+        save_unfitted(run_dir, pop[0].cfg, "init", pop[0].hp)
+        save_unfitted(meta_run, pop[0].cfg, "init", pop[0].hp)
+        if warm_residual >= 0:
+            champion_r = warm_residual
+            champion_cfg = pop[0].cfg
+            champion_hp = pop[0].hp
+            champion_cell = warm_cell
+            champion_r_seam = warm_residual
 
-    champion_r = warm_residual if warm_residual >= 0 else -1.0
-    champion_cfg = pop[0].cfg
-    champion_hp = pop[0].hp
-    champion_cell: SeamCell | None = warm_cell
-    champion_r_seam = warm_residual if warm_residual >= 0 else -1.0
-    champion_t_ms = -1.0
-    iters_since_improve = 0
-    plateau = PlateauAdaptState()
-    last_plateau_event: dict[str, Any] | None = None
-    branch_best = {"ppo": 0.0, "nas": 0.0, "pbt": 0.0, "ga": 0.0, "combo": 0.0}
-    last_ppo_stats = {"policy_loss": 0.0, "value_loss": 0.0, "entropy": 0.0, "nan_skipped": 0.0}
-    last_ga_stats = {"ga_crossover": 0.0, "ga_mutate": 0.0, "ga_elites": 0.0}
-    recent_residuals: deque[float] = deque(maxlen=100)
-
-    t0 = time.time()
+    t0 = time.time() - elapsed_prev
     max_sec = args.max_hours * 3600.0
     keepalive = torch.zeros(1, device=device)
     old_plateau = 0.9809
-    rate_note_written = False
+    if not resume_mode:
+        rate_note_written = False
     BRANCHES = args.branch_tuple
     log_line(log_path, f"branches={','.join(BRANCHES)}")
 
-    for it in range(1, args.iters + 1):
+    for it in range(start_it, args.iters + 1):
         if time.time() - t0 > max_sec:
             log_line(log_path, f"STOP time budget reached at iter={it}")
             break
@@ -1754,7 +2186,7 @@ def main() -> int:
                     parent.cfg,
                     rng,
                     ArchConfig=ArchConfig,
-                    normalize_graph=normalize_graph,
+                    normalize_graph=_graph_normalize,
                     ensure_trainable_ops=ensure_trainable_ops,
                     CELL_KINDS=CELL_KINDS,
                     ACTS=ACTS,
@@ -1877,7 +2309,7 @@ def main() -> int:
                 mutate_hp=mutate_hp,
                 ArchConfig=ArchConfig,
                 HyperParams=HyperParams,
-                normalize_graph=normalize_graph,
+                normalize_graph=_graph_normalize,
                 ensure_trainable_ops=ensure_trainable_ops,
                 CELL_KINDS=CELL_KINDS,
                 ACTS=ACTS,
@@ -2142,10 +2574,38 @@ def main() -> int:
                 "plateau_adapt_every": args.plateau_adapt_every,
                 "ga_every": args.ga_every,
                 "algo_tag": args.algo_tag,
+                "cell_kinds_allowed": cell_kinds_allowed,
+                "extra_blocks_allowed": extra_blocks_allowed,
             }
             if checkpoint:
                 ckpt_path = ckpt_dir / f"ckpt_iter_{iter_n:06d}.json"
-                ckpt_path.write_text(json.dumps(ckpt, indent=2), encoding="utf-8")
+                atomic_json_save(ckpt_path, ckpt)
+                search_path = save_search_checkpoint(
+                    ckpt_dir,
+                    iter_n=iter_n,
+                    args=args,
+                    run_id=run_id,
+                    pop=pop,
+                    policy=policy,
+                    policy_opt=policy_opt,
+                    last_good_policy=last_good_policy,
+                    champion_r=champion_r,
+                    champion_cfg=champion_cfg,
+                    champion_hp=champion_hp,
+                    champion_r_seam=champion_r_seam,
+                    champion_t_ms=champion_t_ms,
+                    iters_since_improve=iters_since_improve,
+                    plateau=plateau,
+                    branch_best=branch_best,
+                    recent_residuals=recent_residuals,
+                    rng=rng,
+                    device=device,
+                    elapsed_sec=time.time() - t0,
+                    last_ppo_stats=last_ppo_stats,
+                    last_ga_stats=last_ga_stats,
+                    rate_note_written=rate_note_written,
+                    buf=buf,
+                )
                 if champion_cell is not None:
                     save_fitted(
                         run_dir,
@@ -2156,7 +2616,10 @@ def main() -> int:
                         f"ckpt_iter_{iter_n:06d}",
                         champion_hp,
                     )
-                log_line(log_path, f"CHECKPOINT iter={iter_n} wrote {ckpt_path}")
+                log_line(
+                    log_path,
+                    f"CHECKPOINT iter={iter_n} wrote {ckpt_path} search={search_path.name}",
+                )
             summary = {
                 **ckpt,
                 "log_path": str(log_path),
@@ -2233,9 +2696,13 @@ def main() -> int:
         "history_path": str(history_path),
         "log_path": str(log_path),
         "seed": args.seed,
+        "cell_kinds_allowed": cell_kinds_allowed,
+        "extra_blocks_allowed": extra_blocks_allowed,
         "champion_arch": champion_cfg.to_dict(),
+        "resumed_from_iter": resumed_from,
+        "search_checkpoint_schema": SEARCH_CKPT_SCHEMA,
     }
-    (run_dir / "final_summary.json").write_text(json.dumps(final, indent=2), encoding="utf-8")
+    atomic_json_save(run_dir / "final_summary.json", final)
     log_line(log_path, f"DONE {json.dumps(final)}")
     return 0
 
