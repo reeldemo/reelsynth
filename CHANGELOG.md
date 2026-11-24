@@ -6,6 +6,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **DenoiseOpt real-seam eval** — `scripts/build_real_seam_set.py` builds deterministic AKWF + factory/FX mis-loop corpora (`real_seam_set.npz` / manifest); `scripts/eval_real_seam.py` scores E4 champions, hybrid LSTM, and N2N on `R_blend` / seam / body metrics; `scripts/test_build_real_seam_set.py` smoke-tests seam placement; restores `scripts/baselines/n2n_seam.from_state` loader.
+
 ### Fixed
 
 - **Multi-osc voice clipping** — Summing several oscillators (e.g. VA Bass, loud Design patches) no longer hard-clamps at ±1 before the filter; voice mix scales by Σ levels (+ sub/noise weight) when > 1, per-voice targets use a transparent soft knee above unity, and the engine bus limiter runs again after FX.
