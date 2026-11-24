@@ -1913,7 +1913,7 @@ def main() -> int:
                 "iter": it,
                 "t_sec": round(time.time() - t0, 6),
                 "residual": residual_raw,
-                "r_seam": residual_raw,
+                "r_blend": residual_raw,
                 "t_ms": t_ms,
                 "j": j_raw,
                 "residual_scored": residual,
