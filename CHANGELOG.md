@@ -8,7 +8,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- **DenoiseOpt real-seam eval** — `scripts/build_real_seam_set.py` builds deterministic AKWF + factory/FX mis-loop corpora (`real_seam_set.npz` / manifest); `scripts/eval_real_seam.py` scores E4 champions, hybrid LSTM, and N2N on `R_blend` / seam / body metrics; `scripts/test_build_real_seam_set.py` smoke-tests seam placement.
+- **DenoiseOpt real-seam eval** — `scripts/build_real_seam_set.py` builds deterministic AKWF + factory/FX mis-loop corpora (`real_seam_set.npz` / manifest); `scripts/eval_real_seam.py` scores E4 champions, hybrid LSTM, and N2N on `R_blend` / seam / body metrics; `scripts/test_build_real_seam_set.py` smoke-tests seam placement; restores `scripts/baselines/n2n_seam.from_state` loader.
 
 ### Fixed
 

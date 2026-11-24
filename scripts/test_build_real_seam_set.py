@@ -56,9 +56,29 @@ def test_build_writes_manifest(tmp_path: Path | None = None) -> None:
     assert (out / "real_seam_set.npz").is_file()
 
 
+def test_load_n2n_random_state() -> None:
+    import tempfile
+
+    import eval_real_seam as ers  # noqa: E402
+    from baselines.n2n_seam import SeamN2N  # noqa: E402
+
+    device = torch.device("cpu")
+    model = SeamN2N(256)
+    out_dir = Path(tempfile.mkdtemp())
+    ckpt = out_dir / "n2n_toy.pt"
+    torch.save({"state_dict": model.state_dict(), "eval": {}}, ckpt)
+    name, fn, meta = ers.load_n2n(ckpt, device)
+    assert name.startswith("n2n:")
+    assert meta["path"] == str(ckpt)
+    y = fn(torch.randn(3, og.N, device=device))
+    assert y.shape == (3, og.N)
+    assert torch.isfinite(y).all()
+
+
 def _main() -> None:
     test_toy_seam_and_reference_alignment()
     test_build_writes_manifest()
+    test_load_n2n_random_state()
     print("test_build_real_seam_set: ok")
 
 
@@ -68,3 +88,4 @@ else:
     # pytest / unittest discovery
     test_toy_seam_and_reference_alignment()
     test_build_writes_manifest()
+    test_load_n2n_random_state()

@@ -163,10 +163,11 @@ def load_fitted_e4(path: Path, device: torch.device) -> tuple[str, Callable[[tor
 
 
 def load_n2n(path: Path, device: torch.device) -> tuple[str, Callable[[torch.Tensor], torch.Tensor], dict]:
-    from baselines.n2n_seam import SeamN2N
+    from baselines import n2n_seam
 
     blob = torch.load(path, map_location=device, weights_only=False)
-    model = SeamN2N.from_state(blob["state_dict"], device)
+    state = blob.get("state_dict") or blob
+    model = n2n_seam.from_state(state, device)
     model.eval()
     eval_blob = blob.get("eval") or {}
 

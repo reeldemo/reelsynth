@@ -230,7 +230,7 @@ def try_load_optional(name: str, device: torch.device):
 
         blob = torch.load(ckpt, map_location=device, weights_only=False)
         if name.startswith("n2n"):
-            m = n2n_seam.SeamN2N.from_state(blob["state_dict"], device)
+            m = n2n_seam.from_state(blob["state_dict"], device)
         elif "lstm" in name:
             m = seq_seam_lstm.SeamLSTM.from_state(blob["state_dict"], device)
         else:
