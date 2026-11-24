@@ -48,6 +48,92 @@ CMA_DIM = 10 + len(BLOCKS) + len(_OP_KEYS)
 RECURRENT_BLOCKS = ("lstm", "xlstm")
 
 
+def _gate_equal(a: float | None, b: float | None) -> bool:
+    if a is None and b is None:
+        return True
+    if a is None or b is None:
+        return False
+    return math.isclose(float(a), float(b), rel_tol=0.0, abs_tol=1e-9)
+
+
+def _beats_n2n(r_raw: float, n2n_gate_r: float | None) -> bool:
+    return n2n_gate_r is None or r_raw > float(n2n_gate_r)
+
+
+def _protocol_fingerprint(
+    *,
+    iters_target: int,
+    batch: int,
+    fit_steps: int,
+    pop_size: int,
+    plateau_every: int,
+    lambda_latency: float,
+    hp_reward_sweep: bool = True,
+) -> dict[str, Any]:
+    return {
+        "iters_target": int(iters_target),
+        "batch": int(batch),
+        "fit_steps_default": int(fit_steps),
+        "pop_size": int(pop_size),
+        "plateau_every": int(plateau_every),
+        "lambda_latency": float(lambda_latency),
+        "hp_reward_sweep": bool(hp_reward_sweep),
+    }
+
+
+def _fingerprints_match(a: dict[str, Any] | None, b: dict[str, Any] | None) -> bool:
+    if not a and not b:
+        return True
+    if not a or not b:
+        return False
+    for k in (
+        "iters_target",
+        "batch",
+        "fit_steps_default",
+        "pop_size",
+        "plateau_every",
+        "lambda_latency",
+        "hp_reward_sweep",
+    ):
+        if a.get(k) != b.get(k):
+            return False
+    return True
+
+
+def _validate_resume(
+    ckpt: dict[str, Any],
+    *,
+    iters: int,
+    fingerprint_now: dict[str, Any],
+    n2n_gate_now: float | None,
+    force_fresh: bool,
+) -> tuple[bool, str, int | None]:
+    if force_fresh or not ckpt:
+        return True, "fresh_start", None
+    gate_ckpt = ckpt.get("n2n_gate_r")
+    if gate_ckpt is not None:
+        try:
+            gate_ckpt = float(gate_ckpt)
+        except (TypeError, ValueError):
+            gate_ckpt = None
+    fp_ckpt = ckpt.get("protocol_fingerprint")
+    gate_ok = _gate_equal(gate_ckpt, n2n_gate_now)
+    fp_ok = _fingerprints_match(fp_ckpt, fingerprint_now)
+    resumed = int(ckpt.get("iters_done") or 0)
+    msg = (
+        f"RESUME_CHECK gate_ckpt={gate_ckpt} gate_now={n2n_gate_now} "
+        f"fingerprint_ok={fp_ok} gate_ok={gate_ok}"
+    )
+    if gate_ok and fp_ok:
+        return True, msg, resumed if resumed > 0 else None
+    return (
+        False,
+        msg
+        + " — protocol mismatch; pass --force-fresh to restart.",
+        resumed if resumed > 0 else None,
+    )
+
+
 def _tb_writer(out_dir: Path):
     """Optional TensorBoard writer (torch.utils.tensorboard)."""
     try:
@@ -643,6 +729,7 @@ def run_approach(
     ckpt_every: int,
     resume: bool,
     all_approaches: list[str] | None = None,
+    force_fresh: bool = False,
 ) -> dict[str, Any]:
     approach_dir = out_dir / name
     approach_dir.mkdir(parents=True, exist_ok=True)
@@ -693,6 +780,19 @@ def run_approach(
     champ_j = -1.0
     iters_since_improve = 0
     plateau_every = 500
+    hp_reward_sweep = True
+    protocol_now = _protocol_fingerprint(
+        iters_target=iters,
+        batch=batch,
+        fit_steps=fit_steps,
+        pop_size=pop_size,
+        plateau_every=plateau_every,
+        lambda_latency=float(og.LAMBDA_LATENCY),
+        hp_reward_sweep=hp_reward_sweep,
+    )
+    champ_iter = 0
+    resumed_from_iter: int | None = None
+    n2n_gate_r_at_start: float | None = None
     t0 = time.time()
     elapsed_prev = 0.0
 
@@ -724,6 +824,19 @@ def run_approach(
         champ_j = float(ckpt.get("champ_j", champ_r))
         champ_t_ms = float(ckpt.get("champ_t_ms", 0.0))
         champ_beats_n2n = bool(ckpt.get("champ_beats_n2n", False))
+        champ_iter = int(ckpt.get("champ_iter") or 0)
+        n2n_gate_r_at_start = n2n_gate_r
+        ok_resume, resume_msg, resumed_from_iter = _validate_resume(
+            ckpt,
+            iters=iters,
+            fingerprint_now=protocol_now,
+            n2n_gate_now=n2n_gate_r,
+            force_fresh=force_fresh,
+        )
+        print(resume_msg, flush=True)
+        if not ok_resume:
+            raise SystemExit(resume_msg)
+        champ_beats_n2n = _beats_n2n(champ_raw, n2n_gate_r)
         champ_lstm = bool(ckpt.get("champ_lstm", False))
         champ_xlstm = bool(ckpt.get("champ_xlstm", False))
         elapsed_prev = float(ckpt.get("wall_s", 0.0))
@@ -1025,6 +1138,7 @@ def run_approach(
             champ_cfg = trial_cfg
             champ_hp = trial_hp
             champ_beats_n2n = bool(beats)
+            champ_iter = it
             champ_t_ms = float(_LAST_EVAL_METRICS.get("t_ms") or 0.0)
             champ_j = float(_LAST_EVAL_METRICS.get("j") or r)
             flags = arch_recurrent_flags(trial_cfg)
@@ -1109,6 +1223,9 @@ def run_approach(
             payload: dict[str, Any] = {
                 "approach": name,
                 "iters_done": it,
+                "iters_target": iters,
+                "protocol_fingerprint": protocol_now,
+                "champ_iter": champ_iter,
                 "champ_r": champ_r,
                 "champ_raw": champ_raw,
                 "champ_j": champ_j,
@@ -1176,6 +1293,9 @@ def run_approach(
         "champ_arch": champ_cfg.to_dict() if champ_cfg else None,
         "champ_hp": champ_hp.to_dict() if champ_hp else None,
         "champ_cell_path": str(approach_dir / "champ_cell.pt"),
+        "champ_iter": champ_iter,
+        "resumed_from_iter": resumed_from_iter,
+        "n2n_gate_r_at_start": n2n_gate_r_at_start,
         "history_path": str(hist_path),
         "finished_at": utc_now(),
         "protocol": "paper_v10",
@@ -1571,6 +1691,7 @@ def main() -> int:
                 ckpt_every=args.ckpt_every,
                 resume=resume,
                 all_approaches=names,
+                force_fresh=allow_fresh,
             )
         )
 
