@@ -508,17 +508,26 @@ class SoftOpGate(nn.Module):
         return g * y + (1 - g) * x
 
 
-def normalize_graph(blocks: Sequence[str] | None, cell_kind: str) -> list[str]:
+def normalize_graph(
+    blocks: Sequence[str] | None,
+    cell_kind: str,
+    allowed_blocks: Sequence[str] | None = None,
+) -> list[str]:
     """Build a composable graph: primary cell + optional extras (depth/mixture biased)."""
+    allowed = list(allowed_blocks) if allowed_blocks is not None else list(BLOCKS)
+    allowed_set = set(allowed)
     raw = list(blocks) if blocks else []
     cleaned: list[str] = []
     for b in raw:
-        if b in BLOCKS and b not in cleaned:
+        if b in allowed_set and b not in cleaned:
             cleaned.append(b)
-    if cell_kind in BLOCKS and cell_kind not in cleaned:
+    if cell_kind in allowed_set and cell_kind not in cleaned:
         cleaned.insert(0, cell_kind)
     if not cleaned:
-        cleaned = ["residual"]
+        if "residual" in allowed_set:
+            cleaned = ["residual"]
+        else:
+            cleaned = [allowed[0]]
     return cleaned[:MAX_GRAPH_LEN]
 
 
@@ -659,9 +668,13 @@ def random_block_graph(
     max_extra: int = 3,
     *,
     crazy_mix_p: float = 0.35,
+    allowed_blocks: Sequence[str] | None = None,
 ) -> list[str]:
-    extras = [b for b in BLOCKS if b != cell_kind]
-    k = rng.randint(0, min(max_extra, MAX_GRAPH_LEN - 1))
+    universe = list(allowed_blocks) if allowed_blocks is not None else list(BLOCKS)
+    allowed_uni = set(universe)
+    extras = [b for b in universe if b != cell_kind]
+    k_hi = min(max_extra, MAX_GRAPH_LEN - 1, len(extras))
+    k = rng.randint(0, k_hi)
     chosen = rng.sample(extras, k=k) if k else []
     # Bias toward heterogeneous mixtures (unet+attn+dilated+noise_cond style)
     if k >= 2 and rng.random() < crazy_mix_p:
@@ -680,11 +693,11 @@ def random_block_graph(
                 "noise_cond",
                 "soft_mix",
             )
-            if b != cell_kind
+            if b != cell_kind and b in allowed_uni
         ]
         if prefer:
             chosen = list(dict.fromkeys(prefer[: max(2, k)] + chosen))[:max_extra]
-    return normalize_graph([cell_kind] + chosen, cell_kind)
+    return normalize_graph([cell_kind] + chosen, cell_kind, allowed_blocks)
 
 
 def random_moe_mode(rng, *, moe_p: float = 0.35) -> str:
