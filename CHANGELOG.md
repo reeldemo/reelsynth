@@ -8,7 +8,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- **DenoiseOpt research infra** — `scripts/refit_holdout.py` gains `--save-state DIR` (fitted `.pt` + sha256 `manifest.json`, loadable by `eval_real_seam` / champion loaders). `overnight_gpu_rl_arch.py` gains `search_state` checkpoints, `--resume`, and atomic retention of the last two checkpoints. Tests: `test_refit_holdout_save_state.py`, `test_overnight_gpu_rl_resume.py`.
+- **DenoiseOpt research infra** — `scripts/refit_holdout.py` gains `--save-state DIR` (fitted `.pt` + sha256 `manifest.json`, loadable by `eval_real_seam` / champion loaders). `overnight_gpu_rl_arch.py` gains `search_state` checkpoints, `--resume`, and atomic retention of the last two checkpoints; resume no longer consumes init-only `seed_specs` RNG. `train_n2n_seam_baseline.py` gains `--train-seed` (default 424242) and `--out-dir`. Tests: `test_refit_holdout_save_state.py`, `test_overnight_gpu_rl_resume.py`, `test_train_n2n_seam_baseline_seeds.py`.
 
 ### Fixed
 

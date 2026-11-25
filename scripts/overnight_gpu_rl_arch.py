@@ -1151,6 +1151,22 @@ def eval_cell(cell: SeamCell, ops: list[str], device: torch.device, batch: int =
 BASELINE_EVAL_SEED = 20260719
 
 
+def configure_torch_reproducibility(device: torch.device) -> None:
+    """Best-effort deterministic Torch/CUDA for resume-fit parity (see test_overnight_gpu_rl_resume)."""
+    os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    try:
+        torch.use_deterministic_algorithms(True, warn_only=True)
+    except Exception:
+        pass
+    if hasattr(torch.backends, "cuda") and torch.backends.cuda.is_built():
+        if hasattr(torch.backends.cuda, "matmul"):
+            torch.backends.cuda.matmul.allow_tf32 = False
+        if hasattr(torch.backends, "cudnn"):
+            torch.backends.cudnn.allow_tf32 = False
+
+
 @torch.no_grad()
 def dual_cosine_baseline(device: torch.device, batch: int = 128) -> float:
     cpu_state = torch.get_rng_state()
@@ -1797,6 +1813,7 @@ def main() -> int:
     device = torch.device(
         args.device if torch.cuda.is_available() and args.device.startswith("cuda") else "cpu"
     )
+    configure_torch_reproducibility(device)
     gpu_name = torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu"
     if args.resume and not args.run_id:
         print("ERROR: --resume requires --run-id naming the interrupted run folder", file=sys.stderr)
@@ -1981,71 +1998,72 @@ def main() -> int:
         last_ga_stats = {"ga_crossover": 0.0, "ga_mutate": 0.0, "ga_elites": 0.0}
         recent_residuals = deque(maxlen=100)
         rate_note_written = False
-    seed_specs = [
-        ArchConfig(
-            depth=6,
-            width=24,
-            act="gelu",
-            ops=["mlp_seam", "dual_cosine", "fir3", "cycle_net"],
-            wet=0.45,
-            fir=[0.2, 0.5, 0.2, 0.05, 0.05],
-            cell_kind="n2n_unet",
-            blocks=["n2n_unet", "attn", "dilated", "residual"],
-            soft_logits=[0.0] * len(OPS),
-            moe_mode="moe_parallel",
-        ),
-        ArchConfig(
-            depth=6,
-            width=24,
-            act="gelu",
-            ops=["mlp_seam", "dual_cosine", "fir3", "cycle_net"],
-            wet=0.45,
-            fir=[0.2, 0.5, 0.2, 0.05, 0.05],
-            cell_kind="unet",
-            blocks=["unet", "attn", "dilated", "residual"],
-            soft_logits=[0.0] * len(OPS),
-            moe_mode="moe_parallel",
-        ),
-        ArchConfig(
-            depth=5,
-            width=20,
-            act="silu",
-            ops=["mlp_seam", "fir5", "cycle_net", "hann_blend"],
-            wet=0.5,
-            fir=[0.15, 0.2, 0.3, 0.2, 0.15],
-            cell_kind="dilated",
-            blocks=["dilated", "gated", "dense"],
-            soft_logits=[0.0] * len(OPS),
-            moe_mode="sequential",
-        ),
-        ArchConfig(
-            depth=4,
-            width=16,
-            act="gelu",
-            ops=["mlp_seam", "dual_cosine", "cycle_net"],
-            wet=0.4,
-            fir=[0.25, 0.5, 0.25, 0.0, 0.0],
-            cell_kind="attn",
-            blocks=["attn", "n2n_unet", "dual_path"],
-            soft_logits=[0.0] * len(OPS),
-            moe_mode="moe_parallel",
-        ),
-        ArchConfig(
-            depth=7,
-            width=18,
-            act="relu",
-            ops=["mlp_seam", "fir3", "cycle_net", "skip_blend"],
-            wet=0.55,
-            fir=[0.2, 0.5, 0.2, 0.05, 0.05],
-            cell_kind="moe_mix",
-            blocks=["moe_mix", "n2n_unet", "attn", "dilated"],
-            soft_logits=[rng.uniform(-0.3, 0.3) for _ in range(len(OPS))],
-            use_adv_aux=False,
-            moe_mode="moe_parallel",
-        ),
-    ]
-    allowed_cells = set(CELL_KINDS)
+    # Must not call rng (or torch RNG) on --resume: seed_specs are init-only.
     if not resume_mode:
+        seed_specs = [
+            ArchConfig(
+                depth=6,
+                width=24,
+                act="gelu",
+                ops=["mlp_seam", "dual_cosine", "fir3", "cycle_net"],
+                wet=0.45,
+                fir=[0.2, 0.5, 0.2, 0.05, 0.05],
+                cell_kind="n2n_unet",
+                blocks=["n2n_unet", "attn", "dilated", "residual"],
+                soft_logits=[0.0] * len(OPS),
+                moe_mode="moe_parallel",
+            ),
+            ArchConfig(
+                depth=6,
+                width=24,
+                act="gelu",
+                ops=["mlp_seam", "dual_cosine", "fir3", "cycle_net"],
+                wet=0.45,
+                fir=[0.2, 0.5, 0.2, 0.05, 0.05],
+                cell_kind="unet",
+                blocks=["unet", "attn", "dilated", "residual"],
+                soft_logits=[0.0] * len(OPS),
+                moe_mode="moe_parallel",
+            ),
+            ArchConfig(
+                depth=5,
+                width=20,
+                act="silu",
+                ops=["mlp_seam", "fir5", "cycle_net", "hann_blend"],
+                wet=0.5,
+                fir=[0.15, 0.2, 0.3, 0.2, 0.15],
+                cell_kind="dilated",
+                blocks=["dilated", "gated", "dense"],
+                soft_logits=[0.0] * len(OPS),
+                moe_mode="sequential",
+            ),
+            ArchConfig(
+                depth=4,
+                width=16,
+                act="gelu",
+                ops=["mlp_seam", "dual_cosine", "cycle_net"],
+                wet=0.4,
+                fir=[0.25, 0.5, 0.25, 0.0, 0.0],
+                cell_kind="attn",
+                blocks=["attn", "n2n_unet", "dual_path"],
+                soft_logits=[0.0] * len(OPS),
+                moe_mode="moe_parallel",
+            ),
+            ArchConfig(
+                depth=7,
+                width=18,
+                act="relu",
+                ops=["mlp_seam", "fir3", "cycle_net", "skip_blend"],
+                wet=0.55,
+                fir=[0.2, 0.5, 0.2, 0.05, 0.05],
+                cell_kind="moe_mix",
+                blocks=["moe_mix", "n2n_unet", "attn", "dilated"],
+                soft_logits=[rng.uniform(-0.3, 0.3) for _ in range(len(OPS))],
+                use_adv_aux=False,
+                moe_mode="moe_parallel",
+            ),
+        ]
+        allowed_cells = set(CELL_KINDS)
         for i, spec in enumerate(seed_specs):
             if i < len(pop) and spec.cell_kind in allowed_cells:
                 pop[i].cfg = spec

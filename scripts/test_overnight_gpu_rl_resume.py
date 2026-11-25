@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
-"""Resume smoke (CPU): one continuation step after search_state checkpoint.
+"""Resume smoke: one continuation step after search_state checkpoint.
 
-Runs N=HALF+1 iters continuously vs HALF iters + --resume for one more step from the
-same run's checkpoint. Branch/proposal must match; ``residual``/``r_blend`` within
-``TOL`` (FitCell may differ slightly across process restarts on CPU). Full N-step
-identity is not required after the first resumed step because training noise compounds.
+Runs N=HALF+1 iters continuously vs checkpoint at HALF + --resume for one more step.
+Branch/proposal and residuals must match exactly (CPU; CUDA with cudnn deterministic).
 """
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import sys
 from pathlib import Path
+
+import torch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -24,7 +25,17 @@ POP = 4
 CKPT_EVERY = 4
 FIT = 4
 BATCH = 8
-TOL = 2e-2
+TOL_RESIDUAL = 1e-6
+TOL_R_BLEND = 1e-6
+
+
+def resolve_test_device() -> str:
+    forced = os.environ.get("DENOISE_RESUME_TEST_DEVICE", "").strip()
+    if forced:
+        return forced
+    if torch.cuda.is_available():
+        return "cuda"
+    return "cpu"
 
 
 def history_rows(run_dir: Path) -> list[dict]:
@@ -41,11 +52,11 @@ def run_main(argv: list[str]) -> int:
         sys.argv = old
 
 
-def base_argv(run_id: str, iters: int, *, resume: bool = False) -> list[str]:
+def base_argv(run_id: str, iters: int, device: str, *, resume: bool = False) -> list[str]:
     cmd = [
         "overnight_gpu_rl_arch.py",
         "--device",
-        "cpu",
+        device,
         "--seed",
         str(SEED),
         "--pop-size",
@@ -73,13 +84,14 @@ def base_argv(run_id: str, iters: int, *, resume: bool = False) -> list[str]:
 
 
 def test_resume_one_step() -> None:
+    device = resolve_test_device()
     base = ROOT / "brand" / "artifacts" / "models"
     run_cont = f"resume-smoke-cont-{SEED}"
     run_split = f"resume-smoke-split-{SEED}"
     for rid in (run_cont, run_split):
         shutil.rmtree(base / rid, ignore_errors=True)
 
-    assert run_main(base_argv(run_cont, N)) == 0
+    assert run_main(base_argv(run_cont, N, device)) == 0
     rows_cont = history_rows(base / run_cont)
 
     (base / run_split).mkdir(parents=True, exist_ok=True)
@@ -93,7 +105,7 @@ def test_resume_one_step() -> None:
         "\n".join(hist_lines[:HALF]) + "\n", encoding="utf-8"
     )
 
-    assert run_main(base_argv(run_split, N, resume=True)) == 0
+    assert run_main(base_argv(run_split, N, device, resume=True)) == 0
     rows_split = history_rows(base / run_split)
     assert len(rows_cont) == N == len(rows_split)
 
@@ -101,12 +113,16 @@ def test_resume_one_step() -> None:
     assert ra["iter"] == rb["iter"] == N
     assert ra.get("branch") == rb.get("branch")
     assert ra.get("proposal") == rb.get("proposal")
-    for key in ("residual", "r_blend"):
-        assert abs(float(ra[key]) - float(rb[key])) <= TOL, (key, ra[key], rb[key])
+    for key, tol in (("residual", TOL_RESIDUAL), ("r_blend", TOL_R_BLEND)):
+        delta = abs(float(ra[key]) - float(rb[key]))
+        assert delta <= tol, (device, key, ra[key], rb[key], delta, tol)
 
     ckpts = sorted(ckpt_dir.glob("search_state_iter_*.pt"))
     assert len(ckpts) <= 2, len(ckpts)
-    print(f"OK: resume one-step smoke passed iter={N} tol={TOL} ckpts_kept={len(ckpts)}")
+    print(
+        f"OK: resume one-step smoke passed iter={N} device={device} "
+        f"tol={TOL_RESIDUAL} ckpts_kept={len(ckpts)}"
+    )
 
 
 if __name__ == "__main__":
