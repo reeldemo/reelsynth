@@ -99,10 +99,12 @@ def train_mode(
     batch: int,
     lr: float,
     device: torch.device,
+    train_seed: int,
+    out_dir: Path,
 ) -> dict:
     model = SeamN2N().to(device)
     opt = torch.optim.Adam(model.parameters(), lr=lr)
-    set_seed(TRAIN_SEED, device)
+    set_seed(train_seed, device)
     losses = []
     t0 = time.perf_counter()
     for step in range(1, steps + 1):
@@ -134,7 +136,7 @@ def train_mode(
         "kind": mode,
         "state_dict": model.state_dict(),
         "n_params": n_params(model),
-        "train_seed": TRAIN_SEED,
+        "train_seed": train_seed,
         "holdout_seed": HOLDOUT_SEED,
         "steps": steps,
         "batch": batch,
@@ -144,8 +146,8 @@ def train_mode(
         "elapsed_sec": elapsed,
         "eval": metrics,
     }
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    path = OUT_DIR / f"{mode}.pt"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / f"{mode}.pt"
     torch.save(ckpt, path)
     print(
         f"saved {path} params={ckpt['n_params']} "
@@ -162,18 +164,33 @@ def main() -> None:
     ap.add_argument("--lr", type=float, default=2e-3)
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument(
+        "--train-seed",
+        type=int,
+        default=TRAIN_SEED,
+        help=f"Training data RNG seed (default {TRAIN_SEED}; disjoint from holdout).",
+    )
+    ap.add_argument(
+        "--out-dir",
+        type=str,
+        default=str(OUT_DIR),
+        help="Directory for per-mode .pt checkpoints and n2n_baseline.json summary.",
+    )
+    ap.add_argument(
         "--modes",
         default="n2n_corrupt_corrupt,n2n_sibling_supervised",
         help="comma-separated modes",
     )
     args = ap.parse_args()
     device = torch.device(args.device)
-    assert TRAIN_SEED != HOLDOUT_SEED
-    assert TRAIN_SEED != 1902771841
+    train_seed = int(args.train_seed)
+    out_dir = Path(args.out_dir)
+    assert train_seed != HOLDOUT_SEED
+    assert train_seed != 1902771841
 
     summary = {
         "meta": {
-            "train_seed": TRAIN_SEED,
+            "train_seed": train_seed,
+            "out_dir": str(out_dir),
             "holdout_seed": HOLDOUT_SEED,
             "overnight_search_seed": 1902771841,
             "note": "no holdout tile leakage; no overnight champion init; v10.1 primary=R_blend",
@@ -192,22 +209,31 @@ def main() -> None:
     }
     for mode in [m.strip() for m in args.modes.split(",") if m.strip()]:
         print(f"=== training {mode} ===")
-        ckpt = train_mode(mode, steps=args.steps, batch=args.batch, lr=args.lr, device=device)
+        ckpt = train_mode(
+            mode,
+            steps=args.steps,
+            batch=args.batch,
+            lr=args.lr,
+            device=device,
+            train_seed=train_seed,
+            out_dir=out_dir,
+        )
         summary["modes"][mode] = {
             "n_params": ckpt["n_params"],
             "loss_first": ckpt["loss_first"],
             "loss_last": ckpt["loss_last"],
             "elapsed_sec": ckpt["elapsed_sec"],
             "eval": ckpt["eval"],
-            "checkpoint": str(OUT_DIR / f"{mode}.pt"),
+            "checkpoint": str(out_dir / f"{mode}.pt"),
+            "train_seed": train_seed,
         }
         # Smoke: loss should decrease
         if ckpt["loss_first"] is not None and ckpt["loss_last"] is not None:
             print(f"  loss {ckpt['loss_first']:.6f} -> {ckpt['loss_last']:.6f}")
 
     # Write JSON to denoise-opt-meta + local artifacts
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    local_json = OUT_DIR / "n2n_baseline.json"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    local_json = out_dir / "n2n_baseline.json"
     local_json.write_text(json.dumps(summary, indent=2), encoding="utf-8")
     meta_json = (
         ROOT.parent / "denoise-opt-meta" / "paper" / "v5" / "figures" / "n2n_baseline.json"

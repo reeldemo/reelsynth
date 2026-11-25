@@ -6,6 +6,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **DenoiseOpt research infra** — `scripts/refit_holdout.py` gains `--save-state DIR` (fitted `.pt` + sha256 `manifest.json`, loadable by `eval_real_seam` / champion loaders). `overnight_gpu_rl_arch.py` gains `search_state` checkpoints, `--resume`, and atomic retention of the last two checkpoints; resume no longer consumes init-only `seed_specs` RNG; CUDA/CPU RNG restore keeps CPU `ByteTensor` states. `train_n2n_seam_baseline.py` gains `--train-seed` (default 424242) and `--out-dir`. Tests: `test_refit_holdout_save_state.py`, `test_overnight_gpu_rl_resume.py`, `test_train_n2n_seam_baseline_seeds.py`.
+
 ### Fixed
 
 - **Multi-osc voice clipping** — Summing several oscillators (e.g. VA Bass, loud Design patches) no longer hard-clamps at ±1 before the filter; voice mix scales by Σ levels (+ sub/noise weight) when > 1, per-voice targets use a transparent soft knee above unity, and the engine bus limiter runs again after FX.
