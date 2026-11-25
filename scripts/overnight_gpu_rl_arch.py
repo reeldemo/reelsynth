@@ -1151,6 +1151,23 @@ def eval_cell(cell: SeamCell, ops: list[str], device: torch.device, batch: int =
 BASELINE_EVAL_SEED = 20260719
 
 
+def rng_state_cpu_byte(state: torch.Tensor | object) -> torch.ByteTensor:
+    """Torch / CUDA RNG checkpoints must be CPU uint8 for set_rng_state* APIs."""
+    if not isinstance(state, torch.Tensor):
+        state = torch.as_tensor(state)
+    return state.detach().cpu().to(dtype=torch.uint8).clone()
+
+
+def apply_checkpoint_rng_states(blob: dict[str, Any], device: torch.device) -> None:
+    ts = blob.get("torch_rng_state")
+    if ts is not None:
+        torch.set_rng_state(rng_state_cpu_byte(ts))
+    if device.type == "cuda":
+        cuda_states = blob.get("cuda_rng_state")
+        if cuda_states:
+            torch.cuda.set_rng_state_all([rng_state_cpu_byte(s) for s in cuda_states])
+
+
 def configure_torch_reproducibility(device: torch.device) -> None:
     """Best-effort deterministic Torch/CUDA for resume-fit parity (see test_overnight_gpu_rl_resume)."""
     os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
@@ -1177,9 +1194,9 @@ def dual_cosine_baseline(device: torch.device, batch: int = 128) -> float:
     ideal, eng = make_batch(batch, N, device)
     out = dual_cosine_blend(eng)
     score = float(residual_score_blend(ideal, eng, out).mean().item())
-    torch.set_rng_state(cpu_state)
+    torch.set_rng_state(rng_state_cpu_byte(cpu_state))
     if cuda_states is not None:
-        torch.cuda.set_rng_state_all(cuda_states)
+        torch.cuda.set_rng_state_all([rng_state_cpu_byte(s) for s in cuda_states])
     return score
 
 
@@ -1193,9 +1210,9 @@ def nobake_baseline(device: torch.device, batch: int = 128) -> float:
         torch.cuda.manual_seed_all(BASELINE_EVAL_SEED + 1)
     ideal, eng = make_batch(batch, N, device)
     score = float(residual_score_blend(ideal, eng, eng).mean().item())
-    torch.set_rng_state(cpu_state)
+    torch.set_rng_state(rng_state_cpu_byte(cpu_state))
     if cuda_states is not None:
-        torch.cuda.set_rng_state_all(cuda_states)
+        torch.cuda.set_rng_state_all([rng_state_cpu_byte(s) for s in cuda_states])
     return score
 
 
@@ -1517,11 +1534,7 @@ def restore_search_checkpoint(
     rng = random.Random()
     if blob.get("rng_state") is not None:
         rng.setstate(blob["rng_state"])
-    if blob.get("torch_rng_state") is not None:
-        torch.set_rng_state(blob["torch_rng_state"])
-    if device.type == "cuda" and blob.get("cuda_rng_state"):
-        states = [s.to(device) for s in blob["cuda_rng_state"]]
-        torch.cuda.set_rng_state_all(states)
+    apply_checkpoint_rng_states(blob, device)
     pop = deserialize_population(blob.get("pop") or [])
     last_good = blob.get("last_good_policy") or snapshot_state_dict(policy)
     plateau_d = blob.get("plateau") or {}

@@ -125,5 +125,35 @@ def test_resume_one_step() -> None:
     )
 
 
+def test_cuda_checkpoint_rng_restore() -> None:
+    """Restore path must accept checkpoint CUDA RNG bytes on CPU (not .to(device))."""
+    if not torch.cuda.is_available():
+        print("SKIP: cuda checkpoint rng restore (no CUDA)")
+        return
+    device = torch.device("cuda")
+    og.configure_torch_reproducibility(device)
+
+    torch.manual_seed(4242)
+    torch.cuda.manual_seed_all(4242)
+    _ = torch.rand(3, device=device)
+    ref = float(torch.rand(1, device=device).item())
+
+    torch.manual_seed(4242)
+    torch.cuda.manual_seed_all(4242)
+    _ = torch.rand(3, device=device)
+    blob = {
+        "torch_rng_state": torch.get_rng_state(),
+        "cuda_rng_state": [t.cpu() for t in torch.cuda.get_rng_state_all()],
+    }
+    torch.manual_seed(0)
+    torch.cuda.manual_seed_all(0)
+    _ = torch.rand(1, device=device)
+    og.apply_checkpoint_rng_states(blob, device)
+    got = float(torch.rand(1, device=device).item())
+    assert abs(got - ref) < 1e-6, (got, ref)
+    print("OK: cuda checkpoint rng restore (CPU ByteTensor)")
+
+
 if __name__ == "__main__":
+    test_cuda_checkpoint_rng_restore()
     test_resume_one_step()
