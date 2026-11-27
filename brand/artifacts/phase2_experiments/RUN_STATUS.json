@@ -1,0 +1,21 @@
+{
+  "started_at": "2026-10-21T05:13:06Z",
+  "device": "cpu",
+  "cuda_available": false,
+  "smoke": true,
+  "search_seeds": [
+    1902771841,
+    2026072701,
+    2026072702
+  ],
+  "min_search_seeds": 3,
+  "steps": {
+    "search_1902771841": "reused_existing_summary",
+    "search_2026072701": "ok",
+    "search_2026072702": "ok",
+    "holdout_eval": "ok",
+    "alpha_sweep": "ok",
+    "compute_table": "ok"
+  },
+  "finished_at": "2026-10-21T05:13:26Z"
+}

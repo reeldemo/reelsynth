@@ -1,0 +1,9 @@
+2026-10-21T05:12:16 START approach=hybrid_lstm iters=1 seed=2026072702 device=cpu baseline_dual_cosine=0.556591 nobake=0.910370 n2n_gate_R_blend=None blocks_has_lstm=True blocks_has_xlstm=True hp_reward_sweep=on plateau_every=500 primary_metric=r_blend search_objective=J
+2026-10-21T05:12:17 CHAMP approach=hybrid_lstm iter=1 J_scored=0.404295 R_blend=0.413678 R_seam=0.1529085338115692 R_body=0.9284501075744629 J=0.404295 t_ms=5.326 beats_n2n=True lstm=False xlstm=False reward_mode=vs_nobake
+2026-10-21T05:12:17 DONE approach=hybrid_lstm champ_r=0.404295 wall_h=0.000 lstm=False xlstm=False
+2026-10-21T05:12:52 START approach=hybrid_lstm iters=1 seed=2026072702 device=cpu baseline_dual_cosine=0.556591 nobake=0.910370 n2n_gate_R_blend=None blocks_has_lstm=True blocks_has_xlstm=True hp_reward_sweep=on plateau_every=500 primary_metric=r_blend search_objective=J
+2026-10-21T05:12:53 CHAMP approach=hybrid_lstm iter=1 J_scored=0.404157 R_blend=0.413678 R_seam=0.1529085338115692 R_body=0.9284501075744629 J=0.404157 t_ms=5.499 beats_n2n=True lstm=False xlstm=False reward_mode=vs_nobake
+2026-10-21T05:12:53 DONE approach=hybrid_lstm champ_r=0.404157 wall_h=0.000 lstm=False xlstm=False
+2026-10-21T05:13:14 START approach=hybrid_lstm iters=1 seed=2026072702 device=cpu baseline_dual_cosine=0.556591 nobake=0.910370 n2n_gate_R_blend=None blocks_has_lstm=True blocks_has_xlstm=True hp_reward_sweep=on plateau_every=500 primary_metric=r_blend search_objective=J
+2026-10-21T05:13:15 CHAMP approach=hybrid_lstm iter=1 J_scored=0.403797 R_blend=0.413678 R_seam=0.1529085338115692 R_body=0.9284501075744629 J=0.403797 t_ms=5.976 beats_n2n=True lstm=False xlstm=False reward_mode=vs_nobake
+2026-10-21T05:13:15 DONE approach=hybrid_lstm champ_r=0.403797 wall_h=0.000 lstm=False xlstm=False
