@@ -1,0 +1,41 @@
+name: Dependency Review
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    name: Review dependency diffs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Dependency graph availability
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # actions/dependency-review-action requires Dependency graph, which is
+          # not enabled on this org repo yet. Probe and soft-skip instead of failing.
+          code=$(curl -sS -o /tmp/depgraph.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/dependency-graph/compare/${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}")
+          if [[ "$code" == "200" ]]; then
+            echo "Dependency graph compare OK — enabling review action."
+            echo "RUN_REVIEW=1" >> "$GITHUB_ENV"
+          else
+            echo "::warning::Dependency graph not available (HTTP $code). Enable it under Settings → Code security, then this job can hard-fail on high severity. Skipping for now."
+            echo "RUN_REVIEW=0" >> "$GITHUB_ENV"
+          fi
+
+      - uses: actions/checkout@v4
+        if: env.RUN_REVIEW == '1'
+
+      - name: Dependency Review
+        if: env.RUN_REVIEW == '1'
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: never
